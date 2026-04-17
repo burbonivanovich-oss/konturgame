@@ -3,20 +3,25 @@ import { useGameStore } from '../stores/gameStore'
 
 export default function NextDayButton() {
   const [isLoading, setIsLoading] = useState(false)
+  const [blockedReason, setBlockedReason] = useState<string | null>(null)
   const { currentDay, isGameOver, isVictory } = useGameStore()
 
   const handleClick = useCallback(async () => {
     if (isLoading) return
     setIsLoading(true)
+    setBlockedReason(null)
     try {
-      useGameStore.getState().nextDay()
+      const result = useGameStore.getState().advanceDay()
+      if (result.blocked) {
+        setBlockedReason(result.reason ?? 'Действие заблокировано')
+      }
     } finally {
       setIsLoading(false)
     }
   }, [isLoading])
 
   const isDisabled = isGameOver || isVictory
-  const disabledReason = isGameOver ? '❌ Игра окончена' : isVictory ? '🎉 Победа!' : ''
+  const statusText = isGameOver ? '❌ Игра окончена' : isVictory ? '🎉 Победа!' : ''
 
   return (
     <div className="text-center">
@@ -33,9 +38,12 @@ export default function NextDayButton() {
           ${isLoading ? 'opacity-75' : ''}
         `}
       >
-        {isLoading ? '⏳ День ' + currentDay + '...' : '→ Следующий день'}
+        {isLoading ? `⏳ Обработка дня ${currentDay}...` : `→ День ${currentDay} завершить`}
       </button>
-      {disabledReason && <p className="text-sm text-gray-400 mt-2">{disabledReason}</p>}
+      {statusText && <p className="text-sm text-gray-400 mt-2">{statusText}</p>}
+      {blockedReason && (
+        <p className="text-sm text-yellow-400 mt-2 font-medium">⚠️ {blockedReason}</p>
+      )}
     </div>
   )
 }

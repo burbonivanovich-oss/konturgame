@@ -181,7 +181,7 @@ describe('processDay', () => {
       daysSinceLastMonthly: 30,
     })
     processDay(state)
-    expect(state.daysSinceLastMonthly).toBe(1)
+    expect(state.daysSinceLastMonthly).toBe(0)
     vi.restoreAllMocks()
   })
 

@@ -22,7 +22,7 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
           <p className="mb-2">
             <strong>Доход:</strong> зависит от количества клиентов и их средней покупки.<br/>
             <strong>Расходы:</strong> закупка товара, зарплата персонала, подписки на сервисы.<br/>
-            <strong>Налоги:</strong> 20% от прибыли каждый день.
+            <strong>Налоги:</strong> 6% от выручки каждый день (снижается с Контур.Экстерн).
           </p>
         </section>
 

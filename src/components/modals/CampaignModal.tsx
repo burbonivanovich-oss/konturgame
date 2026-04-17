@@ -41,7 +41,7 @@ export default function CampaignModal({ isOpen, onClose }: CampaignModalProps) {
   const handleStartCampaign = (campaign: typeof CAMPAIGNS[0]) => {
     if (balance >= campaign.cost) {
       addAdCampaign({
-        id: `campaign-${Date.now()}`,
+        id: campaign.id,
         name: campaign.name,
         duration: campaign.duration,
         cost: campaign.cost,

@@ -1,4 +1,4 @@
-import type { BusinessType, ServiceType, BusinessConfig } from '../types/game'
+import type { BusinessType, ServiceType, BusinessConfig, SynergyBonus } from '../types/game'
 
 export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
   shop: {
@@ -63,6 +63,8 @@ export interface ServiceConfig {
     clientBonus?: number
     creditRate?: number
     reputationBonus?: number
+    loyaltyBonus?: number
+    taxSaving?: number
   }
 }
 
@@ -99,32 +101,92 @@ export const SERVICES_CONFIG: Record<ServiceType, ServiceConfig> = {
   diadoc: {
     id: 'diadoc',
     name: 'Контур.Диадок',
-    description: 'Электронный документооборот с контрагентами.',
+    description: 'Электронный документооборот. Ускоряет поставки: +5% клиентов.',
     monthlyPrice: 1000,
-    effects: {},
+    effects: {
+      clientBonus: 0.05,
+    },
   },
   fokus: {
     id: 'fokus',
     name: 'Контур.Фокус',
-    description: 'Проверка контрагентов и поставщиков.',
+    description: 'Проверка контрагентов. Защита от недобросовестных поставщиков: +1 репутации/день.',
     monthlyPrice: 1000,
-    effects: {},
+    effects: {
+      reputationBonus: 1,
+    },
   },
   elba: {
     id: 'elba',
     name: 'Контур.Эльба',
-    description: 'Онлайн-бухгалтерия. Раскрывает точные данные по лояльности персонала.',
+    description: 'Онлайн-бухгалтерия. Оптимизирует управление персоналом: +2 лояльности/день, снижает штрафы перегрузки.',
     monthlyPrice: 1500,
-    effects: {},
+    effects: {
+      loyaltyBonus: 2,
+    },
   },
   extern: {
     id: 'extern',
     name: 'Контур.Экстерн',
-    description: 'Сдача отчётности. Снижает штрафы при налоговых проверках.',
+    description: 'Сдача отчётности онлайн. Снижает налоговую нагрузку на 2%.',
     monthlyPrice: 2000,
-    effects: {},
+    effects: {
+      taxSaving: 0.02,
+    },
   },
 }
+
+export const SYNERGIES_CONFIG: SynergyBonus[] = [
+  {
+    id: 'market_ofd',
+    name: 'Кассовый порядок',
+    description: 'Маркет + ОФД: +2 репутации в день',
+    requiredServices: ['market', 'ofd'],
+    effects: { reputationBonus: 2 },
+  },
+  {
+    id: 'market_diadoc',
+    name: 'Цепочка поставок',
+    description: 'Маркет + Диадок: +10% к пропускной способности',
+    requiredServices: ['market', 'diadoc'],
+    effects: { capacityBonus: 0.1 },
+  },
+  {
+    id: 'bank_elba',
+    name: 'Финансовый контроль',
+    description: 'Банк + Эльба: +5% к выручке',
+    requiredServices: ['bank', 'elba'],
+    effects: { revenueBonus: 0.05 },
+  },
+  {
+    id: 'fokus_diadoc',
+    name: 'Надёжный контрагент',
+    description: 'Фокус + Диадок: +5% клиентов от репутации надёжности',
+    requiredServices: ['fokus', 'diadoc'],
+    effects: { clientBonus: 0.05 },
+  },
+  {
+    id: 'extern_bank',
+    name: 'Налоговая оптимизация',
+    description: 'Экстерн + Банк: дополнительные -1% налогов',
+    requiredServices: ['extern', 'bank'],
+    effects: { taxSaving: 0.01 },
+  },
+  {
+    id: 'elba_extern',
+    name: 'Полная бухгалтерия',
+    description: 'Эльба + Экстерн: +2 лояльности в день',
+    requiredServices: ['elba', 'extern'],
+    effects: { loyaltyBonus: 2 },
+  },
+  {
+    id: 'full_kontour',
+    name: 'Полный Контур',
+    description: 'Все 7 сервисов активны: +15% к выручке и +1 репутации/день',
+    requiredServices: ['market', 'bank', 'ofd', 'diadoc', 'fokus', 'elba', 'extern'],
+    effects: { revenueBonus: 0.15, reputationBonus: 1 },
+  },
+]
 
 export const ECONOMY_CONSTANTS = {
   TAX_RATE: 0.06,

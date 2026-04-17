@@ -18,6 +18,8 @@ import {
   updateGameOverCounters,
   getLevelForExperience,
 } from './victoryChecker'
+import { calculateSynergyModifiers } from './synergyEngine'
+import { checkNewAchievements } from './achievementChecker'
 
 export function checkDayBlocked(state: GameState): { blocked: boolean; reason?: string } {
   if (state.pendingEvent) {
@@ -39,6 +41,7 @@ export function processDay(state: GameState): DayResult {
 
   const config = BUSINESS_CONFIGS[state.businessType]
   const modifiers = buildModifiers(state)
+  const synergyMods = calculateSynergyModifiers(state)
 
   // 1. Check expiry before calculations
   const { loss: expiredLoss } = checkExpiry(state)
@@ -60,8 +63,9 @@ export function processDay(state: GameState): DayResult {
   // 5. Average check
   const avgCheck = calculateAverageCheck(config.avgCheck, modifiers)
 
-  // 6. Revenue
-  const revenue = calculateRevenue(served, avgCheck)
+  // 6. Revenue (+ synergy revenue bonus)
+  const baseRevenue = calculateRevenue(served, avgCheck)
+  const revenue = Math.round(baseRevenue * (1 + synergyMods.revenueBonus))
 
   // 7. Consume stock via FIFO
   let purchaseCost = 0
@@ -70,8 +74,12 @@ export function processDay(state: GameState): DayResult {
     purchaseCost = result.cost
   }
 
-  // 8. Tax
-  const tax = revenue * ECONOMY_CONSTANTS.TAX_RATE
+  // 8. Tax (reduced by Extern service and synergy)
+  const taxSaving =
+    (state.services?.extern?.isActive ? (state.services.extern.effects.taxSaving ?? 0) : 0) +
+    synergyMods.taxSaving
+  const effectiveTaxRate = Math.max(0, ECONOMY_CONSTANTS.TAX_RATE - taxSaving)
+  const tax = revenue * effectiveTaxRate
 
   // 9. Daily subscription cost
   const subscriptionCost = calculateDailySubscriptions(state)
@@ -87,23 +95,31 @@ export function processDay(state: GameState): DayResult {
   const expenses = tax + subscriptionCost + purchaseCost + monthlyExpense + expiredLoss
   const netProfit = revenue - expenses
 
-  // 12. Reputation change: penalise missed clients, bonus from Market+OFD synergy
+  // 12. Reputation change
   const repFromMissed = -(missed * 0.2)
-  let repBonus = 0
-  if (state.services?.market?.isActive && state.services?.ofd?.isActive) {
-    repBonus = 2
-  }
-  const reputationChange = Math.round(repFromMissed + repBonus)
+  // market+ofd synergy (+2 rep) is handled via synergyMods.reputationBonus
+  const fokusRepBonus = state.services?.fokus?.isActive
+    ? (state.services.fokus.effects.reputationBonus ?? 0)
+    : 0
+  const reputationChange = Math.round(repFromMissed + fokusRepBonus + synergyMods.reputationBonus)
 
   // 13. Loyalty change from overloading
+  const elbaActive = state.services?.elba?.isActive ?? false
   let loyaltyChange = 0
   const load = capacity > 0 ? served / capacity : 0
   if (load > ECONOMY_CONSTANTS.OVERLOAD_THRESHOLD) {
     const newOverloadDays = (state.consecutiveOverloadDays ?? 0) + 1
     if (newOverloadDays >= ECONOMY_CONSTANTS.OVERLOAD_DAYS_FOR_LOYALTY_PENALTY) {
-      loyaltyChange = -ECONOMY_CONSTANTS.LOYALTY_PENALTY_PER_DAY
+      // Elba halves the overload loyalty penalty
+      const penalty = elbaActive
+        ? -(ECONOMY_CONSTANTS.LOYALTY_PENALTY_PER_DAY * 0.5)
+        : -ECONOMY_CONSTANTS.LOYALTY_PENALTY_PER_DAY
+      loyaltyChange = Math.round(penalty)
     }
   }
+  // Elba base loyalty bonus + synergy loyalty bonus
+  const elbaLoyaltyBonus = elbaActive ? (state.services.elba.effects.loyaltyBonus ?? 0) : 0
+  loyaltyChange += elbaLoyaltyBonus + synergyMods.loyaltyBonus
 
   const newBalance = state.balance + netProfit
   const newReputation = Math.max(0, Math.min(100, state.reputation + reputationChange))
@@ -141,9 +157,9 @@ export function processDay(state: GameState): DayResult {
     state.consecutiveOverloadDays = 0
   }
 
-  // Update monthly counter
+  // Update monthly counter (fix: reset to 0, not 1)
   if (daysSinceMonthly >= ECONOMY_CONSTANTS.MONTHLY_CYCLE_DAYS) {
-    state.daysSinceLastMonthly = 1
+    state.daysSinceLastMonthly = 0
   } else {
     state.daysSinceLastMonthly = daysSinceMonthly + 1
   }
@@ -162,6 +178,16 @@ export function processDay(state: GameState): DayResult {
     state.activeAdCampaigns = state.activeAdCampaigns
       .map((c) => ({ ...c, daysRemaining: c.daysRemaining - 1 }))
       .filter((c) => c.daysRemaining > 0)
+  }
+
+  // Track achievement helper fields
+  if (state.reputation <= 20) {
+    state.hadLowReputation = true
+  }
+  if (expiredLoss === 0) {
+    state.consecutiveNoExpiry = (state.consecutiveNoExpiry ?? 0) + 1
+  } else {
+    state.consecutiveNoExpiry = 0
   }
 
   // Advance game day
@@ -187,6 +213,14 @@ export function processDay(state: GameState): DayResult {
     state.gameOverReason = 'reputation'
   } else if (checkVictory(state)) {
     state.isVictory = true
+  }
+
+  // Check and grant new achievements
+  const newAchievements = checkNewAchievements(state)
+  for (const id of newAchievements) {
+    if (!state.achievements.includes(id)) {
+      state.achievements.push(id)
+    }
   }
 
   // Generate new event if game is still active

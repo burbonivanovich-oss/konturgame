@@ -1,10 +1,10 @@
 import type { GameState, Modifiers } from '../types/game'
 import { BUSINESS_CONFIGS, MONTHLY_EXPENSES } from '../constants/business'
+import { calculateSynergyModifiers } from './synergyEngine'
 
 export function getSeasonalModifier(businessType: string, dayNumber: number): number {
   const config = BUSINESS_CONFIGS[businessType as keyof typeof BUSINESS_CONFIGS]
   if (!config) return 0
-  // Each 30 days = 1 month, cycling through 12 months
   const month = ((Math.ceil(dayNumber / 30) - 1) % 12) + 1
   return config.seasonality[String(month)] ?? 0
 }
@@ -33,7 +33,8 @@ export function calculateCapacity(state: GameState): number {
   if (state.loyalty < 30) capacityMod -= 0.15
 
   const upgradeBonus = getCapacityUpgradesBonus(state)
-  return Math.round(baseCapacity * (capacityMod + upgradeBonus))
+  const synergyBonus = calculateSynergyModifiers(state).capacityBonus
+  return Math.round(baseCapacity * (capacityMod + upgradeBonus + synergyBonus))
 }
 
 export function getCapacityUpgradesBonus(state: GameState): number {
@@ -109,22 +110,24 @@ export function calculateMonthlyExpenses(state: GameState): number {
 
 export function buildModifiers(state: GameState): Modifiers {
   const adMods = calculateActiveAdModifiers(state)
+  const synergyMods = calculateSynergyModifiers(state)
+
+  // Service client bonuses (diadoc) + synergy client bonuses
+  const serviceClientBonus =
+    (state.services?.diadoc?.isActive ? (state.services.diadoc.effects.clientBonus ?? 0) : 0) +
+    synergyMods.clientBonus
+
+  // Check bonus includes temporary event modifier (bug fix: was missing)
+  const serviceCheckBonus =
+    (state.services?.market?.isActive ? 0.15 : 0) + synergyMods.checkBonus
 
   return {
     seasonal: getSeasonalModifier(state.businessType, state.currentDay),
-    advertising: adMods.clientMod,
+    advertising: adMods.clientMod + serviceClientBonus,
     reputation: getReputationModifier(state.reputation),
     event: state.temporaryClientMod ?? 0,
     capacityBonus: getCapacityUpgradesBonus(state),
-    checkBonus:
-      getCheckUpgradesBonus(state) + (state.services?.market?.isActive ? 0.15 : 0),
+    checkBonus: getCheckUpgradesBonus(state) + serviceCheckBonus + (state.temporaryCheckMod ?? 0),
     advertisingCheckPenalty: adMods.checkMod,
-  }
-}
-
-export function applyServiceEffects(state: GameState, modifiers: Modifiers): void {
-  if (state.services?.market?.isActive) {
-    modifiers.capacityBonus += 0.2
-    modifiers.checkBonus += 0.15
   }
 }

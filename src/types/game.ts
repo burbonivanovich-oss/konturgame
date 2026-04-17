@@ -15,6 +15,24 @@ export interface Service {
     clientBonus?: number
     creditRate?: number
     reputationBonus?: number
+    loyaltyBonus?: number
+    taxSaving?: number
+  }
+}
+
+export interface SynergyBonus {
+  id: string
+  name: string
+  description: string
+  requiredServices: ServiceType[]
+  effects: {
+    capacityBonus?: number
+    checkBonus?: number
+    reputationBonus?: number
+    loyaltyBonus?: number
+    taxSaving?: number
+    clientBonus?: number
+    revenueBonus?: number
   }
 }
 
@@ -197,4 +215,8 @@ export interface GameState {
 
   createdAt: number
   lastUpdated: number
+
+  // Achievement tracking helpers
+  hadLowReputation?: boolean
+  consecutiveNoExpiry?: number
 }

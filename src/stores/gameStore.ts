@@ -1,6 +1,7 @@
-import { create, type StateCreator } from 'zustand'
+import { create } from 'zustand'
 import type { GameState, BusinessType, ServiceType, Service, DayResult, Event, AdCampaign, StockBatch } from '../types/game'
 import { SERVICES_CONFIG, BUSINESS_CONFIGS, ECONOMY_CONSTANTS } from '../constants/business'
+import { checkDayBlocked, processDay } from '../services/dayCalculator'
 
 const STORAGE_KEY = 'konturgame_state'
 const ROLLBACK_STORAGE_KEY = 'konturgame_rollback'
@@ -39,6 +40,9 @@ const createInitialState = (businessType: BusinessType): GameState => {
     level: 1,
     experience: 0,
 
+    hadLowReputation: false,
+    consecutiveNoExpiry: 0,
+
     lastDayResult: null,
     pendingEvent: null,
     triggeredEventIds: [],
@@ -67,6 +71,7 @@ interface GameStoreActions {
   // Core game actions
   startNewGame: (businessType: BusinessType) => void
   nextDay: () => void
+  advanceDay: () => { blocked: boolean; reason?: string }
 
   // Balance and metrics
   setBalance: (amount: number) => void
@@ -163,6 +168,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
         lastUpdated: Date.now(),
         daysSinceLastMonthly: state.daysSinceLastMonthly + 1,
       })),
+
+    advanceDay: () => {
+      const store = get()
+      const stateCopy = JSON.parse(JSON.stringify(extractState(store))) as GameState
+      const { blocked, reason } = checkDayBlocked(stateCopy)
+      if (blocked) {
+        return { blocked: true, reason }
+      }
+      processDay(stateCopy)
+      set({ ...stateCopy })
+      return { blocked: false }
+    },
 
     // Balance and metrics
     setBalance: (amount) => {
@@ -553,6 +570,8 @@ function extractState(state: any): GameState {
     temporaryModDaysLeft,
     createdAt,
     lastUpdated,
+    hadLowReputation,
+    consecutiveNoExpiry,
   } = state
 
   return {
@@ -586,6 +605,8 @@ function extractState(state: any): GameState {
     temporaryModDaysLeft,
     createdAt,
     lastUpdated,
+    hadLowReputation: hadLowReputation ?? false,
+    consecutiveNoExpiry: consecutiveNoExpiry ?? 0,
   }
 }
 
