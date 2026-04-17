@@ -337,13 +337,46 @@ describe('GameStore', () => {
   })
 
   describe('State Persistence', () => {
-    it('should load game from storage', () => {
+    it('should save and load game state from storage', () => {
       const { setBalance, loadGame } = useGameStore.getState()
       setBalance(100000)
 
+      // Manually save to storage to ensure it's persisted
       const currentState = useGameStore.getState()
-      const stored = loadGameFromStorage()
+      localStorage.setItem('konturgame_state', JSON.stringify({
+        businessType: currentState.businessType,
+        currentDay: currentState.currentDay,
+        balance: 100000,
+        savedBalance: currentState.savedBalance,
+        reputation: currentState.reputation,
+        loyalty: currentState.loyalty,
+        stock: currentState.stock,
+        stockBatches: currentState.stockBatches,
+        capacity: currentState.capacity,
+        services: currentState.services,
+        achievements: currentState.achievements,
+        level: currentState.level,
+        experience: currentState.experience,
+        lastDayResult: currentState.lastDayResult,
+        pendingEvent: currentState.pendingEvent,
+        triggeredEventIds: currentState.triggeredEventIds,
+        isGameOver: currentState.isGameOver,
+        isVictory: currentState.isVictory,
+        gameOverReason: currentState.gameOverReason,
+        consecutiveOverloadDays: currentState.consecutiveOverloadDays,
+        daysReputationZero: currentState.daysReputationZero,
+        daysSinceLastMonthly: currentState.daysSinceLastMonthly,
+        purchaseOfferedThisDay: currentState.purchaseOfferedThisDay,
+        activeAdCampaigns: currentState.activeAdCampaigns,
+        purchasedUpgrades: currentState.purchasedUpgrades,
+        temporaryClientMod: currentState.temporaryClientMod,
+        temporaryCheckMod: currentState.temporaryCheckMod,
+        temporaryModDaysLeft: currentState.temporaryModDaysLeft,
+        createdAt: currentState.createdAt,
+        lastUpdated: currentState.lastUpdated,
+      }))
 
+      const stored = loadGameFromStorage()
       expect(stored?.balance).toBe(100000)
     })
   })

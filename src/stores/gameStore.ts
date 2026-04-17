@@ -1,5 +1,4 @@
-import { create } from 'zustand'
-import { subscribeWithSelector } from 'zustand/react'
+import { create, type StateCreator } from 'zustand'
 import type { GameState, BusinessType, ServiceType, Service, DayResult, Event, AdCampaign, StockBatch } from '../types/game'
 import { SERVICES_CONFIG, BUSINESS_CONFIGS, ECONOMY_CONSTANTS } from '../constants/business'
 
@@ -132,8 +131,7 @@ interface GameStoreActions {
 
 interface GameStore extends GameState, GameStoreActions {}
 
-export const useGameStore = create<GameStore>()(
-  subscribeWithSelector((set, get) => ({
+export const useGameStore = create<GameStore>((set, get) => ({
     // Initial state
     ...createInitialState('shop'),
 
@@ -284,10 +282,15 @@ export const useGameStore = create<GameStore>()(
 
     // Upgrades
     purchaseUpgrade: (upgradeId) => {
-      set((state) => ({
-        purchasedUpgrades: [...state.purchasedUpgrades, upgradeId],
-        lastUpdated: Date.now(),
-      }))
+      set((state) => {
+        if (state.purchasedUpgrades.includes(upgradeId)) {
+          return { lastUpdated: Date.now() }
+        }
+        return {
+          purchasedUpgrades: [...state.purchasedUpgrades, upgradeId],
+          lastUpdated: Date.now(),
+        }
+      })
     },
 
     // Events
@@ -429,7 +432,6 @@ export const useGameStore = create<GameStore>()(
       localStorage.removeItem(ROLLBACK_STORAGE_KEY)
     },
   }))
-)
 
 // LocalStorage persistence
 function saveToStorage(state: GameState) {
