@@ -153,8 +153,10 @@ export class GameStateService {
     }
 
     // Check business type compatibility
-    if (campaignConfig.businessTypes && !campaignConfig.businessTypes.includes(store.businessType)) {
-      return false
+    if ('businessTypes' in campaignConfig && campaignConfig.businessTypes) {
+      if (!(campaignConfig.businessTypes as readonly string[]).includes(store.businessType)) {
+        return false
+      }
     }
 
     // Prevent duplicate active campaigns
@@ -171,7 +173,7 @@ export class GameStateService {
       cost: campaignConfig.cost,
       clientEffect: campaignConfig.clientEffect,
       checkEffect: campaignConfig.checkEffect,
-      businessTypes: campaignConfig.businessTypes || [],
+      businessTypes: 'businessTypes' in campaignConfig ? Array.from(campaignConfig.businessTypes as readonly string[]) as any : undefined,
       daysRemaining: campaignConfig.duration,
     }
 
