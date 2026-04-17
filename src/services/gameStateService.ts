@@ -115,10 +115,10 @@ export class GameStateService {
 
     const upgrade = UPGRADES_CONFIG.find((u) => u.id === upgradeId)
     if (!upgrade) return false
-    if (store.purchasedUpgrades.includes(upgradeId)) return false
+    if (store.hasPurchasedUpgrade(upgradeId)) return false
 
     // Check required service
-    if (upgrade.requiredService && !store.hasService?.(upgrade.requiredService)) {
+    if (upgrade.requiredService && !store.hasService(upgrade.requiredService)) {
       return false
     }
 
@@ -132,7 +132,7 @@ export class GameStateService {
 
     // Apply upgrade effects to capacity
     if (upgrade.capacityBonus) {
-      store.capacity = store.capacity * (1 + upgrade.capacityBonus)
+      store.setCapacity(store.capacity * (1 + upgrade.capacityBonus))
     }
 
     return true
@@ -224,7 +224,7 @@ export class GameStateService {
     // Handle service offers
     if (option.consequences.serviceId) {
       const service = option.consequences.serviceId
-      if (!store.hasService?.(service)) {
+      if (!store.hasService(service)) {
         store.activateService(service)
         if (option.consequences.serviceDiscount) {
           // Apply discount logic if needed
@@ -275,8 +275,8 @@ export class GameStateService {
       level: store.level,
       experience: store.experience,
       achievements: store.achievements.length,
-      activeServices: store.getActiveServiceIds?.().length ?? 0,
-      totalSubscriptionCost: store.getTotalSubscriptionCost?.() ?? 0,
+      activeServices: store.getActiveServiceIds().length,
+      totalSubscriptionCost: store.getTotalSubscriptionCost(),
       isGameOver: store.isGameOver,
       isVictory: store.isVictory,
       gameOverReason: store.gameOverReason,

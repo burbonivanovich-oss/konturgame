@@ -76,6 +76,9 @@ interface GameStoreActions {
   setLoyalty: (value: number) => void
   addLoyalty: (delta: number) => void
 
+  // Capacity
+  setCapacity: (amount: number) => void
+
   // Services
   toggleService: (serviceId: ServiceType) => void
   activateService: (serviceId: ServiceType) => void
@@ -122,6 +125,18 @@ interface GameStoreActions {
 
   // State management
   loadGame: (state: GameState) => void
+
+  // Helper methods (getters)
+  getActivatedServices: () => Service[]
+  getActiveServiceIds: () => ServiceType[]
+  getTotalSubscriptionCost: () => number
+  hasService: (serviceId: ServiceType) => boolean
+  hasPurchasedUpgrade: (upgradeId: string) => boolean
+  hasAchievement: (achievementId: string) => boolean
+  getActiveAdCampaign: (campaignId: string) => AdCampaign | undefined
+  getTotalAdCampaignsCost: () => number
+  getTotalStockValue: () => number
+  getTotalStockQuantity: () => number
 
   // Rollback system
   saveSnapshot: () => void
@@ -190,6 +205,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
         loyalty: Math.max(0, Math.min(ECONOMY_CONSTANTS.MAX_LOYALTY, state.loyalty + delta)),
         lastUpdated: Date.now(),
       }))
+    },
+
+    // Capacity
+    setCapacity: (amount) => {
+      set({
+        capacity: amount,
+        lastUpdated: Date.now(),
+      })
     },
 
     // Services
@@ -412,6 +435,61 @@ export const useGameStore = create<GameStore>((set, get) => ({
       saveToStorage(state)
     },
 
+    // Helper methods (getters)
+    getActivatedServices: () => {
+      const state = get()
+      return Object.values(state.services).filter((s) => s.isActive)
+    },
+
+    getActiveServiceIds: () => {
+      const state = get()
+      return Object.keys(state.services).filter(
+        (key) => state.services[key as ServiceType].isActive
+      ) as ServiceType[]
+    },
+
+    getTotalSubscriptionCost: () => {
+      const state = get()
+      return state
+        .getActivatedServices()
+        .reduce((sum, service) => sum + service.monthlyPrice, 0)
+    },
+
+    hasService: (serviceId: ServiceType) => {
+      const state = get()
+      return state.services[serviceId]?.isActive ?? false
+    },
+
+    hasPurchasedUpgrade: (upgradeId: string) => {
+      const state = get()
+      return state.purchasedUpgrades.includes(upgradeId)
+    },
+
+    hasAchievement: (achievementId: string) => {
+      const state = get()
+      return state.achievements.includes(achievementId)
+    },
+
+    getActiveAdCampaign: (campaignId: string) => {
+      const state = get()
+      return state.activeAdCampaigns.find((c) => c.id === campaignId)
+    },
+
+    getTotalAdCampaignsCost: () => {
+      const state = get()
+      return state.activeAdCampaigns.reduce((sum, campaign) => sum + campaign.cost, 0)
+    },
+
+    getTotalStockValue: () => {
+      const state = get()
+      return state.stockBatches.reduce((sum, batch) => sum + batch.quantity * batch.costPerUnit, 0)
+    },
+
+    getTotalStockQuantity: () => {
+      const state = get()
+      return state.stockBatches.reduce((sum, batch) => sum + batch.quantity, 0)
+    },
+
     // Rollback system
     saveSnapshot: () => {
       const currentState = get()
@@ -526,6 +604,6 @@ export function loadGameFromStorage(): GameState | null {
 useGameStore.subscribe(
   (state) => state,
   (state) => {
-    saveToStorage(state)
+    saveToStorage(state as GameState)
   }
 )
