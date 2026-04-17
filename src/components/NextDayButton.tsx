@@ -1,28 +1,22 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
+import { useGameStore } from '../stores/gameStore'
 
-interface NextDayButtonProps {
-  isDisabled?: boolean
-  disabledReason?: string
-  onNextDay?: () => void
-}
-
-export default function NextDayButton({
-  isDisabled = false,
-  disabledReason = 'Нет событий',
-  onNextDay,
-}: NextDayButtonProps) {
+export default function NextDayButton() {
   const [isLoading, setIsLoading] = useState(false)
+  const { currentDay, isGameOver, isVictory } = useGameStore()
 
-  const handleClick = async () => {
-    if (isDisabled || isLoading) return
-
+  const handleClick = useCallback(async () => {
+    if (isLoading) return
     setIsLoading(true)
     try {
-      await onNextDay?.()
+      useGameStore.getState().nextDay()
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [isLoading])
+
+  const isDisabled = isGameOver || isVictory
+  const disabledReason = isGameOver ? '❌ Игра окончена' : isVictory ? '🎉 Победа!' : ''
 
   return (
     <div className="text-center">
@@ -39,9 +33,9 @@ export default function NextDayButton({
           ${isLoading ? 'opacity-75' : ''}
         `}
       >
-        {isLoading ? '⏳ Расчёт...' : '→ Следующий день'}
+        {isLoading ? '⏳ День ' + currentDay + '...' : '→ Следующий день'}
       </button>
-      <p className="text-sm text-gray-400 mt-2">{disabledReason}</p>
+      {disabledReason && <p className="text-sm text-gray-400 mt-2">{disabledReason}</p>}
     </div>
   )
 }

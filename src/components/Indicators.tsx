@@ -1,9 +1,5 @@
-interface IndicatorsProps {
-  reputation?: number
-  loyalty?: number
-  stockLevel?: number
-  stockExpiry?: number | null
-}
+import { useGameStore } from '../stores/gameStore'
+import { useMemo } from 'react'
 
 function getColorClass(value: number): string {
   if (value >= 70) return 'text-green-400'
@@ -17,15 +13,17 @@ function getBarColor(value: number): string {
   return 'bg-red-500'
 }
 
-export default function Indicators({
-  reputation = 50,
-  loyalty = 50,
-  stockLevel = 50,
-  stockExpiry = null,
-}: IndicatorsProps) {
+export default function Indicators() {
+  const { reputation, loyalty, stockBatches } = useGameStore()
+
+  const stockLevel = useMemo(() => {
+    if (!stockBatches.length) return 0
+    const totalQuantity = stockBatches.reduce((sum, batch) => sum + batch.quantity, 0)
+    const capacity = useGameStore.getState().capacity
+    return Math.min(100, Math.round((totalQuantity / capacity) * 100))
+  }, [stockBatches])
   return (
     <div className="space-y-4">
-      {/* Репутация */}
       <div className="bg-slate-700 rounded-lg p-4">
         <div className="flex justify-between items-center mb-2">
           <span className="text-gray-300">⭐ Репутация</span>
@@ -39,7 +37,6 @@ export default function Indicators({
         </div>
       </div>
 
-      {/* Лояльность персонала */}
       <div className="bg-slate-700 rounded-lg p-4">
         <div className="flex justify-between items-center mb-2">
           <span className="text-gray-300">❤️ Лояльность</span>
@@ -53,24 +50,18 @@ export default function Indicators({
         </div>
       </div>
 
-      {/* Склад (если есть) */}
-      {stockLevel !== undefined && (
-        <div className="bg-slate-700 rounded-lg p-4">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-gray-300">📦 Склад</span>
-            <span className={`font-semibold ${getColorClass(stockLevel)}`}>{stockLevel}%</span>
-          </div>
-          <div className="w-full bg-slate-600 rounded-full h-2">
-            <div
-              className={`h-2 rounded-full transition-all ${getBarColor(stockLevel)}`}
-              style={{ width: `${stockLevel}%` }}
-            />
-          </div>
-          {stockExpiry && (
-            <p className="text-xs text-gray-400 mt-2">Годность: {stockExpiry} дней</p>
-          )}
+      <div className="bg-slate-700 rounded-lg p-4">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-gray-300">📦 Склад</span>
+          <span className={`font-semibold ${getColorClass(stockLevel)}`}>{stockLevel}%</span>
         </div>
-      )}
+        <div className="w-full bg-slate-600 rounded-full h-2">
+          <div
+            className={`h-2 rounded-full transition-all ${getBarColor(stockLevel)}`}
+            style={{ width: `${stockLevel}%` }}
+          />
+        </div>
+      </div>
     </div>
   )
 }
