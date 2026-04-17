@@ -1,0 +1,237 @@
+import { describe, it, expect } from 'vitest'
+import {
+  addStock,
+  consumeStock,
+  checkExpiry,
+  getTotalStock,
+  getStockPercentage,
+  predictedDemand,
+  needsRestock,
+} from '../stockManager'
+import type { GameState } from '../../types/game'
+
+function makeState(overrides: Partial<GameState> = {}): GameState {
+  return {
+    businessType: 'shop',
+    currentDay: 1,
+    balance: 50000,
+    savedBalance: 0,
+    reputation: 50,
+    loyalty: 60,
+    stock: [],
+    stockBatches: [],
+    capacity: 60,
+    services: {} as GameState['services'],
+    achievements: [],
+    level: 1,
+    experience: 0,
+    lastDayResult: null,
+    pendingEvent: null,
+    triggeredEventIds: [],
+    isGameOver: false,
+    isVictory: false,
+    consecutiveOverloadDays: 0,
+    daysReputationZero: 0,
+    daysSinceLastMonthly: 0,
+    purchaseOfferedThisDay: false,
+    activeAdCampaigns: [],
+    purchasedUpgrades: [],
+    temporaryClientMod: 0,
+    temporaryCheckMod: 0,
+    temporaryModDaysLeft: 0,
+    createdAt: Date.now(),
+    lastUpdated: Date.now(),
+    ...overrides,
+  }
+}
+
+describe('addStock', () => {
+  it('adds a batch to empty state', () => {
+    const state = makeState()
+    addStock(state, 100, 5)
+    expect(state.stockBatches).toHaveLength(1)
+    expect(state.stockBatches[0].quantity).toBe(100)
+    expect(state.stockBatches[0].costPerUnit).toBe(5)
+    expect(state.stockBatches[0].dayReceived).toBe(1)
+    expect(state.stockBatches[0].expirationDays).toBe(10) // shop default
+  })
+
+  it('assigns correct expiry for cafe', () => {
+    const state = makeState({ businessType: 'cafe' })
+    addStock(state, 50, 3)
+    expect(state.stockBatches[0].expirationDays).toBe(7)
+  })
+
+  it('adds multiple batches', () => {
+    const state = makeState()
+    addStock(state, 100, 5)
+    addStock(state, 50, 6)
+    expect(state.stockBatches).toHaveLength(2)
+  })
+})
+
+describe('getTotalStock', () => {
+  it('returns 0 for empty state', () => {
+    const state = makeState()
+    expect(getTotalStock(state)).toBe(0)
+  })
+
+  it('sums all batch quantities', () => {
+    const state = makeState()
+    addStock(state, 100, 5)
+    addStock(state, 50, 6)
+    expect(getTotalStock(state)).toBe(150)
+  })
+})
+
+describe('consumeStock (FIFO)', () => {
+  it('consumes from oldest batch first', () => {
+    const state = makeState()
+    addStock(state, 100, 5)
+    addStock(state, 50, 10)
+    const result = consumeStock(state, 60)
+    expect(result.consumed).toBe(60)
+    // 60 units at 5₽ each
+    expect(result.cost).toBe(300)
+    // First batch now has 40, second still 50
+    expect(getTotalStock(state)).toBe(90)
+  })
+
+  it('spans multiple batches', () => {
+    const state = makeState()
+    addStock(state, 30, 5)
+    addStock(state, 30, 10)
+    const result = consumeStock(state, 50)
+    expect(result.consumed).toBe(50)
+    // 30*5 + 20*10 = 150 + 200 = 350
+    expect(result.cost).toBe(350)
+    expect(getTotalStock(state)).toBe(10)
+  })
+
+  it('consumes less than requested if stock insufficient', () => {
+    const state = makeState()
+    addStock(state, 20, 5)
+    const result = consumeStock(state, 50)
+    expect(result.consumed).toBe(20)
+    expect(result.cost).toBe(100)
+    expect(getTotalStock(state)).toBe(0)
+  })
+
+  it('removes empty batches', () => {
+    const state = makeState()
+    addStock(state, 10, 5)
+    consumeStock(state, 10)
+    expect(state.stockBatches).toHaveLength(0)
+  })
+})
+
+describe('checkExpiry', () => {
+  it('returns zero loss for fresh stock', () => {
+    const state = makeState()
+    addStock(state, 100, 5)
+    const result = checkExpiry(state)
+    expect(result.expired).toBe(0)
+    expect(result.loss).toBe(0)
+  })
+
+  it('writes off expired stock with 80% loss', () => {
+    const state = makeState({ currentDay: 11 })
+    // Add batch received on day 1, expiry 10 days → age = 10, expired
+    state.stockBatches = [
+      { id: 'b1', quantity: 100, costPerUnit: 5, dayReceived: 1, expirationDays: 10 },
+    ]
+    const result = checkExpiry(state)
+    expect(result.expired).toBe(100)
+    expect(result.loss).toBeCloseTo(100 * 5 * 0.8)
+    expect(getTotalStock(state)).toBe(0)
+  })
+
+  it('reduces loss to 64% with market active', () => {
+    const state = makeState({
+      currentDay: 11,
+      services: {
+        market: { id: 'market', name: '', description: '', monthlyPrice: 0, isActive: true, effects: {} },
+      } as GameState['services'],
+    })
+    state.stockBatches = [
+      { id: 'b1', quantity: 100, costPerUnit: 5, dayReceived: 1, expirationDays: 10 },
+    ]
+    const result = checkExpiry(state)
+    expect(result.loss).toBeCloseTo(100 * 5 * 0.64)
+  })
+
+  it('does not expire fresh batches', () => {
+    const state = makeState({ currentDay: 5 })
+    state.stockBatches = [
+      { id: 'b1', quantity: 50, costPerUnit: 5, dayReceived: 1, expirationDays: 10 },
+    ]
+    const result = checkExpiry(state)
+    expect(result.expired).toBe(0)
+    expect(getTotalStock(state)).toBe(50)
+  })
+
+  it('returns zero for beauty-salon (no stock)', () => {
+    const state = makeState({ businessType: 'beauty-salon', currentDay: 30 })
+    state.stockBatches = [
+      { id: 'b1', quantity: 50, costPerUnit: 5, dayReceived: 1, expirationDays: 0 },
+    ]
+    const result = checkExpiry(state)
+    expect(result.expired).toBe(0)
+    expect(result.loss).toBe(0)
+  })
+})
+
+describe('getStockPercentage', () => {
+  it('returns 0 for empty stock', () => {
+    const state = makeState()
+    expect(getStockPercentage(state)).toBe(0)
+  })
+
+  it('returns 50 for half capacity', () => {
+    const state = makeState()
+    addStock(state, 100, 5)
+    expect(getStockPercentage(state, 200)).toBe(50)
+  })
+
+  it('caps at 100', () => {
+    const state = makeState()
+    addStock(state, 500, 5)
+    expect(getStockPercentage(state, 200)).toBe(100)
+  })
+})
+
+describe('predictedDemand', () => {
+  it('shop: 80 clients * 2 days = 160', () => {
+    const state = makeState()
+    expect(predictedDemand(state)).toBe(160)
+  })
+
+  it('cafe: 100 clients * 2 days = 200', () => {
+    const state = makeState({ businessType: 'cafe' })
+    expect(predictedDemand(state)).toBe(200)
+  })
+
+  it('beauty-salon: 0 (no stock)', () => {
+    const state = makeState({ businessType: 'beauty-salon' })
+    expect(predictedDemand(state)).toBe(0)
+  })
+})
+
+describe('needsRestock', () => {
+  it('returns true when stock below predicted demand', () => {
+    const state = makeState()
+    addStock(state, 50, 5) // 50 < 160 (predicted)
+    expect(needsRestock(state)).toBe(true)
+  })
+
+  it('returns false when stock is sufficient', () => {
+    const state = makeState()
+    addStock(state, 200, 5)
+    expect(needsRestock(state)).toBe(false)
+  })
+
+  it('returns false for beauty-salon (no stock needed)', () => {
+    const state = makeState({ businessType: 'beauty-salon' })
+    expect(needsRestock(state)).toBe(false)
+  })
+})

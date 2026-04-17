@@ -10,6 +10,7 @@ const INITIAL_STATE: GameState = {
   loyalty: 50,
 
   stock: [],
+  stockBatches: [],
   capacity: 60,
 
   services: {} as Record<ServiceType, any>,
@@ -19,16 +20,28 @@ const INITIAL_STATE: GameState = {
 
   lastDayResult: null,
   pendingEvent: null,
+  triggeredEventIds: [],
 
   isGameOver: false,
   isVictory: false,
+
+  consecutiveOverloadDays: 0,
+  daysReputationZero: 0,
+  daysSinceLastMonthly: 0,
+  purchaseOfferedThisDay: false,
+
+  activeAdCampaigns: [],
+  purchasedUpgrades: [],
+
+  temporaryClientMod: 0,
+  temporaryCheckMod: 0,
+  temporaryModDaysLeft: 0,
 
   createdAt: Date.now(),
   lastUpdated: Date.now(),
 }
 
 interface GameStore extends GameState {
-  // Actions
   startNewGame: (businessType: BusinessType) => void
   nextDay: () => void
   setBalance: (amount: number) => void
