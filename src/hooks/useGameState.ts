@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { useGameStore, loadGameFromStorage } from '../stores/gameStore'
+import type { ServiceType } from '../types/game'
 
 export const useGameState = () => {
   const state = useGameStore()
@@ -12,10 +13,10 @@ export const useGameState = () => {
     getActivatedServices: useCallback(() => state.getActivatedServices(), [state]),
     getActiveServiceIds: useCallback(() => state.getActiveServiceIds(), [state]),
     getTotalSubscriptionCost: useCallback(() => state.getTotalSubscriptionCost(), [state]),
-    hasService: useCallback((serviceId) => state.hasService(serviceId), [state]),
-    hasPurchasedUpgrade: useCallback((upgradeId) => state.hasPurchasedUpgrade(upgradeId), [state]),
-    hasAchievement: useCallback((achievementId) => state.hasAchievement(achievementId), [state]),
-    getActiveAdCampaign: useCallback((campaignId) => state.getActiveAdCampaign(campaignId), [state]),
+    hasService: useCallback((serviceId: ServiceType) => state.hasService(serviceId), [state]),
+    hasPurchasedUpgrade: useCallback((upgradeId: string) => state.hasPurchasedUpgrade(upgradeId), [state]),
+    hasAchievement: useCallback((achievementId: string) => state.hasAchievement(achievementId), [state]),
+    getActiveAdCampaign: useCallback((campaignId: string) => state.getActiveAdCampaign(campaignId), [state]),
     getTotalAdCampaignsCost: useCallback(() => state.getTotalAdCampaignsCost(), [state]),
     getTotalStockValue: useCallback(() => state.getTotalStockValue(), [state]),
     getTotalStockQuantity: useCallback(() => state.getTotalStockQuantity(), [state]),

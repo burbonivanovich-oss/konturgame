@@ -113,12 +113,12 @@ export class GameStateService {
   static async purchaseUpgrade(upgradeId: string): Promise<boolean> {
     const store = useGameStore.getState()
 
-    const upgrade = UPGRADES_CONFIG.find((u) => u.id === upgradeId)
+    const upgrade = UPGRADES_CONFIG.find((u) => u.id === upgradeId) as Upgrade | undefined
     if (!upgrade) return false
     if (store.hasPurchasedUpgrade(upgradeId)) return false
 
     // Check required service
-    if (upgrade.requiredService && !store.hasService(upgrade.requiredService)) {
+    if (upgrade.requiredService && !store.hasService(upgrade.requiredService as ServiceType)) {
       return false
     }
 
@@ -171,7 +171,7 @@ export class GameStateService {
       cost: campaignConfig.cost,
       clientEffect: campaignConfig.clientEffect,
       checkEffect: campaignConfig.checkEffect,
-      businessTypes: campaignConfig.businessTypes,
+      businessTypes: campaignConfig.businessTypes || [],
       daysRemaining: campaignConfig.duration,
     }
 

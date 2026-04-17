@@ -602,8 +602,8 @@ export function loadGameFromStorage(): GameState | null {
 
 // Auto-save on state changes
 useGameStore.subscribe(
-  (state) => state,
-  (state) => {
+  (state: GameStore) => state,
+  (state: GameStore) => {
     saveToStorage(state as GameState)
   }
 )
