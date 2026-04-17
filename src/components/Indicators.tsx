@@ -14,14 +14,13 @@ function getBarColor(value: number): string {
 }
 
 export default function Indicators() {
-  const { reputation, loyalty, stockBatches } = useGameStore()
+  const { reputation, loyalty, stockBatches, capacity } = useGameStore()
 
   const stockLevel = useMemo(() => {
-    if (!stockBatches.length) return 0
+    if (!stockBatches.length || capacity === 0) return 0
     const totalQuantity = stockBatches.reduce((sum, batch) => sum + batch.quantity, 0)
-    const capacity = useGameStore.getState().capacity
     return Math.min(100, Math.round((totalQuantity / capacity) * 100))
-  }, [stockBatches])
+  }, [stockBatches, capacity])
   return (
     <div className="space-y-4">
       <div className="bg-slate-700 rounded-lg p-4">
