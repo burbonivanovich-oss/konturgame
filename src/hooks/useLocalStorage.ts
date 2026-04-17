@@ -67,10 +67,14 @@ export const useGameSnapshot = () => {
       if (key?.startsWith('snapshot_')) {
         const data = localStorage.getItem(key)
         if (data) {
-          snapshots.push({
-            key,
-            ...JSON.parse(data),
-          })
+          try {
+            snapshots.push({
+              key,
+              ...JSON.parse(data),
+            })
+          } catch {
+            // skip malformed snapshot entries
+          }
         }
       }
     }

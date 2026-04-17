@@ -43,9 +43,9 @@ export default function MainScreen() {
     const c = option.consequences
     const { addBalance, addReputation, addLoyalty } = useGameStore.getState()
 
-    if (c.balanceDelta) addBalance(c.balanceDelta)
-    if (c.reputationDelta) addReputation(c.reputationDelta)
-    if (c.loyaltyDelta) addLoyalty(c.loyaltyDelta)
+    if (c.balanceDelta !== undefined) addBalance(c.balanceDelta)
+    if (c.reputationDelta !== undefined) addReputation(c.reputationDelta)
+    if (c.loyaltyDelta !== undefined) addLoyalty(c.loyaltyDelta)
 
     if (c.clientModifier !== undefined || c.checkModifier !== undefined) {
       const currentState = useGameStore.getState()

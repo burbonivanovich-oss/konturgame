@@ -386,7 +386,7 @@ export function applyEventConsequence(
   const c = option.consequences
 
   if (c.balanceDelta !== undefined) {
-    state.balance += c.balanceDelta
+    state.balance = Math.max(0, state.balance + c.balanceDelta)
   }
   if (c.reputationDelta !== undefined) {
     state.reputation = Math.max(0, Math.min(100, state.reputation + c.reputationDelta))

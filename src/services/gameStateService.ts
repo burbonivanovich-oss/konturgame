@@ -11,7 +11,7 @@ export class GameStateService {
 
     // Update core metrics
     store.setBalance(dayResult.balance)
-    store.setReputation(dayResult.balance > 0 ? store.reputation + dayResult.reputationChange : 0)
+    store.setReputation(Math.max(0, Math.min(100, store.reputation + dayResult.reputationChange)))
     store.setLoyalty(store.loyalty + dayResult.loyaltyChange)
 
     // Update experience
@@ -213,13 +213,13 @@ export class GameStateService {
     if (!option) return
 
     // Apply consequences
-    if (option.consequences.balanceDelta) {
+    if (option.consequences.balanceDelta !== undefined) {
       store.addBalance(option.consequences.balanceDelta)
     }
-    if (option.consequences.reputationDelta) {
+    if (option.consequences.reputationDelta !== undefined) {
       store.addReputation(option.consequences.reputationDelta)
     }
-    if (option.consequences.loyaltyDelta) {
+    if (option.consequences.loyaltyDelta !== undefined) {
       store.addLoyalty(option.consequences.loyaltyDelta)
     }
 
@@ -228,26 +228,23 @@ export class GameStateService {
       const service = option.consequences.serviceId
       if (!store.hasService(service)) {
         store.activateService(service)
-        if (option.consequences.serviceDiscount) {
-          // Apply discount logic if needed
-        }
       }
     }
 
-    // Apply temporary modifiers
-    if (option.consequences.clientModifier) {
+    // Apply temporary modifiers — accumulate on top of existing values
+    if (option.consequences.clientModifier !== undefined) {
       store.setTemporaryModifiers(
-        option.consequences.clientModifier,
-        store.temporaryCheckMod,
-        option.consequences.clientModifierDays ?? 1
+        (store.temporaryClientMod ?? 0) + option.consequences.clientModifier,
+        store.temporaryCheckMod ?? 0,
+        Math.max(store.temporaryModDaysLeft ?? 0, option.consequences.clientModifierDays ?? 1),
       )
     }
 
-    if (option.consequences.checkModifier) {
+    if (option.consequences.checkModifier !== undefined) {
       store.setTemporaryModifiers(
-        store.temporaryClientMod,
-        option.consequences.checkModifier,
-        option.consequences.checkModifierDays ?? 1
+        store.temporaryClientMod ?? 0,
+        (store.temporaryCheckMod ?? 0) + option.consequences.checkModifier,
+        Math.max(store.temporaryModDaysLeft ?? 0, option.consequences.checkModifierDays ?? 1),
       )
     }
 

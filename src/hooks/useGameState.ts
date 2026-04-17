@@ -9,17 +9,17 @@ export const useGameState = () => {
     // State
     ...state,
 
-    // Utility methods (delegate to store)
-    getActivatedServices: useCallback(() => state.getActivatedServices(), [state]),
-    getActiveServiceIds: useCallback(() => state.getActiveServiceIds(), [state]),
-    getTotalSubscriptionCost: useCallback(() => state.getTotalSubscriptionCost(), [state]),
-    hasService: useCallback((serviceId: ServiceType) => state.hasService(serviceId), [state]),
-    hasPurchasedUpgrade: useCallback((upgradeId: string) => state.hasPurchasedUpgrade(upgradeId), [state]),
-    hasAchievement: useCallback((achievementId: string) => state.hasAchievement(achievementId), [state]),
-    getActiveAdCampaign: useCallback((campaignId: string) => state.getActiveAdCampaign(campaignId), [state]),
-    getTotalAdCampaignsCost: useCallback(() => state.getTotalAdCampaignsCost(), [state]),
-    getTotalStockValue: useCallback(() => state.getTotalStockValue(), [state]),
-    getTotalStockQuantity: useCallback(() => state.getTotalStockQuantity(), [state]),
+    // Utility methods — delegate directly (Zustand method refs are stable)
+    getActivatedServices: state.getActivatedServices,
+    getActiveServiceIds: state.getActiveServiceIds,
+    getTotalSubscriptionCost: state.getTotalSubscriptionCost,
+    hasService: state.hasService,
+    hasPurchasedUpgrade: state.hasPurchasedUpgrade,
+    hasAchievement: state.hasAchievement,
+    getActiveAdCampaign: state.getActiveAdCampaign,
+    getTotalAdCampaignsCost: state.getTotalAdCampaignsCost,
+    getTotalStockValue: state.getTotalStockValue,
+    getTotalStockQuantity: state.getTotalStockQuantity,
   }
 }
 
