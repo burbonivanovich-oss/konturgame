@@ -1,8 +1,9 @@
 # Требования к дизайну · Бизнес с Контуром
 
-**Версия:** 1.0  
-**Дата:** 2026-04-18  
-**Статус:** Эталон для реализации
+**Версия:** 2.1  
+**Дата:** 2026-04-19  
+**Статус:** Эталон для реализации (обновлено: правило лимита акцентов)  
+**Правило лимитов:** На одном экране — не более **3 акцентов** + нейтралы. На одном экране — не более **2 soft-фонов**.
 
 ---
 
@@ -10,14 +11,28 @@
 
 Все цвета должны использоваться ТОЧНО по значениям. Исключения запрещены.
 
+### Правило лимита акцентов
+
+> **На одном экране — не более 3 акцентных цветов + нейтралы.**
+>
+> Допустимые акценты: Orange, Green, Blue, Purple. Выбрать любые 3 из 4 для конкретного экрана.
+> Остальные элементы — нейтральные (Ink, White, Surface, Surface-2).
+>
+> Примеры:
+> - Главный экран: Orange + Green + нейтралы (2 акцента — и это ок)
+> - Экран финансов: Blue + Green + Purple (3 акцента — предел)
+> - Экран склада: Orange + Purple + нейтралы (2 акцента — и это ок)
+>
+> **Нельзя:** 4 акцента на одном экране.
+
 ### Основные цвета бренда
 
 | Название | Hex | RGB | Использование |
 |----------|-----|-----|---|
-| **Ink (Чёрный)** | `#0E1116` | 14, 17, 22 | Основной текст, фон рейла, кнопки |
-| **White** | `#FFFFFF` | 255, 255, 255 | Фон карточек, текст на тёмных фонах |
-| **Orange** | `#FF6A2C` | 255, 106, 44 | Доход, акценты, CTA-кнопки, Маркет |
-| **Green** | `#14B88A` | 20, 184, 138 | Прибыль, успех, спасено, Экстерн, Диадок |
+| **Ink (Чёрный)** | `#0E1116` | 14, 17, 22 | Основной текст |
+| **White** | `#FFFFFF` | 255, 255, 255 | Фон карточек, рейла, событий |
+| **Orange** | `#FF6A2C` | 255, 106, 44 | Доход, акценты, CTA-кнопки, риски |
+| **Green** | `#14B88A` | 20, 184, 138 | Прибыль, успех, спасено, прогресс |
 | **Blue** | `#3D5BE6` | 61, 91, 230 | Расходы, Банк, Эльба |
 | **Purple** | `#8A4AE0` | 138, 74, 224 | К цели, ОФД |
 
@@ -30,10 +45,22 @@
 
 ### Мягкие версии (soft) для фонов
 
+> **На одном экране — не более 2 soft-фонов.**
+>
+> Вся палитра доступна, но нужно выбирать сдержанно.
+> Soft-фон = крупная закрашенная область (индикатор, карточка, плашка).
+> Мелкие элементы (точки, 1px разделители) не считаются.
+>
+> Примеры:
+> - Главный экран: Orange-soft + Green-soft (2 — предел)
+> - Экран отчёта: Green-soft + Blue-soft (2 — предел)
+>
+> **Нельзя:** 3 и более soft-фона на одном экране.
+
 | Название | Hex | Использование |
 |----------|-----|---|
 | **Orange-soft** | `#FFE2D1` | Фон предупреждений, подсказок |
-| **Green-soft** | `#C5F0E0` | Фон успеха, синергий, активных сервисов |
+| **Green-soft** | `#C5F0E0` | Фон успеха, индикаторы |
 | **Blue-soft** | `#D6DEFB` | Фон информации |
 | **Purple-soft** | `#E3D2F8` | Фон сложных состояний |
 
@@ -153,11 +180,11 @@ font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 ### Структура Desktop Dashboard
 
 ```
-┌─ LEFT RAIL (240px, тёмный) ─┬─────────────── MAIN (flex: 1) ──────────────┐
-│ • Logo                       │ ┌─ KPI row (4 cards, 146px height) ─┐        │
-│ • Day info + weather        │ │ Orange | Green | Blue | Purple    │        │
-│ • Navigation (7 items)      │ └────────────────────────────────────┘        │
-│ • Saved badge (bottom)      │ ┌─ Main row (1fr 380px gap:12px) ─┐           │
+┌─ LEFT RAIL (240px, белый) ──┬─────────────── MAIN (flex: 1) ──────────────┐
+│ • Logo                      │ ┌─ KPI row (4 cards, 146px height) ─┐        │
+│ • Day info + weather         │ │ Orange | Green | White | White    │        │
+│ • Navigation (7 items)       │ └────────────────────────────────────┘        │
+│ • Saved badge (bottom)       │ ┌─ Main row (1fr 380px gap:12px) ─┐           │
 │                             │ │ ┌─ LEFT: Event+Capacity+Stock ┬ RIGHT: ┐ │
 │                             │ │ │ │                           │ Indicators
 │                             │ │ │                             │ Services
@@ -565,7 +592,7 @@ gap: 20px;
 
 ```
 Фон: --k-orange
-Текст: --k-ink
+Текст: #fff
 Padding: 20px 24px (large), 10px 14px (small)
 Border-radius: r-pill (999px)
 Font-weight: 800
@@ -612,7 +639,7 @@ Box-shadow: none (плоский дизайн)
 #### Colored Tile
 
 ```
-Background: цвет бренда (orange, green, blue, purple)
+Background: цвет бренда (orange, green) или #fff (нейтральные)
 Color: зависит от цвета (см. таблицу ниже)
 Border-radius: r-20 (20px)
 Padding: 18px–20px
@@ -620,10 +647,9 @@ Padding: 18px–20px
 
 | Цвет | Текст |
 |------|-------|
-| Orange | --k-ink (чёрный) |
-| Green | --k-ink (чёрный) |
-| Blue | #fff (белый) |
-| Purple | #fff (белый) |
+| Orange | #fff (белый) |
+| Green | #fff (белый) |
+| White (нейтральные) | --k-ink (чёрный) |
 | Ink (тёмный) | #fff (белый) |
 
 #### Bento Grid (KPI)
@@ -741,42 +767,34 @@ Fill: optional (область под линией с opacity 0.15)
 
 ## 🎭 Модальные окна
 
-### Event Modal
+### Event Block (встроенный в главный экран)
+
+> События отображаются **inline** внутри основного layout'а, а не в тёмной модалке. Это полностью светлая карточка с orange акцентом.
 
 ```
-Width: 900px (на desktop 1440px)
-Background: --k-ink (#0E1116)
-Color: #fff
-Border-radius: r-32 (32px)
-Padding: 36px
+Background: #fff
+Color: --k-ink
+Border-radius: r-20 (20px)
+Padding: 20px
 Display: flex + flex-direction: column
-Gap: 24px
-Box-shadow: 0 30px 80px rgba(0,0,0,0.4)
+Gap: 14px
+Border: 1.5px solid --k-orange
+Border-top: 3px solid --k-orange (акцентная полоса)
 ```
 
 **Структура:**
 1. Header (flex space-between):
-   - Left: Badge + "День X · Событие Y/Z"
-   - Right: Close button (32×32px, r-10, background: rgba(255,255,255,0.08))
+   - Left: Badge (orange bg, white text) + hint "Блокирует Следующий день"
+   - Right: Counter "1 / 1"
 
-2. Content (grid 1.1fr 1fr gap:28):
-   - Left: Текст события, следующие события (pills)
-   - Right: Bento иллюстрация (2 колонны, gap: 8px)
+2. Title: 28px, font-weight: 800, line-height: 1.05, color: --k-ink
 
-3. Options (grid repeat(3, 1fr) gap:10):
-   - 3 карточки с выбором
-   - Каждая: padding 18px, border-radius r-20, border: 1.5px solid rgba(255,255,255,0.12)
+3. Options (grid repeat(3, 1fr) gap:8):
+   - Обычные: background: --k-surface, border: 1.5px solid --k-ink-10
+   - Контур: background: --k-green-soft, border: 1.5px solid --k-green
+   - Каждая: padding 14px, border-radius r-14
 
-4. Hint (background: rgba(255,255,255,0.04), padding: 14px, border-radius r-14, font-size: 12px)
-
-### Overlay (затемнение)
-
-```
-Position: absolute + inset: 0
-Background: rgba(14,17,22,0.72)
-Display: flex + center
-Filter: blur(24px) на фоне + brightness(0.75)
-```
+**Примечание:** Тёмная модалка с overlay убрана из дашборда. Если потребуется развёрнутый вид события — он тоже будет на белом фоне.
 
 ---
 
@@ -788,59 +806,64 @@ Filter: blur(24px) на фоне + brightness(0.75)
 
 ```
 Background: --k-orange
-Color: --k-ink
+Color: #fff
 Grid-column: 1.3fr (доминирует)
 ```
 
 Содержит:
-- Eyebrow: "ДОХОД ЗА ДЕНЬ"
+- Eyebrow: "ДОХОД ЗА ДЕНЬ" (opacity: 0.75)
 - Число: 42px, font-weight: 800, class: k-num
-- Badge: "+18%" (background: --k-ink, color: --k-orange)
-- Sparkline (внизу)
+- Badge: "+18%" (background: rgba(255,255,255,0.25), color: #fff)
+- Sparkline (внизу, белый)
 
 #### Чистая прибыль (Net) — Green
 
 ```
 Background: --k-green
+Color: #fff
+```
+
+#### Расходы/месяц (Monthly) — White (нейтральная карточка)
+
+```
+Background: #fff
 Color: --k-ink
+Eyebrow: opacity 0.4 (приглушённый)
 ```
 
-#### Расходы/месяц (Monthly) — Blue
+#### К цели (To Goal) — White (нейтральная карточка)
 
 ```
-Background: --k-blue
-Color: #fff
+Background: #fff
+Color: --k-ink
+Eyebrow: opacity 0.4 (приглушённый)
+Progress bar (внизу, --k-green, width: 67%)
 ```
 
-#### К цели (To Goal) — Purple
+### Событие (Event Block) — полностью белый, с orange акцентом
 
 ```
-Background: --k-purple
-Color: #fff
-Progress bar (внизу, белый, width: 67%)
-```
-
-### Событие (Event Block)
-
-```
-Background: --k-ink
-Color: #fff
-Border-radius: r-24
+Background: #fff
+Color: --k-ink
+Border-radius: r-20 (20px)
 Padding: 20px
 Display: flex + flex-direction: column
 Gap: 14px
+Border: 1.5px solid --k-orange
+Border-top: 3px solid --k-orange (акцентная полоса)
 ```
 
 **Структура:**
 1. Header:
-   - Badge: "СОБЫТИЕ · ТРЕБУЕТ РЕШЕНИЯ"
-   - Hint: "Блокирует Следующий день" (opacity: 0.5)
+   - Badge: "СОБЫТИЕ · ТРЕБУЕТ РЕШЕНИЯ" (background: --k-orange, color: #fff)
+   - Hint: "Блокирует Следующий день" (opacity: 0.45)
    - Counter: "1 / 1" (right)
 
-2. Title: 28px, font-weight: 800, line-height: 1.05
+2. Title: 28px, font-weight: 800, line-height: 1.05, color: --k-ink
 
 3. Options (grid 3 columns):
-   - Каждая опция: background: rgba(255,255,255,0.06), border: 1.5px solid rgba(255,255,255,0.1), padding: 14px
+   - Обычные опции: background: --k-surface, border: 1.5px solid --k-ink-10, padding: 14px
+   - Контур-опция: background: --k-green-soft, border: 1.5px solid --k-green, padding: 14px
    - Содержит: название, цена/результат, вторичная информация (репутация, и т.д.)
 
 ### Пропускная способность (Queue/Capacity)
@@ -873,7 +896,9 @@ Gap: 10px
 4. Batch list (flex column, каждая batch: display grid с прогресс-баром)
 5. Button "Заказать стандарт · 2 880 ₽"
 
-### Экосистема Контура (Services)
+### Экосистема Контура (Services) — единый тон
+
+> Все активные сервисы выглядят одинаково — на surface-2 фоне с зелёной точкой. Никаких разноцветных тайлов.
 
 ```
 Background: #fff
@@ -887,11 +912,11 @@ Flex: 1 (займёт остаток высоты)
 **Структура:**
 1. Header: "ЭКОСИСТЕМА · Контур · 4/7" + "Развернуть →"
 2. Services grid (2 columns, gap: 6px):
-   - Active service: background = цвет (orange, blue, green, purple), color: контрастный
-   - Inactive: background: --k-surface, opacity: 0.55
-   - Empty (+): border: 1.5px dashed --k-ink-30
+   - Active service: background: --k-surface-2, color: --k-ink, opacity: 1 + зелёная точка (6px, border-radius: 50%, --k-green)
+   - Inactive: background: --k-surface, color: --k-ink, opacity: 0.45
+   - Empty (+): border: 1.5px dashed --k-ink-30, background: transparent
    - Каждая карточка: padding 8px 10px, border-radius r-10, min-height: 32px, display: flex space-between
-3. Synergies box (padding: 10px, background: --k-green-soft, border-radius r-12):
+3. Synergies box (padding: 10px, background: --k-surface, border-radius r-12):
    - Label: "АКТИВНЫЕ СИНЕРГИИ · 2"
    - Список (flex column, gap: 4px)
 
@@ -920,46 +945,47 @@ Padding: 40px
    - Data rows (grid 4 columns)
    - Footer (bold, bigger numbers)
 2. Progression row (2 cards):
-   - Purple: К цели (progress bar)
-   - Blue: Уровень (progress bar)
+   - White: К цели (green progress bar)
+   - White: Уровень (green progress bar)
 3. Button: "Продолжить · День 48 →"
 
 ---
 
-## 🧭 Navigation Rail (левый рейл)
+## 🧭 Navigation Rail (левый рейл) — полностью белый
 
 ```
 Width: 240px
-Background: --k-ink
-Color: #fff
+Background: #fff
+Color: --k-ink
 Padding: 24px 20px
 Display: flex + flex-direction: column
 Flex-shrink: 0
+Border-right: 1px solid --k-ink-10 (вместо тёмного фона — визуальное разделение)
 ```
 
 **Структура:**
-1. Logo (32×32px square) + "Бизнес / с Контуром"
+1. Logo (32×32px square, background: --k-orange) + "Бизнес / с Контуром"
 2. Day info box:
-   - Background: rgba(255,255,255,0.06)
+   - Background: --k-surface
    - Border-radius: r-12
    - Padding: 12px
-   - Label: "КОФЕЙНЯ «ЗЕРНО»"
+   - Label: "КОФЕЙНЯ «ЗЕРНО»" (opacity: 0.45)
    - Day: "День 47" (18px, font-weight: 800)
-   - Weather: icon + "Весна · солнечно · +8%"
+   - Weather: icon (14×14, green square) + "Весна · солнечно · +8%" (opacity: 0.55)
 3. Navigation items (flex column, gap: 2px):
    - Каждый: padding 10px 12px, border-radius r-10
-   - Active: background: --k-orange, color: --k-ink
-   - Inactive: background: transparent, color: #fff
-   - Icon (22×22px, border-radius r-6) + label + optional badge
+   - Active: background: --k-orange, color: #fff
+   - Inactive: background: transparent, color: --k-ink
+   - Icon (22×22px, border-radius r-6, background: --k-surface) + label + optional badge
 4. Flex spacer (flex: 1)
 5. Saved rubles badge (внизу):
-   - Background: --k-green
+   - Background: --k-green-soft
    - Color: --k-ink
    - Padding: 14px
    - Border-radius: r-16
-   - Label: "СПАСЕНО С КОНТУРОМ"
+   - Label: "СПАСЕНО С КОНТУРОМ" (opacity: 0.55)
    - Big number: 24px
-   - ROI text: "×6 ROI · за 47 дней"
+   - ROI text: "×6 ROI · за 47 дней" (opacity: 0.55)
 
 ---
 
@@ -1032,9 +1058,9 @@ Border-top: 1px solid --k-ink-10
 |-----------|------|-----------|
 | Page/Screen | --k-surface (#F4F2EE) | — |
 | Card (white) | #fff | — |
-| Left Rail | --k-ink (#0E1116) | Всегда тёмный |
-| Modal | --k-ink (#0E1116) | Всегда тёмный |
-| Overlay | rgba(14,17,22,0.72) | Полупрозрачный чёрный |
+| Left Rail | #fff | Белый фон, border-right |
+| Event Block | #fff | Белый фон, orange border-top |
+| Modal | — | Тёмная модалка убрана, события inline |
 
 ### Text Colors
 
@@ -1049,11 +1075,11 @@ Border-top: 1px solid --k-ink-10
 
 | Бизнес-роль | Цвет | Текст |
 |---|---|---|
-| Доход/Income | --k-orange | --k-ink |
+| Доход/Income | --k-orange | #fff |
 | Спасено/Saved | --k-green | --k-ink |
-| Расходы/Expenses | --k-blue | #fff |
-| Цель/Goal | --k-purple | #fff |
-| Риск/Risk | --k-bad (#FF5A5A) | Depends |
+| Расходы/Expenses | #fff | --k-ink (нейтральная карточка) |
+| Цель/Goal | #fff | --k-ink (нейтральная карточка, green progress) |
+| Риск/Risk | --k-orange-soft / --k-orange | --k-orange |
 
 ---
 
@@ -1130,7 +1156,7 @@ Border-top: 1px solid --k-ink-10
   cursor: 'pointer',
   fontFamily: 'Manrope, sans-serif',
   background: 'var(--k-orange)',
-  color: 'var(--k-ink)',
+  color: '#fff',
   padding: '20px 24px',
   borderRadius: '999px',
   fontSize: '17px',
@@ -1153,21 +1179,21 @@ Border-top: 1px solid --k-ink-10
 ```jsx
 <div style={{
   background: 'var(--k-green)',
-  color: 'var(--k-ink)',
+  color: '#fff',
   borderRadius: '20px',
   padding: '18px',
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'space-between',
 }}>
-  <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.08em', opacity: 0.65 }}>
+  <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.08em', opacity: 0.75 }}>
     ЧИСТАЯ
   </div>
   <div>
     <div style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-0.02em' }}>
       +14 220 ₽
     </div>
-    <div style={{ fontSize: '10px', fontWeight: 600, opacity: 0.7, marginTop: '4px' }}>
+    <div style={{ fontSize: '10px', fontWeight: 600, opacity: 0.75, marginTop: '4px' }}>
       после налога 6% и закупок
     </div>
   </div>
