@@ -27,6 +27,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     experience: 0,
     lastDayResult: null,
     pendingEvent: null,
+      pendingEventsQueue: [],
     triggeredEventIds: [],
     isGameOver: false,
     isVictory: false,
