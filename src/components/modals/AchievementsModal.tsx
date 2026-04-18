@@ -27,51 +27,51 @@ export default function AchievementsModal({ isOpen, onClose }: AchievementsModal
     <Modal isOpen={isOpen} title="🏆 Достижения" onClose={onClose} size="lg">
       <div className="space-y-4">
         {/* Progress bar */}
-        <div className="bg-slate-700 rounded-lg p-3">
-          <div className="flex justify-between text-sm mb-2">
-            <span className="text-gray-300">
-              Уровень {level} · Опыт: {experience}
+        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+          <div className="flex justify-between text-sm mb-3">
+            <span className="text-gray-700 font-semibold">
+              Уровень {level} · {experience} опыта
             </span>
-            <span className="text-yellow-400 font-semibold">
-              {unlockedCount}/{totalCount} получено
+            <span className="text-brand-orange font-bold">
+              {unlockedCount}/{totalCount}
             </span>
           </div>
-          <div className="w-full bg-slate-600 rounded-full h-2">
+          <div className="w-full bg-gray-200 rounded-full h-2.5">
             <div
-              className="bg-yellow-500 h-2 rounded-full transition-all"
+              className="bg-brand-orange h-2.5 rounded-full transition-all"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="text-xs text-gray-400 mt-1 text-right">{progress}% завершено</p>
+          <p className="text-xs text-gray-500 mt-2 text-right">{progress}% завершено</p>
         </div>
 
         {/* Achievement categories */}
-        <div className="max-h-80 overflow-y-auto space-y-4 pr-1">
+        <div className="max-h-96 overflow-y-auto space-y-5">
           {CATEGORIES.map((cat) => {
             const catAchs = ACHIEVEMENTS.filter((a) => a.category === cat)
             const unlockedInCat = catAchs.filter((a) => achievements.includes(a.id)).length
             return (
               <div key={cat}>
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="text-sm font-bold text-gray-300">{CATEGORY_LABELS[cat]}</h3>
-                  <span className="text-xs text-gray-500">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-sm font-bold text-gray-800">{CATEGORY_LABELS[cat]}</h3>
+                  <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full font-semibold">
                     {unlockedInCat}/{catAchs.length}
                   </span>
                 </div>
-                <div className="grid grid-cols-1 gap-2">
+                <div className="space-y-2">
                   {catAchs.map((ach) => {
                     const isUnlocked = achievements.includes(ach.id)
                     return (
                       <div
                         key={ach.id}
-                        className={`flex items-center gap-3 p-2 rounded-lg border transition-all ${
+                        className={`flex items-center gap-3 p-3 rounded-md border-2 transition-all ${
                           isUnlocked
-                            ? 'border-yellow-500/50 bg-yellow-900/20'
-                            : 'border-slate-700 bg-slate-800/50 opacity-60'
+                            ? 'border-brand-orange bg-orange-50'
+                            : 'border-gray-200 bg-gray-50 opacity-75'
                         }`}
                       >
                         <span
-                          className={`text-2xl ${isUnlocked ? '' : 'grayscale'}`}
+                          className="text-3xl"
                           style={isUnlocked ? {} : { filter: 'grayscale(100%)' }}
                         >
                           {ach.icon}
@@ -79,17 +79,21 @@ export default function AchievementsModal({ isOpen, onClose }: AchievementsModal
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <p
-                              className={`text-sm font-semibold ${
-                                isUnlocked ? 'text-yellow-300' : 'text-gray-400'
+                              className={`text-sm font-bold ${
+                                isUnlocked ? 'text-gray-800' : 'text-gray-500'
                               }`}
                             >
                               {ach.name}
                             </p>
                             {isUnlocked && (
-                              <span className="text-xs text-green-400">✓</span>
+                              <span className="text-xs bg-brand-green text-white px-2 py-0.5 rounded-full font-bold">
+                                ✓
+                              </span>
                             )}
                           </div>
-                          <p className="text-xs text-gray-500 truncate">{ach.description}</p>
+                          <p className={`text-xs ${isUnlocked ? 'text-gray-600' : 'text-gray-500'} truncate`}>
+                            {ach.description}
+                          </p>
                         </div>
                       </div>
                     )

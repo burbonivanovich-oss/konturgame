@@ -88,70 +88,91 @@ export default function MainScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white p-4">
-      <div className="max-w-md mx-auto lg:max-w-2xl">
-        <KPIPanel />
+    <div className="min-h-screen bg-kontour-light p-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-800">Бизнес с Контуром</h1>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowAchievementsModal(true)}
+              className="px-3 py-2 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-200 transition relative"
+            >
+              🏆
+              {achievements.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-brand-orange text-white text-xs px-1.5 py-0.5 rounded-full font-bold">
+                  {achievements.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setShowHelpModal(true)}
+              className="px-3 py-2 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-200 transition"
+            >
+              ?
+            </button>
+            <button
+              onClick={() => setShowSettingsModal(true)}
+              className="px-3 py-2 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-200 transition"
+            >
+              ⚙️
+            </button>
+          </div>
+        </div>
 
-        <div className="mt-8 flex flex-col lg:flex-row gap-8">
-          <div className="flex-1">
+        {/* Main Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Left/Center Column */}
+          <div className="lg:col-span-3 space-y-6">
+            {/* KPI Panel */}
+            <KPIPanel />
+
+            {/* Indicators */}
             <Indicators />
-            <div className="mt-6 flex flex-wrap gap-2 justify-center">
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {config.hasStock && (
                 <button
                   onClick={() => setShowPurchaseModal(true)}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-semibold transition"
+                  className="px-4 py-3 bg-brand-blue text-white rounded-md font-semibold text-sm hover:opacity-90 transition"
                 >
                   📦 Закупка
                 </button>
               )}
               <button
                 onClick={() => setShowCampaignModal(true)}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-semibold transition"
+                className="px-4 py-3 bg-brand-purple text-white rounded-md font-semibold text-sm hover:opacity-90 transition"
               >
                 📢 Реклама
               </button>
               <button
                 onClick={() => setShowUpgradesModal(true)}
-                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg text-sm font-semibold transition"
+                className="px-4 py-3 bg-brand-orange text-white rounded-md font-semibold text-sm hover:opacity-90 transition"
               >
                 🔧 Улучшения
               </button>
             </div>
-            <div className="mt-8 flex justify-center">
+
+            {/* Next Day Button */}
+            <div className="pt-4">
               <NextDayButton />
             </div>
           </div>
 
+          {/* Right Sidebar - Services */}
           <ServicePanel />
         </div>
 
-        <div className="mt-8 flex flex-wrap justify-between items-center gap-2 text-sm text-gray-400">
-          <button
-            onClick={() => setShowHelpModal(true)}
-            className="hover:text-white transition"
-          >
-            ℹ️ Справка
-          </button>
-          <button
-            onClick={() => setShowAchievementsModal(true)}
-            className="hover:text-white transition relative"
-          >
-            🏆 Достижения
-            {achievements.length > 0 && (
-              <span className="ml-1 bg-yellow-500 text-black text-xs px-1.5 py-0.5 rounded-full font-bold">
-                {achievements.length}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setShowSettingsModal(true)}
-            className="hover:text-white transition"
-          >
-            ⚙️ Настройки
-          </button>
-        </div>
+        {/* Savings Toast */}
+        {savingsToast !== null && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-brand-blue text-white px-6 py-3 rounded-lg shadow-lg text-sm font-semibold whitespace-nowrap">
+            💙 Контур сэкономил {savingsToast.toLocaleString('ru-RU')} ₽!
+          </div>
+        )}
       </div>
 
+      {/* Modals */}
       <PurchaseModal isOpen={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} />
       <EventModal
         isOpen={showEventModal}
@@ -159,12 +180,6 @@ export default function MainScreen() {
         onOptionSelect={handleEventOption}
         queueLength={pendingEventsQueue?.length ?? 0}
       />
-
-      {savingsToast !== null && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-blue-700 text-white px-5 py-3 rounded-xl shadow-xl text-sm font-semibold whitespace-nowrap">
-          💙 Контур сэкономил {savingsToast.toLocaleString('ru-RU')} ₽!
-        </div>
-      )}
       <CampaignModal isOpen={showCampaignModal} onClose={() => setShowCampaignModal(false)} />
       <UpgradesModal isOpen={showUpgradesModal} onClose={() => setShowUpgradesModal(false)} />
       <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />

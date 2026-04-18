@@ -56,7 +56,7 @@ export default function CampaignModal({ isOpen, onClose }: CampaignModalProps) {
   }
 
   return (
-    <Modal isOpen={isOpen} title="📢 Рекламные кампании" onClose={onClose} size="md">
+    <Modal isOpen={isOpen} title="📢 Рекламные кампании" onClose={onClose} size="lg">
       <div className="space-y-4">
         <div className="space-y-3">
           {CAMPAIGNS.map((campaign) => {
@@ -66,24 +66,24 @@ export default function CampaignModal({ isOpen, onClose }: CampaignModalProps) {
               <div
                 key={campaign.id}
                 onClick={() => setSelectedCampaign(campaign.id)}
-                className={`p-3 rounded border transition cursor-pointer ${
+                className={`p-4 rounded-md border-2 transition cursor-pointer ${
                   selectedCampaign === campaign.id
-                    ? 'border-green-500 bg-slate-600'
-                    : 'border-slate-600 bg-slate-800 hover:border-slate-400'
+                    ? 'border-brand-green bg-green-50'
+                    : 'border-gray-200 bg-gray-50 hover:border-gray-300'
                 }`}
               >
                 <div className="flex justify-between items-start mb-2">
-                  <span className="font-semibold text-sm">{campaign.name}</span>
-                  <span className={`text-sm font-semibold ${
-                    canAfford ? 'text-yellow-400' : 'text-red-400'
+                  <span className="font-semibold text-gray-800">{campaign.name}</span>
+                  <span className={`text-sm font-bold ${
+                    canAfford ? 'text-gray-600' : 'text-red-600'
                   }`}>
                     {campaign.cost.toLocaleString('ru-RU')} ₽
                   </span>
                 </div>
-                <p className="text-xs text-gray-400 mb-2">{campaign.description}</p>
-                <div className="text-xs text-green-400 space-y-1">
-                  <p>Клиентов: +{(campaign.clientBonus * 100).toFixed(0)}%</p>
-                  <p>Длительность: {campaign.duration} дней</p>
+                <p className="text-sm text-gray-600 mb-3">{campaign.description}</p>
+                <div className="text-xs space-y-1 text-gray-700">
+                  <p>👥 +{(campaign.clientBonus * 100).toFixed(0)}% клиентов</p>
+                  <p>📅 {campaign.duration} дней</p>
                 </div>
               </div>
             )
@@ -93,7 +93,7 @@ export default function CampaignModal({ isOpen, onClose }: CampaignModalProps) {
         <div className="flex gap-3 pt-4">
           <button
             onClick={onClose}
-            className="flex-1 bg-gray-600 hover:bg-gray-700 py-2 rounded transition"
+            className="flex-1 bg-gray-200 hover:bg-gray-300 py-2 rounded-md transition font-semibold text-gray-700"
           >
             Отмена
           </button>
@@ -106,7 +106,7 @@ export default function CampaignModal({ isOpen, onClose }: CampaignModalProps) {
                 }
               }}
               disabled={!balance || balance < (CAMPAIGNS.find(c => c.id === selectedCampaign)?.cost || 0)}
-              className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 py-2 rounded transition font-semibold"
+              className="flex-1 bg-brand-purple hover:opacity-90 disabled:bg-gray-300 py-2 rounded-md transition font-semibold text-white disabled:text-gray-500"
             >
               Запустить
             </button>
