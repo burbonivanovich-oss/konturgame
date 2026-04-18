@@ -2,6 +2,16 @@ import { useState, useMemo } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { SYNERGIES_CONFIG } from '../constants/business'
 
+const SERVICE_COLORS: Record<string, string> = {
+  market: 'var(--k-orange)',
+  bank: 'var(--k-blue)',
+  ofd: 'var(--k-purple)',
+  diadoc: 'var(--k-green)',
+  fokus: 'var(--k-orange)',
+  elba: 'var(--k-blue)',
+  extern: 'var(--k-green)',
+}
+
 const SERVICE_ICONS: Record<string, string> = {
   market: '🛒',
   bank: '🏦',
@@ -25,112 +35,149 @@ export default function ServicePanel() {
   const servicesList = Object.entries(services).map(([_, service]) => ({
     ...service,
     icon: SERVICE_ICONS[service.id] ?? '📌',
+    color: SERVICE_COLORS[service.id] ?? 'var(--k-ink)',
   }))
 
-  return (
-    <div className="w-full lg:w-64">
-      {!isExpanded && (
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <button
-            onClick={() => setIsExpanded(true)}
-            className="w-full text-center py-2 text-sm font-bold text-brand-blue hover:text-brand-blue/80 transition"
-          >
-            📘 Сервисы Контура
-          </button>
-          <div className="grid grid-cols-4 gap-2 mt-4">
-            {servicesList.map((service) => (
-              <button
-                key={service.id}
-                onClick={() => setIsExpanded(true)}
-                className="relative group"
-                title={service.name}
-              >
-                <span className="text-2xl">{service.icon}</span>
-                {service.isActive && (
-                  <div className="absolute top-0 right-0 w-2.5 h-2.5 bg-brand-green rounded-full border border-white" />
-                )}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition z-10">
-                  {service.name}
-                </div>
-              </button>
+  if (!isExpanded) {
+    return (
+      <div style={{
+        background: 'var(--k-white)', borderRadius: 16, padding: 16,
+        display: 'flex', flexDirection: 'column', gap: 12,
+      }}>
+        <button
+          onClick={() => setIsExpanded(true)}
+          style={{
+            width: '100%', padding: '12px', textAlign: 'center',
+            fontSize: 13, fontWeight: 700, color: 'var(--k-blue)',
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            transition: 'opacity 0.2s',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
+          onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+        >
+          📘 Сервисы Контура
+        </button>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+          {servicesList.map((service) => (
+            <button
+              key={service.id}
+              onClick={() => setIsExpanded(true)}
+              style={{
+                position: 'relative', fontSize: 24, background: 'transparent',
+                border: 'none', cursor: 'pointer', padding: 4,
+              }}
+              title={service.name}
+            >
+              {service.icon}
+              {service.isActive && (
+                <div style={{
+                  position: 'absolute', top: 0, right: 0,
+                  width: 10, height: 10, borderRadius: '50%',
+                  background: 'var(--k-green)', border: '2px solid white',
+                }}/>
+              )}
+            </button>
+          ))}
+        </div>
+        {activeSynergies.length > 0 && (
+          <div style={{
+            borderTop: '1px solid var(--k-ink-10)', paddingTop: 8,
+            display: 'flex', flexDirection: 'column', gap: 4,
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--k-purple)' }}>
+              ⚡ {activeSynergies.length} синергия
+            </div>
+            {activeSynergies.slice(0, 2).map((syn) => (
+              <div key={syn.id} style={{ fontSize: 10, opacity: 0.6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {syn.name}
+              </div>
             ))}
           </div>
-          {activeSynergies.length > 0 && (
-            <div className="mt-4 pt-3 border-t border-gray-200">
-              <p className="text-xs font-bold text-brand-purple mb-2">
-                ⚡ {activeSynergies.length} синергия
-              </p>
-              {activeSynergies.slice(0, 2).map((syn) => (
-                <p key={syn.id} className="text-xs text-gray-600 truncate">
-                  {syn.name}
-                </p>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
+    )
+  }
 
-      {isExpanded && (
-        <div className="bg-white rounded-lg p-4 space-y-3 max-h-[40rem] overflow-y-auto border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-bold text-gray-800">Экосистема Контура</span>
+  return (
+    <div style={{
+      background: 'var(--k-white)', borderRadius: 16, padding: 16,
+      display: 'flex', flexDirection: 'column', gap: 12,
+      maxHeight: '40rem', overflow: 'hidden', overflowY: 'auto',
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div style={{ fontSize: 13, fontWeight: 700 }}>Экосистема Контура</div>
+        <button
+          onClick={() => setIsExpanded(false)}
+          style={{
+            fontSize: 18, color: 'var(--k-ink-50)', background: 'transparent',
+            border: 'none', cursor: 'pointer', padding: 4,
+          }}
+        >
+          ✕
+        </button>
+      </div>
+
+      {servicesList.map((service) => {
+        const canAfford = balance >= service.monthlyPrice
+        return (
+          <div
+            key={service.id}
+            style={{
+              background: service.isActive ? service.color : 'var(--k-white)',
+              color: service.isActive ? (service.color === 'var(--k-orange)' || service.color === 'var(--k-green)' ? 'var(--k-ink)' : '#fff') : 'var(--k-ink)',
+              borderRadius: 12, padding: 12, border: service.isActive ? 'none' : '1px solid var(--k-ink-10)',
+              display: 'flex', flexDirection: 'column', gap: 8,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 20 }}>{service.icon}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12, fontWeight: 700 }}>{service.name}</div>
+                <div style={{ fontSize: 10, opacity: 0.7 }}>{service.monthlyPrice.toLocaleString('ru-RU')} ₽/мес</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 11, opacity: 0.8, lineHeight: 1.3 }}>{service.description}</div>
             <button
-              onClick={() => setIsExpanded(false)}
-              className="text-lg text-gray-400 hover:text-gray-600 transition"
+              onClick={() => toggleService(service.id)}
+              disabled={!service.isActive && !canAfford}
+              style={{
+                width: '100%', padding: '8px', borderRadius: 8, fontSize: 11, fontWeight: 700,
+                border: 'none', cursor: !service.isActive && !canAfford ? 'not-allowed' : 'pointer',
+                background: service.isActive
+                  ? 'rgba(0,0,0,0.2)'
+                  : canAfford
+                  ? 'rgba(0,0,0,0.15)'
+                  : 'rgba(0,0,0,0.1)',
+                opacity: service.isActive || canAfford ? 1 : 0.6,
+                color: 'inherit',
+                transition: 'opacity 0.2s',
+              }}
+              onMouseEnter={(e) => { if (service.isActive || canAfford) e.currentTarget.style.opacity = '0.8' }}
+              onMouseLeave={(e) => { e.currentTarget.style.opacity = service.isActive || canAfford ? '1' : '0.6' }}
             >
-              ✕
+              {service.isActive ? '✓ Подключено' : 'Подключить'}
             </button>
           </div>
+        )
+      })}
 
-          {servicesList.map((service) => {
-            const canAfford = balance >= service.monthlyPrice
-            return (
-              <div
-                key={service.id}
-                className={`p-3 rounded-md border transition ${
-                  service.isActive
-                    ? 'border-brand-green bg-green-50'
-                    : 'border-gray-200 bg-gray-50'
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-2xl">{service.icon}</span>
-                  <div className="flex-1">
-                    <p className="font-semibold text-sm text-gray-800">{service.name}</p>
-                    <p className="text-xs text-gray-600">{service.monthlyPrice.toLocaleString('ru-RU')} ₽/мес</p>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-600 mb-3">{service.description}</p>
-                <button
-                  onClick={() => toggleService(service.id)}
-                  disabled={!service.isActive && !canAfford}
-                  title={!service.isActive && !canAfford ? 'Недостаточно средств' : undefined}
-                  className={`w-full text-xs py-2 rounded-md transition font-semibold ${
-                    service.isActive
-                      ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                      : canAfford
-                        ? 'bg-brand-green text-white hover:opacity-90'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
-                >
-                  {service.isActive ? '✓ Подключено' : 'Подключить'}
-                </button>
-              </div>
-            )
-          })}
-
-          {/* Active synergies */}
-          {activeSynergies.length > 0 && (
-            <div className="border-t border-gray-200 pt-3">
-              <p className="text-xs font-bold text-brand-purple mb-2">⚡ Активные синергии ({activeSynergies.length})</p>
-              {activeSynergies.map((syn) => (
-                <div key={syn.id} className="mb-2 p-2 bg-purple-50 rounded-md border border-purple-200">
-                  <p className="text-xs font-semibold text-brand-purple">{syn.name}</p>
-                  <p className="text-xs text-gray-600">{syn.description}</p>
-                </div>
-              ))}
+      {activeSynergies.length > 0 && (
+        <div style={{
+          borderTop: '1px solid var(--k-ink-10)', paddingTop: 12,
+          display: 'flex', flexDirection: 'column', gap: 8,
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--k-purple)', letterSpacing: '0.05em' }}>
+            ⚡ АКТИВНЫЕ СИНЕРГИИ ({activeSynergies.length})
+          </div>
+          {activeSynergies.map((syn) => (
+            <div key={syn.id} style={{
+              background: 'var(--k-purple-soft)', borderRadius: 10, padding: 10,
+              display: 'flex', flexDirection: 'column', gap: 4,
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--k-purple)' }}>{syn.name}</div>
+              <div style={{ fontSize: 10, opacity: 0.7, lineHeight: 1.3 }}>{syn.description}</div>
             </div>
-          )}
+          ))}
         </div>
       )}
     </div>
