@@ -373,7 +373,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     },
 
     // Day results
-    setLastDayResult: (result) => {
+    setLastDayResult: (result: DayResult | null) => {
       set({
         lastDayResult: result,
         lastUpdated: Date.now(),
@@ -381,7 +381,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     },
 
     // Game state
-    setGameOver: (isGameOver, reason) => {
+    setGameOver: (isGameOver: boolean, reason?: string) => {
       set({
         isGameOver,
         gameOverReason: reason,
@@ -389,7 +389,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       })
     },
 
-    setVictory: (isVictory) => {
+    setVictory: (isVictory: boolean) => {
       set({
         isVictory,
         lastUpdated: Date.now(),
@@ -397,21 +397,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
     },
 
     // Achievements and progression
-    addAchievement: (achievementId) => {
-      set((state) => ({
+    addAchievement: (achievementId: string) => {
+      set((state: GameState) => ({
         achievements: [...new Set([...state.achievements, achievementId])],
         lastUpdated: Date.now(),
       }))
     },
 
-    addExperience: (amount) => {
-      set((state) => ({
+    addExperience: (amount: number) => {
+      set((state: GameState) => ({
         experience: state.experience + amount,
         lastUpdated: Date.now(),
       }))
     },
 
-    setLevel: (level) => {
+    setLevel: (level: number) => {
       set({
         level,
         lastUpdated: Date.now(),
@@ -419,7 +419,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     },
 
     // Temporary modifiers
-    setTemporaryModifiers: (clientMod, checkMod, daysLeft) => {
+    setTemporaryModifiers: (clientMod: number, checkMod: number, daysLeft: number) => {
       set({
         temporaryClientMod: clientMod,
         temporaryCheckMod: checkMod,
@@ -429,7 +429,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     },
 
     decrementModifierDays: () => {
-      set((state) => {
+      set((state: GameState) => {
         const newDaysLeft = Math.max(0, state.temporaryModDaysLeft - 1)
         return {
           temporaryModDaysLeft: newDaysLeft,
@@ -441,28 +441,28 @@ export const useGameStore = create<GameStore>((set, get) => ({
     },
 
     // Counters
-    setConsecutiveOverloadDays: (count) => {
+    setConsecutiveOverloadDays: (count: number) => {
       set({
         consecutiveOverloadDays: Math.max(0, count),
         lastUpdated: Date.now(),
       })
     },
 
-    setDaysReputationZero: (count) => {
+    setDaysReputationZero: (count: number) => {
       set({
         daysReputationZero: Math.max(0, count),
         lastUpdated: Date.now(),
       })
     },
 
-    setDaysSinceLastMonthly: (count) => {
+    setDaysSinceLastMonthly: (count: number) => {
       set({
         daysSinceLastMonthly: Math.max(0, count),
         lastUpdated: Date.now(),
       })
     },
 
-    setPurchaseOfferedThisDay: (offered) => {
+    setPurchaseOfferedThisDay: (offered: boolean) => {
       set({
         purchaseOfferedThisDay: offered,
         lastUpdated: Date.now(),
@@ -470,7 +470,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     },
 
     // State management
-    loadGame: (state) => {
+    loadGame: (state: GameState) => {
       set(state)
       saveToStorage(state)
     },
@@ -478,7 +478,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Helper methods (getters)
     getActivatedServices: () => {
       const state = get()
-      return Object.values(state.services).filter((s) => s.isActive)
+      return (Object.values(state.services) as Service[]).filter((s: Service) => s.isActive)
     },
 
     getActiveServiceIds: () => {
@@ -492,7 +492,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const state = get()
       return state
         .getActivatedServices()
-        .reduce((sum, service) => sum + service.monthlyPrice, 0)
+        .reduce((sum: number, service: Service) => sum + service.monthlyPrice, 0)
     },
 
     hasService: (serviceId: ServiceType) => {
@@ -512,22 +512,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     getActiveAdCampaign: (campaignId: string) => {
       const state = get()
-      return state.activeAdCampaigns.find((c) => c.id === campaignId)
+      return state.activeAdCampaigns.find((c: AdCampaign) => c.id === campaignId)
     },
 
     getTotalAdCampaignsCost: () => {
       const state = get()
-      return state.activeAdCampaigns.reduce((sum, campaign) => sum + campaign.cost, 0)
+      return state.activeAdCampaigns.reduce((sum: number, campaign: AdCampaign) => sum + campaign.cost, 0)
     },
 
     getTotalStockValue: () => {
       const state = get()
-      return state.stockBatches.reduce((sum, batch) => sum + batch.quantity * batch.costPerUnit, 0)
+      return state.stockBatches.reduce((sum: number, batch: StockBatch) => sum + batch.quantity * batch.costPerUnit, 0)
     },
 
     getTotalStockQuantity: () => {
       const state = get()
-      return state.stockBatches.reduce((sum, batch) => sum + batch.quantity, 0)
+      return state.stockBatches.reduce((sum: number, batch: StockBatch) => sum + batch.quantity, 0)
     },
 
     // Rollback system
