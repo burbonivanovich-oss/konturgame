@@ -5,8 +5,8 @@ export function MarketingView() {
   const { activeAdCampaigns, balance, businessType, addAdCampaign, removeAdCampaign } = useGameStore()
 
   const availableCampaigns = AD_CAMPAIGNS_CONFIG.filter(cfg => {
-    if (!cfg.businessTypes) return true
-    return (cfg.businessTypes as readonly string[]).includes(businessType)
+    if (!('businessTypes' in cfg)) return true
+    return (cfg as any).businessTypes.includes(businessType)
   })
 
   const isActive = (id: string) => activeAdCampaigns.some(c => c.id === id)
