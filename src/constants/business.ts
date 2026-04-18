@@ -235,11 +235,15 @@ export const MONTHLY_EXPENSES: Record<BusinessType, { rent: number; baseSalary: 
 
 export const AD_CAMPAIGNS_CONFIG = [
   { id: 'promo', name: 'Промо-акция', duration: 10, cost: 3000, clientEffect: 0.25, checkEffect: -0.2 },
-  { id: 'happy-hours', name: 'Счастливые часы', duration: 10, cost: 2500, clientEffect: 0.2, checkEffect: -0.15, businessTypes: ['cafe'] },
+  { id: 'happy-hours', name: 'Счастливые часы', duration: 10, cost: 2500, clientEffect: 0.2, checkEffect: -0.15, businessTypes: ['cafe'] as const },
   { id: 'yandex-direct', name: 'Яндекс.Директ', duration: 30, cost: 8000, clientEffect: 0.15, checkEffect: 0 },
   { id: 'leaflets', name: 'Флаеры', duration: 7, cost: 1500, clientEffect: 0.1, checkEffect: 0 },
   { id: 'social-media', name: 'Соцсети', duration: 14, cost: 4000, clientEffect: 0.12, checkEffect: 0 },
   { id: 'loyalty-card', name: 'Карта лояльности', duration: 30, cost: 5000, clientEffect: 0.08, checkEffect: 0.05 },
+  { id: 'instagram', name: 'Instagram', duration: 14, cost: 4000, clientEffect: 0.1, checkEffect: 0, businessTypes: ['cafe', 'beauty-salon'] as const },
+  { id: 'vk-ads', name: 'VK Реклама', duration: 30, cost: 5000, clientEffect: 0.1, checkEffect: 0 },
+  { id: 'smm-salon', name: 'SMM для салона', duration: 20, cost: 4500, clientEffect: 0.13, checkEffect: 0.05, businessTypes: ['beauty-salon'] as const },
+  { id: 'coworking', name: 'Кооперация с коворкингом', duration: 20, cost: 5000, clientEffect: 0.08, checkEffect: 0, businessTypes: ['cafe'] as const },
 ] as const
 
 export const UPGRADES_CONFIG = [

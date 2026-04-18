@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import KPIPanel from './KPIPanel'
 import Indicators from './Indicators'
 import NextDayButton from './NextDayButton'
@@ -23,7 +23,9 @@ export default function MainScreen() {
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [showAchievementsModal, setShowAchievementsModal] = useState(false)
 
-  const { pendingEvent, isGameOver, isVictory, businessType, achievements } = useGameStore()
+  const { pendingEvent, pendingEventsQueue, isGameOver, isVictory, businessType, achievements } = useGameStore()
+  const [savingsToast, setSavingsToast] = useState<number | null>(null)
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const config = BUSINESS_CONFIGS[businessType]
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export default function MainScreen() {
 
   const handleEventOption = (optionId: string) => {
     const state = useGameStore.getState()
-    const { pendingEvent, markEventAsResolved, setTemporaryModifiers, activateService } = state
+    const { pendingEvent, markEventAsResolved, setTemporaryModifiers, activateService, addSavedBalance } = state
 
     if (!pendingEvent) return
     const option = pendingEvent.options.find((o) => o.id === optionId)
@@ -61,6 +63,24 @@ export default function MainScreen() {
 
     if (c.serviceId) {
       activateService(c.serviceId)
+    }
+
+    // Считаем спасённые рубли при выборе Контур-опции
+    if (option.isContourOption && c.balanceDelta !== undefined) {
+      const nonKontourOptions = pendingEvent.options.filter((o) => !o.isContourOption)
+      if (nonKontourOptions.length > 0) {
+        const cheapestNonKontour = nonKontourOptions.reduce((best, o) => {
+          const d = o.consequences.balanceDelta ?? 0
+          return d > (best.consequences.balanceDelta ?? 0) ? o : best
+        })
+        const savings = c.balanceDelta - (cheapestNonKontour.consequences.balanceDelta ?? 0)
+        if (savings > 0) {
+          addSavedBalance(savings)
+          if (toastTimer.current) clearTimeout(toastTimer.current)
+          setSavingsToast(savings)
+          toastTimer.current = setTimeout(() => setSavingsToast(null), 3500)
+        }
+      }
     }
 
     markEventAsResolved(pendingEvent.id)
@@ -137,7 +157,14 @@ export default function MainScreen() {
         isOpen={showEventModal}
         event={pendingEvent}
         onOptionSelect={handleEventOption}
+        queueLength={pendingEventsQueue?.length ?? 0}
       />
+
+      {savingsToast !== null && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-blue-700 text-white px-5 py-3 rounded-xl shadow-xl text-sm font-semibold whitespace-nowrap">
+          💙 Контур сэкономил {savingsToast.toLocaleString('ru-RU')} ₽!
+        </div>
+      )}
       <CampaignModal isOpen={showCampaignModal} onClose={() => setShowCampaignModal(false)} />
       <UpgradesModal isOpen={showUpgradesModal} onClose={() => setShowUpgradesModal(false)} />
       <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
