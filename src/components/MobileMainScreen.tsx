@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import KPIPanel from './KPIPanel'
 import Indicators from './Indicators'
 import NextDayButton from './NextDayButton'
 import ServicePanel from './ServicePanel'

@@ -1,81 +1,501 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import ResponsiveLayout from './ResponsiveLayout'
 import MobileMainScreen from './MobileMainScreen'
 import PurchaseModal from './modals/PurchaseModal'
-import EventModal from './modals/EventModal'
 import CampaignModal from './modals/CampaignModal'
 import UpgradesModal from './modals/UpgradesModal'
 import HelpModal from './modals/HelpModal'
 import SettingsModal from './modals/SettingsModal'
 import VictoryModal from './modals/VictoryModal'
 import AchievementsModal from './modals/AchievementsModal'
+import { DesktopRecap } from './design-system/DesktopRecap'
+import { DesktopKontur } from './design-system/DesktopKontur'
+import { WarehouseView } from './views/WarehouseView'
+import { MarketingView } from './views/MarketingView'
+import { FinanceView } from './views/FinanceView'
+import { ReputationView } from './views/ReputationView'
 import { useGameStore } from '../stores/gameStore'
 
-// Sparkline компонент
-function Spark({ data, color = 'currentColor', fill = false }: any) {
+type ActiveView = 'dashboard' | 'recap' | 'ecosystem' | 'warehouse' | 'marketing' | 'finance' | 'reputation'
+
+function Spark({ data, color = 'currentColor', fill = false }: { data: number[]; color?: string; fill?: boolean }) {
   const w = 100, h = 32
   const max = Math.max(...data), min = Math.min(...data)
   const rng = max - min || 1
-  const pts = data.map((v: number, i: number) => {
+  const pts = data.map((v, i) => {
     const x = (i / (data.length - 1)) * w
     const y = h - ((v - min) / rng) * (h - 4) - 2
     return [x, y]
   })
-  const path = pts.map((p: any, i: number) => `${i ? 'L' : 'M'} ${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ')
+  const path = pts.map((p, i) => `${i ? 'L' : 'M'} ${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ')
   return (
     <svg style={{ width: '100%', height: '32px', display: 'block' }} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
-      {fill && (
-        <path d={`${path} L ${w} ${h} L 0 ${h} Z`} fill={color} opacity="0.15"/>
-      )}
-      <path d={path} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round"/>
+      {fill && <path d={`${path} L ${w} ${h} L 0 ${h} Z`} fill={color} opacity="0.15" />}
+      <path d={path} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   )
 }
 
+const SERVICE_MAP = [
+  { id: 'market', name: 'Маркет' },
+  { id: 'bank', name: 'Банк' },
+  { id: 'extern', name: 'Экстерн' },
+  { id: 'ofd', name: 'ОФД' },
+  { id: 'fokus', name: 'Фокус' },
+  { id: 'diadoc', name: 'Диадок' },
+  { id: 'elba', name: 'Эльба' },
+]
+
+const NAV_ITEMS: Array<{ n: string; g: string; view: ActiveView | null }> = [
+  { n: 'Дневной цикл', g: '◎', view: 'dashboard' },
+  { n: 'Склад', g: '▦', view: 'warehouse' },
+  { n: 'Маркетинг', g: '◆', view: 'marketing' },
+  { n: 'Экосистема', g: '□', view: 'ecosystem' },
+  { n: 'Финансы', g: '₽', view: 'finance' },
+  { n: 'Репутация', g: '★', view: 'reputation' },
+  { n: 'Достижения', g: '◈', view: null },
+]
+
+function LeftRail({
+  currentDay, savedBalance, activeNav, activeCount,
+  pendingEventCount, onNavClick, onHelp, onSettings,
+}: {
+  currentDay: number
+  savedBalance: number
+  activeNav: string
+  activeCount: number
+  pendingEventCount: number
+  onNavClick: (name: string) => void
+  onHelp: () => void
+  onSettings: () => void
+}) {
+  return (
+    <aside style={{
+      width: 240, background: '#fff', color: 'var(--k-ink)',
+      padding: '24px 20px', display: 'flex', flexDirection: 'column',
+      flexShrink: 0, borderRight: '1px solid rgba(14,17,22,0.08)',
+    }}>
+      {/* Logo */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--k-orange)', flexShrink: 0 }} />
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 800 }}>Бизнес</div>
+          <div style={{ fontSize: 10, opacity: 0.45, fontWeight: 600 }}>с Контуром</div>
+        </div>
+      </div>
+
+      {/* Day info */}
+      <div style={{ padding: 12, borderRadius: 12, background: 'var(--k-surface)', marginBottom: 20 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', opacity: 0.45 }}>КОФЕЙНЯ «ЗЕРНО»</div>
+        <div style={{ fontSize: 18, fontWeight: 800, marginTop: 2 }}>День {currentDay}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 11, fontWeight: 600, opacity: 0.55 }}>
+          <div style={{ width: 14, height: 14, borderRadius: 4, background: 'var(--k-green)' }} />
+          Весна · солнечно · +8%
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {NAV_ITEMS.map(item => {
+          const isActive = activeNav === item.n
+          const badge =
+            item.n === 'Дневной цикл' && pendingEventCount > 0 ? String(pendingEventCount) :
+            item.n === 'Экосистема' ? `${activeCount}/7` : undefined
+          return (
+            <div
+              key={item.n}
+              onClick={() => onNavClick(item.n)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '10px 12px', borderRadius: 10,
+                background: isActive ? 'var(--k-orange)' : 'transparent',
+                color: isActive ? '#fff' : 'var(--k-ink)',
+                fontSize: 13, fontWeight: 600,
+                cursor: 'pointer', transition: 'background 0.15s',
+                userSelect: 'none',
+              }}>
+              <span style={{
+                width: 22, height: 22, borderRadius: 6,
+                background: isActive ? 'rgba(255,255,255,0.22)' : 'var(--k-surface)',
+                color: isActive ? '#fff' : 'var(--k-ink)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 12, fontWeight: 800,
+              }}>{item.g}</span>
+              <span style={{ flex: 1 }}>{item.n}</span>
+              {badge && (
+                <span style={{
+                  fontSize: 10, fontWeight: 800,
+                  padding: '2px 6px', borderRadius: 999,
+                  background: isActive ? 'rgba(255,255,255,0.22)' : 'var(--k-surface-2)',
+                  color: isActive ? '#fff' : 'var(--k-ink)',
+                }}>{badge}</span>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      <div style={{ flex: 1 }} />
+
+      {/* Saved balance badge */}
+      <div style={{ padding: 14, borderRadius: 16, background: 'var(--k-green-soft)', color: 'var(--k-ink)' }}>
+        <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.55, letterSpacing: '0.08em' }}>СПАСЕНО С КОНТУРОМ</div>
+        <div style={{ fontSize: 24, fontWeight: 800, marginTop: 4 }} className="k-num">
+          {(savedBalance ?? 0).toLocaleString('ru-RU')} ₽
+        </div>
+        <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.55, marginTop: 4 }}>
+          за {currentDay} {currentDay === 1 ? 'день' : 'дней'}
+        </div>
+      </div>
+
+      {/* Help & Settings */}
+      <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+        <button
+          onClick={onHelp}
+          style={{
+            flex: 1, border: '1px solid rgba(14,17,22,0.1)', cursor: 'pointer',
+            background: 'transparent', color: 'var(--k-ink)',
+            padding: '8px 0', borderRadius: 10,
+            fontFamily: 'inherit', fontSize: 11, fontWeight: 700,
+          }}>
+          ? Справка
+        </button>
+        <button
+          onClick={onSettings}
+          style={{
+            flex: 1, border: '1px solid rgba(14,17,22,0.1)', cursor: 'pointer',
+            background: 'transparent', color: 'var(--k-ink)',
+            padding: '8px 0', borderRadius: 10,
+            fontFamily: 'inherit', fontSize: 11, fontWeight: 700,
+          }}>
+          ⚙ Настройки
+        </button>
+      </div>
+    </aside>
+  )
+}
+
+function DashboardView({
+  onNextDay, dayBlockedMsg,
+  showPurchaseModal, setShowPurchaseModal,
+  showCampaignModal, setShowCampaignModal,
+  showUpgradesModal, setShowUpgradesModal,
+  handleEventOption,
+}: {
+  onNextDay: () => void
+  dayBlockedMsg: string | null
+  showPurchaseModal: boolean
+  setShowPurchaseModal: (v: boolean) => void
+  showCampaignModal: boolean
+  setShowCampaignModal: (v: boolean) => void
+  showUpgradesModal: boolean
+  setShowUpgradesModal: (v: boolean) => void
+  handleEventOption: (id: string) => void
+}) {
+  const {
+    currentDay, balance, reputation, loyalty, services,
+    pendingEvent, pendingEventsQueue, lastDayResult, savedBalance,
+  } = useGameStore()
+
+  const incomeSparkData = Array.from({ length: 10 }, (_, i) => Math.sin(i * 0.8) * 20 + 30)
+  const activeServiceIds = Object.values(services).filter(s => s.isActive).map(s => s.id)
+  const activeCount = activeServiceIds.length
+  const dailyIncome = lastDayResult?.revenue ?? 0
+  const monthlyExpenses = Object.values(services).filter(s => s.isActive).reduce((sum, s) => sum + (s.monthlyPrice ?? 0), 0)
+  const goalAmount = 1_000_000
+  const toGoalPercent = Math.min((balance / goalAmount) * 100, 100)
+  const isDayBlocked = !!pendingEvent
+
+  return (
+    <main style={{ flex: 1, padding: '20px 24px', overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+      {/* KPI row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr 1fr', gap: 10, height: 146 }}>
+        <div style={{
+          background: 'var(--k-orange)', color: '#fff',
+          borderRadius: 20, padding: 20,
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+        }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.75 }}>ДОХОД ЗА ДЕНЬ</div>
+            <div style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.03em', marginTop: 2 }} className="k-num">
+              {dailyIncome.toLocaleString('ru-RU')} ₽
+            </div>
+          </div>
+          <Spark data={incomeSparkData} color="#fff" fill />
+        </div>
+
+        <div style={{
+          background: 'var(--k-green)', color: '#fff',
+          borderRadius: 20, padding: 18,
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.75 }}>ЧИСТАЯ</div>
+          <div>
+            <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }} className="k-num">
+              +{balance.toLocaleString('ru-RU')} ₽
+            </div>
+            <div style={{ fontSize: 10, fontWeight: 600, opacity: 0.75, marginTop: 4 }}>после налогов и закупок</div>
+          </div>
+        </div>
+
+        <div style={{
+          background: '#fff', color: 'var(--k-ink)',
+          borderRadius: 20, padding: 18,
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.4 }}>РАСХОДЫ/МЕС</div>
+          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }} className="k-num">
+            {monthlyExpenses.toLocaleString('ru-RU')} ₽
+          </div>
+        </div>
+
+        <div style={{
+          background: '#fff', color: 'var(--k-ink)',
+          borderRadius: 20, padding: 18,
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.4 }}>К ЦЕЛИ</div>
+          <div>
+            <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }} className="k-num">
+              {Math.round(toGoalPercent)}%
+            </div>
+            <div style={{ marginTop: 6, height: 5, background: 'rgba(14,17,22,0.08)', borderRadius: 999, overflow: 'hidden' }}>
+              <div style={{ width: `${toGoalPercent}%`, height: '100%', background: 'var(--k-green)', borderRadius: 999 }} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 12, flex: 1, minHeight: 0 }}>
+
+        {/* LEFT column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+          {/* Pending event — inline white card with orange accent */}
+          {pendingEvent && (
+            <div style={{
+              background: '#fff', color: 'var(--k-ink)',
+              borderRadius: 20, padding: 20,
+              display: 'flex', flexDirection: 'column', gap: 14,
+              border: '1.5px solid var(--k-orange)',
+              borderTop: '3px solid var(--k-orange)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{
+                    background: 'var(--k-orange)', color: '#fff',
+                    fontSize: 10, fontWeight: 800, letterSpacing: '0.06em',
+                    padding: '4px 10px', borderRadius: 999,
+                  }}>СОБЫТИЕ · ТРЕБУЕТ РЕШЕНИЯ</span>
+                  <span style={{ fontSize: 11, fontWeight: 500, opacity: 0.45 }}>Блокирует Следующий день</span>
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.45 }}>
+                  1 / {1 + (pendingEventsQueue?.length ?? 0)}
+                </span>
+              </div>
+              <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+                {pendingEvent.title}
+              </div>
+              {pendingEvent.description && (
+                <div style={{ fontSize: 13, fontWeight: 500, opacity: 0.65, lineHeight: 1.45 }}>
+                  {pendingEvent.description}
+                </div>
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                {pendingEvent.options.map((opt: any) => (
+                  <div
+                    key={opt.id}
+                    onClick={() => handleEventOption(opt.id)}
+                    style={{
+                      background: opt.isContourOption ? 'var(--k-green-soft)' : 'var(--k-surface)',
+                      color: 'var(--k-ink)',
+                      border: opt.isContourOption ? '1.5px solid var(--k-green)' : '1.5px solid rgba(14,17,22,0.08)',
+                      borderRadius: 14, padding: 14,
+                      cursor: 'pointer', transition: 'opacity 0.15s',
+                    }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{opt.text}</div>
+                    <div style={{
+                      fontSize: 18, fontWeight: 800,
+                      color: opt.isContourOption ? 'var(--k-green)' : 'var(--k-ink)',
+                    }} className="k-num">
+                      {opt.consequences?.balanceDelta != null
+                        ? `${opt.consequences.balanceDelta > 0 ? '+' : ''}${opt.consequences.balanceDelta.toLocaleString('ru-RU')} ₽`
+                        : '—'}
+                    </div>
+                    {opt.isContourOption && (
+                      <div style={{
+                        marginTop: 6, fontSize: 9, fontWeight: 800, letterSpacing: '0.06em',
+                        color: 'var(--k-green)',
+                      }}>КОНТУР ✓</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Indicators */}
+          <div style={{
+            background: '#fff', borderRadius: 20, padding: 14,
+            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8,
+          }}>
+            {[
+              { l: 'Репутация', v: String(reputation), bg: 'var(--k-green-soft)' },
+              { l: 'Лояльность', v: `${loyalty}%`, bg: 'var(--k-surface-2)' },
+              { l: 'День', v: String(currentDay), bg: 'var(--k-surface-2)' },
+            ].map(i => (
+              <div key={i.l} style={{ padding: 10, borderRadius: 12, background: i.bg }}>
+                <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.55 }}>{i.l}</div>
+                <div style={{ fontSize: 15, fontWeight: 800 }}>{i.v}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Action buttons */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+            {[
+              { label: '📦 Закупка', onClick: () => setShowPurchaseModal(true) },
+              { label: '📢 Реклама', onClick: () => setShowCampaignModal(true) },
+              { label: '🔧 Улучшения', onClick: () => setShowUpgradesModal(true) },
+            ].map(btn => (
+              <button
+                key={btn.label}
+                onClick={btn.onClick}
+                style={{
+                  padding: '10px 14px', border: 'none',
+                  background: 'var(--k-ink)', color: '#fff',
+                  borderRadius: 999, fontFamily: 'inherit',
+                  fontWeight: 800, fontSize: 12, letterSpacing: '-0.01em',
+                  cursor: 'pointer', transition: 'opacity 0.15s',
+                }}>
+                {btn.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* RIGHT column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0 }}>
+
+          {/* Services */}
+          <div style={{
+            background: '#fff', borderRadius: 20, padding: 14,
+            flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0,
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.5 }}>
+              ЭКОСИСТЕМА · {activeCount}/7
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+              {SERVICE_MAP.map(svc => {
+                const isActive = activeServiceIds.includes(svc.id)
+                return (
+                  <div key={svc.id} style={{
+                    background: isActive ? 'var(--k-surface-2)' : 'var(--k-surface)',
+                    color: 'var(--k-ink)',
+                    opacity: isActive ? 1 : 0.45,
+                    borderRadius: 10, padding: '8px 10px',
+                    fontSize: 10, fontWeight: 700,
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    minHeight: 32,
+                  }}>
+                    <span>{svc.name}</span>
+                    {isActive && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--k-green)', flexShrink: 0 }} />}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Next Day */}
+          <div>
+            {dayBlockedMsg && (
+              <div style={{
+                marginBottom: 8, padding: '8px 14px',
+                background: 'var(--k-orange-soft)', color: 'var(--k-orange)',
+                borderRadius: 12, fontSize: 12, fontWeight: 700, textAlign: 'center',
+              }}>
+                {dayBlockedMsg}
+              </div>
+            )}
+            <button
+              onClick={onNextDay}
+              disabled={isDayBlocked}
+              style={{
+                width: '100%', border: 'none',
+                cursor: isDayBlocked ? 'not-allowed' : 'pointer',
+                fontFamily: 'inherit',
+                background: isDayBlocked ? 'var(--k-surface-2)' : 'var(--k-orange)',
+                color: isDayBlocked ? 'rgba(14,17,22,0.35)' : 'var(--k-ink)',
+                padding: '20px 24px', borderRadius: 999,
+                fontSize: 17, fontWeight: 800, letterSpacing: '-0.01em',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                opacity: isDayBlocked ? 0.6 : 1,
+                transition: 'transform 0.12s ease, opacity 0.2s',
+              }}>
+              {isDayBlocked ? '⏸ Разрешите событие' : 'Следующий день →'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Purchase modal rendered inside DashboardView for scoping */}
+      <PurchaseModal isOpen={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} />
+      <CampaignModal isOpen={showCampaignModal} onClose={() => setShowCampaignModal(false)} />
+      <UpgradesModal isOpen={showUpgradesModal} onClose={() => setShowUpgradesModal(false)} />
+    </main>
+  )
+}
+
 function DesktopMainScreen() {
+  const [activeView, setActiveView] = useState<ActiveView>('dashboard')
+  const [activeNav, setActiveNav] = useState('Дневной цикл')
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
-  const [showEventModal, setShowEventModal] = useState(false)
   const [showCampaignModal, setShowCampaignModal] = useState(false)
   const [showUpgradesModal, setShowUpgradesModal] = useState(false)
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [showAchievementsModal, setShowAchievementsModal] = useState(false)
-
-  const state = useGameStore()
-  const {
-    currentDay, balance, reputation, loyalty, services,
-    pendingEvent, pendingEventsQueue, isGameOver, isVictory,
-    lastDayResult,
-    addBalance, addReputation, markEventAsResolved, activateService, addSavedBalance
-  } = state
-
+  const [dayBlockedMsg, setDayBlockedMsg] = useState<string | null>(null)
   const [savingsToast, setSavingsToast] = useState<number | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  useEffect(() => {
-    if (pendingEvent) {
-      setShowEventModal(true)
-    }
-  }, [pendingEvent])
+  const {
+    currentDay, services, pendingEvent, pendingEventsQueue,
+    isGameOver, isVictory, savedBalance,
+    addBalance, addReputation, addLoyalty, markEventAsResolved, activateService,
+    addSavedBalance, setTemporaryModifiers, advanceDay,
+  } = useGameStore()
+
+  const activeServiceIds = Object.values(services).filter(s => s.isActive).map(s => s.id)
+  const activeCount = activeServiceIds.length
+  const pendingEventCount = (pendingEvent ? 1 : 0) + (pendingEventsQueue?.length ?? 0)
 
   const handleEventOption = (optionId: string) => {
     if (!pendingEvent) return
     const option = pendingEvent.options.find((o) => o.id === optionId)
     if (!option) return
-
     const c = option.consequences
     if (c.balanceDelta !== undefined) addBalance(c.balanceDelta)
     if (c.reputationDelta !== undefined) addReputation(c.reputationDelta)
+    if (c.loyaltyDelta !== undefined) addLoyalty(c.loyaltyDelta)
+    if (c.clientModifier !== undefined || c.checkModifier !== undefined) {
+      const cur = useGameStore.getState()
+      setTemporaryModifiers(
+        (cur.temporaryClientMod ?? 0) + (c.clientModifier ?? 0),
+        (cur.temporaryCheckMod ?? 0) + (c.checkModifier ?? 0),
+        Math.max(cur.temporaryModDaysLeft ?? 0, c.clientModifierDays ?? c.checkModifierDays ?? 1),
+      )
+    }
     if (c.serviceId) activateService(c.serviceId)
-
     if (option.isContourOption && c.balanceDelta !== undefined) {
-      const nonKontourOptions = pendingEvent.options.filter((o) => !o.isContourOption)
-      if (nonKontourOptions.length > 0) {
-        const cheapestNonKontour = nonKontourOptions.reduce((best, o) => {
-          const d = o.consequences.balanceDelta ?? 0
-          return d > (best.consequences.balanceDelta ?? 0) ? o : best
-        })
-        const savings = c.balanceDelta - (cheapestNonKontour.consequences.balanceDelta ?? 0)
+      const nonKontour = pendingEvent.options.filter((o) => !o.isContourOption)
+      if (nonKontour.length > 0) {
+        const cheapest = nonKontour.reduce((best, o) =>
+          (o.consequences.balanceDelta ?? 0) > (best.consequences.balanceDelta ?? 0) ? o : best
+        )
+        const savings = c.balanceDelta - (cheapest.consequences.balanceDelta ?? 0)
         if (savings > 0) {
           addSavedBalance(savings)
           if (toastTimer.current) clearTimeout(toastTimer.current)
@@ -84,19 +504,39 @@ function DesktopMainScreen() {
         }
       }
     }
-
     markEventAsResolved(pendingEvent.id)
-    setShowEventModal(false)
   }
 
-  const incomeSparkData = Array.from({ length: 10 }, () => Math.random() * 50)
-  const activeServiceIds = Object.values(services).filter(s => s.isActive).map(s => s.id)
+  const handleNextDay = () => {
+    if (pendingEvent) {
+      setDayBlockedMsg('Сначала разрешите событие')
+      setTimeout(() => setDayBlockedMsg(null), 2500)
+      return
+    }
+    const result = advanceDay()
+    if (result.blocked) {
+      setDayBlockedMsg(result.reason ?? 'День заблокирован')
+      setTimeout(() => setDayBlockedMsg(null), 2500)
+    } else {
+      setActiveView('recap')
+      setActiveNav('Дневной цикл')
+    }
+  }
 
-  const dailyIncome = lastDayResult?.revenue ?? 0
-  const monthlyExpenses = Object.values(services).filter(s => s.isActive).reduce((sum, s) => sum + (s.monthlyPrice ?? 0), 0)
-  const goalAmount = 1000000
-  const goalProgress = balance
-  const toGoalPercent = goalAmount > 0 ? Math.min((goalProgress / goalAmount) * 100, 100) : 0
+  const handleNavClick = (name: string) => {
+    setActiveNav(name)
+    if (name === 'Достижения') {
+      setShowAchievementsModal(true)
+      return
+    }
+    const item = NAV_ITEMS.find(i => i.n === name)
+    if (item?.view) setActiveView(item.view)
+  }
+
+  const handleRecapContinue = () => {
+    setActiveView('dashboard')
+    setActiveNav('Дневной цикл')
+  }
 
   return (
     <div style={{
@@ -108,321 +548,61 @@ function DesktopMainScreen() {
       overflow: 'hidden',
       letterSpacing: '-0.01em',
     }}>
-      {/* LEFT RAIL */}
-      <aside style={{
-        width: 240, background: 'var(--k-ink)', color: '#fff',
-        padding: '24px 20px', display: 'flex', flexDirection: 'column',
-        flexShrink: 0,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: 'var(--k-orange)',
-          }}/>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 800 }}>Бизнес</div>
-            <div style={{ fontSize: 10, opacity: 0.5, fontWeight: 600 }}>с Контуром</div>
-          </div>
-        </div>
-
-        <div style={{
-          padding: 12, borderRadius: 12,
-          background: 'rgba(255,255,255,0.06)',
-          marginBottom: 24,
-        }}>
-          <div style={{ fontSize: 10, opacity: 0.5, fontWeight: 700, letterSpacing: '0.1em' }}>КОФЕЙНЯ</div>
-          <div style={{ fontSize: 18, fontWeight: 800, marginTop: 2 }}>День {currentDay}</div>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 6, marginTop: 6,
-            fontSize: 11, fontWeight: 600, opacity: 0.7,
-          }}>
-            <div style={{ width: 14, height: 14, borderRadius: 4, background: 'var(--k-blue-soft)' }}/>
-            Весна · хорошо
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {[
-            { n: 'Дневной цикл', g: '◎', on: true, badge: '1' },
-            { n: 'Склад', g: '▦', on: false },
-            { n: 'Маркетинг', g: '◆', on: false },
-            { n: 'Экосистема', g: '□', on: false, badge: `${activeServiceIds.length}/7` },
-            { n: 'Финансы', g: '₽', on: false },
-            { n: 'Репутация', g: '★', on: false },
-            { n: 'Достижения', g: '◈', on: false },
-          ].map(i => (
-            <div key={i.n} style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '10px 12px', borderRadius: 10,
-              background: i.on ? 'var(--k-orange)' : 'transparent',
-              color: i.on ? 'var(--k-ink)' : '#fff',
-              fontSize: 13, fontWeight: 600,
-              cursor: 'pointer',
-            }}>
-              <span style={{
-                width: 22, height: 22, borderRadius: 6,
-                background: i.on ? 'var(--k-ink)' : 'rgba(255,255,255,0.08)',
-                color: i.on ? 'var(--k-orange)' : '#fff',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 12, fontWeight: 800,
-              }}>{i.g}</span>
-              <span style={{ flex: 1 }}>{i.n}</span>
-              {i.badge && (
-                <span style={{
-                  fontSize: 10, fontWeight: 800,
-                  padding: '2px 6px', borderRadius: 999,
-                  background: i.on ? 'var(--k-ink)' : 'rgba(255,255,255,0.12)',
-                  color: i.on ? 'var(--k-orange)' : '#fff',
-                }}>{i.badge}</span>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div style={{ flex: 1 }}/>
-
-        <div style={{
-          padding: 14, borderRadius: 16,
-          background: 'var(--k-green)', color: 'var(--k-ink)',
-        }}>
-          <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.7, letterSpacing: '0.1em' }}>БАЛАНС</div>
-          <div style={{ fontSize: 24, fontWeight: 800, marginTop: 4 }} className="k-num">
-            {balance.toLocaleString('ru-RU')} ₽
-          </div>
-          <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.7, marginTop: 4 }}>День {currentDay}</div>
-        </div>
-      </aside>
-
-      {/* MAIN */}
-      <main style={{
-        flex: 1, padding: '20px 24px', overflow: 'auto',
-        display: 'flex', flexDirection: 'column', gap: 12,
-      }}>
-        {/* KPI */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1.3fr 1fr 1fr 1fr',
-          gap: 10, height: 146,
-        }}>
-          {/* Income */}
-          <div style={{
-            background: 'var(--k-orange)', color: 'var(--k-ink)',
-            borderRadius: 20, padding: 20,
-            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-          }}>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.65 }}>ДОХОД</div>
-              <div style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.03em', marginTop: 2 }} className="k-num">
-                {(dailyIncome || 0).toLocaleString('ru-RU')} ₽
-              </div>
-            </div>
-            <Spark data={incomeSparkData} color="#0E1116" fill />
-          </div>
-
-          {/* Balance */}
-          <div style={{
-            background: 'var(--k-green)', color: 'var(--k-ink)',
-            borderRadius: 20, padding: 18,
-            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-          }}>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.65 }}>БАЛАНС</div>
-            <div>
-              <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }} className="k-num">
-                +{balance.toLocaleString('ru-RU')} ₽
-              </div>
-            </div>
-          </div>
-
-          {/* Expenses */}
-          <div style={{
-            background: 'var(--k-blue)', color: '#fff',
-            borderRadius: 20, padding: 18,
-            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-          }}>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.7 }}>РАСХОДЫ/МЕС</div>
-            <div>
-              <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }} className="k-num">
-                {monthlyExpenses.toLocaleString('ru-RU')} ₽
-              </div>
-            </div>
-          </div>
-
-          {/* Goal */}
-          <div style={{
-            background: 'var(--k-purple)', color: '#fff',
-            borderRadius: 20, padding: 18,
-            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-          }}>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.7 }}>К ЦЕЛИ</div>
-            <div>
-              <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }} className="k-num">
-                {goalAmount.toLocaleString('ru-RU')} ₽
-              </div>
-              <div style={{
-                marginTop: 6, height: 5, background: 'rgba(255,255,255,0.22)',
-                borderRadius: 999, overflow: 'hidden',
-              }}>
-                <div style={{ width: `${toGoalPercent}%`, height: '100%', background: '#fff' }}/>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Main row */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 12, flex: 1, minHeight: 0 }}>
-          {/* LEFT */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {/* Event */}
-            {pendingEvent && (
-              <div style={{
-                background: 'var(--k-ink)', color: '#fff',
-                borderRadius: 24, padding: 20,
-                display: 'flex', flexDirection: 'column', gap: 14,
-              }}>
-                <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em' }}>
-                  {pendingEvent.title}
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                  {pendingEvent.options.map((opt: any) => (
-                    <div
-                      key={opt.id}
-                      onClick={() => handleEventOption(opt.id)}
-                      style={{
-                        background: opt.isContourOption ? 'var(--k-green)' : 'rgba(255,255,255,0.06)',
-                        color: opt.isContourOption ? 'var(--k-ink)' : '#fff',
-                        border: opt.isContourOption ? 'none' : '1.5px solid rgba(255,255,255,0.1)',
-                        borderRadius: 16, padding: 14,
-                        cursor: 'pointer',
-                      }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 6 }}>
-                        {opt.name}
-                      </div>
-                      <div style={{ fontSize: 18, fontWeight: 800 }} className="k-num">
-                        {opt.consequences?.balanceDelta ? `${opt.consequences.balanceDelta > 0 ? '+' : ''}${opt.consequences.balanceDelta}` : '—'}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Indicators */}
-            <div style={{
-              background: '#fff', borderRadius: 20, padding: 14,
-              display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8,
-            }}>
-              {[
-                { l: 'Репутация', v: `+${reputation}`, bg: 'var(--k-green-soft)' },
-                { l: 'Лояльность', v: `${loyalty}%`, bg: '#FFEFB8' },
-                { l: 'День', v: currentDay, bg: 'var(--k-blue-soft)' },
-              ].map(i => (
-                <div key={i.l} style={{
-                  padding: 10, borderRadius: 12, background: i.bg,
-                }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.65 }}>{i.l}</div>
-                  <div style={{ fontSize: 15, fontWeight: 800 }}>{i.v}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Buttons */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-              <button
-                onClick={() => setShowPurchaseModal(true)}
-                style={{
-                  padding: '10px 14px', border: 'none',
-                  background: 'var(--k-blue)', color: '#fff',
-                  borderRadius: 999, fontFamily: 'inherit',
-                  fontWeight: 700, fontSize: 12, cursor: 'pointer',
-                }}>
-                📦 Закупка
-              </button>
-              <button
-                onClick={() => setShowCampaignModal(true)}
-                style={{
-                  padding: '10px 14px', border: 'none',
-                  background: 'var(--k-purple)', color: '#fff',
-                  borderRadius: 999, fontFamily: 'inherit',
-                  fontWeight: 700, fontSize: 12, cursor: 'pointer',
-                }}>
-                📢 Реклама
-              </button>
-              <button
-                onClick={() => setShowUpgradesModal(true)}
-                style={{
-                  padding: '10px 14px', border: 'none',
-                  background: 'var(--k-orange)', color: 'var(--k-ink)',
-                  borderRadius: 999, fontFamily: 'inherit',
-                  fontWeight: 700, fontSize: 12, cursor: 'pointer',
-                }}>
-                🔧 Улучшения
-              </button>
-            </div>
-          </div>
-
-          {/* RIGHT */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0 }}>
-            {/* Services */}
-            <div style={{
-              background: '#fff', borderRadius: 20, padding: 14,
-              flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0,
-            }}>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.5 }}>СЕРВИСЫ</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                {['Маркет', 'Банк', 'Экстерн', 'ОФД', 'Фокус', 'Диадок', 'Эльба'].map((s) => (
-                  <div key={s} style={{
-                    background: activeServiceIds.includes(s as any) ? 'var(--k-orange)' : 'var(--k-surface)',
-                    color: 'var(--k-ink)',
-                    borderRadius: 10, padding: '8px 10px',
-                    fontSize: 10, fontWeight: 700,
-                    textAlign: 'center',
-                  }}>
-                    {s}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Next day button */}
-            <button style={{
-              border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-              background: 'var(--k-orange)', color: 'var(--k-ink)',
-              padding: '20px 24px', borderRadius: 999,
-              fontSize: 17, fontWeight: 800, letterSpacing: '-0.01em',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            }}>
-              Следующий день →
-            </button>
-          </div>
-        </div>
-      </main>
-
-      {/* Modals */}
-      <PurchaseModal isOpen={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} />
-      <EventModal
-        isOpen={showEventModal}
-        event={pendingEvent}
-        onOptionSelect={handleEventOption}
-        queueLength={pendingEventsQueue?.length ?? 0}
+      <LeftRail
+        currentDay={currentDay}
+        savedBalance={savedBalance ?? 0}
+        activeNav={activeNav}
+        activeCount={activeCount}
+        pendingEventCount={pendingEventCount}
+        onNavClick={handleNavClick}
+        onHelp={() => setShowHelpModal(true)}
+        onSettings={() => setShowSettingsModal(true)}
       />
-      <CampaignModal isOpen={showCampaignModal} onClose={() => setShowCampaignModal(false)} />
-      <UpgradesModal isOpen={showUpgradesModal} onClose={() => setShowUpgradesModal(false)} />
+
+      {activeView === 'dashboard' && (
+        <DashboardView
+          onNextDay={handleNextDay}
+          dayBlockedMsg={dayBlockedMsg}
+          showPurchaseModal={showPurchaseModal}
+          setShowPurchaseModal={setShowPurchaseModal}
+          showCampaignModal={showCampaignModal}
+          setShowCampaignModal={setShowCampaignModal}
+          showUpgradesModal={showUpgradesModal}
+          setShowUpgradesModal={setShowUpgradesModal}
+          handleEventOption={handleEventOption}
+        />
+      )}
+
+      {activeView === 'recap' && (
+        <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+          <DesktopRecap embedded onContinue={handleRecapContinue} />
+        </div>
+      )}
+
+      {activeView === 'ecosystem' && (
+        <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+          <DesktopKontur embedded />
+        </div>
+      )}
+
+      {activeView === 'warehouse' && <WarehouseView />}
+      {activeView === 'marketing' && <MarketingView />}
+      {activeView === 'finance' && <FinanceView />}
+      {activeView === 'reputation' && <ReputationView />}
+
+      {/* Global modals */}
       <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
       <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
-      <AchievementsModal
-        isOpen={showAchievementsModal}
-        onClose={() => setShowAchievementsModal(false)}
-      />
+      <AchievementsModal isOpen={showAchievementsModal} onClose={() => setShowAchievementsModal(false)} />
       <VictoryModal isOpen={isVictory} type="victory" />
       <VictoryModal isOpen={isGameOver && !isVictory} type="defeat" />
 
-      {/* Toast */}
+      {/* Savings toast */}
       {savingsToast !== null && (
         <div style={{
           position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-          zIndex: 50, background: 'var(--k-green)', color: 'var(--k-ink)',
-          padding: '16px 24px', borderRadius: 16,
-          fontSize: 14, fontWeight: 700,
+          zIndex: 50, background: 'var(--k-green)', color: '#fff',
+          padding: '16px 24px', borderRadius: 16, fontSize: 14, fontWeight: 700,
         }}>
           ✅ Спасено {savingsToast.toLocaleString('ru-RU')} ₽!
         </div>

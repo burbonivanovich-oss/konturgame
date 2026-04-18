@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { useGameStore } from '../../stores/gameStore'
 import { SYNERGIES_CONFIG } from '../../constants/business'
 
@@ -12,7 +12,7 @@ const SERVICE_COLORS: Record<string, string> = {
   extern: 'var(--k-green)',
 }
 
-export function DesktopKontur() {
+export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
   const { services, savedBalance, toggleService, balance } = useGameStore()
 
   const activeSynergies = useMemo(() => {
@@ -36,12 +36,21 @@ export function DesktopKontur() {
 
   const roi = totalCost > 0 ? Math.round(savedBalance / totalCost) : 0
 
+  const wrapperStyle: React.CSSProperties = embedded ? {
+    flex: 1, padding: '20px 24px',
+    background: 'var(--k-surface)',
+    fontFamily: 'Manrope, sans-serif', color: 'var(--k-ink)',
+    display: 'flex', gap: 20, letterSpacing: '-0.01em',
+    overflow: 'auto',
+  } : {
+    width: '100%', minHeight: '100vh', background: 'var(--k-surface)',
+    fontFamily: 'Manrope, sans-serif', color: 'var(--k-ink)',
+    padding: 40, overflow: 'hidden', display: 'flex', gap: 20,
+    letterSpacing: '-0.01em',
+  }
+
   return (
-    <div style={{
-      width: '100%', minHeight: '100vh', background: 'var(--k-surface)',
-      fontFamily: 'Manrope, sans-serif', color: 'var(--k-ink)',
-      padding: 40, overflow: 'hidden', display: 'flex', gap: 20,
-    }}>
+    <div style={wrapperStyle}>
       {/* Left — hero savings */}
       <div style={{ width: 440, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
