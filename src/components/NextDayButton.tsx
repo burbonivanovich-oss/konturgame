@@ -25,26 +25,36 @@ export default function NextDayButton() {
   const statusText = isGameOver ? '❌ Игра окончена' : isVictory ? '🎉 Победа!' : ''
 
   return (
-    <div className="text-center">
+    <div style={{ textAlign: 'center' }}>
       {isCrisisDay && !isDisabled && (
-        <p className="text-sm text-red-600 font-semibold mb-4 px-4 py-2 bg-red-50 rounded-md border border-red-200">
+        <div style={{
+          fontSize: 13, fontWeight: 700, marginBottom: 16, padding: '10px 16px',
+          background: 'rgba(255, 90, 90, 0.12)', borderRadius: 12,
+          border: '1.5px solid var(--k-bad)', color: 'var(--k-bad)',
+        }}>
           ⚠️ Кризисный день — возможны события
-        </p>
+        </div>
       )}
       <button
         onClick={handleClick}
         disabled={isDisabled || isLoading}
-        className={`
-          px-16 py-4 rounded-lg font-bold text-lg transition-all transform
-          ${
-            isDisabled
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : isCrisisDay
-              ? 'bg-brand-orange text-white hover:opacity-90 active:scale-95 shadow-md'
-              : 'bg-brand-green text-white hover:opacity-90 active:scale-95 shadow-md'
-          }
-          ${isLoading ? 'opacity-75' : ''}
-        `}
+        style={{
+          padding: '18px 32px', borderRadius: 999, fontWeight: 800, fontSize: 16,
+          border: 'none', cursor: isDisabled || isLoading ? 'not-allowed' : 'pointer',
+          background: isDisabled
+            ? 'var(--k-ink-10)'
+            : isCrisisDay
+            ? 'var(--k-orange)'
+            : 'var(--k-green)',
+          color: isDisabled
+            ? 'var(--k-ink-50)'
+            : isCrisisDay
+            ? 'var(--k-ink)'
+            : 'var(--k-ink)',
+          transition: 'all 0.2s ease',
+          opacity: isLoading ? 0.8 : 1,
+          transform: isLoading ? 'scale(0.98)' : 'scale(1)',
+        }}
       >
         {isLoading
           ? `⏳ Расчёт...`
@@ -52,9 +62,15 @@ export default function NextDayButton() {
           ? `⚡ День ${currentDay} — Кризис`
           : `→ Следующий день`}
       </button>
-      {statusText && <p className="text-sm text-brand-green font-semibold mt-3">{statusText}</p>}
+      {statusText && (
+        <p style={{ fontSize: 13, fontWeight: 700, marginTop: 16, color: 'var(--k-good)' }}>
+          {statusText}
+        </p>
+      )}
       {blockedReason && (
-        <p className="text-sm text-brand-orange font-semibold mt-3">⚠️ {blockedReason}</p>
+        <p style={{ fontSize: 13, fontWeight: 700, marginTop: 16, color: 'var(--k-orange)' }}>
+          ⚠️ {blockedReason}
+        </p>
       )}
     </div>
   )

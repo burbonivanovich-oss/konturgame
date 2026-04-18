@@ -2,10 +2,10 @@ import { useGameStore } from '../stores/gameStore'
 import { useMemo } from 'react'
 import { ECONOMY_CONSTANTS } from '../constants/business'
 
-function getStatusColor(value: number): { bg: string; text: string; bar: string } {
-  if (value >= 70) return { bg: 'bg-green-50', text: 'text-green-600', bar: 'bg-green-500' }
-  if (value >= 40) return { bg: 'bg-yellow-50', text: 'text-yellow-600', bar: 'bg-yellow-500' }
-  return { bg: 'bg-red-50', text: 'text-red-600', bar: 'bg-red-500' }
+function getStatusColor(value: number): { color: string; icon: string } {
+  if (value >= 70) return { color: 'var(--k-green)', icon: '✓' }
+  if (value >= 40) return { color: 'var(--k-orange)', icon: '!' }
+  return { color: 'var(--k-bad)', icon: '⚠' }
 }
 
 export default function Indicators() {
@@ -38,42 +38,58 @@ export default function Indicators() {
     : null
 
   return (
-    <div className="space-y-4">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {/* Репутация */}
-      <div className={`${repColor.bg} rounded-md p-4 border border-gray-200`}>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-xs text-gray-600">⭐ Репутация</span>
-          <span className={`font-bold text-sm ${repColor.text}`}>{reputation}/100</span>
+      <div style={{
+        background: 'var(--k-white)', borderRadius: 16, padding: 16,
+        display: 'flex', flexDirection: 'column', gap: 8,
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em' }}>⭐ РЕПУТАЦИЯ</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: repColor.color }} className="k-num">
+            {reputation}/100
+          </div>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div
-            className={`h-2 rounded-full transition-all ${repColor.bar}`}
-            style={{ width: `${reputation}%` }}
-          />
+        <div style={{
+          height: 6, background: 'var(--k-ink-10)', borderRadius: 999, overflow: 'hidden',
+        }}>
+          <div style={{
+            height: '100%', background: repColor.color, width: `${reputation}%`,
+            transition: 'width 0.3s ease',
+          }}/>
         </div>
       </div>
 
       {/* Лояльность */}
-      <div className={`${loyaltyColor.bg} rounded-md p-4 border border-gray-200`}>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-xs text-gray-600">❤️ Лояльность</span>
-          <span className={`font-bold text-sm ${loyaltyColor.text}`}>{loyalty}/100</span>
+      <div style={{
+        background: 'var(--k-white)', borderRadius: 16, padding: 16,
+        display: 'flex', flexDirection: 'column', gap: 8,
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em' }}>❤️ ЛОЯЛЬНОСТЬ</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: loyaltyColor.color }} className="k-num">
+            {loyalty}/100
+          </div>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div
-            className={`h-2 rounded-full transition-all ${loyaltyColor.bar}`}
-            style={{ width: `${loyalty}%` }}
-          />
+        <div style={{
+          height: 6, background: 'var(--k-ink-10)', borderRadius: 999, overflow: 'hidden',
+        }}>
+          <div style={{
+            height: '100%', background: loyaltyColor.color, width: `${loyalty}%`,
+            transition: 'width 0.3s ease',
+          }}/>
         </div>
         {loyalty < 70 && premiumCost > 0 && (
           <button
             onClick={handlePremium}
             disabled={balance < premiumCost}
-            className={`mt-3 w-full text-xs py-2 rounded-md transition font-semibold ${
-              balance >= premiumCost
-                ? 'bg-brand-orange text-white hover:opacity-90'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
+            style={{
+              marginTop: 8, width: '100%', padding: '8px 12px', borderRadius: 10,
+              fontSize: 11, fontWeight: 700, border: 'none', cursor: balance >= premiumCost ? 'pointer' : 'not-allowed',
+              background: balance >= premiumCost ? 'var(--k-orange)' : 'var(--k-ink-10)',
+              color: balance >= premiumCost ? 'var(--k-ink)' : 'var(--k-ink-50)',
+              transition: 'opacity 0.2s',
+            }}
           >
             💰 Премия персоналу ({premiumCost.toLocaleString('ru-RU')} ₽)
           </button>
@@ -81,43 +97,55 @@ export default function Indicators() {
       </div>
 
       {/* Склад */}
-      <div className={`${stockColor.bg} rounded-md p-4 border border-gray-200`}>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-xs text-gray-600">📦 Склад</span>
-          <span className={`font-bold text-sm ${stockColor.text}`}>{stockLevel}%</span>
+      <div style={{
+        background: 'var(--k-white)', borderRadius: 16, padding: 16,
+        display: 'flex', flexDirection: 'column', gap: 8,
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em' }}>📦 СКЛАД</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: stockColor.color }} className="k-num">
+            {stockLevel}%
+          </div>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div
-            className={`h-2 rounded-full transition-all ${stockColor.bar}`}
-            style={{ width: `${stockLevel}%` }}
-          />
+        <div style={{
+          height: 6, background: 'var(--k-ink-10)', borderRadius: 999, overflow: 'hidden',
+        }}>
+          <div style={{
+            height: '100%', background: stockColor.color, width: `${stockLevel}%`,
+            transition: 'width 0.3s ease',
+          }}/>
         </div>
       </div>
 
-      {/* Последние клиенты */}
+      {/* Обслуженность */}
       {lastDayResult && lastDayResult.clients > 0 && (
-        <div className="bg-blue-50 rounded-md p-4 border border-gray-200">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs text-gray-600">👥 Обслуженность</span>
+        <div style={{
+          background: 'var(--k-white)', borderRadius: 16, padding: 16,
+          display: 'flex', flexDirection: 'column', gap: 8,
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em' }}>👥 ОБСЛУЖЕННОСТЬ</div>
             {lastDayResult.missed > 0 && (
-              <span className="text-xs text-red-600 font-semibold">−{lastDayResult.missed} не обслужены</span>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--k-bad)' }}>
+                −{lastDayResult.missed} ушли
+              </div>
             )}
           </div>
-          <div className="flex gap-1 h-3 rounded overflow-hidden">
-            <div
-              className="bg-brand-green rounded-l transition-all"
-              style={{ width: `${servedPct}%` }}
-              title={`Обслужено: ${lastDayResult.served}`}
-            />
+          <div style={{ display: 'flex', gap: 4, height: 6, borderRadius: 999, overflow: 'hidden' }}>
+            <div style={{
+              flex: `${servedPct || 0} 0 0`,
+              background: 'var(--k-green)',
+              transition: 'flex 0.3s ease',
+            }} title={`Обслужено: ${lastDayResult.served}`}/>
             {lastDayResult.missed > 0 && (
-              <div
-                className="bg-red-500 rounded-r transition-all"
-                style={{ width: `${100 - (servedPct ?? 100)}%` }}
-                title={`Ушли: ${lastDayResult.missed}`}
-              />
+              <div style={{
+                flex: `${100 - (servedPct ?? 100)} 0 0`,
+                background: 'var(--k-bad)',
+                transition: 'flex 0.3s ease',
+              }} title={`Ушли: ${lastDayResult.missed}`}/>
             )}
           </div>
-          <div className="flex justify-between text-xs text-gray-600 mt-2">
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, opacity: 0.6 }}>
             <span>✅ {lastDayResult.served}</span>
             <span>{lastDayResult.clients} всего</span>
           </div>

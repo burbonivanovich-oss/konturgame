@@ -1,5 +1,6 @@
 import { useGameStore } from '../stores/gameStore'
 import { useMemo } from 'react'
+import { Spark } from './design-system'
 
 export default function KPIPanel() {
   const state = useGameStore()
@@ -13,54 +14,105 @@ export default function KPIPanel() {
     dailyExpenses: lastResult?.expenses || 0,
     netProfit: lastResult?.netProfit || 0,
     monthlyExpenses: lastResult?.monthlyExpense || 0,
+    daysUntilExpense: 12,
+    goalRemaining: 672400,
+    goalProgress: 67,
   }), [state.currentDay, state.balance, state.savedBalance, lastResult])
 
+  const revenueHistory = useMemo(() => {
+    return [8, 11, 9, 14, 13, 18, 16, 22, 19, 25]
+  }, [])
+
   return (
-    <div className="bg-white rounded-lg p-6 space-y-4 border border-gray-200">
-      {/* Main KPI Row 1: День и Деньги */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="p-3 bg-gray-50 rounded-md">
-          <p className="text-xs text-gray-600 mb-1">День</p>
-          <p className="text-2xl font-bold text-brand-blue">{kpi.day}</p>
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '1.3fr 1fr 1fr 1fr',
+      gap: 10,
+      height: 146,
+    }}>
+      {/* Income */}
+      <div style={{
+        background: 'var(--k-orange)', color: 'var(--k-ink)',
+        borderRadius: 20, padding: 20,
+        display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.65 }}>
+              ДОХОД ЗА ДЕНЬ
+            </div>
+            <div style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.03em', marginTop: 2 }} className="k-num">
+              {kpi.dailyRevenue.toLocaleString('ru-RU')} ₽
+            </div>
+          </div>
+          <div style={{
+            padding: '4px 8px', borderRadius: 999,
+            background: 'var(--k-ink)', color: 'var(--k-orange)',
+            fontSize: 11, fontWeight: 800,
+          }}>+18%</div>
         </div>
-        <div className={`p-3 bg-gray-50 rounded-md ${kpi.balance < 10000 ? 'border border-red-500' : ''}`}>
-          <p className="text-xs text-gray-600 mb-1">Баланс</p>
-          <p className={`text-2xl font-bold ${kpi.balance < 10000 ? 'text-red-500' : 'text-brand-green'}`}>
-            {(kpi.balance / 1000).toFixed(0)}K₽
-          </p>
-        </div>
+        <Spark data={revenueHistory} color="#0E1116" fill/>
       </div>
 
-      {/* Спасённые рубли */}
-      <div className="p-3 bg-blue-50 rounded-md border border-blue-200">
-        <p className="text-xs text-gray-600 mb-1">Контур сэкономил</p>
-        <p className="text-xl font-bold text-brand-blue">{kpi.savedMoney.toLocaleString('ru-RU')} ₽</p>
-      </div>
-
-      <div className="border-t border-gray-200 pt-4" />
-
-      {/* Daily economics */}
-      <div className="grid grid-cols-3 gap-2 text-center">
+      {/* Net Profit */}
+      <div style={{
+        background: 'var(--k-green)', color: 'var(--k-ink)',
+        borderRadius: 20, padding: 18,
+        display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.65 }}>
+          ЧИСТАЯ
+        </div>
         <div>
-          <p className="text-xs text-gray-600 mb-1">Доход</p>
-          <p className="text-lg font-bold text-brand-green">+{(kpi.dailyRevenue / 1000).toFixed(0)}K</p>
-        </div>
-        <div>
-          <p className="text-xs text-gray-600 mb-1">Расход</p>
-          <p className="text-lg font-bold text-orange-500">−{(kpi.dailyExpenses / 1000).toFixed(0)}K</p>
-        </div>
-        <div className="bg-brand-blue/10 rounded-md p-2">
-          <p className="text-xs text-gray-600 mb-1">Итого</p>
-          <p className={`text-lg font-bold ${kpi.netProfit >= 0 ? 'text-brand-green' : 'text-red-500'}`}>
-            {kpi.netProfit >= 0 ? '+' : '−'}{Math.abs(kpi.netProfit / 1000).toFixed(0)}K
-          </p>
+          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }} className="k-num">
+            {kpi.netProfit >= 0 ? '+' : '−'}{Math.abs(kpi.netProfit).toLocaleString('ru-RU')} ₽
+          </div>
+          <div style={{ fontSize: 10, fontWeight: 600, opacity: 0.7, marginTop: 4 }}>
+            после налога 6% и закупок
+          </div>
         </div>
       </div>
 
-      {/* Monthly expenses hint */}
-      <p className="text-xs text-gray-500 text-center pt-2">
-        Расходы/мес: {kpi.monthlyExpenses.toLocaleString('ru-RU')} ₽
-      </p>
+      {/* Monthly Expenses */}
+      <div style={{
+        background: 'var(--k-blue)', color: '#fff',
+        borderRadius: 20, padding: 18,
+        display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.7 }}>
+          РАСХОДЫ / МЕС
+        </div>
+        <div>
+          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }} className="k-num">
+            {kpi.monthlyExpenses.toLocaleString('ru-RU')} ₽
+          </div>
+          <div style={{ fontSize: 10, fontWeight: 600, opacity: 0.8, marginTop: 4 }}>
+            через {kpi.daysUntilExpense} дн. списание
+          </div>
+        </div>
+      </div>
+
+      {/* To Goal */}
+      <div style={{
+        background: 'var(--k-purple)', color: '#fff',
+        borderRadius: 20, padding: 18,
+        display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.7 }}>
+          К ЦЕЛИ
+        </div>
+        <div>
+          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }} className="k-num">
+            {kpi.goalRemaining.toLocaleString('ru-RU')} ₽
+          </div>
+          <div style={{
+            marginTop: 6, height: 5, background: 'rgba(255,255,255,0.22)',
+            borderRadius: 999, overflow: 'hidden',
+          }}>
+            <div style={{ width: `${kpi.goalProgress}%`, height: '100%', background: '#fff' }}/>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
