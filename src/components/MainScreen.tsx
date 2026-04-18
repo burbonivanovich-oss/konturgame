@@ -1,10 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import ResponsiveLayout from './ResponsiveLayout'
 import MobileMainScreen from './MobileMainScreen'
-import KPIPanel from './KPIPanel'
-import Indicators from './Indicators'
-import NextDayButton from './NextDayButton'
-import ServicePanel from './ServicePanel'
 import PurchaseModal from './modals/PurchaseModal'
 import EventModal from './modals/EventModal'
 import CampaignModal from './modals/CampaignModal'
@@ -14,7 +10,7 @@ import SettingsModal from './modals/SettingsModal'
 import VictoryModal from './modals/VictoryModal'
 import AchievementsModal from './modals/AchievementsModal'
 import { useGameStore } from '../stores/gameStore'
-import { BUSINESS_CONFIGS } from '../constants/business'
+import { Spark } from './frame'
 
 function DesktopMainScreen() {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
@@ -25,10 +21,16 @@ function DesktopMainScreen() {
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [showAchievementsModal, setShowAchievementsModal] = useState(false)
 
-  const { pendingEvent, pendingEventsQueue, isGameOver, isVictory, businessType, achievements } = useGameStore()
+  const {
+    day, balance, dailyIncome, monthlyExpenses, goalAmount, goalProgress,
+    pendingEvent, pendingEventsQueue, isGameOver, isVictory,
+    reputation, loyalty, stockDaysLeft,
+    activeServices, achievements,
+    addBalance, addReputation, markEventAsResolved, activateService, addSavedBalance
+  } = useGameStore()
+
   const [savingsToast, setSavingsToast] = useState<number | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const config = BUSINESS_CONFIGS[businessType]
 
   useEffect(() => {
     if (pendingEvent) {
@@ -37,37 +39,16 @@ function DesktopMainScreen() {
   }, [pendingEvent])
 
   const handleEventOption = (optionId: string) => {
-    const state = useGameStore.getState()
-    const { pendingEvent, markEventAsResolved, setTemporaryModifiers, activateService, addSavedBalance } = state
-
     if (!pendingEvent) return
     const option = pendingEvent.options.find((o) => o.id === optionId)
     if (!option) return
 
     const c = option.consequences
-    const { addBalance, addReputation, addLoyalty } = useGameStore.getState()
-
     if (c.balanceDelta !== undefined) addBalance(c.balanceDelta)
     if (c.reputationDelta !== undefined) addReputation(c.reputationDelta)
-    if (c.loyaltyDelta !== undefined) addLoyalty(c.loyaltyDelta)
+    if (c.serviceId) activateService(c.serviceId)
 
-    if (c.clientModifier !== undefined || c.checkModifier !== undefined) {
-      const currentState = useGameStore.getState()
-      setTemporaryModifiers(
-        (currentState.temporaryClientMod ?? 0) + (c.clientModifier ?? 0),
-        (currentState.temporaryCheckMod ?? 0) + (c.checkModifier ?? 0),
-        Math.max(
-          currentState.temporaryModDaysLeft ?? 0,
-          c.clientModifierDays ?? c.checkModifierDays ?? 1,
-        ),
-      )
-    }
-
-    if (c.serviceId) {
-      activateService(c.serviceId)
-    }
-
-    // Считаем спасённые рубли при выборе Контур-опции
+    // Считаем спасённые рубли
     if (option.isContourOption && c.balanceDelta !== undefined) {
       const nonKontourOptions = pendingEvent.options.filter((o) => !o.isContourOption)
       if (nonKontourOptions.length > 0) {
@@ -89,90 +70,323 @@ function DesktopMainScreen() {
     setShowEventModal(false)
   }
 
+  const incomeSparkData = Array.from({ length: 10 }, () => Math.random() * 50)
+  const toGoalPercent = goalAmount > 0 ? Math.min((goalProgress / goalAmount) * 100, 100) : 0
+
   return (
-    <div className="min-h-screen bg-kontour-light p-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">Бизнес с Контуром</h1>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowAchievementsModal(true)}
-              className="px-3 py-2 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-200 transition relative"
-            >
-              🏆
-              {achievements.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-brand-orange text-white text-xs px-1.5 py-0.5 rounded-full font-bold">
-                  {achievements.length}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setShowHelpModal(true)}
-              className="px-3 py-2 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-200 transition"
-            >
-              ?
-            </button>
-            <button
-              onClick={() => setShowSettingsModal(true)}
-              className="px-3 py-2 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-200 transition"
-            >
-              ⚙️
-            </button>
+    <div style={{
+      width: '100%', minHeight: '100vh',
+      background: 'var(--k-surface)',
+      fontFamily: 'Manrope, sans-serif',
+      color: 'var(--k-ink)',
+      display: 'flex',
+      overflow: 'hidden',
+      letterSpacing: '-0.01em',
+    }}>
+      {/* LEFT RAIL — navigation */}
+      <aside style={{
+        width: 240, background: 'var(--k-ink)', color: '#fff',
+        padding: '24px 20px', display: 'flex', flexDirection: 'column',
+        flexShrink: 0,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: 8,
+            background: 'var(--k-orange)',
+          }}/>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 800 }}>Бизнес</div>
+            <div style={{ fontSize: 10, opacity: 0.5, fontWeight: 600 }}>с Контуром</div>
           </div>
         </div>
 
-        {/* Main Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Left/Center Column */}
-          <div className="lg:col-span-3 space-y-6">
-            {/* KPI Panel */}
-            <KPIPanel />
+        <div style={{
+          padding: 12, borderRadius: 12,
+          background: 'rgba(255,255,255,0.06)',
+          marginBottom: 24,
+        }}>
+          <div style={{ fontSize: 10, opacity: 0.5, fontWeight: 700, letterSpacing: '0.1em' }}>
+            КОФЕЙНЯ
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 800, marginTop: 2 }}>День {day}</div>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6, marginTop: 6,
+            fontSize: 11, fontWeight: 600, opacity: 0.7,
+          }}>
+            <div style={{ width: 14, height: 14, borderRadius: 4, background: 'var(--k-blue-soft)' }}/>
+            Весна · хорошо
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {[
+            { n: 'Дневной цикл',  g: '◎', on: true,  badge: '1' },
+            { n: 'Склад',         g: '▦', on: false },
+            { n: 'Маркетинг',     g: '◆', on: false },
+            { n: 'Экосистема',    g: '□', on: false, badge: `${activeServices.length}/7` },
+            { n: 'Финансы',       g: '₽', on: false },
+            { n: 'Репутация',     g: '★', on: false },
+            { n: 'Достижения',    g: '◈', on: false },
+          ].map(i => (
+            <div key={i.n} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '10px 12px', borderRadius: 10,
+              background: i.on ? 'var(--k-orange)' : 'transparent',
+              color: i.on ? 'var(--k-ink)' : '#fff',
+              fontSize: 13, fontWeight: 600,
+              cursor: 'pointer',
+            }}>
+              <span style={{
+                width: 22, height: 22, borderRadius: 6,
+                background: i.on ? 'var(--k-ink)' : 'rgba(255,255,255,0.08)',
+                color: i.on ? 'var(--k-orange)' : '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 12, fontWeight: 800,
+              }}>{i.g}</span>
+              <span style={{ flex: 1 }}>{i.n}</span>
+              {i.badge && (
+                <span style={{
+                  fontSize: 10, fontWeight: 800,
+                  padding: '2px 6px', borderRadius: 999,
+                  background: i.on ? 'var(--k-ink)' : 'rgba(255,255,255,0.12)',
+                  color: i.on ? 'var(--k-orange)' : '#fff',
+                }}>{i.badge}</span>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ flex: 1 }}/>
+
+        <div style={{
+          padding: 14, borderRadius: 16,
+          background: 'var(--k-green)', color: 'var(--k-ink)',
+        }}>
+          <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.7, letterSpacing: '0.1em' }}>
+            СПАСЕНО
+          </div>
+          <div style={{ fontSize: 24, fontWeight: 800, marginTop: 4 }} className="k-num">
+            {balance.toLocaleString('ru-RU')} ₽
+          </div>
+          <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.7, marginTop: 4 }}>
+            День {day}
+          </div>
+        </div>
+      </aside>
+
+      {/* MAIN */}
+      <main style={{
+        flex: 1, padding: '20px 24px', overflow: 'auto',
+        display: 'flex', flexDirection: 'column', gap: 12,
+      }}>
+        {/* Top KPI bento strip */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1.3fr 1fr 1fr 1fr',
+          gap: 10, height: 146,
+        }}>
+          {/* Income */}
+          <div style={{
+            background: 'var(--k-orange)', color: 'var(--k-ink)',
+            borderRadius: 20, padding: 20,
+            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+          }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.65 }}>
+                ДОХОД
+              </div>
+              <div style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.03em', marginTop: 2 }} className="k-num">
+                {dailyIncome.toLocaleString('ru-RU')} ₽
+              </div>
+            </div>
+            <Spark data={incomeSparkData} color="#0E1116" fill />
+          </div>
+
+          {/* Net */}
+          <div style={{
+            background: 'var(--k-green)', color: 'var(--k-ink)',
+            borderRadius: 20, padding: 18,
+            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.65 }}>
+              БАЛАНС
+            </div>
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }} className="k-num">
+                +{balance.toLocaleString('ru-RU')} ₽
+              </div>
+            </div>
+          </div>
+
+          {/* Monthly */}
+          <div style={{
+            background: 'var(--k-blue)', color: '#fff',
+            borderRadius: 20, padding: 18,
+            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.7 }}>
+              РАСХОДЫ/МЕС
+            </div>
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }} className="k-num">
+                {monthlyExpenses.toLocaleString('ru-RU')} ₽
+              </div>
+            </div>
+          </div>
+
+          {/* To goal */}
+          <div style={{
+            background: 'var(--k-purple)', color: '#fff',
+            borderRadius: 20, padding: 18,
+            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.7 }}>
+              К ЦЕЛИ
+            </div>
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }} className="k-num">
+                {goalAmount.toLocaleString('ru-RU')} ₽
+              </div>
+              <div style={{
+                marginTop: 6, height: 5, background: 'rgba(255,255,255,0.22)',
+                borderRadius: 999, overflow: 'hidden',
+              }}>
+                <div style={{ width: `${toGoalPercent}%`, height: '100%', background: '#fff' }}/>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main row */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 12, flex: 1, minHeight: 0 }}>
+          {/* LEFT */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {/* Event block */}
+            {pendingEvent && (
+              <div style={{
+                background: 'var(--k-ink)', color: '#fff',
+                borderRadius: 24, padding: 20,
+                display: 'flex', flexDirection: 'column', gap: 14,
+              }}>
+                <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em' }}>
+                  {pendingEvent.title}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                  {pendingEvent.options.map((opt) => (
+                    <div
+                      key={opt.id}
+                      onClick={() => handleEventOption(opt.id)}
+                      style={{
+                        background: opt.isContourOption ? 'var(--k-green)' : 'rgba(255,255,255,0.06)',
+                        color: opt.isContourOption ? 'var(--k-ink)' : '#fff',
+                        border: opt.isContourOption ? 'none' : '1.5px solid rgba(255,255,255,0.1)',
+                        borderRadius: 16, padding: 14,
+                        cursor: 'pointer',
+                      }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 6 }}>
+                        {opt.title}
+                      </div>
+                      <div style={{ fontSize: 18, fontWeight: 800 }} className="k-num">
+                        {opt.consequences.balanceDelta ? `${opt.consequences.balanceDelta > 0 ? '+' : ''}${opt.consequences.balanceDelta}` : '—'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Indicators */}
-            <Indicators />
+            <div style={{
+              background: '#fff', borderRadius: 20, padding: 14,
+              display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8,
+            }}>
+              {[
+                { l: 'Репутация', v: `+${reputation}`, bg: 'var(--k-green-soft)' },
+                { l: 'Лояльность', v: `${loyalty}%`, bg: '#FFEFB8' },
+                { l: 'Склад', v: `${stockDaysLeft} дн`, bg: 'var(--k-blue-soft)' },
+              ].map(i => (
+                <div key={i.l} style={{
+                  padding: 10, borderRadius: 12, background: i.bg,
+                }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.65 }}>{i.l}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800 }}>{i.v}</div>
+                </div>
+              ))}
+            </div>
 
-            {/* Action Buttons */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {config.hasStock && (
-                <button
-                  onClick={() => setShowPurchaseModal(true)}
-                  className="px-4 py-3 bg-brand-blue text-white rounded-md font-semibold text-sm hover:opacity-90 transition"
-                >
-                  📦 Закупка
-                </button>
-              )}
+            {/* Action buttons */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+              <button
+                onClick={() => setShowPurchaseModal(true)}
+                style={{
+                  padding: '10px 14px', border: 'none',
+                  background: 'var(--k-blue)', color: '#fff',
+                  borderRadius: 999, fontFamily: 'inherit',
+                  fontWeight: 700, fontSize: 12, cursor: 'pointer',
+                }}>
+                📦 Закупка
+              </button>
               <button
                 onClick={() => setShowCampaignModal(true)}
-                className="px-4 py-3 bg-brand-purple text-white rounded-md font-semibold text-sm hover:opacity-90 transition"
-              >
+                style={{
+                  padding: '10px 14px', border: 'none',
+                  background: 'var(--k-purple)', color: '#fff',
+                  borderRadius: 999, fontFamily: 'inherit',
+                  fontWeight: 700, fontSize: 12, cursor: 'pointer',
+                }}>
                 📢 Реклама
               </button>
               <button
                 onClick={() => setShowUpgradesModal(true)}
-                className="px-4 py-3 bg-brand-orange text-white rounded-md font-semibold text-sm hover:opacity-90 transition"
-              >
+                style={{
+                  padding: '10px 14px', border: 'none',
+                  background: 'var(--k-orange)', color: 'var(--k-ink)',
+                  borderRadius: 999, fontFamily: 'inherit',
+                  fontWeight: 700, fontSize: 12, cursor: 'pointer',
+                }}>
                 🔧 Улучшения
               </button>
             </div>
+          </div>
 
-            {/* Next Day Button */}
-            <div className="pt-4">
-              <NextDayButton />
+          {/* RIGHT */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0 }}>
+            {/* Services */}
+            <div style={{
+              background: '#fff', borderRadius: 20, padding: 14,
+              flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0,
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.5 }}>
+                СЕРВИСЫ
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {['Маркет', 'Банк', 'Экстерн', 'ОФД', 'Фокус', 'Диадок', 'Эльба'].map((s) => (
+                  <div key={s} style={{
+                    background: activeServices.includes(s) ? 'var(--k-orange)' : 'var(--k-surface)',
+                    color: activeServices.includes(s) ? 'var(--k-ink)' : 'var(--k-ink)',
+                    borderRadius: 10, padding: '8px 10px',
+                    fontSize: 10, fontWeight: 700,
+                    textAlign: 'center',
+                  }}>
+                    {s}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Right Sidebar - Services */}
-          <ServicePanel />
+            {/* Next day button */}
+            <button style={{
+              border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+              background: 'var(--k-orange)', color: 'var(--k-ink)',
+              padding: '20px 24px', borderRadius: 999,
+              fontSize: 17, fontWeight: 800, letterSpacing: '-0.01em',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            }}>
+              Следующий день →
+            </button>
+          </div>
         </div>
-
-        {/* Savings Toast */}
-        {savingsToast !== null && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-brand-blue text-white px-6 py-3 rounded-lg shadow-lg text-sm font-semibold whitespace-nowrap">
-            💙 Контур сэкономил {savingsToast.toLocaleString('ru-RU')} ₽!
-          </div>
-        )}
-      </div>
+      </main>
 
       {/* Modals */}
       <PurchaseModal isOpen={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} />
@@ -192,6 +406,18 @@ function DesktopMainScreen() {
       />
       <VictoryModal isOpen={isVictory} type="victory" />
       <VictoryModal isOpen={isGameOver && !isVictory} type="defeat" />
+
+      {/* Savings Toast */}
+      {savingsToast !== null && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 50, background: 'var(--k-green)', color: 'var(--k-ink)',
+          padding: '16px 24px', borderRadius: 16,
+          fontSize: 14, fontWeight: 700,
+        }}>
+          ✅ Контур сэкономил {savingsToast.toLocaleString('ru-RU')} ₽!
+        </div>
+      )}
     </div>
   )
 }
