@@ -180,6 +180,383 @@ font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
 ---
 
+## 📱 Адаптивная верстка
+
+### Брейкпойнты (Breakpoints)
+
+| Устройство | Диапазон | Padding | Примечание |
+|-----------|----------|---------|-----------|
+| **Mobile** | 320px–479px | 12px–16px | Портрет смартфона |
+| **Mobile Large** | 480px–599px | 16px | Большой смартфон |
+| **Tablet Small** | 600px–767px | 16px–20px | Планшет портрет |
+| **Tablet** | 768px–1023px | 20px–24px | Планшет ландшафт |
+| **Desktop Small** | 1024px–1279px | 24px–32px | Ноутбук |
+| **Desktop** | 1280px–1919px | 32px–40px | Стандартный монитор |
+| **Desktop Large** | 1920px+ | 40px–48px | Широкий монитор |
+
+### CSS Media Queries
+
+```css
+/* Mobile first approach */
+@media (min-width: 480px) { /* Mobile Large */ }
+@media (min-width: 600px) { /* Tablet Small */ }
+@media (min-width: 768px) { /* Tablet */ }
+@media (min-width: 1024px) { /* Desktop Small */ }
+@media (min-width: 1280px) { /* Desktop */ }
+@media (min-width: 1920px) { /* Desktop Large */ }
+```
+
+### Адаптивный Layout Dashboard
+
+#### Mobile (320px–479px)
+
+```
+┌──────────────┐
+│ Header/Logo  │
+├──────────────┤
+│              │
+│   Content    │ (single column, full width)
+│              │
+├──────────────┤
+│  Tab Bar     │ (88px, 5 tabs внизу)
+└──────────────┘
+```
+
+**Изменения:**
+- Нет левого рейла (скрыт или drawer)
+- Content: 1 колона (padding: 12px)
+- KPI cards: 2 columns вместо 4
+- Event: padding 14px вместо 20px
+- Font-size уменьшены на 10–15%
+- Gap между элементами: 8px–10px вместо 12px–20px
+
+#### Tablet (600px–767px)
+
+```
+┌─────────────────────────┐
+│ Top bar | Hamburger     │
+├───┬─────────────────────┤
+│   │                     │
+│ S │   Content           │ (2 columns)
+│ i │                     │
+│ d │                     │
+│ e ├─────────────────────┤
+│ b │  Tab Bar (bottom)   │
+│ a │                     │
+│ r └─────────────────────┘
+```
+
+**Изменения:**
+- Sidebar: 180px (вместо 240px), скрыт по умолчанию (drawer)
+- Content padding: 16px
+- KPI cards: 2 columns на мобилях, 4 на горизонтали
+- Event modal width: 90vw (max 600px)
+- Font-size: базовые + 2px
+
+#### Desktop Small (1024px–1279px)
+
+```
+┌─ LEFT RAIL (180px) ─┬──────────── MAIN (flex: 1) ────────────┐
+│ Compact nav         │ ┌─ KPI row (3 cards instead of 4) ┐   │
+│ (smaller icons)     │ └────────────────────────────────────┘   │
+│                     │ ┌─ Main row (1fr 300px gap:12px) ┐      │
+│                     │ │ LEFT + RIGHT layout              │    │
+│                     │ └─────────────────────────────────┘    │
+└─────────────────────┴──────────────────────────────────────────┘
+```
+
+**Изменения:**
+- Sidebar: 180px (вместо 240px)
+- KPI: grid-template-columns: 1.2fr 1fr 1fr (3 cards)
+- Right panel: 300px (вместо 380px)
+- Gap: 10px–12px
+- Font-size: базовые
+
+#### Desktop (1280px–1919px) — ЭТАЛОН
+
+Стандартная структура 1440×900px как описано выше.
+
+#### Desktop Large (1920px+)
+
+```
+┌─ LEFT RAIL (260px) ─┬─────────── MAIN (flex: 1) ─────────────┐
+│ Большой sidebar     │ ┌─ KPI row (5 cards, new metric) ──┐  │
+│                     │ └─────────────────────────────────────┘ │
+│ Bigger icons        │ ┌─ Main row (1fr 420px gap:16px) ┐   │
+│                     │ │ LEFT panel wider                 │    │
+│                     │ │ RIGHT panel больше               │    │
+└─────────────────────┴──────────────────────────────────────────┘
+```
+
+**Изменения:**
+- Sidebar: 260px
+- KPI: может быть 5 карточек, или все 4 с увеличенным размером
+- Right panel: 420px
+- Padding: 40px–48px
+- Font-size: базовые + 10%
+
+### Адаптивные компоненты
+
+#### KPI Cards — Media Query
+
+```css
+/* Default (Desktop): 1.3fr 1fr 1fr 1fr */
+grid-template-columns: 1.3fr 1fr 1fr 1fr;
+height: 146px;
+gap: 10px;
+
+/* Desktop Small: 1.2fr 1fr 1fr */
+@media (max-width: 1279px) {
+  grid-template-columns: 1.2fr 1fr 1fr;
+  height: 140px;
+}
+
+/* Tablet: 1fr 1fr (2 на каждую строку) */
+@media (max-width: 767px) {
+  grid-template-columns: 1fr 1fr;
+  height: 120px;
+  gap: 8px;
+}
+
+/* Mobile: 1fr (single column) */
+@media (max-width: 479px) {
+  grid-template-columns: 1fr;
+  height: 100px;
+  gap: 8px;
+}
+```
+
+#### Числа в KPI — Font Size Адаптация
+
+```css
+/* Desktop */
+.k-kpi-number { font-size: 42px; }
+
+/* Tablet */
+@media (max-width: 767px) {
+  .k-kpi-number { font-size: 32px; }
+}
+
+/* Mobile */
+@media (max-width: 479px) {
+  .k-kpi-number { font-size: 24px; }
+}
+```
+
+#### Event Modal — Responsive Width
+
+```css
+/* Desktop */
+width: 900px;
+
+/* Tablet Small */
+@media (max-width: 767px) {
+  width: 90vw;
+  max-width: 600px;
+}
+
+/* Mobile */
+@media (max-width: 479px) {
+  width: 95vw;
+  max-width: 100%;
+  padding: 20px 16px;
+  border-radius: 20px; /* уменьшить с 32px */
+}
+```
+
+#### Services Grid — Колонки
+
+```css
+/* Desktop: 2 columns */
+grid-template-columns: 1fr 1fr;
+gap: 10px;
+
+/* Tablet: 2 columns, но меньше */
+@media (max-width: 767px) {
+  gap: 8px;
+}
+
+/* Mobile: 1 column */
+@media (max-width: 599px) {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+```
+
+#### Left Rail Navigation
+
+```css
+/* Desktop (240px) */
+width: 240px;
+padding: 24px 20px;
+
+/* Tablet (collapsed) */
+@media (max-width: 767px) {
+  width: 180px;
+  padding: 16px;
+}
+
+/* Mobile (hidden drawer) */
+@media (max-width: 599px) {
+  position: fixed;
+  left: -240px;
+  height: 100vh;
+  transition: left 0.3s ease;
+  z-index: 100;
+  
+  /* При открытии */
+  &.open {
+    left: 0;
+  }
+}
+```
+
+#### Текст — Адаптивный Font Size
+
+| Элемент | Desktop | Tablet | Mobile |
+|---------|---------|--------|--------|
+| h1 | 34px | 28px | 22px |
+| h2 | 24px | 20px | 18px |
+| h3 | 18px | 16px | 14px |
+| Body | 14px | 13px | 12px |
+| Small | 12px | 11px | 10px |
+| Eyebrow | 11px | 10px | 9px |
+
+```css
+@media (max-width: 767px) {
+  .k-h1 { font-size: 28px; }
+  .k-h2 { font-size: 20px; }
+  .k-h3 { font-size: 16px; }
+  .k-body { font-size: 13px; }
+  .k-small { font-size: 11px; }
+  .k-eyebrow { font-size: 10px; }
+}
+
+@media (max-width: 479px) {
+  .k-h1 { font-size: 22px; }
+  .k-h2 { font-size: 18px; }
+  .k-h3 { font-size: 14px; }
+  .k-body { font-size: 12px; }
+  .k-small { font-size: 10px; }
+  .k-eyebrow { font-size: 9px; }
+}
+```
+
+#### Padding/Gap Адаптация
+
+```css
+/* Desktop: 20px–40px */
+padding: 40px;
+gap: 20px;
+
+/* Tablet: 16px–24px */
+@media (max-width: 767px) {
+  padding: 24px;
+  gap: 16px;
+}
+
+/* Mobile: 12px–16px */
+@media (max-width: 479px) {
+  padding: 16px;
+  gap: 12px;
+}
+```
+
+### Адаптивные классы (можно добавить в CSS)
+
+```css
+/* Visibility helpers */
+.hidden-mobile {
+  @media (max-width: 599px) {
+    display: none;
+  }
+}
+
+.hidden-tablet {
+  @media (min-width: 600px) and (max-width: 1023px) {
+    display: none;
+  }
+}
+
+.hidden-desktop {
+  @media (min-width: 1024px) {
+    display: none;
+  }
+}
+
+.visible-mobile {
+  display: none;
+  @media (max-width: 599px) {
+    display: block;
+  }
+}
+
+/* Touch-friendly spacing on mobile */
+@media (max-width: 767px) {
+  .k-btn {
+    min-height: 44px; /* Apple's recommended touch target */
+  }
+}
+```
+
+### Ориентация экрана
+
+```css
+/* Landscape mobile */
+@media (max-height: 500px) {
+  .k-tabbar {
+    height: 44px; /* меньше на горизонтали */
+  }
+}
+
+/* Portrait (default) */
+@media (orientation: portrait) {
+  /* стандартные стили */
+}
+
+/* Landscape */
+@media (orientation: landscape) {
+  body {
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+}
+```
+
+### Safe Area (для notched devices)
+
+```css
+/* iPhone notch */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-top: max(12px, env(safe-area-inset-top));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+}
+```
+
+### Контрольный список адаптивности
+
+При реализации проверить:
+
+- [ ] Mobile 320px–479px выглядит хорошо
+- [ ] Tablet 600px–767px — все элементы видны
+- [ ] Desktop 1280px–1919px — эталонный дизайн
+- [ ] Desktop Large 1920px+ — масштабируется корректно
+- [ ] Font-size масштабируется по медиа-запросам
+- [ ] Padding/gap кратны 4px и масштабируются
+- [ ] Sidebar скрывается на мобилях (drawer)
+- [ ] Buttons имеют минимум 44px высоты (touch)
+- [ ] Images адаптивны (max-width: 100%)
+- [ ] Layout переходит с flex/grid корректно
+- [ ] Нет горизонтального скролла на мобилях
+- [ ] Touch targets >= 44px на мобилях
+- [ ] Safe areas учтены (notch, gesture areas)
+
+---
+
 ## 🎯 Компоненты
 
 ### Кнопки
