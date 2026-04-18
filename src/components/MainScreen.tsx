@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
+import ResponsiveLayout from './ResponsiveLayout'
+import MobileMainScreen from './MobileMainScreen'
 import KPIPanel from './KPIPanel'
 import Indicators from './Indicators'
 import NextDayButton from './NextDayButton'
@@ -14,7 +16,7 @@ import AchievementsModal from './modals/AchievementsModal'
 import { useGameStore } from '../stores/gameStore'
 import { BUSINESS_CONFIGS } from '../constants/business'
 
-export default function MainScreen() {
+function DesktopMainScreen() {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
   const [showEventModal, setShowEventModal] = useState(false)
   const [showCampaignModal, setShowCampaignModal] = useState(false)
@@ -191,5 +193,14 @@ export default function MainScreen() {
       <VictoryModal isOpen={isVictory} type="victory" />
       <VictoryModal isOpen={isGameOver && !isVictory} type="defeat" />
     </div>
+  )
+}
+
+export default function MainScreen() {
+  return (
+    <ResponsiveLayout
+      desktopView={<DesktopMainScreen />}
+      mobileView={<MobileMainScreen />}
+    />
   )
 }
