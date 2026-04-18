@@ -21,10 +21,16 @@ export default function NextDayButton() {
   }, [isLoading])
 
   const isDisabled = isGameOver || isVictory
+  const isCrisisDay = currentDay > 0 && currentDay % 9 === 0
   const statusText = isGameOver ? '❌ Игра окончена' : isVictory ? '🎉 Победа!' : ''
 
   return (
     <div className="text-center">
+      {isCrisisDay && !isDisabled && (
+        <p className="text-xs text-red-400 font-medium mb-2">
+          ⚠️ Кризисный день — возможны до 3 событий
+        </p>
+      )}
       <button
         onClick={handleClick}
         disabled={isDisabled || isLoading}
@@ -33,12 +39,18 @@ export default function NextDayButton() {
           ${
             isDisabled
               ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+              : isCrisisDay
+              ? 'bg-gradient-to-r from-red-600 to-orange-500 text-white hover:from-red-700 hover:to-orange-600 active:scale-95'
               : 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 active:scale-95'
           }
           ${isLoading ? 'opacity-75' : ''}
         `}
       >
-        {isLoading ? `⏳ Обработка дня ${currentDay}...` : `→ День ${currentDay} завершить`}
+        {isLoading
+          ? `⏳ Обработка дня ${currentDay}...`
+          : isCrisisDay
+          ? `⚡ День ${currentDay} — Кризис`
+          : `→ День ${currentDay} завершить`}
       </button>
       {statusText && <p className="text-sm text-gray-400 mt-2">{statusText}</p>}
       {blockedReason && (

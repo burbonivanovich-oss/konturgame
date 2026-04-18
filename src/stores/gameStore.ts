@@ -27,7 +27,7 @@ const createInitialState = (businessType: BusinessType): GameState => {
     businessType,
     currentDay: 1,
     balance: config.startBalance,
-    savedBalance: config.startBalance,
+    savedBalance: 0,
     reputation: 50,
     loyalty: 50,
 
@@ -45,6 +45,7 @@ const createInitialState = (businessType: BusinessType): GameState => {
 
     lastDayResult: null,
     pendingEvent: null,
+    pendingEventsQueue: [],
     triggeredEventIds: [],
 
     isGameOver: false,
@@ -105,6 +106,10 @@ interface GameStoreActions {
   // Events
   setPendingEvent: (event: Event | null) => void
   markEventAsResolved: (eventId: string) => void
+  setPendingEventsQueue: (events: Event[]) => void
+
+  // Saved balance
+  addSavedBalance: (amount: number) => void
 
   // Day results
   setLastDayResult: (result: DayResult) => void
@@ -342,9 +347,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
     },
 
     markEventAsResolved: (eventId) => {
+      set((state) => {
+        const queue = state.pendingEventsQueue ?? []
+        const nextEvent = queue.length > 0 ? queue[0] : null
+        return {
+          triggeredEventIds: state.triggeredEventIds.includes(eventId)
+            ? state.triggeredEventIds
+            : [...state.triggeredEventIds, eventId],
+          pendingEvent: nextEvent,
+          pendingEventsQueue: queue.slice(1),
+          lastUpdated: Date.now(),
+        }
+      })
+    },
+
+    setPendingEventsQueue: (events) => {
+      set({ pendingEventsQueue: events, lastUpdated: Date.now() })
+    },
+
+    addSavedBalance: (amount) => {
       set((state) => ({
-        triggeredEventIds: [...state.triggeredEventIds, eventId],
-        pendingEvent: null,
+        savedBalance: state.savedBalance + amount,
         lastUpdated: Date.now(),
       }))
     },
@@ -555,6 +578,7 @@ function extractState(state: any): GameState {
     experience,
     lastDayResult,
     pendingEvent,
+    pendingEventsQueue,
     triggeredEventIds,
     isGameOver,
     isVictory,
@@ -590,6 +614,7 @@ function extractState(state: any): GameState {
     experience,
     lastDayResult,
     pendingEvent,
+    pendingEventsQueue: pendingEventsQueue ?? [],
     triggeredEventIds,
     isGameOver,
     isVictory,

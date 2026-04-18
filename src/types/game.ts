@@ -192,6 +192,7 @@ export interface GameState {
 
   lastDayResult: DayResult | null
   pendingEvent: Event | null
+  pendingEventsQueue: Event[]
   triggeredEventIds: string[]
 
   isGameOver: boolean

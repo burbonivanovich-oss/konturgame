@@ -223,11 +223,26 @@ export function processDay(state: GameState): DayResult {
     }
   }
 
-  // Generate new event if game is still active
+  // Generate new event(s) if game is still active
   if (!state.isGameOver && !state.isVictory && !state.pendingEvent) {
-    const event = generateEvent(state.currentDay, state)
-    if (event) {
-      state.pendingEvent = event
+    const isCrisisDay = state.currentDay % 9 === 0
+    const firstEvent = generateEvent(state.currentDay, state)
+
+    if (firstEvent) {
+      state.pendingEvent = firstEvent
+
+      if (isCrisisDay) {
+        const usedIds = new Set([firstEvent.id])
+        const queue: typeof firstEvent[] = []
+        for (let attempt = 0; attempt < 10 && queue.length < 2; attempt++) {
+          const extra = generateEvent(state.currentDay, state)
+          if (extra && !usedIds.has(extra.id)) {
+            usedIds.add(extra.id)
+            queue.push(extra)
+          }
+        }
+        state.pendingEventsQueue = queue
+      }
     }
   }
 
