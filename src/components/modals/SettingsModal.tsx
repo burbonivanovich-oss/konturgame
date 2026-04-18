@@ -7,12 +7,11 @@ interface SettingsModalProps {
 }
 
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const { startNewGame } = useGameStore()
 
   const handleNewGame = () => {
     if (confirm('Вы уверены? Текущий прогресс будет потерян.')) {
-      startNewGame('shop')
-      onClose()
+      localStorage.removeItem('konturgame_state')
+      window.location.reload()
     }
   }
 
