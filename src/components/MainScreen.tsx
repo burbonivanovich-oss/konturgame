@@ -10,9 +10,13 @@ import VictoryModal from './modals/VictoryModal'
 import AchievementsModal from './modals/AchievementsModal'
 import { DesktopRecap } from './design-system/DesktopRecap'
 import { DesktopKontur } from './design-system/DesktopKontur'
+import { WarehouseView } from './views/WarehouseView'
+import { MarketingView } from './views/MarketingView'
+import { FinanceView } from './views/FinanceView'
+import { ReputationView } from './views/ReputationView'
 import { useGameStore } from '../stores/gameStore'
 
-type ActiveView = 'dashboard' | 'recap' | 'ecosystem'
+type ActiveView = 'dashboard' | 'recap' | 'ecosystem' | 'warehouse' | 'marketing' | 'finance' | 'reputation'
 
 function Spark({ data, color = 'currentColor', fill = false }: { data: number[]; color?: string; fill?: boolean }) {
   const w = 100, h = 32
@@ -42,19 +46,19 @@ const SERVICE_MAP = [
   { id: 'elba', name: 'Эльба' },
 ]
 
-const NAV_ITEMS = [
-  { n: 'Дневной цикл', g: '◎', view: 'dashboard' as ActiveView },
-  { n: 'Склад', g: '▦', view: null },
-  { n: 'Маркетинг', g: '◆', view: null },
-  { n: 'Экосистема', g: '□', view: 'ecosystem' as ActiveView },
-  { n: 'Финансы', g: '₽', view: null },
-  { n: 'Репутация', g: '★', view: null },
+const NAV_ITEMS: Array<{ n: string; g: string; view: ActiveView | null }> = [
+  { n: 'Дневной цикл', g: '◎', view: 'dashboard' },
+  { n: 'Склад', g: '▦', view: 'warehouse' },
+  { n: 'Маркетинг', g: '◆', view: 'marketing' },
+  { n: 'Экосистема', g: '□', view: 'ecosystem' },
+  { n: 'Финансы', g: '₽', view: 'finance' },
+  { n: 'Репутация', g: '★', view: 'reputation' },
   { n: 'Достижения', g: '◈', view: null },
 ]
 
 function LeftRail({
   currentDay, savedBalance, activeNav, activeCount,
-  pendingEventCount, onNavClick,
+  pendingEventCount, onNavClick, onHelp, onSettings,
 }: {
   currentDay: number
   savedBalance: number
@@ -62,6 +66,8 @@ function LeftRail({
   activeCount: number
   pendingEventCount: number
   onNavClick: (name: string) => void
+  onHelp: () => void
+  onSettings: () => void
 }) {
   return (
     <aside style={{
@@ -140,6 +146,30 @@ function LeftRail({
         <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.55, marginTop: 4 }}>
           за {currentDay} {currentDay === 1 ? 'день' : 'дней'}
         </div>
+      </div>
+
+      {/* Help & Settings */}
+      <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+        <button
+          onClick={onHelp}
+          style={{
+            flex: 1, border: '1px solid rgba(14,17,22,0.1)', cursor: 'pointer',
+            background: 'transparent', color: 'var(--k-ink)',
+            padding: '8px 0', borderRadius: 10,
+            fontFamily: 'inherit', fontSize: 11, fontWeight: 700,
+          }}>
+          ? Справка
+        </button>
+        <button
+          onClick={onSettings}
+          style={{
+            flex: 1, border: '1px solid rgba(14,17,22,0.1)', cursor: 'pointer',
+            background: 'transparent', color: 'var(--k-ink)',
+            padding: '8px 0', borderRadius: 10,
+            fontFamily: 'inherit', fontSize: 11, fontWeight: 700,
+          }}>
+          ⚙ Настройки
+        </button>
       </div>
     </aside>
   )
@@ -525,6 +555,8 @@ function DesktopMainScreen() {
         activeCount={activeCount}
         pendingEventCount={pendingEventCount}
         onNavClick={handleNavClick}
+        onHelp={() => setShowHelpModal(true)}
+        onSettings={() => setShowSettingsModal(true)}
       />
 
       {activeView === 'dashboard' && (
@@ -552,6 +584,11 @@ function DesktopMainScreen() {
           <DesktopKontur embedded />
         </div>
       )}
+
+      {activeView === 'warehouse' && <WarehouseView />}
+      {activeView === 'marketing' && <MarketingView />}
+      {activeView === 'finance' && <FinanceView />}
+      {activeView === 'reputation' && <ReputationView />}
 
       {/* Global modals */}
       <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
