@@ -1,0 +1,284 @@
+/* Kontur Game — brand-aligned design tokens */
+
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* brand palette */
+  --k-white: #ffffff;
+  --k-black: #0E1116;
+  --k-ink: #0E1116;
+  --k-ink-70: rgba(14,17,22,0.70);
+  --k-ink-50: rgba(14,17,22,0.50);
+  --k-ink-30: rgba(14,17,22,0.30);
+  --k-ink-10: rgba(14,17,22,0.08);
+  --k-surface: #F4F2EE;
+  --k-surface-2: #EBE8E2;
+
+  --k-orange: #FF6A2C;
+  --k-green:  #14B88A;
+  --k-blue:   #3D5BE6;
+  --k-purple: #8A4AE0;
+
+  /* softened tints for backgrounds */
+  --k-orange-soft: #FFE2D1;
+  --k-green-soft:  #C5F0E0;
+  --k-blue-soft:   #D6DEFB;
+  --k-purple-soft: #E3D2F8;
+
+  --k-good: #14B88A;
+  --k-warn: #FFB020;
+  --k-bad:  #FF5A5A;
+
+  /* radii — divisible by 4, per brand techniques */
+  --r-4: 4px;
+  --r-8: 8px;
+  --r-12: 12px;
+  --r-16: 16px;
+  --r-20: 20px;
+  --r-24: 24px;
+  --r-32: 32px;
+  --r-pill: 999px;
+
+  --font: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+.kg-phone {
+  width: 390px;
+  height: 844px;
+  background: var(--k-surface);
+  font-family: var(--font);
+  color: var(--k-ink);
+  position: relative;
+  overflow: hidden;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+}
+
+.kg-phone * { box-sizing: border-box; }
+
+.kg-status {
+  height: 44px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--k-ink);
+  flex-shrink: 0;
+}
+
+.kg-status .k-signal { display: flex; gap: 4px; align-items: center; }
+.kg-status .k-bar { width: 3px; background: var(--k-ink); border-radius: 1px; }
+.kg-status .k-batt {
+  width: 24px; height: 11px; border: 1.5px solid var(--k-ink);
+  border-radius: 3px; position: relative; display: inline-block;
+}
+.kg-status .k-batt::after {
+  content: ''; position: absolute; right: -3px; top: 3px;
+  width: 2px; height: 5px; background: var(--k-ink); border-radius: 1px;
+}
+.kg-status .k-batt::before {
+  content: ''; position: absolute; inset: 1px; width: 16px;
+  background: var(--k-ink); border-radius: 1px;
+}
+
+.kg-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+/* Generic pill / chip */
+.k-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  font-size: 12px; font-weight: 600;
+  background: var(--k-ink);
+  color: var(--k-white);
+}
+
+.k-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 10px;
+  border-radius: var(--r-8);
+  font-size: 12px; font-weight: 600;
+  background: rgba(255,255,255,0.2);
+}
+
+/* Brand logo mark */
+.k-logo {
+  font-weight: 800; font-size: 14px; letter-spacing: -0.02em;
+  display: inline-flex; align-items: baseline; gap: 2px;
+}
+.k-logo::before {
+  content: ''; width: 10px; height: 10px; border-radius: 3px;
+  background: var(--k-ink); margin-right: 6px; display: inline-block;
+  transform: translateY(1px);
+}
+
+/* bento card base */
+.k-card {
+  background: var(--k-white);
+  border-radius: var(--r-20);
+  padding: 16px;
+  position: relative;
+}
+
+.k-card-tight { padding: 12px; border-radius: var(--r-16); }
+
+/* Big colored tiles */
+.k-tile-orange { background: var(--k-orange); color: var(--k-ink); }
+.k-tile-green  { background: var(--k-green);  color: var(--k-ink); }
+.k-tile-blue   { background: var(--k-blue);   color: var(--k-white); }
+.k-tile-purple { background: var(--k-purple); color: var(--k-white); }
+.k-tile-dark   { background: var(--k-ink);    color: var(--k-white); }
+
+/* typography */
+.k-h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.02; }
+.k-h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; }
+.k-h3 { font-size: 18px; font-weight: 700; letter-spacing: -0.015em; line-height: 1.1; }
+.k-eyebrow { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5; }
+.k-label { font-size: 12px; font-weight: 600; opacity: 0.6; }
+.k-body { font-size: 14px; font-weight: 500; line-height: 1.4; }
+.k-small { font-size: 12px; font-weight: 500; line-height: 1.35; opacity: 0.7; }
+.k-num { font-variant-numeric: tabular-nums; }
+.k-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* big primary button */
+.k-btn {
+  border: none; cursor: pointer; font-family: inherit;
+  font-weight: 700; letter-spacing: -0.01em;
+  border-radius: var(--r-pill);
+  padding: 18px 24px;
+  font-size: 17px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--k-ink); color: var(--k-white);
+  width: 100%;
+}
+
+.k-btn-orange { background: var(--k-orange); color: var(--k-ink); }
+.k-btn-outline {
+  background: transparent; color: var(--k-ink);
+  border: 1.5px solid var(--k-ink-10);
+}
+
+/* dot indicators */
+.k-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.k-dot-green  { background: var(--k-good); }
+.k-dot-yellow { background: var(--k-warn); }
+.k-dot-red    { background: var(--k-bad);  }
+
+/* divider */
+.k-div { height: 1px; background: var(--k-ink-10); }
+
+/* Top bar common */
+.k-topbar {
+  padding: 8px 20px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+}
+
+/* saved rubles badge */
+.k-saved {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--k-green);
+  color: var(--k-ink);
+  padding: 8px 12px;
+  border-radius: var(--r-pill);
+  font-size: 13px; font-weight: 700;
+}
+.k-saved::before {
+  content: ''; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--k-ink); display: inline-block;
+  background-image: radial-gradient(circle at center, var(--k-green) 30%, transparent 32%);
+}
+
+/* tab bar */
+.k-tabbar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 88px;
+  background: var(--k-white);
+  display: flex; justify-content: space-around; align-items: flex-start;
+  padding: 12px 12px 28px;
+  border-top: 1px solid var(--k-ink-10);
+}
+.k-tabbar .k-tab {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 600;
+  color: var(--k-ink-50);
+  padding: 6px 10px;
+  border-radius: var(--r-12);
+  min-width: 56px;
+}
+.k-tabbar .k-tab .k-tab-icon {
+  width: 24px; height: 24px; border-radius: 7px;
+  background: var(--k-ink-10);
+}
+.k-tabbar .k-tab.active { color: var(--k-ink); }
+.k-tabbar .k-tab.active .k-tab-icon { background: var(--k-ink); }
+
+/* home indicator */
+.k-home {
+  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+  width: 134px; height: 5px; background: var(--k-ink); border-radius: 3px;
+  opacity: 0.9;
+  z-index: 20;
+}
+
+/* scrollable inner */
+.k-scroll {
+  flex: 1; overflow: auto; padding-bottom: 8px;
+}
+.k-scroll::-webkit-scrollbar { display: none; }
+
+/* placeholder hatched stripe */
+.k-placeholder {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--k-ink-10) 0 6px,
+    transparent 6px 12px
+  );
+  background-color: var(--k-surface-2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--k-ink-50);
+  text-align: center;
+}
+
+/* weather scene */
+.k-weather {
+  border-radius: var(--r-24);
+  overflow: hidden;
+  position: relative;
+  padding: 14px;
+  min-height: 90px;
+}
+
+/* progress bar */
+.k-progress {
+  height: 6px; border-radius: var(--r-pill);
+  background: var(--k-ink-10);
+  overflow: hidden;
+  position: relative;
+}
+.k-progress > span {
+  position: absolute; inset: 0;
+  background: var(--k-ink); border-radius: inherit;
+  transform-origin: left center;
+}
+
+/* icon placeholder — simple glyph square */
+.k-icon {
+  width: 36px; height: 36px; border-radius: var(--r-12);
+  background: var(--k-ink); color: var(--k-white);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 14px; flex-shrink: 0;
+}
+
+/* clickable card appear */
+.k-clickable { cursor: pointer; transition: transform .12s ease; }
+.k-clickable:active { transform: scale(0.99); }
+
+/* sparkline */
+.k-spark { width: 100%; height: 32px; display: block; }
