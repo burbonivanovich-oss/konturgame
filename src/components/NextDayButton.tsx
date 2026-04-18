@@ -27,34 +27,34 @@ export default function NextDayButton() {
   return (
     <div className="text-center">
       {isCrisisDay && !isDisabled && (
-        <p className="text-xs text-red-400 font-medium mb-2">
-          ⚠️ Кризисный день — возможны до 3 событий
+        <p className="text-sm text-red-600 font-semibold mb-4 px-4 py-2 bg-red-50 rounded-md border border-red-200">
+          ⚠️ Кризисный день — возможны события
         </p>
       )}
       <button
         onClick={handleClick}
         disabled={isDisabled || isLoading}
         className={`
-          px-12 py-4 rounded-lg font-bold text-lg transition-all transform
+          px-16 py-4 rounded-lg font-bold text-lg transition-all transform
           ${
             isDisabled
-              ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
               : isCrisisDay
-              ? 'bg-gradient-to-r from-red-600 to-orange-500 text-white hover:from-red-700 hover:to-orange-600 active:scale-95'
-              : 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 active:scale-95'
+              ? 'bg-brand-orange text-white hover:opacity-90 active:scale-95 shadow-md'
+              : 'bg-brand-green text-white hover:opacity-90 active:scale-95 shadow-md'
           }
           ${isLoading ? 'opacity-75' : ''}
         `}
       >
         {isLoading
-          ? `⏳ Обработка дня ${currentDay}...`
+          ? `⏳ Расчёт...`
           : isCrisisDay
           ? `⚡ День ${currentDay} — Кризис`
-          : `→ День ${currentDay} завершить`}
+          : `→ Следующий день`}
       </button>
-      {statusText && <p className="text-sm text-gray-400 mt-2">{statusText}</p>}
+      {statusText && <p className="text-sm text-brand-green font-semibold mt-3">{statusText}</p>}
       {blockedReason && (
-        <p className="text-sm text-yellow-400 mt-2 font-medium">⚠️ {blockedReason}</p>
+        <p className="text-sm text-brand-orange font-semibold mt-3">⚠️ {blockedReason}</p>
       )}
     </div>
   )

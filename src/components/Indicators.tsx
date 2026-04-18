@@ -2,16 +2,10 @@ import { useGameStore } from '../stores/gameStore'
 import { useMemo } from 'react'
 import { ECONOMY_CONSTANTS } from '../constants/business'
 
-function getColorClass(value: number): string {
-  if (value >= 70) return 'text-green-400'
-  if (value >= 40) return 'text-yellow-400'
-  return 'text-red-400'
-}
-
-function getBarColor(value: number): string {
-  if (value >= 70) return 'bg-green-500'
-  if (value >= 40) return 'bg-yellow-500'
-  return 'bg-red-500'
+function getStatusColor(value: number): { bg: string; text: string; bar: string } {
+  if (value >= 70) return { bg: 'bg-green-50', text: 'text-green-600', bar: 'bg-green-500' }
+  if (value >= 40) return { bg: 'bg-yellow-50', text: 'text-yellow-600', bar: 'bg-yellow-500' }
+  return { bg: 'bg-red-50', text: 'text-red-600', bar: 'bg-red-500' }
 }
 
 export default function Indicators() {
@@ -35,33 +29,39 @@ export default function Indicators() {
     }
   }
 
+  const repColor = getStatusColor(reputation)
+  const loyaltyColor = getStatusColor(loyalty)
+  const stockColor = getStatusColor(stockLevel)
+
   const servedPct = lastDayResult && lastDayResult.clients > 0
     ? Math.round((lastDayResult.served / lastDayResult.clients) * 100)
     : null
 
   return (
     <div className="space-y-4">
-      <div className="bg-slate-700 rounded-lg p-4">
+      {/* Репутация */}
+      <div className={`${repColor.bg} rounded-md p-4 border border-gray-200`}>
         <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-300">⭐ Репутация</span>
-          <span className={`font-semibold ${getColorClass(reputation)}`}>{reputation}/100</span>
+          <span className="text-xs text-gray-600">⭐ Репутация</span>
+          <span className={`font-bold text-sm ${repColor.text}`}>{reputation}/100</span>
         </div>
-        <div className="w-full bg-slate-600 rounded-full h-2">
+        <div className="w-full bg-gray-200 rounded-full h-2">
           <div
-            className={`h-2 rounded-full transition-all ${getBarColor(reputation)}`}
+            className={`h-2 rounded-full transition-all ${repColor.bar}`}
             style={{ width: `${reputation}%` }}
           />
         </div>
       </div>
 
-      <div className="bg-slate-700 rounded-lg p-4">
+      {/* Лояльность */}
+      <div className={`${loyaltyColor.bg} rounded-md p-4 border border-gray-200`}>
         <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-300">❤️ Лояльность</span>
-          <span className={`font-semibold ${getColorClass(loyalty)}`}>{loyalty}/100</span>
+          <span className="text-xs text-gray-600">❤️ Лояльность</span>
+          <span className={`font-bold text-sm ${loyaltyColor.text}`}>{loyalty}/100</span>
         </div>
-        <div className="w-full bg-slate-600 rounded-full h-2">
+        <div className="w-full bg-gray-200 rounded-full h-2">
           <div
-            className={`h-2 rounded-full transition-all ${getBarColor(loyalty)}`}
+            className={`h-2 rounded-full transition-all ${loyaltyColor.bar}`}
             style={{ width: `${loyalty}%` }}
           />
         </div>
@@ -69,43 +69,43 @@ export default function Indicators() {
           <button
             onClick={handlePremium}
             disabled={balance < premiumCost}
-            className={`mt-3 w-full text-xs py-1.5 rounded transition font-medium ${
+            className={`mt-3 w-full text-xs py-2 rounded-md transition font-semibold ${
               balance >= premiumCost
-                ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                : 'bg-slate-600 text-gray-500 cursor-not-allowed'
+                ? 'bg-brand-orange text-white hover:opacity-90'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
-            💰 Премия персоналу ({premiumCost.toLocaleString('ru-RU')} ₽) → +{ECONOMY_CONSTANTS.LOYALTY_BONUS_PREMIUM} лояльности
+            💰 Премия персоналу ({premiumCost.toLocaleString('ru-RU')} ₽)
           </button>
         )}
       </div>
 
-      <div className="bg-slate-700 rounded-lg p-4">
+      {/* Склад */}
+      <div className={`${stockColor.bg} rounded-md p-4 border border-gray-200`}>
         <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-300">📦 Склад</span>
-          <span className={`font-semibold ${getColorClass(stockLevel)}`}>{stockLevel}%</span>
+          <span className="text-xs text-gray-600">📦 Склад</span>
+          <span className={`font-bold text-sm ${stockColor.text}`}>{stockLevel}%</span>
         </div>
-        <div className="w-full bg-slate-600 rounded-full h-2">
+        <div className="w-full bg-gray-200 rounded-full h-2">
           <div
-            className={`h-2 rounded-full transition-all ${getBarColor(stockLevel)}`}
+            className={`h-2 rounded-full transition-all ${stockColor.bar}`}
             style={{ width: `${stockLevel}%` }}
           />
         </div>
       </div>
 
+      {/* Последние клиенты */}
       {lastDayResult && lastDayResult.clients > 0 && (
-        <div className="bg-slate-700 rounded-lg p-4">
+        <div className="bg-blue-50 rounded-md p-4 border border-gray-200">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-gray-300 text-sm">👥 Клиенты вчера</span>
+            <span className="text-xs text-gray-600">👥 Обслуженность</span>
             {lastDayResult.missed > 0 && (
-              <span className="text-xs text-red-400">
-                -{lastDayResult.missed} ушли
-              </span>
+              <span className="text-xs text-red-600 font-semibold">−{lastDayResult.missed} не обслужены</span>
             )}
           </div>
-          <div className="flex gap-1 h-4 rounded overflow-hidden">
+          <div className="flex gap-1 h-3 rounded overflow-hidden">
             <div
-              className="bg-green-500 rounded-l transition-all"
+              className="bg-brand-green rounded-l transition-all"
               style={{ width: `${servedPct}%` }}
               title={`Обслужено: ${lastDayResult.served}`}
             />
@@ -117,10 +117,9 @@ export default function Indicators() {
               />
             )}
           </div>
-          <div className="flex justify-between text-xs text-gray-400 mt-1">
-            <span>✅ {lastDayResult.served} обслужено</span>
-            <span>📊 {lastDayResult.clients} всего</span>
-            {lastDayResult.missed > 0 && <span className="text-red-400">❌ {lastDayResult.missed}</span>}
+          <div className="flex justify-between text-xs text-gray-600 mt-2">
+            <span>✅ {lastDayResult.served}</span>
+            <span>{lastDayResult.clients} всего</span>
           </div>
         </div>
       )}

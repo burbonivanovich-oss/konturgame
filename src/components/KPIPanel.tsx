@@ -14,46 +14,53 @@ export default function KPIPanel() {
     netProfit: lastResult?.netProfit || 0,
     monthlyExpenses: lastResult?.monthlyExpense || 0,
   }), [state.currentDay, state.balance, state.savedBalance, lastResult])
+
   return (
-    <div className="bg-slate-700 rounded-lg p-6 space-y-3">
-      <div className="flex justify-between">
-        <span className="text-gray-300">📅 День</span>
-        <span className="font-semibold text-lg">{kpi.day}</span>
+    <div className="bg-white rounded-lg p-6 space-y-4 border border-gray-200">
+      {/* Main KPI Row 1: День и Деньги */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="p-3 bg-gray-50 rounded-md">
+          <p className="text-xs text-gray-600 mb-1">День</p>
+          <p className="text-2xl font-bold text-brand-blue">{kpi.day}</p>
+        </div>
+        <div className={`p-3 bg-gray-50 rounded-md ${kpi.balance < 10000 ? 'border border-red-500' : ''}`}>
+          <p className="text-xs text-gray-600 mb-1">Баланс</p>
+          <p className={`text-2xl font-bold ${kpi.balance < 10000 ? 'text-red-500' : 'text-brand-green'}`}>
+            {(kpi.balance / 1000).toFixed(0)}K₽
+          </p>
+        </div>
       </div>
 
-      <div className={`flex justify-between ${kpi.balance < 10000 ? 'text-red-400' : ''}`}>
-        <span className="text-gray-300">💰 Деньги</span>
-        <span className="font-semibold text-lg">{kpi.balance.toLocaleString('ru-RU')} ₽</span>
+      {/* Спасённые рубли */}
+      <div className="p-3 bg-blue-50 rounded-md border border-blue-200">
+        <p className="text-xs text-gray-600 mb-1">Контур сэкономил</p>
+        <p className="text-xl font-bold text-brand-blue">{kpi.savedMoney.toLocaleString('ru-RU')} ₽</p>
       </div>
 
-      <div className="flex justify-between text-green-300">
-        <span className="text-gray-300">💸 Спасённые рубли</span>
-        <span className="font-semibold text-lg">{kpi.savedMoney.toLocaleString('ru-RU')} ₽</span>
+      <div className="border-t border-gray-200 pt-4" />
+
+      {/* Daily economics */}
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <div>
+          <p className="text-xs text-gray-600 mb-1">Доход</p>
+          <p className="text-lg font-bold text-brand-green">+{(kpi.dailyRevenue / 1000).toFixed(0)}K</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-600 mb-1">Расход</p>
+          <p className="text-lg font-bold text-orange-500">−{(kpi.dailyExpenses / 1000).toFixed(0)}K</p>
+        </div>
+        <div className="bg-brand-blue/10 rounded-md p-2">
+          <p className="text-xs text-gray-600 mb-1">Итого</p>
+          <p className={`text-lg font-bold ${kpi.netProfit >= 0 ? 'text-brand-green' : 'text-red-500'}`}>
+            {kpi.netProfit >= 0 ? '+' : '−'}{Math.abs(kpi.netProfit / 1000).toFixed(0)}K
+          </p>
+        </div>
       </div>
 
-      <hr className="border-slate-600" />
-
-      <div className="flex justify-between">
-        <span className="text-gray-300">📈 Доход/день</span>
-        <span className="font-semibold text-green-400">{kpi.dailyRevenue.toLocaleString('ru-RU')} ₽</span>
-      </div>
-
-      <div className="flex justify-between">
-        <span className="text-gray-300">📉 Расход/день</span>
-        <span className="font-semibold text-red-400">{kpi.dailyExpenses.toLocaleString('ru-RU')} ₽</span>
-      </div>
-
-      <div className="flex justify-between bg-slate-600 p-2 rounded">
-        <span className="text-gray-300">📊 Чистая прибыль/день</span>
-        <span className={`font-semibold text-lg ${kpi.netProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-          {kpi.netProfit.toLocaleString('ru-RU')} ₽
-        </span>
-      </div>
-
-      <div className="flex justify-between text-sm text-gray-400">
-        <span>Расходы/мес</span>
-        <span>{kpi.monthlyExpenses.toLocaleString('ru-RU')} ₽</span>
-      </div>
+      {/* Monthly expenses hint */}
+      <p className="text-xs text-gray-500 text-center pt-2">
+        Расходы/мес: {kpi.monthlyExpenses.toLocaleString('ru-RU')} ₽
+      </p>
     </div>
   )
 }

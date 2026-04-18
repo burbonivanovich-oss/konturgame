@@ -45,27 +45,27 @@ export default function EventModal({ isOpen, event, onOptionSelect, queueLength 
     if (option.isContourOption && option.requiredService) {
       return SERVICE_ICONS[option.requiredService as ServiceType] ?? '✓'
     }
-    return '✓'
+    return '→'
   }
 
   return (
     <Modal
       isOpen={isOpen}
-      title={`📰 День ${event.day}: ${event.title}`}
+      title={`📰 ${event.title}`}
       onClose={() => {}}
-      size="md"
+      size="lg"
       closeButton={false}
     >
       <div className="space-y-4">
         {queueLength > 0 && (
-          <div className="bg-red-900/50 border border-red-500 rounded px-3 py-1.5 text-xs text-red-300 font-medium">
+          <div className="bg-orange-50 border border-orange-300 rounded-md px-4 py-3 text-sm text-orange-700 font-semibold">
             ⚠️ Кризисный день — ещё {queueLength} {queueLength === 1 ? 'событие' : 'события'} после этого
           </div>
         )}
 
-        <p className="text-gray-300 text-sm">{event.description}</p>
+        <p className="text-gray-700 text-base leading-relaxed">{event.description}</p>
 
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 gap-3 pt-4">
           {event.options.map((option) => {
             const available = isOptionAvailable(option)
             const isContour = option.isContourOption
@@ -75,46 +75,46 @@ export default function EventModal({ isOpen, event, onOptionSelect, queueLength 
                 key={option.id}
                 onClick={() => available && onOptionSelect(option.id)}
                 disabled={!available}
-                className={`w-full text-left p-3 rounded border transition ${
+                className={`w-full text-left p-4 rounded-md border-2 transition ${
                   !available
-                    ? 'border-slate-700 bg-slate-900 opacity-50 cursor-not-allowed'
+                    ? 'border-gray-300 bg-gray-100 opacity-50 cursor-not-allowed'
                     : isContour
-                    ? 'border-blue-500 bg-blue-900/40 hover:bg-blue-900/70 hover:border-blue-400'
-                    : 'border-slate-600 bg-slate-800 hover:bg-slate-700 hover:border-green-500'
+                    ? 'border-brand-green bg-green-50 hover:bg-green-100 hover:border-brand-green'
+                    : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  <span className="text-xl mt-0.5">{getOptionIcon(option)}</span>
+                  <span className="text-2xl mt-0.5">{getOptionIcon(option)}</span>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-sm">{option.text}</p>
+                      <p className={`font-semibold text-sm ${isContour ? 'text-brand-green' : 'text-gray-800'}`}>
+                        {option.text}
+                      </p>
                       {isContour && (
-                        <span className="text-xs px-1.5 py-0.5 rounded bg-blue-700 text-blue-200 font-medium">
-                          Контур
+                        <span className="text-xs px-2 py-1 rounded-full bg-brand-green text-white font-bold">
+                          Контур ✓
                         </span>
                       )}
                       {!available && option.requiredService && (
-                        <span className="text-xs text-gray-500">
-                          🔒 Нет {SERVICE_NAMES[option.requiredService as ServiceType]}
+                        <span className="text-xs text-red-600 font-semibold">
+                          🔒 {SERVICE_NAMES[option.requiredService as ServiceType]}
                         </span>
                       )}
                     </div>
-                    {option.consequences.balanceDelta !== undefined && (
-                      <p className={`text-xs mt-1 ${
-                        option.consequences.balanceDelta >= 0 ? 'text-green-400' : 'text-red-400'
-                      }`}>
-                        {option.consequences.balanceDelta >= 0 ? '+' : ''}
-                        {option.consequences.balanceDelta.toLocaleString('ru-RU')} ₽
-                      </p>
-                    )}
-                    {option.consequences.reputationDelta !== undefined && (
-                      <p className={`text-xs ${
-                        option.consequences.reputationDelta >= 0 ? 'text-green-400' : 'text-red-400'
-                      }`}>
-                        Репутация: {option.consequences.reputationDelta >= 0 ? '+' : ''}
-                        {option.consequences.reputationDelta}
-                      </p>
-                    )}
+                    <div className="flex gap-4 mt-2 text-xs font-semibold">
+                      {option.consequences.balanceDelta !== undefined && (
+                        <p className={option.consequences.balanceDelta >= 0 ? 'text-brand-green' : 'text-red-600'}>
+                          {option.consequences.balanceDelta >= 0 ? '+' : ''}
+                          {option.consequences.balanceDelta.toLocaleString('ru-RU')} ₽
+                        </p>
+                      )}
+                      {option.consequences.reputationDelta !== undefined && (
+                        <p className={option.consequences.reputationDelta >= 0 ? 'text-brand-green' : 'text-red-600'}>
+                          Репутация: {option.consequences.reputationDelta >= 0 ? '+' : ''}
+                          {option.consequences.reputationDelta}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </button>

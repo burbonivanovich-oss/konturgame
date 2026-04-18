@@ -61,22 +61,22 @@ export default function UpgradesModal({ isOpen, onClose }: UpgradesModalProps) {
             return (
               <div
                 key={upgrade.id}
-                className={`p-3 rounded border transition cursor-pointer ${
+                className={`p-4 rounded-md border-2 transition cursor-pointer ${
                   isPurchased
-                    ? 'border-green-500 bg-green-900 bg-opacity-30'
-                    : 'border-slate-600 bg-slate-800 hover:border-slate-400'
+                    ? 'border-brand-green bg-green-50'
+                    : 'border-gray-200 bg-gray-50 hover:border-gray-300'
                 }`}
                 onClick={() => !isPurchased && setSelectedUpgrade(upgrade.id)}
               >
                 <div className="flex justify-between items-start mb-2">
-                  <span className="font-semibold text-sm">{upgrade.name}</span>
-                  {isPurchased && <span className="text-green-400 text-sm">✓</span>}
+                  <span className="font-semibold text-gray-800">{upgrade.name}</span>
+                  {isPurchased && <span className="text-brand-green text-xl">✓</span>}
                 </div>
-                <p className="text-xs text-gray-400 mb-2">{upgrade.description}</p>
-                <p className="text-xs text-green-400 mb-2">{upgrade.effect}</p>
+                <p className="text-sm text-gray-600 mb-2">{upgrade.description}</p>
+                <p className="text-sm font-semibold text-brand-orange mb-2">{upgrade.effect}</p>
                 {!isPurchased && (
-                  <p className={`text-xs font-semibold ${
-                    canAfford ? 'text-yellow-400' : 'text-red-400'
+                  <p className={`text-sm font-bold ${
+                    canAfford ? 'text-gray-700' : 'text-red-600'
                   }`}>
                     {upgrade.cost.toLocaleString('ru-RU')} ₽
                   </p>
@@ -89,7 +89,7 @@ export default function UpgradesModal({ isOpen, onClose }: UpgradesModalProps) {
         <div className="flex gap-3 pt-4">
           <button
             onClick={onClose}
-            className="flex-1 bg-gray-600 hover:bg-gray-700 py-2 rounded transition"
+            className="flex-1 bg-gray-200 hover:bg-gray-300 py-2 rounded-md transition font-semibold text-gray-700"
           >
             Закрыть
           </button>
@@ -100,7 +100,7 @@ export default function UpgradesModal({ isOpen, onClose }: UpgradesModalProps) {
                 if (upgrade) handlePurchase(upgrade)
               }}
               disabled={!balance || balance < (UPGRADES.find(u => u.id === selectedUpgrade)?.cost || 0)}
-              className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 py-2 rounded transition font-semibold"
+              className="flex-1 bg-brand-orange hover:opacity-90 disabled:bg-gray-300 py-2 rounded-md transition font-semibold text-white disabled:text-gray-500"
             >
               Купить
             </button>

@@ -23,50 +23,52 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
       closeButton={false}
       size="md"
     >
-      <div className="space-y-4 text-center">
-        <div className="text-4xl">
+      <div className="space-y-6 text-center">
+        <div className="text-6xl">
           {isVictory ? '🏆' : '❌'}
         </div>
 
         <div>
-          <h2 className={`text-2xl font-bold mb-4 ${
-            isVictory ? 'text-green-400' : 'text-red-400'
+          <h2 className={`text-3xl font-bold mb-4 ${
+            isVictory ? 'text-brand-green' : 'text-red-600'
           }`}>
             {isVictory ? 'Вы выиграли!' : 'Игра окончена'}
           </h2>
 
-          <div className={`space-y-2 text-sm mb-6 p-4 rounded ${
-            isVictory ? 'bg-green-900 bg-opacity-20' : 'bg-red-900 bg-opacity-20'
+          <div className={`space-y-3 text-sm mb-6 p-5 rounded-lg border ${
+            isVictory ? 'bg-green-50 border-brand-green' : 'bg-red-50 border-red-300'
           }`}>
-            <p>
-              <span className="text-gray-400">День:</span>
-              <span className="float-right font-semibold">{currentDay}</span>
-            </p>
-            <p>
-              <span className="text-gray-400">Баланс:</span>
-              <span className="float-right font-semibold">{balance.toLocaleString('ru-RU')} ₽</span>
-            </p>
-            <p>
-              <span className="text-gray-400">Репутация:</span>
-              <span className="float-right font-semibold">{reputation}/100</span>
-            </p>
+            <div className="flex justify-between">
+              <span className="text-gray-600">День:</span>
+              <span className="font-bold text-gray-800">{currentDay}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Баланс:</span>
+              <span className="font-bold text-gray-800">{balance.toLocaleString('ru-RU')} ₽</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Репутация:</span>
+              <span className="font-bold text-gray-800">{reputation}/100</span>
+            </div>
           </div>
 
-          <p className="text-gray-400 text-sm mb-6">
+          <p className="text-gray-600 text-base mb-6 leading-relaxed">
             {isVictory
-              ? 'Вы успешно управляли бизнесом и достигли целей!'
-              : 'Ваш бизнес не смог пережить трудные времена.'}
+              ? 'Вы успешно управляли бизнесом и освоили экосистему Контура!'
+              : 'Ваш бизнес не смог пережить трудные времена. Попробуйте еще раз!'}
           </p>
         </div>
 
-        <div className="flex gap-3">
-          <button
-            onClick={handleNewGame}
-            className="flex-1 bg-green-600 hover:bg-green-700 py-2 rounded transition font-semibold"
-          >
-            {isVictory ? '▶️ Новая игра' : '🔄 Попробовать снова'}
-          </button>
-        </div>
+        <button
+          onClick={handleNewGame}
+          className={`w-full py-3 rounded-lg transition font-bold text-white ${
+            isVictory
+              ? 'bg-brand-green hover:opacity-90'
+              : 'bg-brand-orange hover:opacity-90'
+          }`}
+        >
+          {isVictory ? '▶️ Новая игра' : '🔄 Попробовать снова'}
+        </button>
       </div>
     </Modal>
   )
