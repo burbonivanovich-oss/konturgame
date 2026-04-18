@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+
 interface ModalProps {
   isOpen: boolean
   title: string
@@ -7,10 +9,10 @@ interface ModalProps {
   closeButton?: boolean
 }
 
-const sizeClasses = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-2xl',
+const sizeMap = {
+  sm: { width: '400px', maxWidth: '90vw' },
+  md: { width: '600px', maxWidth: '90vw' },
+  lg: { width: '900px', maxWidth: '90vw' },
 }
 
 export default function Modal({
@@ -21,29 +23,71 @@ export default function Modal({
   size = 'md',
   closeButton = true,
 }: ModalProps) {
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape)
+      return () => document.removeEventListener('keydown', handleEscape)
+    }
+  }, [isOpen, onClose])
+
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Затемнение фона */}
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 50,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 16, fontFamily: 'Manrope, sans-serif',
+    }}>
+      {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black bg-opacity-40"
+        style={{
+          position: 'absolute', inset: 0,
+          background: 'rgba(14,17,22,0.72)',
+          backdropFilter: 'blur(4px)',
+        }}
         onClick={onClose}
       />
 
-      {/* Модальное окно */}
-      <div className={`relative bg-white rounded-lg p-6 shadow-xl ${sizeClasses[size]} max-h-[80vh] overflow-y-auto`}>
-        <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+      {/* Modal content */}
+      <div style={{
+        position: 'relative', zIndex: 10,
+        background: 'var(--k-white)', color: 'var(--k-ink)',
+        borderRadius: 20, padding: 24,
+        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+        ...sizeMap[size],
+        maxHeight: '90vh', overflowY: 'auto',
+      }}>
+        {/* Header */}
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid var(--k-ink-10)',
+        }}>
+          <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+            {title}
+          </h2>
           {closeButton && (
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition text-2xl leading-none hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center"
+              style={{
+                width: 32, height: 32, borderRadius: 8,
+                background: 'var(--k-ink-10)', border: 'none',
+                cursor: 'pointer', fontSize: 18, color: 'var(--k-ink-50)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'background 0.2s',
+                padding: 0,
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--k-ink-20)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--k-ink-10)')}
             >
               ✕
             </button>
           )}
         </div>
+
+        {/* Content */}
         {children}
       </div>
     </div>
