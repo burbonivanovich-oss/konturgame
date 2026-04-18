@@ -389,7 +389,7 @@ function DashboardView({
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
               {SERVICE_MAP.map(svc => {
-                const isActive = activeServiceIds.includes(svc.id)
+                const isActive = activeServiceIds.some(id => id === svc.id)
                 return (
                   <div key={svc.id} style={{
                     background: isActive ? 'var(--k-surface-2)' : 'var(--k-surface)',
