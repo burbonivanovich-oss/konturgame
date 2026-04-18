@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import ResponsiveLayout from './ResponsiveLayout'
 import MobileMainScreen from './MobileMainScreen'
 import PurchaseModal from './modals/PurchaseModal'
-import EventModal from './modals/EventModal'
 import CampaignModal from './modals/CampaignModal'
 import UpgradesModal from './modals/UpgradesModal'
 import HelpModal from './modals/HelpModal'
@@ -51,7 +50,6 @@ const NAV_ITEMS = [
 
 function DesktopMainScreen() {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
-  const [showEventModal, setShowEventModal] = useState(false)
   const [showCampaignModal, setShowCampaignModal] = useState(false)
   const [showUpgradesModal, setShowUpgradesModal] = useState(false)
   const [showHelpModal, setShowHelpModal] = useState(false)
@@ -67,13 +65,9 @@ function DesktopMainScreen() {
     currentDay, balance, reputation, loyalty, services,
     pendingEvent, pendingEventsQueue, isGameOver, isVictory,
     lastDayResult, savedBalance,
-    addBalance, addReputation, markEventAsResolved, activateService, addSavedBalance,
-    advanceDay,
+    addBalance, addReputation, addLoyalty, markEventAsResolved, activateService,
+    addSavedBalance, setTemporaryModifiers, advanceDay,
   } = state
-
-  useEffect(() => {
-    if (pendingEvent) setShowEventModal(true)
-  }, [pendingEvent])
 
   const handleEventOption = (optionId: string) => {
     if (!pendingEvent) return
@@ -82,6 +76,15 @@ function DesktopMainScreen() {
     const c = option.consequences
     if (c.balanceDelta !== undefined) addBalance(c.balanceDelta)
     if (c.reputationDelta !== undefined) addReputation(c.reputationDelta)
+    if (c.loyaltyDelta !== undefined) addLoyalty(c.loyaltyDelta)
+    if (c.clientModifier !== undefined || c.checkModifier !== undefined) {
+      const cur = useGameStore.getState()
+      setTemporaryModifiers(
+        (cur.temporaryClientMod ?? 0) + (c.clientModifier ?? 0),
+        (cur.temporaryCheckMod ?? 0) + (c.checkModifier ?? 0),
+        Math.max(cur.temporaryModDaysLeft ?? 0, c.clientModifierDays ?? c.checkModifierDays ?? 1),
+      )
+    }
     if (c.serviceId) activateService(c.serviceId)
     if (option.isContourOption && c.balanceDelta !== undefined) {
       const nonKontour = pendingEvent.options.filter((o) => !o.isContourOption)
@@ -100,7 +103,6 @@ function DesktopMainScreen() {
       }
     }
     markEventAsResolved(pendingEvent.id)
-    setShowEventModal(false)
   }
 
   const handleNextDay = () => {
@@ -330,7 +332,7 @@ function DesktopMainScreen() {
                         cursor: 'pointer',
                         transition: 'transform 0.12s ease',
                       }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{opt.name}</div>
+                      <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{opt.text}</div>
                       <div style={{
                         fontSize: 18, fontWeight: 800,
                         color: opt.isContourOption ? 'var(--k-green)' : 'var(--k-ink)',
@@ -497,12 +499,6 @@ function DesktopMainScreen() {
 
       {/* Modals */}
       <PurchaseModal isOpen={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} />
-      <EventModal
-        isOpen={showEventModal}
-        event={pendingEvent}
-        onOptionSelect={handleEventOption}
-        queueLength={pendingEventsQueue?.length ?? 0}
-      />
       <CampaignModal isOpen={showCampaignModal} onClose={() => setShowCampaignModal(false)} />
       <UpgradesModal isOpen={showUpgradesModal} onClose={() => setShowUpgradesModal(false)} />
       <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
