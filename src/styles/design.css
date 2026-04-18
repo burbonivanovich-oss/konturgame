@@ -282,3 +282,186 @@
 
 /* sparkline */
 .k-spark { width: 100%; height: 32px; display: block; }
+
+/* ============ RESPONSIVE DESIGN ============ */
+
+/* KPI Cards — Responsive columns */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr 1fr;
+  gap: 10px;
+  height: 146px;
+}
+
+@media (max-width: 1279px) {
+  .kpi-grid {
+    grid-template-columns: 1.2fr 1fr 1fr;
+    height: 140px;
+  }
+}
+
+@media (max-width: 767px) {
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr;
+    height: 120px;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 479px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+    height: 100px;
+    gap: 8px;
+  }
+}
+
+/* KPI Numbers — Font size adaptation */
+.k-kpi-number {
+  font-size: 42px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 767px) {
+  .k-kpi-number {
+    font-size: 32px;
+  }
+}
+
+@media (max-width: 479px) {
+  .k-kpi-number {
+    font-size: 24px;
+  }
+}
+
+/* Event Modal — Responsive width */
+.event-modal {
+  width: 900px;
+}
+
+@media (max-width: 767px) {
+  .event-modal {
+    width: 90vw;
+    max-width: 600px;
+    padding: 24px;
+  }
+}
+
+@media (max-width: 479px) {
+  .event-modal {
+    width: 95vw;
+    max-width: 100%;
+    padding: 20px 16px;
+    border-radius: 20px;
+  }
+}
+
+/* Services Grid — Column adaptation */
+.services-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 767px) {
+  .services-grid {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 599px) {
+  .services-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+/* Left Rail Navigation */
+.left-rail {
+  width: 240px;
+  padding: 24px 20px;
+}
+
+@media (max-width: 767px) {
+  .left-rail {
+    width: 180px;
+    padding: 16px;
+  }
+}
+
+@media (max-width: 599px) {
+  .left-rail {
+    position: fixed;
+    left: -240px;
+    height: 100vh;
+    transition: left 0.3s ease;
+    z-index: 100;
+    top: 0;
+    overflow-y: auto;
+  }
+
+  .left-rail.open {
+    left: 0;
+  }
+}
+
+/* Responsive Padding and Gap */
+.content-main {
+  padding: 40px;
+  gap: 20px;
+}
+
+@media (max-width: 767px) {
+  .content-main {
+    padding: 24px;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 479px) {
+  .content-main {
+    padding: 16px;
+    gap: 12px;
+  }
+}
+
+/* Button responsive sizing */
+.k-btn {
+  font-size: 17px;
+  padding: 20px 24px;
+}
+
+@media (max-width: 767px) {
+  .k-btn {
+    font-size: 15px;
+    padding: 16px 20px;
+  }
+}
+
+@media (max-width: 479px) {
+  .k-btn {
+    font-size: 14px;
+    padding: 14px 18px;
+  }
+}
+
+/* Landscape mode adjustments */
+@media (max-height: 500px) {
+  .k-tabbar {
+    height: 44px;
+  }
+}
+
+/* Portrait orientation */
+@media (orientation: portrait) {
+  /* Standard styles applied */
+}
+
+/* Landscape orientation */
+@media (orientation: landscape) {
+  body {
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+}

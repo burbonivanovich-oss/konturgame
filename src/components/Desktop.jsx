@@ -11,6 +11,8 @@ function DesktopApp() {
       display: 'flex',
       overflow: 'hidden',
       letterSpacing: '-0.01em',
+      WebkitFontSmoothing: 'antialiased',
+      MozOsxFontSmoothing: 'grayscale',
     }}>
       {/* LEFT RAIL — navigation */}
       <aside style={{
@@ -18,6 +20,7 @@ function DesktopApp() {
         padding: '24px 20px', display: 'flex', flexDirection: 'column',
         flexShrink: 0,
       }}>
+        {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
           <div style={{
             width: 32, height: 32, borderRadius: 8,
@@ -29,6 +32,7 @@ function DesktopApp() {
           </div>
         </div>
 
+        {/* Day info box */}
         <div style={{
           padding: 12, borderRadius: 12,
           background: 'rgba(255,255,255,0.06)',
@@ -47,6 +51,7 @@ function DesktopApp() {
           </div>
         </div>
 
+        {/* Navigation items */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {[
             { n: 'Дневной цикл',  g: '◎', on: true,  badge: '1' },
