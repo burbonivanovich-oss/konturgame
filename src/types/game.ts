@@ -2,6 +2,56 @@ export type BusinessType = 'shop' | 'cafe' | 'beauty-salon'
 
 export type ServiceType = 'market' | 'bank' | 'ofd' | 'diadoc' | 'fokus' | 'elba' | 'extern'
 
+export type OnboardingStage = 0 | 1 | 2 | 3 | 4
+
+export type CashRegisterType = 'mobile' | 'reliable' | 'fast'
+
+export interface CashRegister {
+  type: CashRegisterType
+  count: number
+  purchaseDay: number
+}
+
+export interface ProductCategory {
+  id: string
+  name: string
+  description: string
+  margin: number
+  dailyCost: number
+  baseRevenue: number
+  requiredServices: ServiceType[]
+  requiresEgais?: boolean
+  requiresVetCert?: boolean
+  icon: string
+}
+
+export interface PainLossRecord {
+  bank: number
+  market: number
+  ofd: number
+  diadoc: number
+  fokus: number
+  elba: number
+  extern: number
+  total: number
+}
+
+export interface OnboardingStep {
+  id: string
+  title: string
+  text: string
+  highlightTarget?: string
+  requiresAction?: string
+}
+
+export interface OnboardingStageConfig {
+  stage: OnboardingStage
+  dayRange: [number, number]
+  steps: OnboardingStep[]
+  unlocksServices: ServiceType[]
+  requiredAction?: string
+}
+
 export interface Service {
   id: ServiceType
   name: string
@@ -53,6 +103,18 @@ export interface DayResult {
   reputationChange: number
   loyaltyChange: number
   stockAfter: number
+  // Pain losses from missing services
+  painLossBankMissed: number
+  painLossMarketInventory: number
+  painLossOfdFine: number
+  painLossDiadocDelay: number
+  painLossFokusBadSupplier: number
+  painLossElbaFine: number
+  painLossExternBlock: number
+  // Cash register
+  registerOverflowPenalty: number
+  // Category breakdown
+  categoryFines: Record<string, number>
 }
 
 export interface EventOption {
@@ -169,6 +231,7 @@ export interface BusinessConfig {
   mainService: ServiceType
   monthlyRent: number
   monthlyBaseSalary: number
+  usesAssortment: boolean
 }
 
 export interface GameState {
@@ -220,4 +283,34 @@ export interface GameState {
   // Achievement tracking helpers
   hadLowReputation?: boolean
   consecutiveNoExpiry?: number
+
+  // Onboarding
+  onboardingStage: OnboardingStage
+  onboardingCompleted: boolean
+  onboardingStepIndex: number
+
+  // Service visibility (unlocked by onboarding)
+  unlockedServices: ServiceType[]
+
+  // Cash registers
+  cashRegisters: CashRegister[]
+
+  // Assortment categories
+  enabledCategories: string[]
+
+  // Promo codes
+  promoCodesRevealed: ServiceType[]
+  pendingPromoCode: ServiceType | null
+
+  // Balance game-over tracking
+  daysBalanceNegative: number
+
+  // Competitor event flag
+  competitorEventTriggered: boolean
+
+  // Pain losses from last day
+  lastDayPainLosses: PainLossRecord | null
+
+  // Bundle promo shown
+  bundlePromoShown: boolean
 }

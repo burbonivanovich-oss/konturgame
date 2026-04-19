@@ -1,6 +1,12 @@
 import { create } from 'zustand'
-import type { GameState, BusinessType, ServiceType, Service, DayResult, Event, AdCampaign, StockBatch } from '../types/game'
+import type {
+  GameState, BusinessType, ServiceType, Service, DayResult, Event,
+  AdCampaign, StockBatch, CashRegisterType, CashRegister, OnboardingStage,
+} from '../types/game'
 import { SERVICES_CONFIG, BUSINESS_CONFIGS, ECONOMY_CONSTANTS } from '../constants/business'
+import { SERVICE_UNLOCK_MAP } from '../constants/onboarding'
+import { CASH_REGISTER_CONFIGS, REGISTER_COMBO_DISCOUNTS } from '../constants/cashRegisters'
+import { getDefaultCategories } from '../services/assortmentEngine'
 import { checkDayBlocked, processDay } from '../services/dayCalculator'
 
 const STORAGE_KEY = 'konturgame_state'
@@ -65,6 +71,36 @@ const createInitialState = (businessType: BusinessType): GameState => {
 
     createdAt: Date.now(),
     lastUpdated: Date.now(),
+
+    // Onboarding
+    onboardingStage: 0,
+    onboardingCompleted: false,
+    onboardingStepIndex: 0,
+
+    // Service unlocking
+    unlockedServices: SERVICE_UNLOCK_MAP[0],
+
+    // Cash registers
+    cashRegisters: [],
+
+    // Assortment
+    enabledCategories: getDefaultCategories(businessType),
+
+    // Promo codes
+    promoCodesRevealed: [],
+    pendingPromoCode: null,
+
+    // Balance game-over tracking
+    daysBalanceNegative: 0,
+
+    // Competitor
+    competitorEventTriggered: false,
+
+    // Pain losses
+    lastDayPainLosses: null,
+
+    // Bundle promo
+    bundlePromoShown: false,
   }
 }
 
@@ -152,6 +188,22 @@ interface GameStoreActions {
   saveSnapshot: () => void
   rollback: () => void
   clearRollback: () => void
+
+  // Onboarding
+  advanceOnboardingStage: () => void
+  nextOnboardingStep: () => void
+  completeOnboarding: () => void
+
+  // Cash registers
+  buyCashRegister: (type: CashRegisterType) => boolean
+
+  // Assortment
+  toggleCategory: (categoryId: string) => void
+
+  // Promo codes
+  revealPromoCode: (serviceId: ServiceType) => void
+  clearPendingPromoCode: () => void
+  markBundlePromoShown: () => void
 }
 
 interface GameStore extends GameState, GameStoreActions {}
@@ -239,12 +291,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // Services
     toggleService: (serviceId) => {
-      set((state) => ({
+      const state = get()
+      const isCurrentlyActive = state.services[serviceId]?.isActive ?? false
+      // Activate with promo code reveal
+      if (!isCurrentlyActive) {
+        get().revealPromoCode(serviceId)
+      }
+      set((s) => ({
         services: {
-          ...state.services,
+          ...s.services,
           [serviceId]: {
-            ...state.services[serviceId],
-            isActive: !state.services[serviceId]?.isActive,
+            ...s.services[serviceId],
+            isActive: !s.services[serviceId]?.isActive,
           },
         },
         lastUpdated: Date.now(),
@@ -252,11 +310,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     },
 
     activateService: (serviceId) => {
-      set((state) => ({
+      const state = get()
+      if (!state.services[serviceId]?.isActive) {
+        get().revealPromoCode(serviceId)
+      }
+      set((s) => ({
         services: {
-          ...state.services,
+          ...s.services,
           [serviceId]: {
-            ...state.services[serviceId],
+            ...s.services[serviceId],
             isActive: true,
           },
         },
@@ -471,8 +533,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // State management
     loadGame: (state: GameState) => {
-      set(state)
-      saveToStorage(state)
+      const migrated: GameState = {
+        ...createInitialState(state.businessType),
+        ...state,
+        // Migration defaults for new fields
+        unlockedServices: state.unlockedServices ?? SERVICE_UNLOCK_MAP[0],
+        cashRegisters: state.cashRegisters ?? [],
+        enabledCategories: state.enabledCategories ?? getDefaultCategories(state.businessType),
+        promoCodesRevealed: state.promoCodesRevealed ?? [],
+        pendingPromoCode: null, // Never persist pending promo
+        onboardingStage: state.onboardingStage ?? 0,
+        onboardingCompleted: state.onboardingCompleted ?? false,
+        onboardingStepIndex: state.onboardingStepIndex ?? 0,
+        daysBalanceNegative: state.daysBalanceNegative ?? 0,
+        competitorEventTriggered: state.competitorEventTriggered ?? false,
+        lastDayPainLosses: state.lastDayPainLosses ?? null,
+        bundlePromoShown: state.bundlePromoShown ?? false,
+      }
+      set(migrated)
+      saveToStorage(migrated)
     },
 
     // Helper methods (getters)
@@ -549,6 +628,103 @@ export const useGameStore = create<GameStore>((set, get) => ({
     clearRollback: () => {
       localStorage.removeItem(ROLLBACK_STORAGE_KEY)
     },
+
+    // Onboarding
+    advanceOnboardingStage: () => {
+      set((state) => {
+        const newStage = Math.min(4, state.onboardingStage + 1) as OnboardingStage
+        return {
+          onboardingStage: newStage,
+          onboardingStepIndex: 0,
+          unlockedServices: SERVICE_UNLOCK_MAP[newStage],
+          lastUpdated: Date.now(),
+        }
+      })
+    },
+
+    nextOnboardingStep: () => {
+      set((state) => ({
+        onboardingStepIndex: state.onboardingStepIndex + 1,
+        lastUpdated: Date.now(),
+      }))
+    },
+
+    completeOnboarding: () => {
+      set({
+        onboardingCompleted: true,
+        unlockedServices: SERVICE_UNLOCK_MAP[4],
+        lastUpdated: Date.now(),
+      })
+    },
+
+    // Cash registers
+    buyCashRegister: (type: CashRegisterType): boolean => {
+      const state = get()
+      const config = CASH_REGISTER_CONFIGS[type]
+      if (!config) return false
+
+      const totalExisting = state.cashRegisters.reduce((s, r) => s + r.count, 0)
+      let cost = config.cost
+      if (totalExisting >= 2) cost = Math.round(cost * (1 - (REGISTER_COMBO_DISCOUNTS[3] ?? 0)))
+      else if (totalExisting >= 1) cost = Math.round(cost * (1 - (REGISTER_COMBO_DISCOUNTS[2] ?? 0)))
+
+      if (state.balance < cost) return false
+
+      set((s) => {
+        const existing = s.cashRegisters.find((r) => r.type === type)
+        let newRegisters: CashRegister[]
+        if (existing) {
+          newRegisters = s.cashRegisters.map((r) =>
+            r.type === type ? { ...r, count: r.count + 1 } : r
+          )
+        } else {
+          newRegisters = [
+            ...s.cashRegisters,
+            { type, count: 1, purchaseDay: s.currentDay },
+          ]
+        }
+        return {
+          cashRegisters: newRegisters,
+          balance: s.balance - cost,
+          lastUpdated: Date.now(),
+        }
+      })
+      return true
+    },
+
+    // Assortment
+    toggleCategory: (categoryId: string) => {
+      set((state) => {
+        const enabled = state.enabledCategories ?? []
+        const newEnabled = enabled.includes(categoryId)
+          ? enabled.filter((id) => id !== categoryId)
+          : [...enabled, categoryId]
+        return { enabledCategories: newEnabled, lastUpdated: Date.now() }
+      })
+    },
+
+    // Promo codes
+    revealPromoCode: (serviceId: ServiceType) => {
+      set((state) => {
+        if (state.promoCodesRevealed.includes(serviceId)) {
+          return { lastUpdated: Date.now() }
+        }
+        const newRevealed = [...state.promoCodesRevealed, serviceId]
+        return {
+          promoCodesRevealed: newRevealed,
+          pendingPromoCode: serviceId,
+          lastUpdated: Date.now(),
+        }
+      })
+    },
+
+    clearPendingPromoCode: () => {
+      set({ pendingPromoCode: null, lastUpdated: Date.now() })
+    },
+
+    markBundlePromoShown: () => {
+      set({ bundlePromoShown: true, lastUpdated: Date.now() })
+    },
   }))
 
 // LocalStorage persistence
@@ -563,75 +739,43 @@ function saveToStorage(state: GameState) {
 
 function extractState(state: any): GameState {
   const {
-    businessType,
-    currentDay,
-    balance,
-    savedBalance,
-    reputation,
-    loyalty,
-    stock,
-    stockBatches,
-    capacity,
-    services,
-    achievements,
-    level,
-    experience,
-    lastDayResult,
-    pendingEvent,
-    pendingEventsQueue,
-    triggeredEventIds,
-    isGameOver,
-    isVictory,
-    gameOverReason,
-    consecutiveOverloadDays,
-    daysReputationZero,
-    daysSinceLastMonthly,
-    purchaseOfferedThisDay,
-    activeAdCampaigns,
-    purchasedUpgrades,
-    temporaryClientMod,
-    temporaryCheckMod,
-    temporaryModDaysLeft,
-    createdAt,
-    lastUpdated,
-    hadLowReputation,
-    consecutiveNoExpiry,
+    businessType, currentDay, balance, savedBalance, reputation, loyalty,
+    stock, stockBatches, capacity, services, achievements, level, experience,
+    lastDayResult, pendingEvent, pendingEventsQueue, triggeredEventIds,
+    isGameOver, isVictory, gameOverReason, consecutiveOverloadDays, daysReputationZero,
+    daysSinceLastMonthly, purchaseOfferedThisDay, activeAdCampaigns, purchasedUpgrades,
+    temporaryClientMod, temporaryCheckMod, temporaryModDaysLeft, createdAt, lastUpdated,
+    hadLowReputation, consecutiveNoExpiry,
+    // New fields
+    onboardingStage, onboardingCompleted, onboardingStepIndex, unlockedServices,
+    cashRegisters, enabledCategories, promoCodesRevealed,
+    daysBalanceNegative, competitorEventTriggered, lastDayPainLosses, bundlePromoShown,
   } = state
 
   return {
-    businessType,
-    currentDay,
-    balance,
-    savedBalance,
-    reputation,
-    loyalty,
-    stock,
-    stockBatches,
-    capacity,
-    services,
-    achievements,
-    level,
-    experience,
-    lastDayResult,
-    pendingEvent,
-    pendingEventsQueue: pendingEventsQueue ?? [],
-    triggeredEventIds,
-    isGameOver,
-    isVictory,
-    gameOverReason,
-    consecutiveOverloadDays,
-    daysReputationZero,
-    daysSinceLastMonthly,
-    purchaseOfferedThisDay,
-    activeAdCampaigns,
-    purchasedUpgrades,
-    temporaryClientMod,
-    temporaryCheckMod,
-    temporaryModDaysLeft,
-    createdAt,
-    lastUpdated,
+    businessType, currentDay, balance, savedBalance, reputation, loyalty,
+    stock, stockBatches, capacity, services, achievements, level, experience,
+    lastDayResult, pendingEvent, pendingEventsQueue: pendingEventsQueue ?? [],
+    triggeredEventIds, isGameOver, isVictory, gameOverReason,
+    consecutiveOverloadDays, daysReputationZero, daysSinceLastMonthly,
+    purchaseOfferedThisDay, activeAdCampaigns, purchasedUpgrades,
+    temporaryClientMod, temporaryCheckMod, temporaryModDaysLeft,
+    createdAt, lastUpdated,
     hadLowReputation: hadLowReputation ?? false,
     consecutiveNoExpiry: consecutiveNoExpiry ?? 0,
+    // New fields with migration defaults
+    onboardingStage: onboardingStage ?? 0,
+    onboardingCompleted: onboardingCompleted ?? false,
+    onboardingStepIndex: onboardingStepIndex ?? 0,
+    unlockedServices: unlockedServices ?? SERVICE_UNLOCK_MAP[0],
+    cashRegisters: cashRegisters ?? [],
+    enabledCategories: enabledCategories ?? [],
+    promoCodesRevealed: promoCodesRevealed ?? [],
+    pendingPromoCode: null, // Never persist pending promo
+    daysBalanceNegative: daysBalanceNegative ?? 0,
+    competitorEventTriggered: competitorEventTriggered ?? false,
+    lastDayPainLosses: lastDayPainLosses ?? null,
+    bundlePromoShown: bundlePromoShown ?? false,
   }
 }
 

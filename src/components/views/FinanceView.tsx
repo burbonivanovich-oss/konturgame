@@ -13,11 +13,22 @@ export function FinanceView() {
   ] : []
 
   const expenseItems = lastDayResult ? [
-    ...(lastDayResult.purchaseCost > 0 ? [{ label: 'Закупки товара', value: lastDayResult.purchaseCost }] : []),
+    ...(lastDayResult.purchaseCost > 0 ? [{ label: 'Закупки / ассортимент', value: lastDayResult.purchaseCost }] : []),
     { label: 'Налог УСН 6%', value: lastDayResult.tax },
     ...(lastDayResult.monthlyExpense > 0 ? [{ label: 'Аренда и зарплата', value: lastDayResult.monthlyExpense }] : []),
     ...(lastDayResult.subscriptionCost > 0 ? [{ label: 'Подписки Контур', value: lastDayResult.subscriptionCost }] : []),
     ...(lastDayResult.expiredLoss > 0 ? [{ label: 'Списание просрочки', value: lastDayResult.expiredLoss }] : []),
+    ...(lastDayResult.registerOverflowPenalty > 0 ? [{ label: 'Штраф за очередь (касса)', value: lastDayResult.registerOverflowPenalty }] : []),
+  ] : []
+
+  const painItems = lastDayResult ? [
+    ...(lastDayResult.painLossBankMissed > 0 ? [{ label: 'Без Банка: 40% клиентов платят наличными', value: lastDayResult.painLossBankMissed }] : []),
+    ...(lastDayResult.painLossMarketInventory > 0 ? [{ label: 'Без Маркета: ошибки ручного учёта', value: lastDayResult.painLossMarketInventory }] : []),
+    ...(lastDayResult.painLossOfdFine > 0 ? [{ label: 'Без ОФД: штраф налоговой', value: lastDayResult.painLossOfdFine }] : []),
+    ...(lastDayResult.painLossDiadocDelay > 0 ? [{ label: 'Без Диадока: задержка поставки', value: lastDayResult.painLossDiadocDelay }] : []),
+    ...(lastDayResult.painLossFokusBadSupplier > 0 ? [{ label: 'Без Фокуса: ненадёжный поставщик', value: lastDayResult.painLossFokusBadSupplier }] : []),
+    ...(lastDayResult.painLossElbaFine > 0 ? [{ label: 'Без Эльбы: штраф за ошибку в декларации', value: lastDayResult.painLossElbaFine }] : []),
+    ...(lastDayResult.painLossExternBlock > 0 ? [{ label: 'Без Экстерна: блокировка счёта', value: lastDayResult.painLossExternBlock }] : []),
   ] : []
 
   return (
@@ -119,6 +130,31 @@ export function FinanceView() {
                   </span>
                 </div>
               ))}
+
+              {/* Pain losses from missing services */}
+              {painItems.length > 0 && (
+                <>
+                  <div style={{
+                    fontSize: 10, fontWeight: 800, letterSpacing: '0.08em',
+                    color: '#c0392b', marginTop: 8, opacity: 0.8,
+                  }}>
+                    ⚠️ ПОТЕРИ БЕЗ СЕРВИСОВ КОНТУРА
+                  </div>
+                  {painItems.map((item, i) => (
+                    <div key={i} style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '6px 10px', borderRadius: 10,
+                      background: 'rgba(192,57,43,0.06)',
+                      borderLeft: '3px solid rgba(192,57,43,0.4)',
+                    }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, opacity: 0.8, flex: 1 }}>{item.label}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#c0392b', flexShrink: 0 }} className="k-num">
+                        −{item.value.toLocaleString('ru-RU')} ₽
+                      </span>
+                    </div>
+                  ))}
+                </>
+              )}
 
               {/* Net */}
               <div style={{

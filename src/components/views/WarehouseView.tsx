@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useGameStore } from '../../stores/gameStore'
 import PurchaseModal from '../modals/PurchaseModal'
+import AssortmentModal from '../modals/AssortmentModal'
 
 function ExpiryBar({ pct, daysLeft }: { pct: number; daysLeft: number }) {
   const color = daysLeft <= 1 ? 'var(--k-bad)' : daysLeft <= 3 ? 'var(--k-warn)' : 'var(--k-green)'
@@ -13,7 +14,8 @@ function ExpiryBar({ pct, daysLeft }: { pct: number; daysLeft: number }) {
 
 export function WarehouseView() {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
-  const { stockBatches, capacity, currentDay, businessType } = useGameStore()
+  const [showAssortmentModal, setShowAssortmentModal] = useState(false)
+  const { stockBatches, capacity, currentDay, businessType, enabledCategories } = useGameStore()
 
   const totalStock = stockBatches.reduce((s, b) => s + b.quantity, 0)
   const capacityPct = capacity > 0 ? Math.min((totalStock / capacity) * 100, 100) : 0
@@ -35,14 +37,14 @@ export function WarehouseView() {
         </div>
         {hasStock && (
           <button
-            onClick={() => setShowPurchaseModal(true)}
+            onClick={() => (enabledCategories && enabledCategories.length > 0) ? setShowAssortmentModal(true) : setShowPurchaseModal(true)}
             style={{
               border: 'none', cursor: 'pointer', fontFamily: 'inherit',
               background: 'var(--k-orange)', color: 'var(--k-ink)',
               padding: '12px 20px', borderRadius: 999,
               fontSize: 13, fontWeight: 800, letterSpacing: '-0.01em',
             }}>
-            + Заказать товар
+            {(enabledCategories && enabledCategories.length > 0) ? '🛍️ Ассортимент' : '+ Заказать товар'}
           </button>
         )}
       </div>
@@ -186,6 +188,7 @@ export function WarehouseView() {
       )}
 
       <PurchaseModal isOpen={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} />
+      <AssortmentModal isOpen={showAssortmentModal} onClose={() => setShowAssortmentModal(false)} />
     </div>
   )
 }

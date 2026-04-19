@@ -8,6 +8,12 @@ import HelpModal from './modals/HelpModal'
 import SettingsModal from './modals/SettingsModal'
 import VictoryModal from './modals/VictoryModal'
 import AchievementsModal from './modals/AchievementsModal'
+import OnboardingModal from './modals/OnboardingModal'
+import CashRegisterModal from './modals/CashRegisterModal'
+import AssortmentModal from './modals/AssortmentModal'
+import PromoCodeModal from './modals/PromoCodeModal'
+import PromoWalletModal from './modals/PromoWalletModal'
+import BundleModal from './modals/BundleModal'
 import { DesktopRecap } from './design-system/DesktopRecap'
 import { DesktopKontur } from './design-system/DesktopKontur'
 import { WarehouseView } from './views/WarehouseView'
@@ -59,6 +65,7 @@ const NAV_ITEMS: Array<{ n: string; g: string; view: ActiveView | null }> = [
 function LeftRail({
   currentDay, savedBalance, activeNav, activeCount,
   pendingEventCount, onNavClick, onHelp, onSettings,
+  onPromoWallet, promoCodesCount,
 }: {
   currentDay: number
   savedBalance: number
@@ -68,6 +75,8 @@ function LeftRail({
   onNavClick: (name: string) => void
   onHelp: () => void
   onSettings: () => void
+  onPromoWallet: () => void
+  promoCodesCount: number
 }) {
   return (
     <aside style={{
@@ -148,6 +157,9 @@ function LeftRail({
         </div>
       </div>
 
+      {/* Promo Wallet */}
+      <LeftRailPromoWallet onPromoWalletClick={onPromoWallet} promoCodesCount={promoCodesCount} />
+
       {/* Help & Settings */}
       <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
         <button
@@ -175,11 +187,49 @@ function LeftRail({
   )
 }
 
+interface LeftRailPromoWalletProps {
+  onPromoWalletClick: () => void
+  promoCodesCount: number
+}
+
+function LeftRailPromoWallet({ onPromoWalletClick, promoCodesCount }: LeftRailPromoWalletProps) {
+  return (
+    <button
+      onClick={onPromoWalletClick}
+      style={{
+        width: '100%', padding: '10px 12px', marginBottom: 10,
+        background: 'var(--k-orange-soft)', color: 'var(--k-orange)',
+        border: '1px solid var(--k-orange)',
+        borderRadius: 10, fontSize: 13, fontWeight: 700,
+        cursor: 'pointer', transition: 'opacity 0.2s',
+        position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+        fontFamily: 'inherit',
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
+      onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+    >
+      🎟️ Промокоды
+      {promoCodesCount > 0 && (
+        <span style={{
+          position: 'absolute', right: 8,
+          width: 20, height: 20, borderRadius: '50%',
+          background: 'var(--k-orange)', color: '#fff',
+          fontSize: 10, fontWeight: 800,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {Math.min(promoCodesCount, 9)}
+        </span>
+      )}
+    </button>
+  )
+}
+
 function DashboardView({
   onNextDay, dayBlockedMsg,
   showPurchaseModal, setShowPurchaseModal,
   showCampaignModal, setShowCampaignModal,
   showUpgradesModal, setShowUpgradesModal,
+  showCashRegisterModal, setShowCashRegisterModal,
   handleEventOption,
 }: {
   onNextDay: () => void
@@ -190,6 +240,8 @@ function DashboardView({
   setShowCampaignModal: (v: boolean) => void
   showUpgradesModal: boolean
   setShowUpgradesModal: (v: boolean) => void
+  showCashRegisterModal: boolean
+  setShowCashRegisterModal: (v: boolean) => void
   handleEventOption: (id: string) => void
 }) {
   const {
@@ -354,10 +406,11 @@ function DashboardView({
           </div>
 
           {/* Action buttons */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
             {[
               { label: '📦 Закупка', onClick: () => setShowPurchaseModal(true) },
               { label: '📢 Реклама', onClick: () => setShowCampaignModal(true) },
+              { label: '🖥️ Касса', onClick: () => setShowCashRegisterModal(true) },
               { label: '🔧 Улучшения', onClick: () => setShowUpgradesModal(true) },
             ].map(btn => (
               <button
@@ -457,13 +510,15 @@ function DesktopMainScreen() {
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [showAchievementsModal, setShowAchievementsModal] = useState(false)
+  const [showCashRegisterModal, setShowCashRegisterModal] = useState(false)
+  const [showPromoWalletModal, setShowPromoWalletModal] = useState(false)
   const [dayBlockedMsg, setDayBlockedMsg] = useState<string | null>(null)
   const [savingsToast, setSavingsToast] = useState<number | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const {
     currentDay, services, pendingEvent, pendingEventsQueue,
-    isGameOver, isVictory, savedBalance,
+    isGameOver, isVictory, savedBalance, promoCodesRevealed,
     addBalance, addReputation, addLoyalty, markEventAsResolved, activateService,
     addSavedBalance, setTemporaryModifiers, advanceDay,
   } = useGameStore()
@@ -557,6 +612,8 @@ function DesktopMainScreen() {
         onNavClick={handleNavClick}
         onHelp={() => setShowHelpModal(true)}
         onSettings={() => setShowSettingsModal(true)}
+        onPromoWallet={() => setShowPromoWalletModal(true)}
+        promoCodesCount={promoCodesRevealed?.length ?? 0}
       />
 
       {activeView === 'dashboard' && (
@@ -569,6 +626,8 @@ function DesktopMainScreen() {
           setShowCampaignModal={setShowCampaignModal}
           showUpgradesModal={showUpgradesModal}
           setShowUpgradesModal={setShowUpgradesModal}
+          showCashRegisterModal={showCashRegisterModal}
+          setShowCashRegisterModal={setShowCashRegisterModal}
           handleEventOption={handleEventOption}
         />
       )}
@@ -594,6 +653,12 @@ function DesktopMainScreen() {
       <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
       <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
       <AchievementsModal isOpen={showAchievementsModal} onClose={() => setShowAchievementsModal(false)} />
+      <OnboardingModal />
+      <CashRegisterModal isOpen={showCashRegisterModal} onClose={() => setShowCashRegisterModal(false)} />
+      <AssortmentModal isOpen={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} />
+      <PromoCodeModal />
+      <PromoWalletModal isOpen={showPromoWalletModal} onClose={() => setShowPromoWalletModal(false)} />
+      <BundleModal />
       <VictoryModal isOpen={isVictory} type="victory" />
       <VictoryModal isOpen={isGameOver && !isVictory} type="defeat" />
 

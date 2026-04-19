@@ -16,6 +16,7 @@ export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
     mainService: 'market',
     monthlyRent: 15000,
     monthlyBaseSalary: 20000,
+    usesAssortment: true,
   },
   cafe: {
     type: 'cafe',
@@ -32,6 +33,7 @@ export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
     mainService: 'market',
     monthlyRent: 15000,
     monthlyBaseSalary: 20000,
+    usesAssortment: true,
   },
   'beauty-salon': {
     type: 'beauty-salon',
@@ -48,6 +50,7 @@ export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
     mainService: 'elba',
     monthlyRent: 15000,
     monthlyBaseSalary: 20000,
+    usesAssortment: true,
   },
 }
 
@@ -212,6 +215,14 @@ export const ECONOMY_CONSTANTS = {
   VICTORY_ACHIEVEMENTS: 7,
   EXPERIENCE_PER_DAY: 1,
   EXPERIENCE_PER_10K_PROFIT: 1,
+  // New balance constants
+  DAILY_UTILITIES: 500,
+  DAILY_REGISTER_MAINTENANCE: 300,
+  DAYS_BALANCE_NEGATIVE_FOR_GAMEOVER: 3,
+  OVERLOAD_DAYS_FOR_GAMEOVER: 7,
+  COMPETITOR_EVENT_DAY: 20,
+  COMPETITOR_TRAFFIC_STEAL_PCT: 0.15,
+  COMPETITOR_EFFECT_DAYS: 10,
 } as const
 
 export const LEVEL_TABLE: Array<{ level: number; expRequired: number }> = [

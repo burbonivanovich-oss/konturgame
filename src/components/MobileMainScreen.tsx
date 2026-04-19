@@ -10,6 +10,12 @@ import HelpModal from './modals/HelpModal'
 import SettingsModal from './modals/SettingsModal'
 import AchievementsModal from './modals/AchievementsModal'
 import VictoryModal from './modals/VictoryModal'
+import OnboardingModal from './modals/OnboardingModal'
+import CashRegisterModal from './modals/CashRegisterModal'
+import AssortmentModal from './modals/AssortmentModal'
+import PromoCodeModal from './modals/PromoCodeModal'
+import PromoWalletModal from './modals/PromoWalletModal'
+import BundleModal from './modals/BundleModal'
 import { useGameStore } from '../stores/gameStore'
 
 export default function MobileMainScreen() {
@@ -20,9 +26,11 @@ export default function MobileMainScreen() {
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [showAchievementsModal, setShowAchievementsModal] = useState(false)
+  const [showCashRegisterModal, setShowCashRegisterModal] = useState(false)
+  const [showPromoWalletModal, setShowPromoWalletModal] = useState(false)
   const [activeTab, setActiveTab] = useState('day')
 
-  const { pendingEvent, pendingEventsQueue, isGameOver, isVictory, businessType, achievements } = useGameStore()
+  const { pendingEvent, pendingEventsQueue, isGameOver, isVictory, businessType, achievements, promoCodesRevealed } = useGameStore()
   const [savingsToast, setSavingsToast] = useState<number | null>(null)
 
   const handleEventOption = (optionId: string) => {
@@ -89,11 +97,32 @@ export default function MobileMainScreen() {
         <div style={{ fontSize: 14, fontWeight: 800 }}>Бизнес с Контуром</div>
         <div style={{ display: 'flex', gap: 6 }}>
           <button
+            onClick={() => setShowPromoWalletModal(true)}
+            style={{
+              width: 32, height: 32, borderRadius: 8,
+              background: 'var(--k-orange-soft)', border: 'none', cursor: 'pointer',
+              fontSize: 14, position: 'relative',
+            }}
+            title="Промокоды"
+          >
+            🎟️
+            {(promoCodesRevealed?.length ?? 0) > 0 && (
+              <span style={{
+                position: 'absolute', top: -4, right: -4,
+                background: 'var(--k-orange)', color: 'white',
+                fontSize: 9, fontWeight: 800, padding: '2px 4px',
+                borderRadius: 4,
+              }}>
+                {Math.min(promoCodesRevealed?.length ?? 0, 9)}
+              </span>
+            )}
+          </button>
+          <button
             onClick={() => setShowAchievementsModal(true)}
             style={{
               width: 32, height: 32, borderRadius: 8,
               background: 'var(--k-ink-10)', border: 'none', cursor: 'pointer',
-              fontSize: 14,
+              fontSize: 14, position: 'relative',
             }}
           >
             🏆
@@ -184,6 +213,16 @@ export default function MobileMainScreen() {
               display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8,
             }}>
               <button
+                onClick={() => setShowPurchaseModal(true)}
+                style={{
+                  padding: 12, borderRadius: 10, border: 'none',
+                  background: 'var(--k-ink)', color: 'white',
+                  fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                📦 Закупка
+              </button>
+              <button
                 onClick={() => setShowCampaignModal(true)}
                 style={{
                   padding: 12, borderRadius: 10, border: 'none',
@@ -192,6 +231,21 @@ export default function MobileMainScreen() {
                 }}
               >
                 📢 Реклама
+              </button>
+            </div>
+
+            <div style={{
+              display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8,
+            }}>
+              <button
+                onClick={() => setShowCashRegisterModal(true)}
+                style={{
+                  padding: 12, borderRadius: 10, border: 'none',
+                  background: 'var(--k-orange)', color: 'white',
+                  fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                🖥️ Касса
               </button>
               <button
                 onClick={() => setShowUpgradesModal(true)}
@@ -238,7 +292,7 @@ export default function MobileMainScreen() {
       )}
 
       {/* Modals */}
-      <PurchaseModal isOpen={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} />
+      <AssortmentModal isOpen={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} />
       <EventModal
         isOpen={showEventModal}
         event={pendingEvent}
@@ -250,6 +304,11 @@ export default function MobileMainScreen() {
       <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
       <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
       <AchievementsModal isOpen={showAchievementsModal} onClose={() => setShowAchievementsModal(false)} />
+      <OnboardingModal />
+      <CashRegisterModal isOpen={showCashRegisterModal} onClose={() => setShowCashRegisterModal(false)} />
+      <PromoCodeModal />
+      <PromoWalletModal isOpen={showPromoWalletModal} onClose={() => setShowPromoWalletModal(false)} />
+      <BundleModal />
       <VictoryModal isOpen={isVictory} type="victory" />
       <VictoryModal isOpen={isGameOver && !isVictory} type="defeat" />
     </div>
