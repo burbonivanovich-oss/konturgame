@@ -43,11 +43,16 @@ const BUSINESS_INFO = {
   },
 }
 
-export default function BusinessSelector() {
+interface BusinessSelectorProps {
+  onGameStart?: () => void
+}
+
+export default function BusinessSelector({ onGameStart }: BusinessSelectorProps) {
   const startNewGame = useGameStore((s) => s.startNewGame)
 
   const handleSelectBusiness = (businessType: BusinessType) => {
     startNewGame(businessType)
+    onGameStart?.()
   }
 
   return (
