@@ -29,7 +29,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     experience: 0,
     lastDayResult: null,
     pendingEvent: null,
-      pendingEventsQueue: [],
+    pendingEventsQueue: [],
     triggeredEventIds: [],
     isGameOver: false,
     isVictory: false,
@@ -42,8 +42,50 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     temporaryClientMod: 0,
     temporaryCheckMod: 0,
     temporaryModDaysLeft: 0,
+    onboardingStage: 0,
+    onboardingCompleted: false,
+    onboardingStepIndex: 0,
+    unlockedServices: [],
+    cashRegisters: [],
+    enabledCategories: [],
+    promoCodesRevealed: [],
+    pendingPromoCode: null,
+    daysBalanceNegative: 0,
+    competitorEventTriggered: false,
+    lastDayPainLosses: null,
+    bundlePromoShown: false,
     createdAt: Date.now(),
     lastUpdated: Date.now(),
+    ...overrides,
+  }
+}
+
+function makeDayResult(overrides: Partial<any> = {}): any {
+  return {
+    dayNumber: 1,
+    clients: 100,
+    served: 100,
+    missed: 0,
+    revenue: 150000,
+    expenses: 10000,
+    tax: 9000,
+    subscriptionCost: 0,
+    purchaseCost: 0,
+    monthlyExpense: 0,
+    expiredLoss: 0,
+    netProfit: 100000,
+    balance: 150000,
+    reputationChange: 0,
+    loyaltyChange: 0,
+    stockAfter: 0,
+    painLossBankMissed: 0,
+    painLossMarketInventory: 0,
+    painLossOfdFine: 0,
+    painLossDiadocDelay: 0,
+    painLossFokusBadSupplier: 0,
+    painLossElbaFine: 0,
+    painLossExternBlock: 0,
+    registerOverflowPenalty: 0,
     ...overrides,
   }
 }
@@ -139,24 +181,7 @@ describe('getVictoryStatus', () => {
 
   it('dailyProfitReached true when last result >= 100000', () => {
     const state = makeState({
-      lastDayResult: {
-        dayNumber: 1,
-        clients: 100,
-        served: 100,
-        missed: 0,
-        revenue: 150000,
-        expenses: 10000,
-        tax: 9000,
-        subscriptionCost: 0,
-        purchaseCost: 0,
-        monthlyExpense: 0,
-        expiredLoss: 0,
-        netProfit: 100000,
-        balance: 150000,
-        reputationChange: 0,
-        loyaltyChange: 0,
-        stockAfter: 0,
-      },
+      lastDayResult: makeDayResult({ netProfit: 100000 }),
     })
     const status = getVictoryStatus(state)
     expect(status.dailyProfitReached).toBe(true)
@@ -174,24 +199,7 @@ describe('checkVictory', () => {
       level: 10,
       achievements: ['a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7'],
       services: makeActiveServices(),
-      lastDayResult: {
-        dayNumber: 1,
-        clients: 100,
-        served: 100,
-        missed: 0,
-        revenue: 150000,
-        expenses: 10000,
-        tax: 9000,
-        subscriptionCost: 0,
-        purchaseCost: 0,
-        monthlyExpense: 0,
-        expiredLoss: 0,
-        netProfit: 100000,
-        balance: 1000000,
-        reputationChange: 0,
-        loyaltyChange: 0,
-        stockAfter: 0,
-      },
+      lastDayResult: makeDayResult({ netProfit: 100000, balance: 1000000 }),
     })
     expect(checkVictory(state)).toBe(true)
   })
