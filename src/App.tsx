@@ -4,7 +4,7 @@ import BusinessSelector from '@components/BusinessSelector'
 import { useGameStore } from './stores/gameStore'
 
 export default function App() {
-  const [loaded, setLoaded] = useState(false)
+  const [showGame, setShowGame] = useState(false)
   const loadGame = useGameStore((s) => s.loadGame)
 
   // Load game from localStorage on mount
@@ -14,24 +14,23 @@ export default function App() {
       try {
         const state = JSON.parse(saved)
         loadGame(state)
+        setShowGame(true)
       } catch (error) {
         console.error('Failed to load game', error)
+        setShowGame(false)
       }
+    } else {
+      setShowGame(false)
     }
-    setLoaded(true)
   }, [loadGame])
 
-  if (!loaded) {
-    return null // Loading
+  const handleGameStart = () => {
+    setShowGame(true)
   }
 
-  const saved = localStorage.getItem('konturgame_state')
-  const hasStartedGame = saved !== null
-
-  // Show business selector if no saved game exists
-  if (!hasStartedGame) {
-    return <BusinessSelector />
+  if (showGame) {
+    return <MainScreen />
   }
 
-  return <MainScreen />
+  return <BusinessSelector onGameStart={handleGameStart} />
 }
