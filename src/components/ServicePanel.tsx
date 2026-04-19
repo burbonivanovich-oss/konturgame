@@ -174,21 +174,19 @@ export default function ServicePanel() {
             <div style={{ fontSize: 11, opacity: 0.8, lineHeight: 1.3 }}>{service.description}</div>
             <button
               onClick={() => toggleService(service.id)}
-              disabled={!service.isActive && !canAfford}
+              disabled={false}
               style={{
                 width: '100%', padding: '8px', borderRadius: 8, fontSize: 11, fontWeight: 700,
-                border: 'none', cursor: !service.isActive && !canAfford ? 'not-allowed' : 'pointer',
+                border: 'none', cursor: 'pointer',
                 background: service.isActive
                   ? 'rgba(0,0,0,0.2)'
-                  : canAfford
-                  ? 'rgba(0,0,0,0.15)'
-                  : 'rgba(0,0,0,0.1)',
-                opacity: service.isActive || canAfford ? 1 : 0.6,
+                  : 'rgba(0,0,0,0.15)',
+                opacity: 1,
                 color: 'inherit',
                 transition: 'opacity 0.2s',
               }}
-              onMouseEnter={(e) => { if (service.isActive || canAfford) e.currentTarget.style.opacity = '0.8' }}
-              onMouseLeave={(e) => { e.currentTarget.style.opacity = service.isActive || canAfford ? '1' : '0.6' }}
+              onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.8' }}
+              onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
             >
               {service.isActive ? '✓ Подключено' : 'Подключить'}
             </button>
