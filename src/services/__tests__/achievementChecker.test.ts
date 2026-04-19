@@ -88,6 +88,7 @@ function makeDayResult(overrides: Partial<DayResult> = {}): DayResult {
     painLossElbaFine: 0,
     painLossExternBlock: 0,
     registerOverflowPenalty: 0,
+    categoryFines: {},
     ...overrides,
   }
 }
