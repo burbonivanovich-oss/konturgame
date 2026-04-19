@@ -25,6 +25,10 @@ const ACHIEVEMENT_CHECKS: Record<string, CheckFn> = {
   event_veteran: (s) => (s.triggeredEventIds?.length ?? 0) >= 10,
   resilient: (s) => (s.hadLowReputation ?? false) && s.reputation >= 60,
   stock_master: (s) => (s.consecutiveNoExpiry ?? 0) >= 10,
+  first_register: (s) => (s.cashRegisters?.length ?? 0) > 0,
+  promo_collector: (s) => (s.promoCodesRevealed?.length ?? 0) >= 5,
+  full_promo: (s) => (s.promoCodesRevealed?.length ?? 0) >= 7,
+  survived_competitor: (s) => s.currentDay >= 21 && (s.competitorEventTriggered ?? false),
 }
 
 export function checkNewAchievements(state: GameState): string[] {

@@ -147,4 +147,32 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     icon: '📦',
     category: 'business',
   },
+  {
+    id: 'first_register',
+    name: 'Первая касса',
+    description: 'Купить первую кассовую систему',
+    icon: '🖥️',
+    category: 'business',
+  },
+  {
+    id: 'promo_collector',
+    name: 'Коллекционер',
+    description: 'Собрать 5 промокодов на услуги Контура',
+    icon: '🎟️',
+    category: 'services',
+  },
+  {
+    id: 'full_promo',
+    name: 'Полный набор',
+    description: 'Собрать все 7 промокодов на услуги Контура',
+    icon: '🏆',
+    category: 'services',
+  },
+  {
+    id: 'survived_competitor',
+    name: 'Конкурент побежден',
+    description: 'Выжить во время атаки конкурента на день 20+',
+    icon: '🛡️',
+    category: 'special',
+  },
 ]

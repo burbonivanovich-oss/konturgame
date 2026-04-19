@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { SYNERGIES_CONFIG } from '../constants/business'
+import { ONBOARDING_STAGE_LABELS } from '../constants/onboarding'
+import type { OnboardingStage } from '../types/game'
 
 const SERVICE_COLORS: Record<string, string> = {
   market: 'var(--k-orange)',
@@ -22,9 +24,20 @@ const SERVICE_ICONS: Record<string, string> = {
   extern: '⚖️',
 }
 
+// When each locked service unlocks
+const SERVICE_UNLOCK_STAGE: Record<string, OnboardingStage> = {
+  bank: 0,
+  ofd: 1,
+  market: 2,
+  diadoc: 3,
+  fokus: 3,
+  elba: 4,
+  extern: 4,
+}
+
 export default function ServicePanel() {
   const [isExpanded, setIsExpanded] = useState(false)
-  const { services, toggleService, balance } = useGameStore()
+  const { services, toggleService, balance, unlockedServices } = useGameStore()
 
   const activeSynergies = useMemo(() => {
     return SYNERGIES_CONFIG.filter((syn) =>
@@ -32,11 +45,18 @@ export default function ServicePanel() {
     )
   }, [services])
 
-  const servicesList = Object.entries(services).map(([_, service]) => ({
+  const allServicesList = Object.entries(services).map(([_, service]) => ({
     ...service,
     icon: SERVICE_ICONS[service.id] ?? '📌',
     color: SERVICE_COLORS[service.id] ?? 'var(--k-ink)',
   }))
+
+  const visibleServices = allServicesList.filter((s) =>
+    (unlockedServices ?? []).includes(s.id)
+  )
+  const lockedServices = allServicesList.filter((s) =>
+    !(unlockedServices ?? []).includes(s.id)
+  )
 
   if (!isExpanded) {
     return (
@@ -58,26 +78,40 @@ export default function ServicePanel() {
           📘 Сервисы Контура
         </button>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-          {servicesList.map((service) => (
-            <button
-              key={service.id}
-              onClick={() => setIsExpanded(true)}
-              style={{
-                position: 'relative', fontSize: 24, background: 'transparent',
-                border: 'none', cursor: 'pointer', padding: 4,
-              }}
-              title={service.name}
-            >
-              {service.icon}
-              {service.isActive && (
-                <div style={{
-                  position: 'absolute', top: 0, right: 0,
-                  width: 10, height: 10, borderRadius: '50%',
-                  background: 'var(--k-green)', border: '2px solid white',
-                }}/>
-              )}
-            </button>
-          ))}
+          {allServicesList.map((service) => {
+            const isUnlocked = (unlockedServices ?? []).includes(service.id)
+            return (
+              <button
+                key={service.id}
+                onClick={() => setIsExpanded(true)}
+                style={{
+                  position: 'relative', fontSize: 24, background: 'transparent',
+                  border: 'none', cursor: 'pointer', padding: 4,
+                  opacity: isUnlocked ? 1 : 0.3,
+                  filter: isUnlocked ? 'none' : 'grayscale(1)',
+                }}
+                title={isUnlocked ? service.name : `Откроется позже`}
+              >
+                {service.icon}
+                {service.isActive && isUnlocked && (
+                  <div style={{
+                    position: 'absolute', top: 0, right: 0,
+                    width: 10, height: 10, borderRadius: '50%',
+                    background: 'var(--k-green)', border: '2px solid white',
+                  }}/>
+                )}
+                {!isUnlocked && (
+                  <div style={{
+                    position: 'absolute', top: 0, right: 0,
+                    width: 12, height: 12, borderRadius: '50%',
+                    background: 'var(--k-ink-50)', border: '2px solid white',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 6, color: '#fff',
+                  }}>🔒</div>
+                )}
+              </button>
+            )
+          })}
         </div>
         {activeSynergies.length > 0 && (
           <div style={{
@@ -117,7 +151,8 @@ export default function ServicePanel() {
         </button>
       </div>
 
-      {servicesList.map((service) => {
+      {/* Unlocked services */}
+      {visibleServices.map((service) => {
         const canAfford = balance >= service.monthlyPrice
         return (
           <div
@@ -160,6 +195,41 @@ export default function ServicePanel() {
           </div>
         )
       })}
+
+      {/* Locked services */}
+      {lockedServices.length > 0 && (
+        <>
+          <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.35, letterSpacing: '0.08em', marginTop: 4 }}>
+            🔒 ОТКРОЕТСЯ ПОЗЖЕ
+          </div>
+          {lockedServices.map((service) => {
+            const unlockStage = SERVICE_UNLOCK_STAGE[service.id]
+            const stageLabel = unlockStage !== undefined ? ONBOARDING_STAGE_LABELS[unlockStage] : ''
+            return (
+              <div key={service.id} style={{
+                borderRadius: 12, padding: 12, border: '1px dashed var(--k-ink-10)',
+                display: 'flex', flexDirection: 'column', gap: 6,
+                opacity: 0.45,
+                filter: 'grayscale(0.8)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 20 }}>{service.icon}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700 }}>{service.name}</div>
+                    <div style={{ fontSize: 10, opacity: 0.7 }}>{service.monthlyPrice.toLocaleString('ru-RU')} ₽/мес</div>
+                  </div>
+                  <div style={{ fontSize: 18 }}>🔒</div>
+                </div>
+                {stageLabel && (
+                  <div style={{ fontSize: 10, fontStyle: 'italic' }}>
+                    Откроется на этапе: {stageLabel}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </>
+      )}
 
       {activeSynergies.length > 0 && (
         <div style={{
