@@ -1,7 +1,7 @@
 import { useGameStore } from '../../stores/gameStore'
 
 export function FinanceView() {
-  const { balance, savedBalance, lastDayResult, services, currentDay } = useGameStore()
+  const { balance, savedBalance, lastDayResult, services, currentWeek } = useGameStore()
 
   const goalAmount = 1_000_000
   const toGoalPct = Math.min((balance / goalAmount) * 100, 100)
@@ -57,7 +57,7 @@ export function FinanceView() {
               {balance.toLocaleString('ru-RU')} ₽
             </div>
             <div style={{ fontSize: 10, fontWeight: 600, opacity: 0.75, marginTop: 4 }}>
-              День {currentDay}
+              День {currentWeek}
             </div>
           </div>
         </div>

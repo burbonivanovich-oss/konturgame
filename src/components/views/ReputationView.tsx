@@ -36,7 +36,7 @@ const LOYALTY_FACTORS = [
 ]
 
 export function ReputationView() {
-  const { reputation, loyalty, lastDayResult, currentDay } = useGameStore()
+  const { reputation, loyalty, lastDayResult, currentWeek } = useGameStore()
 
   const repColor = reputation >= 60 ? 'var(--k-good)' : reputation >= 30 ? 'var(--k-warn)' : 'var(--k-bad)'
   const loyColor = loyalty >= 60 ? 'var(--k-good)' : loyalty >= 30 ? 'var(--k-warn)' : 'var(--k-bad)'
@@ -93,7 +93,7 @@ export function ReputationView() {
               fontSize: 12, fontWeight: 700,
               color: repChange > 0 ? 'var(--k-good)' : 'var(--k-bad)',
             }}>
-              {repChange > 0 ? '+' : ''}{repChange} вчера (день {currentDay - 1})
+              {repChange > 0 ? '+' : ''}{repChange} вчера (день {currentWeek - 1})
             </div>
           )}
         </div>
@@ -131,7 +131,7 @@ export function ReputationView() {
               fontSize: 12, fontWeight: 700,
               color: loyChange > 0 ? 'var(--k-good)' : 'var(--k-bad)',
             }}>
-              {loyChange > 0 ? '+' : ''}{loyChange} вчера (день {currentDay - 1})
+              {loyChange > 0 ? '+' : ''}{loyChange} вчера (день {currentWeek - 1})
             </div>
           )}
         </div>

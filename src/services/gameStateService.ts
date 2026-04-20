@@ -56,7 +56,7 @@ export class GameStateService {
 
     // Victory conditions
     const dailyProfit = store.lastDayResult?.netProfit ?? 0
-    const meetsDaily = dailyProfit >= ECONOMY_CONSTANTS.VICTORY_DAILY_PROFIT
+    const meetsDaily = dailyProfit >= ECONOMY_CONSTANTS.VICTORY_WEEKLY_PROFIT
     const meetsBalance = store.balance >= ECONOMY_CONSTANTS.VICTORY_BALANCE
     const meetsLevel = store.level >= ECONOMY_CONSTANTS.VICTORY_LEVEL
     const meetsAchievements = store.achievements.length >= ECONOMY_CONSTANTS.VICTORY_ACHIEVEMENTS
@@ -70,7 +70,7 @@ export class GameStateService {
       store.setGameOver(true, 'Банкротство')
     }
 
-    if (store.reputation <= 0 && store.daysReputationZero >= ECONOMY_CONSTANTS.REPUTATION_ZERO_DAYS_FOR_LOSS) {
+    if (store.reputation <= 0 && store.daysReputationZero >= ECONOMY_CONSTANTS.REPUTATION_ZERO_WEEKS_FOR_LOSS) {
       store.setGameOver(true, 'Репутация полностью уничтожена')
     }
 

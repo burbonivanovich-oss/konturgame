@@ -750,7 +750,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         } else {
           newRegisters = [
             ...s.cashRegisters,
-            { type, count: 1, purchaseDay: s.currentDay },
+            { type, count: 1, purchaseDay: s.currentWeek * 7 + s.dayOfWeek },
           ]
         }
         return {

@@ -4,7 +4,7 @@ import { useGameStore } from '../stores/gameStore'
 export default function NextDayButton() {
   const [isLoading, setIsLoading] = useState(false)
   const [blockedReason, setBlockedReason] = useState<string | null>(null)
-  const { currentDay, isGameOver, isVictory } = useGameStore()
+  const { currentWeek, isGameOver, isVictory } = useGameStore()
 
   const handleClick = useCallback(async () => {
     if (isLoading) return
@@ -21,7 +21,7 @@ export default function NextDayButton() {
   }, [isLoading])
 
   const isDisabled = isGameOver || isVictory
-  const isCrisisDay = currentDay > 0 && currentDay % 9 === 0
+  const isCrisisDay = currentWeek > 0 && currentWeek % 9 === 0
   const statusText = isGameOver ? '❌ Игра окончена' : isVictory ? '🎉 Победа!' : ''
 
   return (
@@ -59,7 +59,7 @@ export default function NextDayButton() {
         {isLoading
           ? `⏳ Расчёт...`
           : isCrisisDay
-          ? `⚡ День ${currentDay} — Кризис`
+          ? `⚡ День ${currentWeek} — Кризис`
           : `→ Следующий день`}
       </button>
       {statusText && (

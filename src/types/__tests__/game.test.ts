@@ -25,11 +25,13 @@ describe('Game Types', () => {
   it('should create a valid GameState object', () => {
     const gameState: GameState = {
       businessType: 'shop',
-      currentDay: 1,
+      currentWeek: 1,
+      dayOfWeek: 0,
       balance: 50000,
       savedBalance: 0,
       reputation: 50,
       loyalty: 50,
+      entrepreneurEnergy: 100,
       stock: [],
       stockBatches: [],
       capacity: 60,
@@ -64,6 +66,7 @@ describe('Game Types', () => {
       competitorEventTriggered: false,
       lastDayPainLosses: null,
       bundlePromoShown: false,
+      weeklyEnergyRestored: false,
       createdAt: Date.now(),
       lastUpdated: Date.now(),
     }

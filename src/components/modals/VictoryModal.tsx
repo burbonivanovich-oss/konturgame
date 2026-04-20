@@ -7,7 +7,7 @@ interface VictoryModalProps {
 }
 
 export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
-  const { startNewGame, currentDay, balance, reputation } = useGameStore()
+  const { startNewGame, currentWeek, balance, reputation } = useGameStore()
 
   const isVictory = type === 'victory'
 
@@ -40,7 +40,7 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
           }`}>
             <div className="flex justify-between">
               <span className="text-gray-600">День:</span>
-              <span className="font-bold text-gray-800">{currentDay}</span>
+              <span className="font-bold text-gray-800">{currentWeek}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Баланс:</span>

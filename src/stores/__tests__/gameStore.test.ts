@@ -16,7 +16,7 @@ describe('GameStore', () => {
     it('should initialize with default state for shop', () => {
       const state = useGameStore.getState()
       expect(state.businessType).toBe('shop')
-      expect(state.currentDay).toBe(1)
+      expect(state.currentWeek).toBe(1)
       expect(state.balance).toBe(50000)
       expect(state.reputation).toBe(50)
       expect(state.loyalty).toBe(50)
@@ -101,7 +101,7 @@ describe('GameStore', () => {
     it('should increment day', () => {
       const { nextDay } = useGameStore.getState()
       nextDay()
-      expect(useGameStore.getState().currentDay).toBe(2)
+      expect(useGameStore.getState().currentWeek).toBe(2)
     })
 
     it('should increment daysSinceLastMonthly', () => {
@@ -345,7 +345,7 @@ describe('GameStore', () => {
       const currentState = useGameStore.getState()
       localStorage.setItem('konturgame_state', JSON.stringify({
         businessType: currentState.businessType,
-        currentDay: currentState.currentDay,
+        currentWeek: currentState.currentWeek,
         balance: 100000,
         savedBalance: currentState.savedBalance,
         reputation: currentState.reputation,

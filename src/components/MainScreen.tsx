@@ -245,7 +245,7 @@ function DashboardView({
   handleEventOption: (id: string) => void
 }) {
   const {
-    currentDay, balance, reputation, loyalty, services,
+    currentWeek, balance, reputation, loyalty, services,
     pendingEvent, pendingEventsQueue, lastDayResult, savedBalance,
   } = useGameStore()
 
@@ -396,7 +396,7 @@ function DashboardView({
             {[
               { l: 'Репутация', v: String(reputation), bg: 'var(--k-green-soft)' },
               { l: 'Лояльность', v: `${loyalty}%`, bg: 'var(--k-surface-2)' },
-              { l: 'День', v: String(currentDay), bg: 'var(--k-surface-2)' },
+              { l: 'Неделя', v: String(currentWeek), bg: 'var(--k-surface-2)' },
             ].map(i => (
               <div key={i.l} style={{ padding: 10, borderRadius: 12, background: i.bg }}>
                 <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.55 }}>{i.l}</div>
@@ -520,7 +520,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const {
-    currentDay, services, pendingEvent, pendingEventsQueue,
+    currentWeek, services, pendingEvent, pendingEventsQueue,
     isGameOver, isVictory, savedBalance, promoCodesRevealed,
     addBalance, addReputation, addLoyalty, markEventAsResolved, activateService,
     addSavedBalance, setTemporaryModifiers, advanceDay,
@@ -607,7 +607,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       letterSpacing: '-0.01em',
     }}>
       <LeftRail
-        currentDay={currentDay}
+        currentDay={currentWeek}
         savedBalance={savedBalance ?? 0}
         activeNav={activeNav}
         activeCount={activeCount}
