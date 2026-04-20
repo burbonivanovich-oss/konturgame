@@ -375,8 +375,8 @@ export const UPGRADES_CONFIG: Record<BusinessType, Array<{
     { id: 'hire-master', name: '👨‍🎓 Наём мастера', cost: 50000, effect: '+50% пропускная способность', capacityBonus: 0.5, monthlySalaryIncrease: 15000 },
     { id: 'vip-room', name: '👑 VIP-кабинет', cost: 70000, effect: '+30% среднего чека, премиум позиционирование', checkBonus: 0.3, monthlyRentIncrease: 10000 },
   ],
-} as const
+}
 
 export function getUpgradesForBusiness(businessType: BusinessType) {
-  return UPGRADES_CONFIG[businessType] || []
+  return UPGRADES_CONFIG[businessType] ?? []
 }
