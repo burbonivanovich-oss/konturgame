@@ -18,15 +18,12 @@ export function shouldAdvanceStage(state: GameState): boolean {
 
   if (!dayThresholdReached) return false
 
-  // For critical stages (0 and 1), check if required action is completed
-  if (currentStage === 0) {
-    const bankActive = state.services?.bank?.isActive ?? false
-    if (!bankActive) return false
-  }
-  if (currentStage === 1) {
-    const ofdActive = state.services?.ofd?.isActive ?? false
-    if (!ofdActive) return false
-  }
+  // Check required actions for each stage before advancing
+  if (currentStage === 0 && !(state.services?.bank?.isActive ?? false)) return false
+  if (currentStage === 1 && !(state.services?.ofd?.isActive ?? false)) return false
+  if (currentStage === 2 && !(state.services?.market?.isActive ?? false)) return false
+  if (currentStage === 3 && !(state.services?.diadoc?.isActive ?? false)) return false
+  if (currentStage === 4) return false // final stage — never auto-advance
 
   return true
 }
