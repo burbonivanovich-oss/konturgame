@@ -67,6 +67,8 @@ describe('Game Types', () => {
       lastDayPainLosses: null,
       bundlePromoShown: false,
       weeklyEnergyRestored: false,
+      seenMicroEventIds: [],
+      pendingMicroEvent: null,
       createdAt: Date.now(),
       lastUpdated: Date.now(),
     }
