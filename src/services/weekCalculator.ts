@@ -325,16 +325,18 @@ export function processWeek(state: GameState): DayResult {
   // Advance onboarding stage if needed
   advanceOnboardingIfNeeded(state)
 
-  // Generate new event(s) at end of week
+  // Generate 1-2 events every week (crisis weeks always get 2)
   if (!state.isGameOver && !state.isVictory && !state.pendingEvent) {
     const firstEvent = generateEvent(state.currentWeek * 7, state)
     if (firstEvent) {
       state.pendingEvent = firstEvent
-      // Crisis weeks (every ~9 weeks)
-      if (state.currentWeek % 9 === 0) {
+      const isCrisisWeek = state.currentWeek % 9 === 0
+      // Crisis weeks always add a 2nd event; normal weeks 50% chance
+      const addSecond = isCrisisWeek || Math.random() < 0.5
+      if (addSecond) {
         const usedIds = new Set([firstEvent.id])
         const queue: typeof firstEvent[] = []
-        for (let attempt = 0; attempt < 10 && queue.length < 2; attempt++) {
+        for (let attempt = 0; attempt < 10 && queue.length < 1; attempt++) {
           const extra = generateEvent(state.currentWeek * 7, state)
           if (extra && !usedIds.has(extra.id)) {
             usedIds.add(extra.id)

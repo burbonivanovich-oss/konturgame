@@ -25,6 +25,9 @@ export function OnboardingPanel() {
     if (!currentStep.requiresAction) return true
     if (currentStep.requiresAction === 'activate_bank') return services?.bank?.isActive ?? false
     if (currentStep.requiresAction === 'activate_ofd') return services?.ofd?.isActive ?? false
+    if (currentStep.requiresAction === 'activate_market') return services?.market?.isActive ?? false
+    if (currentStep.requiresAction === 'activate_diadoc') return services?.diadoc?.isActive ?? false
+    if (currentStep.requiresAction === 'activate_elba') return services?.elba?.isActive ?? false
     if (currentStep.requiresAction === 'buy_register') return cashRegisters.length > 0
     return true
   }
@@ -130,6 +133,9 @@ export function OnboardingPanel() {
           <div>
             {currentStep.requiresAction === 'activate_bank' && 'Подключите Контур.Банк в панели сервисов'}
             {currentStep.requiresAction === 'activate_ofd' && 'Подключите Контур.ОФД в панели сервисов'}
+            {currentStep.requiresAction === 'activate_market' && 'Подключите Контур.Маркет в панели сервисов'}
+            {currentStep.requiresAction === 'activate_diadoc' && 'Подключите Контур.Диадок в панели сервисов'}
+            {currentStep.requiresAction === 'activate_elba' && 'Подключите Контур.Эльба в панели сервисов'}
             {currentStep.requiresAction === 'buy_register' && 'Нажмите кнопку "Касса" и купите кассовый аппарат'}
           </div>
         </div>

@@ -24,7 +24,6 @@ import { ReputationView } from './views/ReputationView'
 import OperationsView from './views/OperationsView'
 import StatisticsView from './views/StatisticsView'
 import { useGameStore } from '../stores/gameStore'
-import { generateMicroEventForDay } from '../services/microEventGenerator'
 
 type ActiveView = 'dashboard' | 'recap' | 'ecosystem' | 'warehouse' | 'marketing' | 'finance' | 'reputation' | 'operations' | 'statistics'
 
@@ -560,15 +559,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
     } else {
       setActiveView('recap')
       setActiveNav('Дневной цикл')
-
-      // Generate micro event for the new day
-      setTimeout(() => {
-        const store = useGameStore.getState()
-        const microEvent = generateMicroEventForDay(store)
-        if (microEvent) {
-          store.setPendingMicroEvent(microEvent)
-        }
-      }, 500)
     }
   }
 
