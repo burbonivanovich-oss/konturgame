@@ -15,10 +15,10 @@ export function addStock(state: GameState, quantity: number, costPerUnit: number
   if (!state.stockBatches) state.stockBatches = []
 
   const batch: StockBatch = {
-    id: `batch-${state.currentDay}-${state.stockBatches.length}`,
+    id: `batch-${(state.currentWeek * 7 + state.dayOfWeek)}-${state.stockBatches.length}`,
     quantity,
     costPerUnit,
-    dayReceived: state.currentDay,
+    dayReceived: (state.currentWeek * 7 + state.dayOfWeek),
     expirationDays: getExpirationDays(state),
   }
   state.stockBatches.push(batch)
@@ -62,7 +62,7 @@ export function checkExpiry(state: GameState): { expired: number; loss: number }
   let totalLoss = 0
 
   for (const batch of state.stockBatches) {
-    const age = state.currentDay - batch.dayReceived
+    const age = (state.currentWeek * 7 + state.dayOfWeek) - batch.dayReceived
     if (age >= batch.expirationDays) {
       totalExpired += batch.quantity
       totalLoss += batch.quantity * batch.costPerUnit * lossRate

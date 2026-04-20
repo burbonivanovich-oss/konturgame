@@ -15,7 +15,7 @@ export class GameStateService {
     store.setLoyalty(store.loyalty + dayResult.loyaltyChange)
 
     // Update experience
-    const expGain = ECONOMY_CONSTANTS.EXPERIENCE_PER_DAY + Math.floor(dayResult.netProfit / 10000)
+    const expGain = ECONOMY_CONSTANTS.EXPERIENCE_PER_WEEK + Math.floor(dayResult.netProfit / 10000)
     store.addExperience(expGain)
 
     // Store day result
@@ -192,7 +192,7 @@ export class GameStateService {
       id: batchId,
       quantity,
       costPerUnit,
-      dayReceived: store.currentDay,
+      dayReceived: store.currentWeek * 7 + store.dayOfWeek,
       expirationDays,
     }
 
@@ -267,7 +267,7 @@ export class GameStateService {
     const store = useGameStore.getState()
 
     return {
-      day: store.currentDay,
+      week: store.currentWeek,
       balance: store.balance,
       reputation: store.reputation,
       loyalty: store.loyalty,

@@ -6,7 +6,7 @@ export function calculatePainLosses(
   profit: number,
   totalCategoryRevenue: number,
 ): PainLossRecord {
-  const day = state.currentDay
+  const day = (state.currentWeek * 7 + state.dayOfWeek)
   const hasBank = state.services?.bank?.isActive ?? false
   const hasMarket = state.services?.market?.isActive ?? false
   const hasOfd = state.services?.ofd?.isActive ?? false

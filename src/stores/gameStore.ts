@@ -809,21 +809,31 @@ function saveToStorage(state: GameState) {
 
 function extractState(state: any): GameState {
   const {
-    businessType, currentDay, balance, savedBalance, reputation, loyalty,
-    stock, stockBatches, capacity, services, achievements, level, experience,
+    businessType, currentWeek, dayOfWeek, balance, savedBalance, reputation, loyalty,
+    entrepreneurEnergy, stock, stockBatches, capacity, services, achievements, level, experience,
     lastDayResult, pendingEvent, pendingEventsQueue, triggeredEventIds,
     isGameOver, isVictory, gameOverReason, consecutiveOverloadDays, daysReputationZero,
     daysSinceLastMonthly, purchaseOfferedThisDay, activeAdCampaigns, purchasedUpgrades,
     temporaryClientMod, temporaryCheckMod, temporaryModDaysLeft, createdAt, lastUpdated,
-    hadLowReputation, consecutiveNoExpiry,
+    hadLowReputation, consecutiveNoExpiry, weeklyEnergyRestored,
+    // Legacy fields for migration
+    currentDay,
     // New fields
     onboardingStage, onboardingCompleted, onboardingStepIndex, unlockedServices,
     cashRegisters, enabledCategories, promoCodesRevealed,
     daysBalanceNegative, competitorEventTriggered, lastDayPainLosses, bundlePromoShown,
   } = state
 
+  // Migration: convert old currentDay to currentWeek
+  const week = currentWeek ?? Math.ceil((currentDay ?? 1) / 7)
+  const dow = dayOfWeek ?? ((currentDay ?? 1) % 7)
+
   return {
-    businessType, currentDay, balance, savedBalance, reputation, loyalty,
+    businessType,
+    currentWeek: week,
+    dayOfWeek: dow,
+    balance, savedBalance, reputation, loyalty,
+    entrepreneurEnergy: entrepreneurEnergy ?? ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY,
     stock, stockBatches, capacity, services, achievements, level, experience,
     lastDayResult, pendingEvent, pendingEventsQueue: pendingEventsQueue ?? [],
     triggeredEventIds, isGameOver, isVictory, gameOverReason,
@@ -833,6 +843,7 @@ function extractState(state: any): GameState {
     createdAt, lastUpdated,
     hadLowReputation: hadLowReputation ?? false,
     consecutiveNoExpiry: consecutiveNoExpiry ?? 0,
+    weeklyEnergyRestored: weeklyEnergyRestored ?? false,
     // New fields with migration defaults
     onboardingStage: onboardingStage ?? 0,
     onboardingCompleted: onboardingCompleted ?? false,
