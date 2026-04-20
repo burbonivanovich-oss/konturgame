@@ -13,10 +13,12 @@ export default function OnboardingModal() {
   if (!stageConfig) return null
 
   const steps = stageConfig.steps
-  const currentStep = steps[onboardingStepIndex]
+  if (!steps || steps.length === 0) return null
+  const clampedStepIndex = Math.min(onboardingStepIndex, steps.length - 1)
+  const currentStep = steps[clampedStepIndex]
   if (!currentStep) return null
 
-  const isLastStep = onboardingStepIndex >= steps.length - 1
+  const isLastStep = clampedStepIndex >= steps.length - 1
   const isLastStage = onboardingStage >= 4
 
   // Check if the required action for this step is done
@@ -125,7 +127,7 @@ export default function OnboardingModal() {
             {steps.map((_, i) => (
               <div key={i} style={{
                 width: 6, height: 6, borderRadius: '50%',
-                background: i <= onboardingStepIndex ? 'var(--k-orange)' : 'var(--k-ink-10)',
+                background: i <= clampedStepIndex ? 'var(--k-orange)' : 'var(--k-ink-10)',
                 transition: 'background 0.2s',
               }} />
             ))}
