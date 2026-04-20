@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import ResponsiveLayout from './ResponsiveLayout'
 import MobileMainScreen from './MobileMainScreen'
+import { OnboardingPanel } from './OnboardingPanel'
 import PurchaseModal from './modals/PurchaseModal'
 import CampaignModal from './modals/CampaignModal'
 import UpgradesModal from './modals/UpgradesModal'
@@ -8,7 +9,6 @@ import HelpModal from './modals/HelpModal'
 import SettingsModal from './modals/SettingsModal'
 import VictoryModal from './modals/VictoryModal'
 import AchievementsModal from './modals/AchievementsModal'
-import OnboardingModal from './modals/OnboardingModal'
 import CashRegisterModal from './modals/CashRegisterModal'
 import AssortmentModal from './modals/AssortmentModal'
 import PromoCodeModal from './modals/PromoCodeModal'
@@ -461,6 +461,9 @@ function DashboardView({
             </div>
           </div>
 
+          {/* Onboarding Panel */}
+          <OnboardingPanel />
+
           {/* Next Day */}
           <div>
             {dayBlockedMsg && (
@@ -653,7 +656,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
       <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} onRestart={onRestart} />
       <AchievementsModal isOpen={showAchievementsModal} onClose={() => setShowAchievementsModal(false)} />
-      <OnboardingModal />
       <CashRegisterModal isOpen={showCashRegisterModal} onClose={() => setShowCashRegisterModal(false)} />
       <AssortmentModal isOpen={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} />
       <PromoCodeModal />

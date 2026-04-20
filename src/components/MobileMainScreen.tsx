@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Indicators from './Indicators'
 import NextDayButton from './NextDayButton'
 import ServicePanel from './ServicePanel'
+import { OnboardingPanel } from './OnboardingPanel'
 import PurchaseModal from './modals/PurchaseModal'
 import EventModal from './modals/EventModal'
 import CampaignModal from './modals/CampaignModal'
@@ -10,7 +11,6 @@ import HelpModal from './modals/HelpModal'
 import SettingsModal from './modals/SettingsModal'
 import AchievementsModal from './modals/AchievementsModal'
 import VictoryModal from './modals/VictoryModal'
-import OnboardingModal from './modals/OnboardingModal'
 import CashRegisterModal from './modals/CashRegisterModal'
 import AssortmentModal from './modals/AssortmentModal'
 import PromoCodeModal from './modals/PromoCodeModal'
@@ -277,6 +277,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
 
         {activeTab === 'services' && (
           <>
+            <OnboardingPanel />
             <ServicePanel />
           </>
         )}
@@ -308,7 +309,6 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
       <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
       <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} onRestart={onRestart} />
       <AchievementsModal isOpen={showAchievementsModal} onClose={() => setShowAchievementsModal(false)} />
-      <OnboardingModal />
       <CashRegisterModal isOpen={showCashRegisterModal} onClose={() => setShowCashRegisterModal(false)} />
       <PromoCodeModal />
       <PromoWalletModal isOpen={showPromoWalletModal} onClose={() => setShowPromoWalletModal(false)} />
