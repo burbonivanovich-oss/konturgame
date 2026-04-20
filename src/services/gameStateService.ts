@@ -1,6 +1,6 @@
 import { useGameStore } from '../stores/gameStore'
 import type { BusinessType, ServiceType, DayResult, Event, AdCampaign, StockBatch, Upgrade } from '../types/game'
-import { SERVICES_CONFIG, UPGRADES_CONFIG, AD_CAMPAIGNS_CONFIG, BUSINESS_CONFIGS, ECONOMY_CONSTANTS } from '../constants/business'
+import { SERVICES_CONFIG, AD_CAMPAIGNS_CONFIG, BUSINESS_CONFIGS, ECONOMY_CONSTANTS, getUpgradesForBusiness } from '../constants/business'
 
 export class GameStateService {
   /**
@@ -113,8 +113,8 @@ export class GameStateService {
   static async purchaseUpgrade(upgradeId: string): Promise<boolean> {
     const store = useGameStore.getState()
 
-    const allUpgrades = Object.values(UPGRADES_CONFIG).flat()
-    const upgrade = allUpgrades.find((u) => u.id === upgradeId) as Upgrade | undefined
+    const upgrades = getUpgradesForBusiness(store.businessType)
+    const upgrade = upgrades.find((u) => u.id === upgradeId) as Upgrade | undefined
     if (!upgrade) return false
     if (store.hasPurchasedUpgrade(upgradeId)) return false
 
