@@ -409,28 +409,6 @@ function DashboardView({
             ))}
           </div>
 
-          {/* Action buttons */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-            {[
-              { label: '📦 Закупка', onClick: () => setShowPurchaseModal(true) },
-              { label: '📢 Реклама', onClick: () => setShowCampaignModal(true) },
-              { label: '🖥️ Касса', onClick: () => setShowCashRegisterModal(true) },
-              { label: '🔧 Улучшения', onClick: () => setShowUpgradesModal(true) },
-            ].map(btn => (
-              <button
-                key={btn.label}
-                onClick={btn.onClick}
-                style={{
-                  padding: '10px 14px', border: 'none',
-                  background: 'var(--k-ink)', color: '#fff',
-                  borderRadius: 999, fontFamily: 'inherit',
-                  fontWeight: 800, fontSize: 12, letterSpacing: '-0.01em',
-                  cursor: 'pointer', transition: 'opacity 0.15s',
-                }}>
-                {btn.label}
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* RIGHT column */}

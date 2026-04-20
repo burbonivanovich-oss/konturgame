@@ -77,11 +77,20 @@ export function OnboardingPanel() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
         <div style={{
           width: 40, height: 40, borderRadius: 12,
-          background: 'linear-gradient(135deg, var(--k-orange), var(--k-blue))',
+          background: onboardingStage === 0 ? 'var(--k-blue)' :
+                      onboardingStage === 1 ? 'var(--k-purple)' :
+                      onboardingStage === 2 ? 'var(--k-orange)' :
+                      onboardingStage === 3 ? 'var(--k-green)' :
+                      'var(--k-orange)',
           flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 20,
+          color: '#fff',
         }}>
-          🧑‍💼
+          {onboardingStage === 0 ? '🏦' :
+           onboardingStage === 1 ? '📋' :
+           onboardingStage === 2 ? '🛒' :
+           onboardingStage === 3 ? '⚖️' :
+           '📊'}
         </div>
         <div style={{ fontSize: 14, fontWeight: 800 }}>{currentStep.title}</div>
       </div>

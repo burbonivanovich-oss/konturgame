@@ -339,8 +339,44 @@ export const AD_CAMPAIGNS_CONFIG = [
   { id: 'coworking', name: 'Кооперация с коворкингом', duration: 20, cost: 5000, clientEffect: 0.08, checkEffect: 0, businessTypes: ['cafe'] as const },
 ] as const
 
-export const UPGRADES_CONFIG = [
-  { id: 'hall-expansion', name: 'Расширение зала', cost: 50000, capacityBonus: 0.4, monthlyRentIncrease: 15000, clientPenaltyDays: 5, clientPenaltyAmount: 0.3 },
-  { id: 'hire-admin', name: 'Наём администратора', cost: 10000, capacityBonus: 0.2, monthlySalaryIncrease: 5000 },
-  { id: 'premium-categories', name: 'Премиум-категории', cost: 30000, checkBonus: 0.15, requiredService: 'market' },
-] as const
+export const UPGRADES_CONFIG: Record<BusinessType, Array<{
+  id: string
+  name: string
+  cost: number
+  effect: string
+  capacityBonus?: number
+  loyaltyBonus?: number
+  clientBonus?: number
+  checkBonus?: number
+  monthlySalaryIncrease?: number
+  monthlyRentIncrease?: number
+}>> = {
+  shop: [
+    { id: 'cold-case', name: '❄️ Холодильная витрина', cost: 45000, effect: '+3 лояльности/день, расширение ассортимента', loyaltyBonus: 3, capacityBonus: 0.2 },
+    { id: 'cctv', name: '📹 Система видеонаблюдения', cost: 35000, effect: '+2% выручка, защита от краж', checkBonus: 0.02, loyaltyBonus: 1 },
+    { id: 'pos-terminal', name: '💳 POS-терминал', cost: 40000, effect: '+25% клиентов, приём карт', clientBonus: 0.25, checkBonus: 0.05 },
+    { id: 'hire-cashier', name: '👥 Наём кассира', cost: 30000, effect: '+50% пропускная способность', capacityBonus: 0.5, monthlySalaryIncrease: 8000 },
+    { id: 'hall-expansion', name: '📏 Расширение зала', cost: 60000, effect: '+60% вместимость, +15% аренда', capacityBonus: 0.6, monthlyRentIncrease: 12000 },
+    { id: 'premium-categories', name: '⭐ Премиум-категории', cost: 35000, effect: '+20% маржа на премиум товарах', checkBonus: 0.15 },
+  ],
+  cafe: [
+    { id: 'espresso-machine', name: '☕ Кофемашина эспрессо', cost: 50000, effect: '+5% выручка, новая позиция в меню', checkBonus: 0.05, loyaltyBonus: 2 },
+    { id: 'cooler', name: '❄️ Холодильник торговый', cost: 40000, effect: '+2 лояльности, больше ассортимента', loyaltyBonus: 2, capacityBonus: 0.15 },
+    { id: 'seasonal-menu', name: '🍽️ Сезонное меню', cost: 25000, effect: '+25% выручка летом/весной', checkBonus: 0.1 },
+    { id: 'hire-barista', name: '👨‍💼 Наём баристы', cost: 35000, effect: '+40% пропускная способность', capacityBonus: 0.4, monthlySalaryIncrease: 10000 },
+    { id: 'summer-terrace', name: '🏕️ Летняя веранда', cost: 55000, effect: '+40% мест летом, +20% аренда', capacityBonus: 0.4, monthlyRentIncrease: 8000 },
+    { id: 'dessert-bar', name: '🧁 Десертная стойка', cost: 30000, effect: '+15% среднего чека', checkBonus: 0.12 },
+  ],
+  'beauty-salon': [
+    { id: 'massage-chair', name: '💆 Массажное кресло', cost: 60000, effect: '+25% клиентов, новая услуга', clientBonus: 0.25, loyaltyBonus: 3 },
+    { id: 'manicure-station', name: '💅 Станция маникюра', cost: 45000, effect: '+20% клиентов, +15% маржа', clientBonus: 0.2, checkBonus: 0.15 },
+    { id: 'uv-lamps', name: '💡 УФ-лампы и стерилизация', cost: 35000, effect: '+4 лояльности, безопасность', loyaltyBonus: 4, clientBonus: 0.1 },
+    { id: 'crm-system', name: '📊 CRM и управление клиентами', cost: 30000, effect: '+3 лояльности, аналитика', loyaltyBonus: 3, checkBonus: 0.03 },
+    { id: 'hire-master', name: '👨‍🎓 Наём мастера', cost: 50000, effect: '+50% пропускная способность', capacityBonus: 0.5, monthlySalaryIncrease: 15000 },
+    { id: 'vip-room', name: '👑 VIP-кабинет', cost: 70000, effect: '+30% среднего чека, премиум позиционирование', checkBonus: 0.3, monthlyRentIncrease: 10000 },
+  ],
+} as const
+
+export function getUpgradesForBusiness(businessType: BusinessType) {
+  return UPGRADES_CONFIG[businessType] || []
+}

@@ -78,40 +78,27 @@ export default function ServicePanel() {
           📘 Сервисы Контура
         </button>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-          {allServicesList.map((service) => {
-            const isUnlocked = (unlockedServices ?? []).includes(service.id)
-            return (
-              <button
-                key={service.id}
-                onClick={() => setIsExpanded(true)}
-                style={{
-                  position: 'relative', fontSize: 24, background: 'transparent',
-                  border: 'none', cursor: 'pointer', padding: 4,
-                  opacity: isUnlocked ? 1 : 0.3,
-                  filter: isUnlocked ? 'none' : 'grayscale(1)',
-                }}
-                title={isUnlocked ? service.name : `Откроется позже`}
-              >
-                {service.icon}
-                {service.isActive && isUnlocked && (
-                  <div style={{
-                    position: 'absolute', top: 0, right: 0,
-                    width: 10, height: 10, borderRadius: '50%',
-                    background: 'var(--k-green)', border: '2px solid white',
-                  }}/>
-                )}
-                {!isUnlocked && (
-                  <div style={{
-                    position: 'absolute', top: 0, right: 0,
-                    width: 12, height: 12, borderRadius: '50%',
-                    background: 'var(--k-ink-50)', border: '2px solid white',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 6, color: '#fff',
-                  }}>🔒</div>
-                )}
-              </button>
-            )
-          })}
+          {visibleServices.map((service) => (
+            <button
+              key={service.id}
+              onClick={() => setIsExpanded(true)}
+              style={{
+                position: 'relative', fontSize: 24, background: 'transparent',
+                border: 'none', cursor: 'pointer', padding: 4,
+                opacity: 1,
+              }}
+              title={service.name}
+            >
+              {service.icon}
+              {service.isActive && (
+                <div style={{
+                  position: 'absolute', top: 0, right: 0,
+                  width: 10, height: 10, borderRadius: '50%',
+                  background: 'var(--k-green)', border: '2px solid white',
+                }}/>
+              )}
+            </button>
+          ))}
         </div>
         {activeSynergies.length > 0 && (
           <div style={{
