@@ -25,6 +25,7 @@ export default function OnboardingModal() {
   const isActionDone = (): boolean => {
     if (!currentStep.requiresAction) return true
     if (currentStep.requiresAction === 'activate_bank') return services?.bank?.isActive ?? false
+    if (currentStep.requiresAction === 'activate_ofd') return services?.ofd?.isActive ?? false
     if (currentStep.requiresAction === 'buy_register') return cashRegisters.length > 0
     return true
   }
@@ -130,6 +131,7 @@ export default function OnboardingModal() {
           }}>
             <span>⚠️</span>
             {currentStep.requiresAction === 'activate_bank' && 'Подключите Контур.Банк в панели сервисов'}
+            {currentStep.requiresAction === 'activate_ofd' && 'Подключите Контур.ОФД в панели сервисов'}
             {currentStep.requiresAction === 'buy_register' && 'Нажмите кнопку "Касса" и купите кассовый аппарат'}
           </div>
         )}
