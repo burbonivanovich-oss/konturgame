@@ -1,21 +1,61 @@
 ```
-# Documentation archives
-Archive/
+# Dependencies
+node_modules/
 
-# Temporary editor/IDE files
-*.tmp
+# Build artifacts
+dist/
+build/
+*.min.js
+*.min.css
+
+# Environment variables
+.env
+.env.local
+*.env.*
+
+# IDE and editor files
+.vscode/
+.idea/
 *.swp
 *.swo
 
 # Logs
 *.log
 
-# Environment files
-.env
-.env.local
-*.env.*
+# OS generated files
+.DS_Store
+Thumbs.db
 
-# Backup files
-*~
-.#*
+# Coverage reports
+coverage/
+htmlcov/
+*.coverage
+
+# Temporary files
+*.tmp
+*.temp
+
+# Package manager caches
+.npm/
+.yarn/
+.pnpm-store/
+
+# TypeScript
+*.tsbuildinfo
+*.js.map
+
+# Browserslist
+.browserslistcache
+
+# Vitest
+.vitest/
+
+# Tailwind CSS
+.tailwindcss/
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
 ```

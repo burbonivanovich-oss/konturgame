@@ -6,10 +6,35 @@ export type OnboardingStage = 0 | 1 | 2 | 3 | 4
 
 export type CashRegisterType = 'mobile' | 'reliable' | 'fast'
 
+export type SupplierTier = 'economy' | 'standard' | 'premium'
+
+export type EmployeePosition = 'cashier' | 'assistant' | 'manager' | 'specialist'
+
 export interface CashRegister {
   type: CashRegisterType
   count: number
   purchaseDay: number
+}
+
+export interface Supplier {
+  id: string
+  name: string
+  tier: SupplierTier
+  qualityModifier: number  // -0.2 to +0.2
+  priceModifier: number    // -0.15 to +0.25
+  reliability: number      // 0.7 to 1.0 (chance of on-time delivery)
+  isActive: boolean
+  unlockedDay: number
+}
+
+export interface Employee {
+  id: string
+  position: EmployeePosition
+  name: string
+  salary: number           // monthly salary
+  efficiency: number       // 0.5 to 1.5 (affects capacity)
+  hireDay: number
+  energyCost: number       // energy cost per week to manage
 }
 
 export interface ProductCategory {
@@ -332,4 +357,17 @@ export interface GameState {
       effects: Record<string, number>
     }>
   }
+
+  // Suppliers system (NEW v2.0)
+  suppliers: Supplier[]
+  activeSupplierId: string | null
+
+  // Employees system (NEW v2.0)
+  employees: Employee[]
+
+  // Quality of service/product (NEW v2.0) - affects reputation and loyalty
+  qualityLevel: number  // 0-100, starts at 50
+
+  // Competitor events tracking (UPDATED v2.0)
+  weeksSinceCompetitorEvent: number  // Track weeks since last competitor event
 }
