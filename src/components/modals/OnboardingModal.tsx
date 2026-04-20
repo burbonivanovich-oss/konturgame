@@ -25,6 +25,7 @@ export default function OnboardingModal() {
   const isActionDone = (): boolean => {
     if (!currentStep.requiresAction) return true
     if (currentStep.requiresAction === 'activate_bank') return services?.bank?.isActive ?? false
+    if (currentStep.requiresAction === 'activate_ofd') return services?.ofd?.isActive ?? false
     if (currentStep.requiresAction === 'buy_register') return cashRegisters.length > 0
     return true
   }
@@ -50,10 +51,10 @@ export default function OnboardingModal() {
     <div style={{
       position: 'fixed', zIndex: 200,
       pointerEvents: pendingAction ? 'none' : 'auto',
-      // When action is pending: anchor to bottom-right, no backdrop, pointer-events none
+      // When action is pending: anchor to top-left, no backdrop, pointer-events none
       // When action done or no action: center with full backdrop
       ...(pendingAction ? {
-        bottom: 24, right: 24,
+        top: 24, left: 24,
         width: 360,
       } : {
         inset: 0,
@@ -65,6 +66,8 @@ export default function OnboardingModal() {
       <div style={{
         background: '#fff', borderRadius: 24, padding: 28,
         maxWidth: pendingAction ? '100%' : 440, width: '100%',
+        maxHeight: pendingAction ? '80vh' : '85vh',
+        overflowY: 'auto',
         boxShadow: '0 24px 80px rgba(0,0,0,0.25)',
         pointerEvents: 'auto',
         // Subtle highlight border when floating
@@ -118,6 +121,21 @@ export default function OnboardingModal() {
           {currentStep.text}
         </div>
 
+        {/* Stage completion hint */}
+        {isLastStep && !isLastStage && (
+          <div style={{
+            fontSize: 12, fontWeight: 600,
+            color: 'var(--k-green)',
+            background: 'rgba(34, 197, 94, 0.08)',
+            borderRadius: 10, padding: '10px 14px',
+            marginBottom: 16,
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <span>🔓</span>
+            При завершении этапа откроются новые сервисы
+          </div>
+        )}
+
         {/* Action required notice */}
         {currentStep.requiresAction && !actionDone && (
           <div style={{
@@ -130,6 +148,7 @@ export default function OnboardingModal() {
           }}>
             <span>⚠️</span>
             {currentStep.requiresAction === 'activate_bank' && 'Подключите Контур.Банк в панели сервисов'}
+            {currentStep.requiresAction === 'activate_ofd' && 'Подключите Контур.ОФД в панели сервисов'}
             {currentStep.requiresAction === 'buy_register' && 'Нажмите кнопку "Касса" и купите кассовый аппарат'}
           </div>
         )}

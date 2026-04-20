@@ -796,3 +796,17 @@ useGameStore.subscribe(
     saveToStorage(state as GameState)
   }
 )
+
+// Sync unlockedServices with onboardingStage if they're out of sync
+export function syncOnboardingState(): void {
+  const state = useGameStore.getState()
+  const expectedServices = SERVICE_UNLOCK_MAP[state.onboardingStage]
+  const actualServices = state.unlockedServices ?? []
+
+  if (JSON.stringify(expectedServices) !== JSON.stringify(actualServices)) {
+    useGameStore.setState({
+      unlockedServices: expectedServices,
+      lastUpdated: Date.now(),
+    })
+  }
+}

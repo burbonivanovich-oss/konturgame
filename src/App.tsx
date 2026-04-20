@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import MainScreen from '@components/MainScreen'
 import BusinessSelector from '@components/BusinessSelector'
-import { useGameStore } from './stores/gameStore'
+import { useGameStore, syncOnboardingState } from './stores/gameStore'
 
 export default function App() {
   const [showGame, setShowGame] = useState(false)
@@ -14,6 +14,8 @@ export default function App() {
       try {
         const state = JSON.parse(saved)
         loadGame(state)
+        // Ensure unlockedServices syncs with onboardingStage
+        syncOnboardingState()
         setShowGame(true)
       } catch (error) {
         console.error('Failed to load game', error)
