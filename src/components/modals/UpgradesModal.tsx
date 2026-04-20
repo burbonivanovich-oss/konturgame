@@ -66,10 +66,10 @@ export default function UpgradesModal({ isOpen, onClose }: UpgradesModalProps) {
           {selectedUpgrade && (
             <button
               onClick={() => {
-                const upgrade = UPGRADES.find(u => u.id === selectedUpgrade)
+                const upgrade = upgrades.find((u: typeof upgrades[0]) => u.id === selectedUpgrade)
                 if (upgrade) handlePurchase(upgrade)
               }}
-              disabled={!balance || balance < (UPGRADES.find(u => u.id === selectedUpgrade)?.cost || 0)}
+              disabled={!balance || balance < (upgrades.find((u: typeof upgrades[0]) => u.id === selectedUpgrade)?.cost || 0)}
               className="flex-1 bg-brand-orange hover:opacity-90 disabled:bg-gray-300 py-2 rounded-md transition font-semibold text-white disabled:text-gray-500"
             >
               Купить

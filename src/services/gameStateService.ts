@@ -113,7 +113,8 @@ export class GameStateService {
   static async purchaseUpgrade(upgradeId: string): Promise<boolean> {
     const store = useGameStore.getState()
 
-    const upgrade = UPGRADES_CONFIG.find((u) => u.id === upgradeId) as Upgrade | undefined
+    const allUpgrades = Object.values(UPGRADES_CONFIG).flat()
+    const upgrade = allUpgrades.find((u) => u.id === upgradeId) as Upgrade | undefined
     if (!upgrade) return false
     if (store.hasPurchasedUpgrade(upgradeId)) return false
 
