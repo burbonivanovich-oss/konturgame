@@ -152,8 +152,14 @@ export default function ServicePanel() {
       </div>
 
       {/* Unlocked services */}
+      {visibleServices.length > 0 && (
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--k-green)', marginBottom: 8, opacity: 0.7 }}>
+          ✓ Доступные сервисы на этом этапе
+        </div>
+      )}
       {visibleServices.map((service) => {
         const canAfford = balance >= service.monthlyPrice
+        const isUnlocked = unlockedServices.includes(service.id)
         return (
           <div
             key={service.id}
@@ -162,6 +168,7 @@ export default function ServicePanel() {
               color: service.isActive ? (service.color === 'var(--k-orange)' || service.color === 'var(--k-green)' ? 'var(--k-ink)' : '#fff') : 'var(--k-ink)',
               borderRadius: 12, padding: 12, border: service.isActive ? 'none' : '1px solid var(--k-ink-10)',
               display: 'flex', flexDirection: 'column', gap: 8,
+              opacity: isUnlocked ? 1 : 0.5,
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -173,8 +180,8 @@ export default function ServicePanel() {
             </div>
             <div style={{ fontSize: 11, opacity: 0.8, lineHeight: 1.3 }}>{service.description}</div>
             <button
-              onClick={() => toggleService(service.id)}
-              disabled={false}
+              onClick={() => isUnlocked && toggleService(service.id)}
+              disabled={!isUnlocked}
               style={{
                 width: '100%', padding: '8px', borderRadius: 8, fontSize: 11, fontWeight: 700,
                 border: 'none', cursor: 'pointer',
