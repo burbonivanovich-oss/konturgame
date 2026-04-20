@@ -171,8 +171,15 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'survived_competitor',
     name: 'Конкурент побежден',
-    description: 'Выжить во время атаки конкурента на день 20+',
+    description: 'Выжить во время атаки конкурента на неделю 4+',
     icon: '🛡️',
+    category: 'special',
+  },
+  {
+    id: 'survival_year_one',
+    name: 'Выжил первый год!',
+    description: 'Прожить весь первый год с положительным балансом и репутацией',
+    icon: '🎉',
     category: 'special',
   },
 ]

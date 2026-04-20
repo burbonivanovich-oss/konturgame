@@ -192,37 +192,68 @@ export const SYNERGIES_CONFIG: SynergyBonus[] = [
 ]
 
 export const ECONOMY_CONSTANTS = {
+  // Rates (same)
   TAX_RATE: 0.06,
   EXPIRY_LOSS_RATE: 0.8,
   EXPIRY_LOSS_RATE_WITH_MARKET: 0.64,
   PURCHASE_TRIGGER_DAYS: 3,
   DEFAULT_BATCH_SIZE: 48,
   DEFAULT_UNIT_COST: 5,
-  MONTHLY_CYCLE_DAYS: 30,
+
+  // Week-based cycles
+  MONTHLY_CYCLE_WEEKS: 4,  // ~30 days = 4 weeks
+
+  // Constants (max values)
   MAX_REPUTATION: 100,
   MIN_REPUTATION: 0,
   MAX_LOYALTY: 100,
   MIN_LOYALTY: 0,
-  REPUTATION_ZERO_DAYS_FOR_LOSS: 3,
+  MAX_ENTREPRENEURIAL_ENERGY: 100,
+
+  // Thresholds
+  REPUTATION_ZERO_WEEKS_FOR_LOSS: 6,  // ~1.5 months
   OVERLOAD_THRESHOLD: 0.9,
   OVERLOAD_DAYS_FOR_LOYALTY_PENALTY: 3,
   LOYALTY_PENALTY_PER_DAY: 10,
   LOYALTY_BONUS_PREMIUM: 15,
   PREMIUM_COST_RATE: 0.05,
-  VICTORY_DAILY_PROFIT: 100000,
-  VICTORY_BALANCE: 1000000,
+
+  // Victory conditions (annual)
+  VICTORY_WEEKLY_PROFIT: 15000,  // ~2100/day
+  VICTORY_BALANCE: 200000,  // Realistic for year 1
   VICTORY_LEVEL: 10,
   VICTORY_ACHIEVEMENTS: 7,
-  EXPERIENCE_PER_DAY: 1,
-  EXPERIENCE_PER_10K_PROFIT: 1,
-  // New balance constants
+
+  // Experience
+  EXPERIENCE_PER_WEEK: 7,
+  EXPERIENCE_PER_10K_PROFIT: 2,
+
+  // Weekly utilities and maintenance
   DAILY_UTILITIES: 500,
   DAILY_REGISTER_MAINTENANCE: 300,
-  DAYS_BALANCE_NEGATIVE_FOR_GAMEOVER: 3,
-  OVERLOAD_DAYS_FOR_GAMEOVER: 7,
-  COMPETITOR_EVENT_DAY: 20,
+  WEEKS_BALANCE_NEGATIVE_FOR_GAMEOVER: 3,  // If balance negative for 3+ weeks
+
+  // Entrepreneur energy mechanics
+  ENERGY_COST_BASE_OPERATION: 15,  // Per operation (buy stock, change category, etc)
+  ENERGY_COST_PURCHASE: 25,
+  ENERGY_COST_PROMO: 20,
+  ENERGY_WEEKLY_RESTORE: 100,  // Full restore at week start
+
+  // Service energy reduction
+  ENERGY_REDUCTION_BANK: 0.3,      // 30% cost reduction
+  ENERGY_REDUCTION_OFD: 0.2,       // 20% cost reduction
+  ENERGY_REDUCTION_DIADOC: 0.25,   // 25% cost reduction
+  ENERGY_REDUCTION_ELBA: 0.35,     // 35% cost reduction
+  ENERGY_COST_ZERO_THRESHOLD: 5,   // Minimum cost
+
+  // Competitor event (week-based)
+  COMPETITOR_EVENT_WEEK: 3,
   COMPETITOR_TRAFFIC_STEAL_PCT: 0.15,
-  COMPETITOR_EFFECT_DAYS: 10,
+  COMPETITOR_EFFECT_WEEKS: 2,
+
+  // Year-based achievements
+  TOTAL_WEEKS_PER_YEAR: 52,
+  SURVIVAL_YEAR_ACHIEVEMENT: 'survival_year_one',
 } as const
 
 export const LEVEL_TABLE: Array<{ level: number; expRequired: number }> = [

@@ -236,11 +236,13 @@ export interface BusinessConfig {
 
 export interface GameState {
   businessType: BusinessType
-  currentDay: number
+  currentWeek: number  // 1-52
+  dayOfWeek: number    // 0-6 (0 = Monday, 6 = Sunday)
   balance: number
   savedBalance: number
   reputation: number
   loyalty: number
+  entrepreneurEnergy: number  // 0-100, drained by operations, restored weekly
 
   // Legacy stock (kept for compatibility)
   stock: Stock[]
@@ -267,6 +269,9 @@ export interface GameState {
   daysReputationZero: number
   daysSinceLastMonthly: number
   purchaseOfferedThisDay: boolean
+
+  // Week-based counters
+  weeklyEnergyRestored: boolean  // Track if energy was restored this week
 
   // Active campaigns and upgrades
   activeAdCampaigns: AdCampaign[]
