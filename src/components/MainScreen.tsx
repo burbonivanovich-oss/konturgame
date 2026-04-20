@@ -501,7 +501,7 @@ function DashboardView({
   )
 }
 
-function DesktopMainScreen() {
+function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const [activeView, setActiveView] = useState<ActiveView>('dashboard')
   const [activeNav, setActiveNav] = useState('Дневной цикл')
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
@@ -651,7 +651,7 @@ function DesktopMainScreen() {
 
       {/* Global modals */}
       <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
-      <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
+      <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} onRestart={onRestart} />
       <AchievementsModal isOpen={showAchievementsModal} onClose={() => setShowAchievementsModal(false)} />
       <OnboardingModal />
       <CashRegisterModal isOpen={showCashRegisterModal} onClose={() => setShowCashRegisterModal(false)} />
@@ -676,11 +676,15 @@ function DesktopMainScreen() {
   )
 }
 
-export default function MainScreen() {
+interface MainScreenProps {
+  onRestart?: () => void
+}
+
+export default function MainScreen({ onRestart }: MainScreenProps) {
   return (
     <ResponsiveLayout
-      desktopView={<DesktopMainScreen />}
-      mobileView={<MobileMainScreen />}
+      desktopView={<DesktopMainScreen onRestart={onRestart} />}
+      mobileView={<MobileMainScreen onRestart={onRestart} />}
     />
   )
 }
