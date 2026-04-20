@@ -14,6 +14,7 @@ import AssortmentModal from './modals/AssortmentModal'
 import PromoCodeModal from './modals/PromoCodeModal'
 import PromoWalletModal from './modals/PromoWalletModal'
 import BundleModal from './modals/BundleModal'
+import MicroEventModal from './modals/MicroEventModal'
 import { DesktopRecap } from './design-system/DesktopRecap'
 import { DesktopKontur } from './design-system/DesktopKontur'
 import { WarehouseView } from './views/WarehouseView'
@@ -23,6 +24,7 @@ import { ReputationView } from './views/ReputationView'
 import OperationsView from './views/OperationsView'
 import StatisticsView from './views/StatisticsView'
 import { useGameStore } from '../stores/gameStore'
+import { generateMicroEventForDay } from '../services/microEventGenerator'
 
 type ActiveView = 'dashboard' | 'recap' | 'ecosystem' | 'warehouse' | 'marketing' | 'finance' | 'reputation' | 'operations' | 'statistics'
 
@@ -580,6 +582,15 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
     } else {
       setActiveView('recap')
       setActiveNav('Дневной цикл')
+
+      // Generate micro event for the new day
+      setTimeout(() => {
+        const store = useGameStore.getState()
+        const microEvent = generateMicroEventForDay(store)
+        if (microEvent) {
+          store.setPendingMicroEvent(microEvent)
+        }
+      }, 500)
     }
   }
 
@@ -665,6 +676,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       <PromoCodeModal />
       <PromoWalletModal isOpen={showPromoWalletModal} onClose={() => setShowPromoWalletModal(false)} />
       <BundleModal />
+      <MicroEventModal />
       <VictoryModal isOpen={isVictory} type="victory" />
       <VictoryModal isOpen={isGameOver && !isVictory} type="defeat" />
 

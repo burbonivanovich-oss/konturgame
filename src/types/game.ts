@@ -318,4 +318,18 @@ export interface GameState {
 
   // Bundle promo shown
   bundlePromoShown: boolean
+
+  // Daily micro events
+  seenMicroEventIds: string[]  // Events already shown this week
+  pendingMicroEvent: null | {
+    id: string
+    title: string
+    description: string
+    icon: string
+    options: Array<{
+      id: string
+      text: string
+      effects: Record<string, number>
+    }>
+  }
 }

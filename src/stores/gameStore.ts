@@ -106,6 +106,10 @@ const createInitialState = (businessType: BusinessType): GameState => {
 
     // Week energy restore
     weeklyEnergyRestored: false,
+
+    // Daily micro events
+    seenMicroEventIds: [],
+    pendingMicroEvent: null,
   }
 }
 
@@ -215,6 +219,11 @@ interface GameStoreActions {
   revealPromoCode: (serviceId: ServiceType) => void
   clearPendingPromoCode: () => void
   markBundlePromoShown: () => void
+
+  // Daily micro events
+  setPendingMicroEvent: (event: any) => void
+  resolveMicroEvent: (optionId: string) => void
+  clearSeenMicroEvents: () => void  // Reset when week changes
 }
 
 interface GameStore extends GameState, GameStoreActions {}
@@ -795,6 +804,50 @@ export const useGameStore = create<GameStore>((set, get) => ({
     markBundlePromoShown: () => {
       set({ bundlePromoShown: true, lastUpdated: Date.now() })
     },
+
+    // Daily micro events
+    setPendingMicroEvent: (event) => {
+      set({
+        pendingMicroEvent: event,
+        seenMicroEventIds: [...get().seenMicroEventIds, event.id],
+        lastUpdated: Date.now(),
+      })
+    },
+
+    resolveMicroEvent: (optionId) => {
+      const state = get()
+      const event = state.pendingMicroEvent
+      if (!event) return
+
+      const option = event.options.find(o => o.id === optionId)
+      if (!option) return
+
+      const effects = option.effects
+      let updates: any = { pendingMicroEvent: null, lastUpdated: Date.now() }
+
+      if (effects.balanceDelta) {
+        updates.balance = Math.max(0, state.balance + effects.balanceDelta)
+      }
+
+      if (effects.energyDelta) {
+        updates.entrepreneurEnergy = Math.max(0, Math.min(100, state.entrepreneurEnergy + effects.energyDelta))
+      }
+
+      if (effects.reputationDelta) {
+        updates.reputation = Math.max(0, Math.min(100, state.reputation + effects.reputationDelta))
+      }
+
+      if (effects.clientModifierPercent && effects.clientModifierDays) {
+        updates.temporaryClientMod = effects.clientModifierPercent
+        updates.temporaryModDaysLeft = effects.clientModifierDays
+      }
+
+      set(updates)
+    },
+
+    clearSeenMicroEvents: () => {
+      set({ seenMicroEventIds: [], lastUpdated: Date.now() })
+    },
   }))
 
 // LocalStorage persistence
@@ -820,6 +873,7 @@ function extractState(state: any): GameState {
     currentDay,
     // New fields
     onboardingStage, onboardingCompleted, onboardingStepIndex, unlockedServices,
+    seenMicroEventIds, pendingMicroEvent,
     cashRegisters, enabledCategories, promoCodesRevealed,
     daysBalanceNegative, competitorEventTriggered, lastDayPainLosses, bundlePromoShown,
   } = state
@@ -857,6 +911,8 @@ function extractState(state: any): GameState {
     competitorEventTriggered: competitorEventTriggered ?? false,
     lastDayPainLosses: lastDayPainLosses ?? null,
     bundlePromoShown: bundlePromoShown ?? false,
+    seenMicroEventIds: seenMicroEventIds ?? [],
+    pendingMicroEvent: pendingMicroEvent ?? null,
   }
 }
 

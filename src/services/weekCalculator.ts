@@ -233,6 +233,7 @@ export function processWeek(state: GameState): DayResult {
   state.currentWeek += 1
   state.dayOfWeek = 0
   state.weeklyEnergyRestored = false
+  state.seenMicroEventIds = []  // Reset seen events for new week
   state.balance = newBalance
   state.reputation = newReputation
   state.loyalty = newLoyalty
