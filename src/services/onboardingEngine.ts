@@ -14,7 +14,21 @@ export function shouldAdvanceStage(state: GameState): boolean {
 
   // dayRange is in days, convert currentWeek to days
   const currentDay = state.currentWeek * 7
-  return currentDay >= nextStageConfig.dayRange[0]
+  const dayThresholdReached = currentDay >= nextStageConfig.dayRange[0]
+
+  if (!dayThresholdReached) return false
+
+  // For critical stages (0 and 1), check if required action is completed
+  if (currentStage === 0) {
+    const bankActive = state.services?.bank?.isActive ?? false
+    if (!bankActive) return false
+  }
+  if (currentStage === 1) {
+    const ofdActive = state.services?.ofd?.isActive ?? false
+    if (!ofdActive) return false
+  }
+
+  return true
 }
 
 export function checkOnboardingBlocked(state: GameState): { blocked: boolean; reason?: string } {

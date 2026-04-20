@@ -371,6 +371,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Services
     toggleService: (serviceId) => {
       const state = get()
+      // Check if service is unlocked before allowing toggle
+      if (!(state.unlockedServices ?? []).includes(serviceId)) {
+        return
+      }
       const isCurrentlyActive = state.services[serviceId]?.isActive ?? false
       // Activate with promo code reveal
       if (!isCurrentlyActive) {
@@ -390,6 +394,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     activateService: (serviceId) => {
       const state = get()
+      // Check if service is unlocked before allowing activation
+      if (!(state.unlockedServices ?? []).includes(serviceId)) {
+        return
+      }
       if (!state.services[serviceId]?.isActive) {
         get().revealPromoCode(serviceId)
       }

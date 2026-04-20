@@ -1,48 +1,19 @@
 import { useState } from 'react'
 import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
+import { getUpgradesForBusiness } from '../../constants/business'
 
 interface UpgradesModalProps {
   isOpen: boolean
   onClose: () => void
 }
 
-const UPGRADES = [
-  {
-    id: 'expansion',
-    name: '📏 Расширение помещения',
-    description: 'Увеличивает вместимость склада на 50%',
-    cost: 50000,
-    effect: '+50% вместимость',
-  },
-  {
-    id: 'staff-hire',
-    name: '👥 Наем сотрудника',
-    description: 'Повышает лояльность на 10 пунктов',
-    cost: 30000,
-    effect: '+10 лояльности',
-  },
-  {
-    id: 'better-location',
-    name: '🏪 Улучшенная локация',
-    description: 'Увеличивает количество клиентов на 20%',
-    cost: 80000,
-    effect: '+20% клиентов',
-  },
-  {
-    id: 'equipment',
-    name: '⚙️ Оборудование',
-    description: 'Сокращает время обслуживания на 15%',
-    cost: 40000,
-    effect: '+15% скорость',
-  },
-]
-
 export default function UpgradesModal({ isOpen, onClose }: UpgradesModalProps) {
-  const { balance, purchasedUpgrades, purchaseUpgrade, setBalance } = useGameStore()
+  const { balance, businessType, purchasedUpgrades, purchaseUpgrade, setBalance } = useGameStore()
   const [selectedUpgrade, setSelectedUpgrade] = useState<string | null>(null)
+  const upgrades = getUpgradesForBusiness(businessType)
 
-  const handlePurchase = (upgrade: typeof UPGRADES[0]) => {
+  const handlePurchase = (upgrade: typeof upgrades[0]) => {
     if (balance >= upgrade.cost && !purchasedUpgrades.includes(upgrade.id)) {
       purchaseUpgrade(upgrade.id)
       setBalance(balance - upgrade.cost)
@@ -54,7 +25,7 @@ export default function UpgradesModal({ isOpen, onClose }: UpgradesModalProps) {
     <Modal isOpen={isOpen} title="🔧 Улучшения" onClose={onClose} size="lg">
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
-          {UPGRADES.map((upgrade) => {
+          {upgrades.map((upgrade) => {
             const isPurchased = purchasedUpgrades.includes(upgrade.id)
             const canAfford = balance >= upgrade.cost
 
@@ -72,7 +43,6 @@ export default function UpgradesModal({ isOpen, onClose }: UpgradesModalProps) {
                   <span className="font-semibold text-gray-800">{upgrade.name}</span>
                   {isPurchased && <span className="text-brand-green text-xl">✓</span>}
                 </div>
-                <p className="text-sm text-gray-600 mb-2">{upgrade.description}</p>
                 <p className="text-sm font-semibold text-brand-orange mb-2">{upgrade.effect}</p>
                 {!isPurchased && (
                   <p className={`text-sm font-bold ${
