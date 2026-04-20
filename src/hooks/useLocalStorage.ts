@@ -50,7 +50,7 @@ export const useGameSnapshot = () => {
     const snapshotKey = `snapshot_${Date.now()}`
     localStorage.setItem(snapshotKey, JSON.stringify({
       timestamp: Date.now(),
-      day: state.currentDay,
+      day: state.currentWeek,
       balance: state.balance,
       reputation: state.reputation,
       loyalty: state.loyalty,

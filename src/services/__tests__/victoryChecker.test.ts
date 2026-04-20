@@ -15,10 +15,12 @@ const ALL_SERVICE_IDS: ServiceType[] = ['market', 'bank', 'ofd', 'diadoc', 'foku
 function makeState(overrides: Partial<GameState> = {}): GameState {
   return {
     businessType: 'shop',
-    currentDay: 1,
+    currentWeek: 1,
+    dayOfWeek: 0,
     balance: 50000,
     savedBalance: 0,
     reputation: 50,
+    entrepreneurEnergy: 100,
     loyalty: 60,
     stock: [],
     stockBatches: [],
@@ -54,6 +56,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     competitorEventTriggered: false,
     lastDayPainLosses: null,
     bundlePromoShown: false,
+    weeklyEnergyRestored: false,
     createdAt: Date.now(),
     lastUpdated: Date.now(),
     ...overrides,

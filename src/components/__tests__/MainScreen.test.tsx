@@ -9,7 +9,7 @@ describe('MainScreen Integration', () => {
   it('should initialize game state', () => {
     const state = useGameStore.getState()
     expect(state.businessType).toBe('shop')
-    expect(state.currentDay).toBe(1)
+    expect(state.currentWeek).toBe(1)
     expect(state.balance).toBeGreaterThan(0)
     expect(state.reputation).toBeGreaterThan(0)
     expect(state.loyalty).toBeGreaterThan(0)
@@ -17,7 +17,7 @@ describe('MainScreen Integration', () => {
 
   it('should have KPI values from store', () => {
     const state = useGameStore.getState()
-    expect(state.currentDay).toBe(1)
+    expect(state.currentWeek).toBe(1)
     expect(state.balance).toBe(50000)
   })
 

@@ -6,7 +6,7 @@ interface DesktopRecapProps {
 }
 
 export function DesktopRecap({ onContinue, embedded = false }: DesktopRecapProps) {
-  const { currentDay, balance, lastDayResult, achievements, services } = useGameStore()
+  const { currentWeek, balance, lastDayResult, achievements, services } = useGameStore()
 
   if (!lastDayResult) return null
 
@@ -72,7 +72,7 @@ export function DesktopRecap({ onContinue, embedded = false }: DesktopRecapProps
       {/* LEFT — hero */}
       <div style={{ width: 420, display: 'flex', flexDirection: 'column', gap: 12, flexShrink: 0 }}>
         <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', opacity: 0.5 }}>
-          ИТОГИ ДНЯ · {currentDay}
+          ИТОГИ ДНЯ · {currentWeek}
         </div>
 
         {/* Net profit hero card */}
@@ -171,10 +171,10 @@ export function DesktopRecap({ onContinue, embedded = false }: DesktopRecapProps
                 РАСЧЁТ ДНЯ
               </div>
               <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.025em', marginTop: 2 }}>
-                День {currentDay}
+                День {currentWeek}
               </div>
             </div>
-            <div className="k-mono" style={{ fontSize: 11, opacity: 0.35 }}>#D{currentDay}</div>
+            <div className="k-mono" style={{ fontSize: 11, opacity: 0.35 }}>#D{currentWeek}</div>
           </div>
 
           {/* Header row */}
@@ -302,7 +302,7 @@ export function DesktopRecap({ onContinue, embedded = false }: DesktopRecapProps
                 transition: 'opacity 0.15s',
               }}
             >
-              День {currentDay + 1} →
+              День {currentWeek + 1} →
             </button>
           </div>
         </div>

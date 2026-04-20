@@ -4,19 +4,15 @@ import { ECONOMY_CONSTANTS } from '../constants/business'
 const ALL_SERVICES: ServiceType[] = ['market', 'bank', 'ofd', 'diadoc', 'fokus', 'elba', 'extern']
 
 export function checkBankruptcy(state: GameState): boolean {
-  // Bankruptcy after 3 consecutive days with negative balance
-  return (state.daysBalanceNegative ?? 0) >= ECONOMY_CONSTANTS.DAYS_BALANCE_NEGATIVE_FOR_GAMEOVER
+  // Bankruptcy after 3 consecutive weeks with negative balance
+  return (state.daysBalanceNegative ?? 0) >= ECONOMY_CONSTANTS.WEEKS_BALANCE_NEGATIVE_FOR_GAMEOVER
 }
 
 export function checkReputationLoss(state: GameState): boolean {
   return (
     state.reputation === 0 &&
-    (state.daysReputationZero ?? 0) >= ECONOMY_CONSTANTS.REPUTATION_ZERO_DAYS_FOR_LOSS
+    (state.daysReputationZero ?? 0) >= ECONOMY_CONSTANTS.REPUTATION_ZERO_WEEKS_FOR_LOSS
   )
-}
-
-export function checkOverloadGameOver(state: GameState): boolean {
-  return (state.consecutiveOverloadDays ?? 0) >= ECONOMY_CONSTANTS.OVERLOAD_DAYS_FOR_GAMEOVER
 }
 
 export function getAllServicesActive(state: GameState): boolean {
@@ -25,21 +21,26 @@ export function getAllServicesActive(state: GameState): boolean {
 }
 
 export function getVictoryStatus(state: GameState): Record<string, boolean> {
-  const dailyProfit = state.lastDayResult?.netProfit ?? 0
+  const weeklyProfit = state.lastDayResult?.netProfit ?? 0
+  const isYearOne = state.currentWeek >= ECONOMY_CONSTANTS.TOTAL_WEEKS_PER_YEAR
 
   return {
-    dailyProfitReached: dailyProfit >= ECONOMY_CONSTANTS.VICTORY_DAILY_PROFIT,
+    weeklyProfitReached: weeklyProfit >= ECONOMY_CONSTANTS.VICTORY_WEEKLY_PROFIT,
     balanceReached: state.balance >= ECONOMY_CONSTANTS.VICTORY_BALANCE,
     allServicesConnected: getAllServicesActive(state),
     levelReached: state.level >= ECONOMY_CONSTANTS.VICTORY_LEVEL,
-    achievementsReached:
-      (state.achievements?.length ?? 0) >= ECONOMY_CONSTANTS.VICTORY_ACHIEVEMENTS,
+    achievementsReached: (state.achievements?.length ?? 0) >= ECONOMY_CONSTANTS.VICTORY_ACHIEVEMENTS,
+    yearOneComplete: isYearOne,  // Survived full year!
   }
 }
 
 export function checkVictory(state: GameState): boolean {
   const status = getVictoryStatus(state)
-  return Object.values(status).every(Boolean)
+  // Need to survive a year OR meet all other conditions
+  if (status.yearOneComplete) {
+    return (state.balance > 0 && state.reputation > 0)  // Just surviving year 1 is a win
+  }
+  return Object.values(status).slice(0, -1).every(Boolean)  // Other conditions
 }
 
 export function updateGameOverCounters(state: GameState): void {
@@ -47,12 +48,6 @@ export function updateGameOverCounters(state: GameState): void {
     state.daysReputationZero = (state.daysReputationZero ?? 0) + 1
   } else {
     state.daysReputationZero = 0
-  }
-
-  // Check overload game over
-  if (checkOverloadGameOver(state)) {
-    state.isGameOver = true
-    state.gameOverReason = 'overload'
   }
 }
 

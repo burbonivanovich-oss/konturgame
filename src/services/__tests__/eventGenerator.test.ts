@@ -5,10 +5,12 @@ import type { GameState } from '../../types/game'
 function makeState(overrides: Partial<GameState> = {}): GameState {
   return {
     businessType: 'shop',
-    currentDay: 1,
+    currentWeek: 1,
+    dayOfWeek: 0,
     balance: 50000,
     savedBalance: 0,
     reputation: 50,
+    entrepreneurEnergy: 100,
     loyalty: 60,
     stock: [],
     stockBatches: [],
@@ -44,6 +46,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     competitorEventTriggered: false,
     lastDayPainLosses: null,
     bundlePromoShown: false,
+    weeklyEnergyRestored: false,
     createdAt: Date.now(),
     lastUpdated: Date.now(),
     ...overrides,
@@ -89,7 +92,7 @@ describe('generateEvent', () => {
 
   it('returns event when random chance fires', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0)
-    const state = makeState({ currentDay: 20 })
+    const state = makeState({ currentWeek: 20 })
     const event = generateEvent(20, state)
     expect(event).not.toBeNull()
     vi.restoreAllMocks()
@@ -98,7 +101,7 @@ describe('generateEvent', () => {
   it('skips one-time events already triggered', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0)
     const state = makeState({
-      currentDay: 20,
+      currentWeek: 20,
       triggeredEventIds: EVENTS_DATABASE.filter((e) => e.trigger.oneTime).map((e) => e.id),
     })
     // With all one-time events triggered and random returning 0, non-one-time events can still fire
@@ -133,7 +136,7 @@ describe('generateEvent', () => {
 
   it('event has correct structure', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0)
-    const state = makeState({ currentDay: 20 })
+    const state = makeState({ currentWeek: 20 })
     const event = generateEvent(20, state)
     if (event) {
       expect(event).toHaveProperty('id')

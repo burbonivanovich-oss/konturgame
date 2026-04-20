@@ -12,7 +12,9 @@ export function shouldAdvanceStage(state: GameState): boolean {
   const nextStageConfig = ONBOARDING_STAGES[currentStage + 1]
   if (!nextStageConfig) return false
 
-  return state.currentDay >= nextStageConfig.dayRange[0]
+  // dayRange is in days, convert currentWeek to days
+  const currentDay = state.currentWeek * 7
+  return currentDay >= nextStageConfig.dayRange[0]
 }
 
 export function checkOnboardingBlocked(state: GameState): { blocked: boolean; reason?: string } {

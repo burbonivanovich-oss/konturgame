@@ -15,7 +15,7 @@ export class GameStateService {
     store.setLoyalty(store.loyalty + dayResult.loyaltyChange)
 
     // Update experience
-    const expGain = ECONOMY_CONSTANTS.EXPERIENCE_PER_DAY + Math.floor(dayResult.netProfit / 10000)
+    const expGain = ECONOMY_CONSTANTS.EXPERIENCE_PER_WEEK + Math.floor(dayResult.netProfit / 10000)
     store.addExperience(expGain)
 
     // Store day result
@@ -56,7 +56,7 @@ export class GameStateService {
 
     // Victory conditions
     const dailyProfit = store.lastDayResult?.netProfit ?? 0
-    const meetsDaily = dailyProfit >= ECONOMY_CONSTANTS.VICTORY_DAILY_PROFIT
+    const meetsDaily = dailyProfit >= ECONOMY_CONSTANTS.VICTORY_WEEKLY_PROFIT
     const meetsBalance = store.balance >= ECONOMY_CONSTANTS.VICTORY_BALANCE
     const meetsLevel = store.level >= ECONOMY_CONSTANTS.VICTORY_LEVEL
     const meetsAchievements = store.achievements.length >= ECONOMY_CONSTANTS.VICTORY_ACHIEVEMENTS
@@ -70,7 +70,7 @@ export class GameStateService {
       store.setGameOver(true, 'Банкротство')
     }
 
-    if (store.reputation <= 0 && store.daysReputationZero >= ECONOMY_CONSTANTS.REPUTATION_ZERO_DAYS_FOR_LOSS) {
+    if (store.reputation <= 0 && store.daysReputationZero >= ECONOMY_CONSTANTS.REPUTATION_ZERO_WEEKS_FOR_LOSS) {
       store.setGameOver(true, 'Репутация полностью уничтожена')
     }
 
@@ -192,7 +192,7 @@ export class GameStateService {
       id: batchId,
       quantity,
       costPerUnit,
-      dayReceived: store.currentDay,
+      dayReceived: store.currentWeek * 7 + store.dayOfWeek,
       expirationDays,
     }
 
@@ -267,7 +267,7 @@ export class GameStateService {
     const store = useGameStore.getState()
 
     return {
-      day: store.currentDay,
+      week: store.currentWeek,
       balance: store.balance,
       reputation: store.reputation,
       loyalty: store.loyalty,

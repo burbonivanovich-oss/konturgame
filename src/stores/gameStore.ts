@@ -7,7 +7,7 @@ import { SERVICES_CONFIG, BUSINESS_CONFIGS, ECONOMY_CONSTANTS } from '../constan
 import { SERVICE_UNLOCK_MAP } from '../constants/onboarding'
 import { CASH_REGISTER_CONFIGS, REGISTER_COMBO_DISCOUNTS } from '../constants/cashRegisters'
 import { getDefaultCategories } from '../services/assortmentEngine'
-import { checkDayBlocked, processDay } from '../services/dayCalculator'
+import { checkWeekBlocked, processWeek } from '../services/weekCalculator'
 
 const STORAGE_KEY = 'konturgame_state'
 const ROLLBACK_STORAGE_KEY = 'konturgame_rollback'
@@ -31,11 +31,13 @@ const createInitialState = (businessType: BusinessType): GameState => {
   const config = BUSINESS_CONFIGS[businessType]
   return {
     businessType,
-    currentDay: 1,
+    currentWeek: 1,
+    dayOfWeek: 0,  // 0 = Monday
     balance: config.startBalance,
     savedBalance: 0,
     reputation: 50,
     loyalty: 50,
+    entrepreneurEnergy: ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY,
 
     stock: [],
     stockBatches: [],
@@ -77,7 +79,7 @@ const createInitialState = (businessType: BusinessType): GameState => {
     onboardingCompleted: false,
     onboardingStepIndex: 0,
 
-    // Service unlocking
+    // Service unlocking (start with Bank only)
     unlockedServices: SERVICE_UNLOCK_MAP[0],
 
     // Cash registers
@@ -101,6 +103,9 @@ const createInitialState = (businessType: BusinessType): GameState => {
 
     // Bundle promo
     bundlePromoShown: false,
+
+    // Week energy restore
+    weeklyEnergyRestored: false,
   }
 }
 
@@ -109,6 +114,7 @@ interface GameStoreActions {
   startNewGame: (businessType: BusinessType) => void
   nextDay: () => void
   advanceDay: () => { blocked: boolean; reason?: string }
+  advanceWeek: () => { blocked: boolean; reason?: string }
 
   // Balance and metrics
   setBalance: (amount: number) => void
@@ -117,6 +123,11 @@ interface GameStoreActions {
   addReputation: (delta: number) => void
   setLoyalty: (value: number) => void
   addLoyalty: (delta: number) => void
+
+  // Entrepreneur energy
+  setEntrepreneurEnergy: (amount: number) => void
+  spendEnergy: (baseCost: number) => boolean  // Returns true if energy was sufficient
+  restoreEnergyAtWeekStart: () => void
 
   // Capacity
   setCapacity: (amount: number) => void
@@ -220,20 +231,37 @@ export const useGameStore = create<GameStore>((set, get) => ({
     },
 
     nextDay: () =>
-      set((state) => ({
-        currentDay: state.currentDay + 1,
-        lastUpdated: Date.now(),
-        daysSinceLastMonthly: state.daysSinceLastMonthly + 1,
-      })),
+      set((state) => {
+        const newDayOfWeek = (state.dayOfWeek + 1) % 7
+        const advancedWeek = newDayOfWeek === 0 ? state.currentWeek + 1 : state.currentWeek
+        return {
+          dayOfWeek: newDayOfWeek,
+          currentWeek: advancedWeek,
+          lastUpdated: Date.now(),
+          weeklyEnergyRestored: false,
+        }
+      }),
 
     advanceDay: () => {
       const store = get()
       const stateCopy = JSON.parse(JSON.stringify(extractState(store))) as GameState
-      const { blocked, reason } = checkDayBlocked(stateCopy)
+      const { blocked, reason } = checkWeekBlocked(stateCopy)
       if (blocked) {
         return { blocked: true, reason }
       }
-      processDay(stateCopy)
+      processWeek(stateCopy)
+      set({ ...stateCopy })
+      return { blocked: false }
+    },
+
+    advanceWeek: () => {
+      const store = get()
+      const stateCopy = JSON.parse(JSON.stringify(extractState(store))) as GameState
+      const { blocked, reason } = checkWeekBlocked(stateCopy)
+      if (blocked) {
+        return { blocked: true, reason }
+      }
+      processWeek(stateCopy)
       set({ ...stateCopy })
       return { blocked: false }
     },
@@ -279,6 +307,48 @@ export const useGameStore = create<GameStore>((set, get) => ({
         loyalty: Math.max(0, Math.min(ECONOMY_CONSTANTS.MAX_LOYALTY, state.loyalty + delta)),
         lastUpdated: Date.now(),
       }))
+    },
+
+    // Entrepreneur energy
+    setEntrepreneurEnergy: (amount) => {
+      set({
+        entrepreneurEnergy: Math.max(0, Math.min(ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY, amount)),
+        lastUpdated: Date.now(),
+      })
+    },
+
+    spendEnergy: (baseCost) => {
+      const state = get()
+      const activeServices = get().getActiveServiceIds()
+
+      // Calculate total energy reduction from services
+      let costModifier = 1
+      if (activeServices.includes('bank')) costModifier *= (1 - ECONOMY_CONSTANTS.ENERGY_REDUCTION_BANK)
+      if (activeServices.includes('ofd')) costModifier *= (1 - ECONOMY_CONSTANTS.ENERGY_REDUCTION_OFD)
+      if (activeServices.includes('diadoc')) costModifier *= (1 - ECONOMY_CONSTANTS.ENERGY_REDUCTION_DIADOC)
+      if (activeServices.includes('elba')) costModifier *= (1 - ECONOMY_CONSTANTS.ENERGY_REDUCTION_ELBA)
+
+      const actualCost = Math.max(
+        ECONOMY_CONSTANTS.ENERGY_COST_ZERO_THRESHOLD,
+        Math.ceil(baseCost * costModifier)
+      )
+
+      if (state.entrepreneurEnergy >= actualCost) {
+        set((s) => ({
+          entrepreneurEnergy: s.entrepreneurEnergy - actualCost,
+          lastUpdated: Date.now(),
+        }))
+        return true
+      }
+      return false
+    },
+
+    restoreEnergyAtWeekStart: () => {
+      set({
+        entrepreneurEnergy: ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY,
+        weeklyEnergyRestored: true,
+        lastUpdated: Date.now(),
+      })
     },
 
     // Capacity
@@ -680,7 +750,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         } else {
           newRegisters = [
             ...s.cashRegisters,
-            { type, count: 1, purchaseDay: s.currentDay },
+            { type, count: 1, purchaseDay: s.currentWeek * 7 + s.dayOfWeek },
           ]
         }
         return {
@@ -739,21 +809,31 @@ function saveToStorage(state: GameState) {
 
 function extractState(state: any): GameState {
   const {
-    businessType, currentDay, balance, savedBalance, reputation, loyalty,
-    stock, stockBatches, capacity, services, achievements, level, experience,
+    businessType, currentWeek, dayOfWeek, balance, savedBalance, reputation, loyalty,
+    entrepreneurEnergy, stock, stockBatches, capacity, services, achievements, level, experience,
     lastDayResult, pendingEvent, pendingEventsQueue, triggeredEventIds,
     isGameOver, isVictory, gameOverReason, consecutiveOverloadDays, daysReputationZero,
     daysSinceLastMonthly, purchaseOfferedThisDay, activeAdCampaigns, purchasedUpgrades,
     temporaryClientMod, temporaryCheckMod, temporaryModDaysLeft, createdAt, lastUpdated,
-    hadLowReputation, consecutiveNoExpiry,
+    hadLowReputation, consecutiveNoExpiry, weeklyEnergyRestored,
+    // Legacy fields for migration
+    currentDay,
     // New fields
     onboardingStage, onboardingCompleted, onboardingStepIndex, unlockedServices,
     cashRegisters, enabledCategories, promoCodesRevealed,
     daysBalanceNegative, competitorEventTriggered, lastDayPainLosses, bundlePromoShown,
   } = state
 
+  // Migration: convert old currentDay to currentWeek
+  const week = currentWeek ?? Math.ceil((currentDay ?? 1) / 7)
+  const dow = dayOfWeek ?? ((currentDay ?? 1) % 7)
+
   return {
-    businessType, currentDay, balance, savedBalance, reputation, loyalty,
+    businessType,
+    currentWeek: week,
+    dayOfWeek: dow,
+    balance, savedBalance, reputation, loyalty,
+    entrepreneurEnergy: entrepreneurEnergy ?? ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY,
     stock, stockBatches, capacity, services, achievements, level, experience,
     lastDayResult, pendingEvent, pendingEventsQueue: pendingEventsQueue ?? [],
     triggeredEventIds, isGameOver, isVictory, gameOverReason,
@@ -763,6 +843,7 @@ function extractState(state: any): GameState {
     createdAt, lastUpdated,
     hadLowReputation: hadLowReputation ?? false,
     consecutiveNoExpiry: consecutiveNoExpiry ?? 0,
+    weeklyEnergyRestored: weeklyEnergyRestored ?? false,
     // New fields with migration defaults
     onboardingStage: onboardingStage ?? 0,
     onboardingCompleted: onboardingCompleted ?? false,

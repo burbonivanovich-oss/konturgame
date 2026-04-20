@@ -20,9 +20,11 @@ import { WarehouseView } from './views/WarehouseView'
 import { MarketingView } from './views/MarketingView'
 import { FinanceView } from './views/FinanceView'
 import { ReputationView } from './views/ReputationView'
+import OperationsView from './views/OperationsView'
+import StatisticsView from './views/StatisticsView'
 import { useGameStore } from '../stores/gameStore'
 
-type ActiveView = 'dashboard' | 'recap' | 'ecosystem' | 'warehouse' | 'marketing' | 'finance' | 'reputation'
+type ActiveView = 'dashboard' | 'recap' | 'ecosystem' | 'warehouse' | 'marketing' | 'finance' | 'reputation' | 'operations' | 'statistics'
 
 function Spark({ data, color = 'currentColor', fill = false }: { data: number[]; color?: string; fill?: boolean }) {
   const w = 100, h = 32
@@ -54,11 +56,11 @@ const SERVICE_MAP = [
 
 const NAV_ITEMS: Array<{ n: string; g: string; view: ActiveView | null }> = [
   { n: 'Дневной цикл', g: '◎', view: 'dashboard' },
-  { n: 'Склад', g: '▦', view: 'warehouse' },
+  { n: 'Управление', g: '⚙', view: 'operations' },
   { n: 'Маркетинг', g: '◆', view: 'marketing' },
   { n: 'Экосистема', g: '□', view: 'ecosystem' },
   { n: 'Финансы', g: '₽', view: 'finance' },
-  { n: 'Репутация', g: '★', view: 'reputation' },
+  { n: 'Статистика', g: '📊', view: 'statistics' },
   { n: 'Достижения', g: '◈', view: null },
 ]
 
@@ -245,7 +247,7 @@ function DashboardView({
   handleEventOption: (id: string) => void
 }) {
   const {
-    currentDay, balance, reputation, loyalty, services,
+    currentWeek, balance, reputation, loyalty, services,
     pendingEvent, pendingEventsQueue, lastDayResult, savedBalance,
   } = useGameStore()
 
@@ -396,7 +398,7 @@ function DashboardView({
             {[
               { l: 'Репутация', v: String(reputation), bg: 'var(--k-green-soft)' },
               { l: 'Лояльность', v: `${loyalty}%`, bg: 'var(--k-surface-2)' },
-              { l: 'День', v: String(currentDay), bg: 'var(--k-surface-2)' },
+              { l: 'Неделя', v: String(currentWeek), bg: 'var(--k-surface-2)' },
             ].map(i => (
               <div key={i.l} style={{ padding: 10, borderRadius: 12, background: i.bg }}>
                 <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.55 }}>{i.l}</div>
@@ -520,7 +522,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const {
-    currentDay, services, pendingEvent, pendingEventsQueue,
+    currentWeek, services, pendingEvent, pendingEventsQueue,
     isGameOver, isVictory, savedBalance, promoCodesRevealed,
     addBalance, addReputation, addLoyalty, markEventAsResolved, activateService,
     addSavedBalance, setTemporaryModifiers, advanceDay,
@@ -607,7 +609,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       letterSpacing: '-0.01em',
     }}>
       <LeftRail
-        currentDay={currentDay}
+        currentDay={currentWeek}
         savedBalance={savedBalance ?? 0}
         activeNav={activeNav}
         activeCount={activeCount}
@@ -651,6 +653,8 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       {activeView === 'marketing' && <MarketingView />}
       {activeView === 'finance' && <FinanceView />}
       {activeView === 'reputation' && <ReputationView />}
+      {activeView === 'operations' && <OperationsView />}
+      {activeView === 'statistics' && <StatisticsView />}
 
       {/* Global modals */}
       <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />

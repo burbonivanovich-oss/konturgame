@@ -13,10 +13,12 @@ import type { GameState } from '../../types/game'
 function makeState(overrides: Partial<GameState> = {}): GameState {
   return {
     businessType: 'shop',
-    currentDay: 1,
+    currentWeek: 1,
+    dayOfWeek: 0,
     balance: 50000,
     savedBalance: 0,
     reputation: 50,
+    entrepreneurEnergy: 100,
     loyalty: 60,
     stock: [],
     stockBatches: [],
@@ -52,6 +54,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     competitorEventTriggered: false,
     lastDayPainLosses: null,
     bundlePromoShown: false,
+    weeklyEnergyRestored: false,
     createdAt: Date.now(),
     lastUpdated: Date.now(),
     ...overrides,
@@ -148,7 +151,7 @@ describe('checkExpiry', () => {
   })
 
   it('writes off expired stock with 80% loss', () => {
-    const state = makeState({ currentDay: 11 })
+    const state = makeState({ currentWeek: 11 })
     // Add batch received on day 1, expiry 10 days → age = 10, expired
     state.stockBatches = [
       { id: 'b1', quantity: 100, costPerUnit: 5, dayReceived: 1, expirationDays: 10 },
@@ -161,7 +164,7 @@ describe('checkExpiry', () => {
 
   it('reduces loss to 64% with market active', () => {
     const state = makeState({
-      currentDay: 11,
+      currentWeek: 11,
       services: {
         market: { id: 'market', name: '', description: '', monthlyPrice: 0, isActive: true, effects: {} },
       } as GameState['services'],
@@ -174,7 +177,7 @@ describe('checkExpiry', () => {
   })
 
   it('does not expire fresh batches', () => {
-    const state = makeState({ currentDay: 5 })
+    const state = makeState({ currentWeek: 5 })
     state.stockBatches = [
       { id: 'b1', quantity: 50, costPerUnit: 5, dayReceived: 1, expirationDays: 10 },
     ]
@@ -184,7 +187,7 @@ describe('checkExpiry', () => {
   })
 
   it('returns zero for beauty-salon (no stock)', () => {
-    const state = makeState({ businessType: 'beauty-salon', currentDay: 30 })
+    const state = makeState({ businessType: 'beauty-salon', currentWeek: 30 })
     state.stockBatches = [
       { id: 'b1', quantity: 50, costPerUnit: 5, dayReceived: 1, expirationDays: 0 },
     ]

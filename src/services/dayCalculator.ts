@@ -58,12 +58,12 @@ export function processDay(state: GameState): DayResult {
   const { loss: expiredLoss } = checkExpiry(state)
 
   // 2. Competitor event on day 20 (one-time, -15% traffic for 10 days)
-  if (state.currentDay === ECONOMY_CONSTANTS.COMPETITOR_EVENT_DAY && !state.competitorEventTriggered) {
+  if (state.currentWeek === ECONOMY_CONSTANTS.COMPETITOR_EVENT_WEEK && !state.competitorEventTriggered) {
     state.competitorEventTriggered = true
     // Apply competitor effect as temporary client modifier
     if ((state.temporaryModDaysLeft ?? 0) === 0) {
       state.temporaryClientMod = -ECONOMY_CONSTANTS.COMPETITOR_TRAFFIC_STEAL_PCT
-      state.temporaryModDaysLeft = ECONOMY_CONSTANTS.COMPETITOR_EFFECT_DAYS
+      state.temporaryModDaysLeft = ECONOMY_CONSTANTS.COMPETITOR_EFFECT_WEEKS
     }
   }
 
@@ -157,7 +157,7 @@ export function processDay(state: GameState): DayResult {
   // 15. Monthly expenses every 30 days (rent + salary)
   let monthlyExpense = 0
   const daysSinceMonthly = state.daysSinceLastMonthly ?? 0
-  if (daysSinceMonthly >= ECONOMY_CONSTANTS.MONTHLY_CYCLE_DAYS) {
+  if (daysSinceMonthly >= ECONOMY_CONSTANTS.MONTHLY_CYCLE_WEEKS) {
     monthlyExpense = calculateMonthlyExpenses(state)
   }
 
@@ -201,7 +201,7 @@ export function processDay(state: GameState): DayResult {
   const newLoyalty = Math.max(0, Math.min(100, state.loyalty + loyaltyChange))
 
   const result: DayResult = {
-    dayNumber: state.currentDay,
+    dayNumber: state.currentWeek,
     clients: totalClients,
     served,
     missed,
@@ -253,7 +253,7 @@ export function processDay(state: GameState): DayResult {
   }
 
   // Update monthly counter
-  if (daysSinceMonthly >= ECONOMY_CONSTANTS.MONTHLY_CYCLE_DAYS) {
+  if (daysSinceMonthly >= ECONOMY_CONSTANTS.MONTHLY_CYCLE_WEEKS) {
     state.daysSinceLastMonthly = 0
   } else {
     state.daysSinceLastMonthly = daysSinceMonthly + 1
@@ -286,14 +286,14 @@ export function processDay(state: GameState): DayResult {
   }
 
   // Advance game day
-  state.currentDay += 1
+  state.currentWeek += 1
   state.purchaseOfferedThisDay = false
 
   // Update reputation-zero counter
   updateGameOverCounters(state)
 
   // Gain experience
-  state.experience += ECONOMY_CONSTANTS.EXPERIENCE_PER_DAY
+  state.experience += ECONOMY_CONSTANTS.EXPERIENCE_PER_WEEK
   if (netProfit > 0) {
     state.experience += Math.floor(netProfit / 10000) * ECONOMY_CONSTANTS.EXPERIENCE_PER_10K_PROFIT
   }
@@ -323,8 +323,8 @@ export function processDay(state: GameState): DayResult {
 
   // Generate new event(s) if game is still active
   if (!state.isGameOver && !state.isVictory && !state.pendingEvent) {
-    const isCrisisDay = state.currentDay % 9 === 0
-    const firstEvent = generateEvent(state.currentDay, state)
+    const isCrisisDay = state.currentWeek % 9 === 0
+    const firstEvent = generateEvent(state.currentWeek, state)
 
     if (firstEvent) {
       state.pendingEvent = firstEvent
@@ -333,7 +333,7 @@ export function processDay(state: GameState): DayResult {
         const usedIds = new Set([firstEvent.id])
         const queue: typeof firstEvent[] = []
         for (let attempt = 0; attempt < 10 && queue.length < 2; attempt++) {
-          const extra = generateEvent(state.currentDay, state)
+          const extra = generateEvent(state.currentWeek, state)
           if (extra && !usedIds.has(extra.id)) {
             usedIds.add(extra.id)
             queue.push(extra)

@@ -15,7 +15,7 @@ function ExpiryBar({ pct, daysLeft }: { pct: number; daysLeft: number }) {
 export function WarehouseView() {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
   const [showAssortmentModal, setShowAssortmentModal] = useState(false)
-  const { stockBatches, capacity, currentDay, businessType, enabledCategories } = useGameStore()
+  const { stockBatches, capacity, currentWeek, businessType, enabledCategories } = useGameStore()
 
   const totalStock = stockBatches.reduce((s, b) => s + b.quantity, 0)
   const capacityPct = capacity > 0 ? Math.min((totalStock / capacity) * 100, 100) : 0
@@ -111,7 +111,7 @@ export function WarehouseView() {
                 </div>
 
                 {stockBatches.map((batch, i) => {
-                  const daysLeft = batch.expirationDays - (currentDay - batch.dayReceived)
+                  const daysLeft = batch.expirationDays - (currentWeek - batch.dayReceived)
                   const freshnessPct = Math.max(0, (daysLeft / batch.expirationDays) * 100)
                   const isExpiring = daysLeft <= 2
                   const isExpired = daysLeft <= 0

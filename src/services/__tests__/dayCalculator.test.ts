@@ -6,10 +6,12 @@ import type { GameState } from '../../types/game'
 function makeState(overrides: Partial<GameState> = {}): GameState {
   return {
     businessType: 'shop',
-    currentDay: 1,
+    currentWeek: 1,
+    dayOfWeek: 0,
     balance: 50000,
     savedBalance: 0,
     reputation: 50,
+    entrepreneurEnergy: 100,
     loyalty: 60,
     stock: [],
     stockBatches: [],
@@ -45,6 +47,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     competitorEventTriggered: false,
     lastDayPainLosses: null,
     bundlePromoShown: false,
+    weeklyEnergyRestored: false,
     createdAt: Date.now(),
     lastUpdated: Date.now(),
     ...overrides,
@@ -108,11 +111,11 @@ describe('processDay', () => {
     expect(() => processDay(state)).toThrow()
   })
 
-  it('advances currentDay by 1', () => {
+  it('advances currentWeek by 1', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.99) // prevent events
     const state = makeState({ businessType: 'beauty-salon' })
     processDay(state)
-    expect(state.currentDay).toBe(2)
+    expect(state.currentWeek).toBe(2)
     vi.restoreAllMocks()
   })
 

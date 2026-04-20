@@ -7,17 +7,17 @@ export default function KPIPanel() {
   const lastResult = state.lastDayResult
 
   const kpi = useMemo(() => ({
-    day: state.currentDay,
+    week: state.currentWeek,
     balance: state.balance,
     savedMoney: state.savedBalance,
-    dailyRevenue: lastResult?.revenue || 0,
-    dailyExpenses: lastResult?.expenses || 0,
+    weeklyRevenue: lastResult?.revenue || 0,
+    weeklyExpenses: lastResult?.expenses || 0,
     netProfit: lastResult?.netProfit || 0,
     monthlyExpenses: lastResult?.monthlyExpense || 0,
-    daysUntilExpense: 12,
-    goalRemaining: 672400,
-    goalProgress: 67,
-  }), [state.currentDay, state.balance, state.savedBalance, lastResult])
+    weeksUntilExpense: 4,
+    goalRemaining: 500000,
+    goalProgress: 0,
+  }), [state.currentWeek, state.balance, state.savedBalance, lastResult])
 
   const revenueHistory = useMemo(() => {
     return [8, 11, 9, 14, 13, 18, 16, 22, 19, 25]
@@ -42,7 +42,7 @@ export default function KPIPanel() {
               ДОХОД ЗА ДЕНЬ
             </div>
             <div style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.03em', marginTop: 2 }} className="k-num">
-              {kpi.dailyRevenue.toLocaleString('ru-RU')} ₽
+              {kpi.weeklyRevenue.toLocaleString('ru-RU')} ₽
             </div>
           </div>
           <div style={{
@@ -87,7 +87,7 @@ export default function KPIPanel() {
             {kpi.monthlyExpenses.toLocaleString('ru-RU')} ₽
           </div>
           <div style={{ fontSize: 10, fontWeight: 600, opacity: 0.8, marginTop: 4 }}>
-            через {kpi.daysUntilExpense} дн. списание
+            через {kpi.weeksUntilExpense} нед. списание
           </div>
         </div>
       </div>

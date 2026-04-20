@@ -122,7 +122,7 @@ export function buildModifiers(state: GameState): Modifiers {
     (state.services?.market?.isActive ? 0.15 : 0) + synergyMods.checkBonus
 
   return {
-    seasonal: getSeasonalModifier(state.businessType, state.currentDay),
+    seasonal: getSeasonalModifier(state.businessType, (state.currentWeek * 7 + state.dayOfWeek)),
     advertising: adMods.clientMod + serviceClientBonus,
     reputation: getReputationModifier(state.reputation),
     event: state.temporaryClientMod ?? 0,

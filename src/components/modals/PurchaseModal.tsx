@@ -25,7 +25,7 @@ export default function PurchaseModal({ isOpen, onClose }: PurchaseModalProps) {
       id: `batch-${Date.now()}`,
       quantity,
       costPerUnit,
-      dayReceived: useGameStore.getState().currentDay,
+      dayReceived: useGameStore.getState().currentWeek,
       expirationDays: config.stockExpiry,
     })
 

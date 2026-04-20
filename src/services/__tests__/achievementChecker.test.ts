@@ -17,10 +17,12 @@ function makeServices(activeIds: ServiceType[] = []): GameState['services'] {
 function makeState(overrides: Partial<GameState> = {}): GameState {
   return {
     businessType: 'shop',
-    currentDay: 1,
+    currentWeek: 1,
+    dayOfWeek: 0,
     balance: 50000,
     savedBalance: 0,
     reputation: 50,
+    entrepreneurEnergy: 100,
     loyalty: 60,
     stock: [],
     stockBatches: [],
@@ -56,6 +58,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     competitorEventTriggered: false,
     lastDayPainLosses: null,
     bundlePromoShown: false,
+    weeklyEnergyRestored: false,
     createdAt: Date.now(),
     lastUpdated: Date.now(),
     ...overrides,
@@ -100,25 +103,25 @@ describe('checkNewAchievements', () => {
   })
 
   it('does not return already unlocked achievements', () => {
-    const state = makeState({ currentDay: 5, achievements: ['first_day'] })
+    const state = makeState({ currentWeek: 5, achievements: ['first_day'] })
     const newAchs = checkNewAchievements(state)
     expect(newAchs).not.toContain('first_day')
   })
 
-  it('grants first_day when currentDay >= 2', () => {
-    const state = makeState({ currentDay: 2 })
+  it('grants first_day when currentWeek >= 2', () => {
+    const state = makeState({ currentWeek: 2 })
     expect(checkNewAchievements(state)).toContain('first_day')
   })
 
-  it('grants week_done when currentDay >= 8', () => {
-    const state = makeState({ currentDay: 8 })
+  it('grants week_done when currentWeek >= 8', () => {
+    const state = makeState({ currentWeek: 8 })
     const achs = checkNewAchievements(state)
     expect(achs).toContain('week_done')
     expect(achs).toContain('first_day')
   })
 
   it('grants month_done at day 31', () => {
-    const state = makeState({ currentDay: 31 })
+    const state = makeState({ currentWeek: 31 })
     expect(checkNewAchievements(state)).toContain('month_done')
   })
 
