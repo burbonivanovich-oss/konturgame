@@ -20,9 +20,11 @@ import { WarehouseView } from './views/WarehouseView'
 import { MarketingView } from './views/MarketingView'
 import { FinanceView } from './views/FinanceView'
 import { ReputationView } from './views/ReputationView'
+import OperationsView from './views/OperationsView'
+import StatisticsView from './views/StatisticsView'
 import { useGameStore } from '../stores/gameStore'
 
-type ActiveView = 'dashboard' | 'recap' | 'ecosystem' | 'warehouse' | 'marketing' | 'finance' | 'reputation'
+type ActiveView = 'dashboard' | 'recap' | 'ecosystem' | 'warehouse' | 'marketing' | 'finance' | 'reputation' | 'operations' | 'statistics'
 
 function Spark({ data, color = 'currentColor', fill = false }: { data: number[]; color?: string; fill?: boolean }) {
   const w = 100, h = 32
@@ -54,11 +56,11 @@ const SERVICE_MAP = [
 
 const NAV_ITEMS: Array<{ n: string; g: string; view: ActiveView | null }> = [
   { n: 'Дневной цикл', g: '◎', view: 'dashboard' },
-  { n: 'Склад', g: '▦', view: 'warehouse' },
+  { n: 'Управление', g: '⚙', view: 'operations' },
   { n: 'Маркетинг', g: '◆', view: 'marketing' },
   { n: 'Экосистема', g: '□', view: 'ecosystem' },
   { n: 'Финансы', g: '₽', view: 'finance' },
-  { n: 'Репутация', g: '★', view: 'reputation' },
+  { n: 'Статистика', g: '📊', view: 'statistics' },
   { n: 'Достижения', g: '◈', view: null },
 ]
 
@@ -651,6 +653,8 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       {activeView === 'marketing' && <MarketingView />}
       {activeView === 'finance' && <FinanceView />}
       {activeView === 'reputation' && <ReputationView />}
+      {activeView === 'operations' && <OperationsView />}
+      {activeView === 'statistics' && <StatisticsView />}
 
       {/* Global modals */}
       <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />

@@ -3,10 +3,10 @@ import type { BusinessType, ServiceType, BusinessConfig, SynergyBonus } from '..
 export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
   shop: {
     type: 'shop',
-    startBalance: 50000,
-    baseClients: 80,
-    avgCheck: 300,
-    capacity: 60,
+    startBalance: 100000,  // Больше начального капитала
+    baseClients: 25,  // Реалистичнее для первого дня
+    avgCheck: 180,  // Среднее значение (не все товары дорогие)
+    capacity: 35,  // Пропускная способность кассы/магазина
     hasStock: true,
     stockExpiry: 10,
     seasonality: {
@@ -14,16 +14,16 @@ export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
       '7': 0.05, '8': 0.05, '9': 0, '10': 0, '11': 0, '12': 0,
     },
     mainService: 'market',
-    monthlyRent: 15000,
-    monthlyBaseSalary: 20000,
+    monthlyRent: 25000,  // Более реалистичная аренда
+    monthlyBaseSalary: 15000,  // Одна касса + помощник
     usesAssortment: true,
   },
   cafe: {
     type: 'cafe',
-    startBalance: 40000,
-    baseClients: 100,
-    avgCheck: 180,
-    capacity: 70,
+    startBalance: 100000,
+    baseClients: 30,  // Реалистичнее
+    avgCheck: 150,  // Меньше, чем магазин
+    capacity: 40,  // Количество мест/столов
     hasStock: true,
     stockExpiry: 7,
     seasonality: {
@@ -31,16 +31,16 @@ export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
       '6': 0.22, '7': 0.22, '8': 0.22, '9': 0, '10': 0, '11': 0, '12': -0.15,
     },
     mainService: 'market',
-    monthlyRent: 15000,
+    monthlyRent: 30000,
     monthlyBaseSalary: 20000,
     usesAssortment: true,
   },
   'beauty-salon': {
     type: 'beauty-salon',
-    startBalance: 60000,
-    baseClients: 40,
-    avgCheck: 800,
-    capacity: 30,
+    startBalance: 100000,
+    baseClients: 12,  // Меньше клиентов, но дороже услуги
+    avgCheck: 800,  // Услуги дороже
+    capacity: 20,  // 2-3 мастера максимум
     hasStock: false,
     stockExpiry: 0,
     seasonality: {
@@ -48,8 +48,8 @@ export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
       '6': 0, '7': 0, '8': 0, '9': 0, '10': 0, '11': 0, '12': 0,
     },
     mainService: 'elba',
-    monthlyRent: 15000,
-    monthlyBaseSalary: 20000,
+    monthlyRent: 20000,
+    monthlyBaseSalary: 30000,  // Мастера платят дороже
     usesAssortment: true,
   },
 }
@@ -139,6 +139,57 @@ export const SERVICES_CONFIG: Record<ServiceType, ServiceConfig> = {
   },
 }
 
+// Market modules (add-ons to Контур.Маркет)
+export interface MarketModule {
+  id: string
+  name: string
+  description: string
+  monthlyPrice: number
+  requiredService: ServiceType
+  effects: {
+    categoryUnlock?: string[]
+    capacityBonus?: number
+    revenueBonus?: number
+    taxSaving?: number
+  }
+}
+
+export const MARKET_MODULES: MarketModule[] = [
+  {
+    id: 'egais',
+    name: 'ЕГАИС',
+    description: 'Система учета алкоголя. Разблокирует продажу алкогольных напитков.',
+    monthlyPrice: 1500,
+    requiredService: 'market',
+    effects: {
+      categoryUnlock: ['alcohol'],
+      revenueBonus: 0.1,
+    },
+  },
+  {
+    id: 'merkuriy',
+    name: 'Меркурий',
+    description: 'Система учета лекарств и БАДов. Разблокирует категорию фармацевтики.',
+    monthlyPrice: 1200,
+    requiredService: 'market',
+    effects: {
+      categoryUnlock: ['pharmacy'],
+      revenueBonus: 0.08,
+    },
+  },
+  {
+    id: 'marking',
+    name: 'Маркировка товаров',
+    description: 'Система отслеживания маркированных товаров (обувь, табак, парфюм).',
+    monthlyPrice: 800,
+    requiredService: 'market',
+    effects: {
+      categoryUnlock: ['marked_goods'],
+      revenueBonus: 0.05,
+    },
+  },
+]
+
 export const SYNERGIES_CONFIG: SynergyBonus[] = [
   {
     id: 'market_ofd',
@@ -219,8 +270,8 @@ export const ECONOMY_CONSTANTS = {
   PREMIUM_COST_RATE: 0.05,
 
   // Victory conditions (annual)
-  VICTORY_WEEKLY_PROFIT: 15000,  // ~2100/day
-  VICTORY_BALANCE: 200000,  // Realistic for year 1
+  VICTORY_WEEKLY_PROFIT: 10000,  // Прибыль за неделю ~1500/день
+  VICTORY_BALANCE: 150000,  // Баланс по итогам года
   VICTORY_LEVEL: 10,
   VICTORY_ACHIEVEMENTS: 7,
 
