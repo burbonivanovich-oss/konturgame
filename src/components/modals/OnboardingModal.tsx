@@ -44,18 +44,29 @@ export default function OnboardingModal() {
 
   const actionDone = isActionDone()
   const stageLabel = ONBOARDING_STAGE_LABELS[onboardingStage]
+  const pendingAction = !!(currentStep.requiresAction && !actionDone)
 
   return (
     <div style={{
-      position: 'fixed', inset: 0, zIndex: 200,
-      background: 'rgba(14,17,22,0.75)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 16,
+      position: 'fixed', zIndex: 200,
+      // When action is pending: anchor to bottom-right, no backdrop
+      // When no action required: center with full backdrop
+      ...(pendingAction ? {
+        bottom: 24, right: 24,
+        width: 360,
+      } : {
+        inset: 0,
+        background: 'rgba(14,17,22,0.75)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16,
+      }),
     }}>
       <div style={{
         background: '#fff', borderRadius: 24, padding: 28,
-        maxWidth: 440, width: '100%',
+        maxWidth: pendingAction ? '100%' : 440, width: '100%',
         boxShadow: '0 24px 80px rgba(0,0,0,0.25)',
+        // Subtle highlight border when floating
+        ...(pendingAction ? { border: '2px solid var(--k-orange)' } : {}),
       }}>
         {/* Stage indicator */}
         <div style={{
