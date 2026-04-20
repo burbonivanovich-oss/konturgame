@@ -66,6 +66,8 @@ export default function OnboardingModal() {
       <div style={{
         background: '#fff', borderRadius: 24, padding: 28,
         maxWidth: pendingAction ? '100%' : 440, width: '100%',
+        maxHeight: pendingAction ? '80vh' : '85vh',
+        overflowY: 'auto',
         boxShadow: '0 24px 80px rgba(0,0,0,0.25)',
         pointerEvents: 'auto',
         // Subtle highlight border when floating
@@ -118,6 +120,21 @@ export default function OnboardingModal() {
         }}>
           {currentStep.text}
         </div>
+
+        {/* Stage completion hint */}
+        {isLastStep && !isLastStage && (
+          <div style={{
+            fontSize: 12, fontWeight: 600,
+            color: 'var(--k-green)',
+            background: 'rgba(34, 197, 94, 0.08)',
+            borderRadius: 10, padding: '10px 14px',
+            marginBottom: 16,
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <span>🔓</span>
+            При завершении этапа откроются новые сервисы
+          </div>
+        )}
 
         {/* Action required notice */}
         {currentStep.requiresAction && !actionDone && (
