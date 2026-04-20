@@ -24,6 +24,9 @@ import { checkOnboardingBlocked, advanceOnboardingIfNeeded } from './onboardingE
 import { calculatePainLosses, getBankPaymentRatio } from './painEngine'
 import { getTotalThroughput, calculateRegisterPenalty, checkRegisterBreakdown } from './cashRegisterEngine'
 import { calculateCategoryRevenue } from './assortmentEngine'
+import { initializeSuppliers, unlockSuppliersIfNeeded, getQualityModifier, getPriceModifier, calculateStockCost } from './supplierManager'
+import { initializeEmployees, getWeeklySalaryCost, getWeeklyEnergyCost, getEmployeeCapacityBonus } from './employeeManager'
+import { initializeQuality, updateQualityWeekly, getQualityReputationBonus, getQualityLoyaltyBonus, getQualityPricePremium } from './qualityManager'
 
 export function checkWeekBlocked(state: GameState): { blocked: boolean; reason?: string } {
   if (state.pendingEvent) {
@@ -53,6 +56,24 @@ export function processWeek(state: GameState): DayResult {
 
   const config = BUSINESS_CONFIGS[state.businessType]
 
+  // Initialize new systems if not present (for save compatibility)
+  if (!state.suppliers || state.suppliers.length === 0) {
+    state.suppliers = initializeSuppliers()
+    state.activeSupplierId = state.suppliers.find(s => s.isActive)?.id || null
+  }
+  if (!state.employees) {
+    state.employees = initializeEmployees()
+  }
+  if (state.qualityLevel === undefined) {
+    state.qualityLevel = initializeQuality()
+  }
+  if (state.weeksSinceCompetitorEvent === undefined) {
+    state.weeksSinceCompetitorEvent = 0
+  }
+
+  // Unlock suppliers based on progression
+  unlockSuppliersIfNeeded(state)
+
   // Accumulate results for the week
   let weekRevenue = 0
   let weekExpenses = 0
@@ -61,17 +82,28 @@ export function processWeek(state: GameState): DayResult {
   let weekLoyaltyChange = 0
   let totalDaysWithoutExpiry = 0
 
+  // Calculate weekly employee costs
+  const weeklySalaryCost = getWeeklySalaryCost(state)
+  const weeklyEnergyCost = getWeeklyEnergyCost(state)
+  const employeeCapacityBonus = getEmployeeCapacityBonus(state)
+
   // Process each day of the week (7 iterations)
   for (let dayNum = 0; dayNum < 7; dayNum++) {
     const modifiers = buildModifiers(state)
     const synergyMods = calculateSynergyModifiers(state)
 
+    // Quality price premium
+    const qualityPricePremium = getQualityPricePremium(state)
+
     // 1. Check expiry
     const { loss: expiredLoss } = checkExpiry(state)
 
-    // 2. Competitor event on week 3 (one-time)
-    if (state.currentWeek === ECONOMY_CONSTANTS.COMPETITOR_EVENT_WEEK && !state.competitorEventTriggered) {
+    // 2. Competitor event - now cyclic every 5-8 weeks
+    state.weeksSinceCompetitorEvent++
+    const competitorInterval = 5 + Math.floor(state.currentWeek / 10)  // Increases with game progress
+    if (state.weeksSinceCompetitorEvent >= competitorInterval && !state.competitorEventTriggered) {
       state.competitorEventTriggered = true
+      state.weeksSinceCompetitorEvent = 0
       if ((state.temporaryModDaysLeft ?? 0) === 0) {
         state.temporaryClientMod = -ECONOMY_CONSTANTS.COMPETITOR_TRAFFIC_STEAL_PCT
         state.temporaryModDaysLeft = ECONOMY_CONSTANTS.COMPETITOR_EFFECT_WEEKS * 7
@@ -80,7 +112,13 @@ export function processWeek(state: GameState): DayResult {
 
     // 3. Calculate daily metrics
     const totalClients = calculateClients(config.baseClients, modifiers)
-    const capacity = calculateCapacity(state)
+    
+    // Capacity with employee bonus
+    let capacity = calculateCapacity(state)
+    if (employeeCapacityBonus > 0) {
+      capacity = Math.round(capacity * (1 + employeeCapacityBonus * 0.1))
+    }
+    
     let served = Math.min(totalClients, capacity)
     if (config.hasStock && !config.usesAssortment) {
       const availableStock = getTotalStock(state)
@@ -92,8 +130,9 @@ export function processWeek(state: GameState): DayResult {
     const bankPaymentRatio = getBankPaymentRatio(state)
     const effectiveServed = Math.floor(served * bankPaymentRatio)
 
-    // 5. Average check
-    const avgCheck = calculateAverageCheck(config.avgCheck, modifiers)
+    // 5. Average check with quality premium
+    let avgCheck = calculateAverageCheck(config.avgCheck, modifiers)
+    avgCheck = Math.round(avgCheck * (1 + qualityPricePremium))
 
     // 6. Revenue (daily)
     let dailyRevenue: number
@@ -124,11 +163,11 @@ export function processWeek(state: GameState): DayResult {
 
     const dayRevenue = Math.max(0, dailyRevenue - registerPenalty - breakdownPenalty)
 
-    // 8. Stock and costs
+    // 8. Stock and costs with supplier modifier
     let purchaseCost = 0
     if (config.hasStock && !config.usesAssortment && served > 0) {
       const result = consumeStock(state, served)
-      purchaseCost = result.cost
+      purchaseCost = calculateStockCost(result.cost, state)
     }
     purchaseCost += totalDailyCategoryCost
 
@@ -154,7 +193,7 @@ export function processWeek(state: GameState): DayResult {
     let monthlyExpense = 0
     const daysSinceMonthly = state.daysSinceLastMonthly ?? 0
     if (daysSinceMonthly >= ECONOMY_CONSTANTS.MONTHLY_CYCLE_WEEKS * 7) {
-      monthlyExpense = calculateMonthlyExpenses(state)
+      monthlyExpense = calculateMonthlyExpenses(state) + weeklySalaryCost
     }
 
     // 13. Daily profit
@@ -167,14 +206,15 @@ export function processWeek(state: GameState): DayResult {
     const additionalPainLoss = pain.market + pain.ofd + pain.diadoc + pain.fokus + pain.elba + pain.extern
     dayNetProfit -= additionalPainLoss
 
-    // 15. Reputation change
+    // 15. Reputation change with quality bonus
     const repFromMissed = -(missed * 0.2)
     const fokusRepBonus = state.services?.fokus?.isActive
       ? (state.services.fokus.effects.reputationBonus ?? 0)
       : 0
-    const dayRepChange = Math.round(repFromMissed + fokusRepBonus + synergyMods.reputationBonus)
+    const qualityRepBonus = getQualityReputationBonus(state)
+    const dayRepChange = Math.round(repFromMissed + fokusRepBonus + synergyMods.reputationBonus + qualityRepBonus)
 
-    // 16. Loyalty change
+    // 16. Loyalty change with quality bonus
     const elbaActive = state.services?.elba?.isActive ?? false
     let dayLoyaltyChange = 0
     const load = capacity > 0 ? served / capacity : 0
@@ -188,7 +228,8 @@ export function processWeek(state: GameState): DayResult {
       }
     }
     const elbaLoyaltyBonus = elbaActive ? (state.services.elba.effects.loyaltyBonus ?? 0) : 0
-    dayLoyaltyChange += elbaLoyaltyBonus + synergyMods.loyaltyBonus
+    const qualityLoyaltyBonus = getQualityLoyaltyBonus(state)
+    dayLoyaltyChange += elbaLoyaltyBonus + synergyMods.loyaltyBonus + qualityLoyaltyBonus
 
     // 17. Accumulate week results
     weekRevenue += dayRevenue
@@ -222,6 +263,12 @@ export function processWeek(state: GameState): DayResult {
   const newBalance = state.balance + weekNetProfit
   const newReputation = Math.max(0, Math.min(100, state.reputation + weekRepChange))
   const newLoyalty = Math.max(0, Math.min(100, state.loyalty + weekLoyaltyChange))
+
+  // Update quality weekly
+  updateQualityWeekly(state)
+
+  // Deduct weekly employee energy cost
+  state.entrepreneurEnergy = Math.max(0, state.entrepreneurEnergy - weeklyEnergyCost)
 
   // Check if entrepreneur energy reached 0 (end of week)
   if (state.entrepreneurEnergy <= 0) {

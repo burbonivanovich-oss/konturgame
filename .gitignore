@@ -1,1 +1,61 @@
-(docs/status/DOCUMENTATION_AUDIT_REPORT.md', 'docs/status/IMPLEMENTATION_STATUS.md', 'docs/technical/STATE_MANAGEMENT.md']
+```
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+build/
+*.min.js
+*.min.css
+
+# Environment variables
+.env
+.env.local
+*.env.*
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Coverage reports
+coverage/
+htmlcov/
+*.coverage
+
+# Temporary files
+*.tmp
+*.temp
+
+# Package manager caches
+.npm/
+.yarn/
+.pnpm-store/
+
+# TypeScript
+*.tsbuildinfo
+*.js.map
+
+# Browserslist
+.browserslistcache
+
+# Vitest
+.vitest/
+
+# Tailwind CSS
+.tailwindcss/
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+```
