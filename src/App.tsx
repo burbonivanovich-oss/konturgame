@@ -28,8 +28,13 @@ export default function App() {
     setShowGame(true)
   }
 
+  const handleRestartGame = () => {
+    localStorage.removeItem('konturgame_state')
+    setShowGame(false)
+  }
+
   if (showGame) {
-    return <MainScreen />
+    return <MainScreen onRestart={handleRestartGame} />
   }
 
   return <BusinessSelector onGameStart={handleGameStart} />

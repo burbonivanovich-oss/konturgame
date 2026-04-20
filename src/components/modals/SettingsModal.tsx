@@ -4,14 +4,19 @@ import { useGameStore } from '../../stores/gameStore'
 interface SettingsModalProps {
   isOpen: boolean
   onClose: () => void
+  onRestart?: () => void
 }
 
-export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
+export default function SettingsModal({ isOpen, onClose, onRestart }: SettingsModalProps) {
 
   const handleNewGame = () => {
     if (confirm('Вы уверены? Текущий прогресс будет потерян.')) {
-      localStorage.removeItem('konturgame_state')
-      window.location.reload()
+      if (onRestart) {
+        onRestart()
+      } else {
+        localStorage.removeItem('konturgame_state')
+        window.location.reload()
+      }
     }
   }
 

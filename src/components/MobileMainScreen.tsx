@@ -18,7 +18,11 @@ import PromoWalletModal from './modals/PromoWalletModal'
 import BundleModal from './modals/BundleModal'
 import { useGameStore } from '../stores/gameStore'
 
-export default function MobileMainScreen() {
+interface MobileMainScreenProps {
+  onRestart?: () => void
+}
+
+export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
   const [showEventModal, setShowEventModal] = useState(false)
   const [showCampaignModal, setShowCampaignModal] = useState(false)
@@ -302,7 +306,7 @@ export default function MobileMainScreen() {
       <CampaignModal isOpen={showCampaignModal} onClose={() => setShowCampaignModal(false)} />
       <UpgradesModal isOpen={showUpgradesModal} onClose={() => setShowUpgradesModal(false)} />
       <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
-      <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
+      <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} onRestart={onRestart} />
       <AchievementsModal isOpen={showAchievementsModal} onClose={() => setShowAchievementsModal(false)} />
       <OnboardingModal />
       <CashRegisterModal isOpen={showCashRegisterModal} onClose={() => setShowCashRegisterModal(false)} />
