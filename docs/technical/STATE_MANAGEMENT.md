@@ -1,4 +1,7 @@
-# Управление состоянием (ЭТАП 3)
+# Управление состоянием (ЭТАП 3) — v2.0
+
+**Версия:** 2.0 (недельный цикл)  
+**Дата обновления:** 2026-04-20
 
 Здесь описан полный стек управления состоянием приложения на базе Zustand.
 
@@ -7,6 +10,10 @@
 ```
 GameStore (Zustand)
     ├── State properties (gameState)
+    │   ├── currentWeek: number (1-52+)
+    │   ├── dayOfWeek: number (0-6, 0 = Monday)
+    │   ├── entrepreneurEnergy: number (0-100)
+    │   └── ...
     ├── Actions (set/get methods)
     └── Middleware (localStorage auto-save)
         │
@@ -17,7 +24,7 @@ GameStore (Zustand)
         │   └── Другие вспомогательные методы
         │
         ├── GameStateService.ts (Service Layer)
-        │   ├── processNextDay()
+        │   ├── processNextWeek()
         │   ├── activateService()
         │   ├── purchaseUpgrade()
         │   ├── launchAdCampaign()
@@ -27,6 +34,48 @@ GameStore (Zustand)
             ├── useLocalStorageSync()
             ├── useGameSnapshot()
             └── Утилиты для работы с сохранениями
+```
+
+## Ключевые изменения v2.0
+
+### Переход на недельный цикл
+
+**v1.0 (устарело):**
+```typescript
+interface GameState {
+  currentDay: number  // День игры
+}
+nextDay()  // Перейти к следующему дню
+```
+
+**v2.0 (актуально):**
+```typescript
+interface GameState {
+  currentWeek: number  // Неделя игры (1-52+)
+  dayOfWeek: number    // День недели (0-6)
+  entrepreneurEnergy: number  // Энергия владельца
+  weeklyEnergyRestored: boolean  // Флаг восстановления энергии
+}
+nextWeek()  // Перейти к следующей неделе (7 дней пакетно)
+```
+
+### Процесс недели
+
+```typescript
+// src/services/weekCalculator.ts
+export function processWeek(state: GameState): DayResult {
+  // Accumulate results for the week
+  for (let dayNum = 0; dayNum < 7; dayNum++) {
+    // Process each day of the week (7 iterations)
+    // 1. Проверка просрочки
+    // 2. Событие конкурента (если неделя 3)
+    // 3. Расчёт клиентов, пропускной способности
+    // 4. Расчёт выручки
+    // 5. Расчёт расходов
+    // 6. Обновление репутации и лояльности
+  }
+  // Возвращает сводку за неделю
+}
 ```
 
 ## Компоненты
