@@ -188,7 +188,7 @@ export default function ServicePanel() {
               onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.8' }}
               onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
             >
-              {service.isActive ? '✓ Подключено' : 'Подключить'}
+              {service.isActive ? '✓ Подключено' : `Подключить`}
             </button>
           </div>
         )

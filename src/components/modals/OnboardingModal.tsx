@@ -4,7 +4,7 @@ import { ONBOARDING_STAGES, ONBOARDING_STAGE_LABELS } from '../../constants/onbo
 export default function OnboardingModal() {
   const {
     onboardingStage, onboardingStepIndex, onboardingCompleted,
-    nextOnboardingStep, completeOnboarding, services, cashRegisters,
+    nextOnboardingStep, advanceOnboardingStage, completeOnboarding, services, cashRegisters,
   } = useGameStore()
 
   if (onboardingCompleted) return null
@@ -35,7 +35,7 @@ export default function OnboardingModal() {
       if (isLastStage) {
         completeOnboarding()
       } else {
-        nextOnboardingStep()
+        advanceOnboardingStage()
       }
     } else {
       nextOnboardingStep()
@@ -49,6 +49,7 @@ export default function OnboardingModal() {
   return (
     <div style={{
       position: 'fixed', zIndex: 200,
+      pointerEvents: pendingAction ? 'none' : 'auto',
       // When action is pending: anchor to bottom-right, no backdrop
       // When no action required: center with full backdrop
       ...(pendingAction ? {
@@ -65,6 +66,7 @@ export default function OnboardingModal() {
         background: '#fff', borderRadius: 24, padding: 28,
         maxWidth: pendingAction ? '100%' : 440, width: '100%',
         boxShadow: '0 24px 80px rgba(0,0,0,0.25)',
+        pointerEvents: 'auto',
         // Subtle highlight border when floating
         ...(pendingAction ? { border: '2px solid var(--k-orange)' } : {}),
       }}>
