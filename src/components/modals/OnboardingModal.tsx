@@ -50,8 +50,8 @@ export default function OnboardingModal() {
     <div style={{
       position: 'fixed', zIndex: 200,
       pointerEvents: pendingAction ? 'none' : 'auto',
-      // When action is pending: anchor to bottom-right, no backdrop
-      // When no action required: center with full backdrop
+      // When action is pending: anchor to bottom-right, no backdrop, pointer-events none
+      // When action done or no action: center with full backdrop
       ...(pendingAction ? {
         bottom: 24, right: 24,
         width: 360,
