@@ -1,5 +1,6 @@
 import type { GameState, Employee, EmployeePosition } from '../types/game'
 import { createEmployee, getTotalEmployeeEfficiency, getTotalEmployeeSalary, getTotalEmployeeEnergyCost } from '../constants/employees'
+import { UPGRADES_CONFIG } from '../constants/business'
 
 /**
  * Initialize employees for a new game (start with no employees)
@@ -146,4 +147,20 @@ export function checkEmployeeEvent(state: GameState): { type: string; effect: nu
 export function getEmployeeCount(state: GameState, position?: EmployeePosition): number {
   if (!position) return state.employees.length
   return state.employees.filter(e => e.position === position).length
+}
+
+/**
+ * Calculate energy recovery bonus from purchased upgrades
+ */
+export function getUpgradeEnergyBonus(state: GameState): number {
+  if (!state.purchasedUpgrades || state.purchasedUpgrades.length === 0) return 0
+
+  const upgrades = UPGRADES_CONFIG[state.businessType] ?? []
+
+  return upgrades.reduce((total: number, upgrade: any) => {
+    if (state.purchasedUpgrades.includes(upgrade.id) && upgrade.energyBonus) {
+      return total + upgrade.energyBonus
+    }
+    return total
+  }, 0)
 }

@@ -25,7 +25,7 @@ import { calculatePainLosses, getBankPaymentRatio } from './painEngine'
 import { getTotalThroughput, calculateRegisterPenalty, checkRegisterBreakdown } from './cashRegisterEngine'
 import { calculateCategoryRevenue } from './assortmentEngine'
 import { initializeSuppliers, unlockSuppliersIfNeeded, getQualityModifier, getPriceModifier, calculateStockCost } from './supplierManager'
-import { initializeEmployees, getWeeklySalaryCost, getWeeklyEnergyCost, getEmployeeCapacityBonus } from './employeeManager'
+import { initializeEmployees, getWeeklySalaryCost, getWeeklyEnergyCost, getEmployeeCapacityBonus, getUpgradeEnergyBonus } from './employeeManager'
 import { initializeQuality, updateQualityWeekly, getQualityReputationBonus, getQualityLoyaltyBonus, getQualityPricePremium } from './qualityManager'
 
 export function checkWeekBlocked(state: GameState): { blocked: boolean; reason?: string } {
@@ -267,8 +267,10 @@ export function processWeek(state: GameState): DayResult {
   // Update quality weekly
   updateQualityWeekly(state)
 
-  // Deduct weekly employee energy cost
-  state.entrepreneurEnergy = Math.max(0, state.entrepreneurEnergy - weeklyEnergyCost)
+  // Deduct weekly employee energy cost, minus upgrade bonuses
+  const upgradeEnergyBonus = getUpgradeEnergyBonus(state)
+  const actualEnergyCost = Math.max(0, weeklyEnergyCost - upgradeEnergyBonus)
+  state.entrepreneurEnergy = Math.max(0, state.entrepreneurEnergy - actualEnergyCost)
 
   // Check if entrepreneur energy reached 0 (end of week)
   if (state.entrepreneurEnergy <= 0) {
