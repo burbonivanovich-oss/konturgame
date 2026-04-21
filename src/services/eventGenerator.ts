@@ -435,6 +435,204 @@ export const EVENTS_DATABASE: EventTemplate[] = [
       },
     ],
   },
+  // ФАЗА 3: Конкуренция, поставщики, тренды, сотрудники
+  {
+    id: 'COMPETITOR_COUNTER',
+    title: 'Отвоевание рынка у конкурента',
+    description: 'Конкурент отнял ваших клиентов. Пора дать ему отпор!',
+    trigger: { randomChance: 0.03 },
+    options: [
+      {
+        id: 'price-war',
+        text: 'Снизить цены (-5 000 ₽, вернуть клиентов)',
+        consequences: { balanceDelta: -5000, clientModifier: 0.2, clientModifierDays: 7 },
+      },
+      {
+        id: 'quality-push',
+        text: 'Улучшить качество (+1 репутация каждый день)',
+        consequences: { reputationDelta: 5 },
+      },
+      {
+        id: 'ignore',
+        text: 'Ничего не делать',
+        consequences: {},
+      },
+    ],
+  },
+  {
+    id: 'SUPPLIER_QUALITY',
+    title: 'Проблемы с качеством товара',
+    description: 'Поставщик начал присылать товар худшего качества. Клиенты жалуются.',
+    trigger: { randomChance: 0.04 },
+    options: [
+      {
+        id: 'switch-supplier',
+        text: 'Сменить поставщика (найти нового)',
+        consequences: { reputationDelta: -3 },
+      },
+      {
+        id: 'negotiate',
+        text: 'Договориться о скидке (-2 000 ₽)',
+        consequences: { balanceDelta: -2000, loyaltyDelta: 2 },
+      },
+      {
+        id: 'accept',
+        text: 'Продолжать работу (-5% лояльность)',
+        consequences: { loyaltyDelta: -5 },
+      },
+    ],
+  },
+  {
+    id: 'TREND_BOOM',
+    title: 'Тренд на ваш товар!',
+    description: 'Внезапно стало модно то, что вы продаёте! Спрос резко вырос!',
+    trigger: { randomChance: 0.03 },
+    options: [
+      {
+        id: 'capitalize',
+        text: 'Максимально использовать тренд (+40% выручка на 6 дней)',
+        consequences: { checkModifier: 0.4, checkModifierDays: 6 },
+      },
+      {
+        id: 'steady',
+        text: 'Работать в обычном режиме (+20% выручка на 4 дня)',
+        consequences: { checkModifier: 0.2, checkModifierDays: 4 },
+      },
+    ],
+  },
+  {
+    id: 'TREND_BUST',
+    title: 'Антитренд на ваш товар',
+    description: 'Внезапно ваш основной товар вышел из моды. Спрос упал.',
+    trigger: { randomChance: 0.03 },
+    options: [
+      {
+        id: 'diversify',
+        text: 'Быстро перестроить ассортимент (-8 000 ₽, восстановление)',
+        consequences: { balanceDelta: -8000, checkModifier: 0.15, checkModifierDays: 5 },
+      },
+      {
+        id: 'wait',
+        text: 'Ждать, пока тренд вернётся (-15% клиентов на 7 дней)',
+        consequences: { clientModifier: -0.15, clientModifierDays: 7 },
+      },
+    ],
+  },
+  {
+    id: 'STAR_EMPLOYEE',
+    title: 'Звёздный сотрудник получил предложение',
+    description: 'Ваш лучший сотрудник получил заманчивое предложение от конкурента. Грозит уход.',
+    trigger: { randomChance: 0.04 },
+    options: [
+      {
+        id: 'match-offer',
+        text: 'Поднять зарплату (-3 000 ₽/месяц, удержать)',
+        consequences: { balanceDelta: -3000, loyaltyDelta: 10 },
+      },
+      {
+        id: 'promote',
+        text: 'Повысить в должности (+1 репутация)',
+        consequences: { reputationDelta: 5 },
+      },
+      {
+        id: 'let-go',
+        text: 'Отпустить с миром (-10 клиентов от потери таланта)',
+        consequences: { clientModifier: -0.15, clientModifierDays: 8 },
+      },
+    ],
+  },
+  {
+    id: 'STAFF_CONFLICT',
+    title: 'Конфликт между сотрудниками',
+    description: 'Два ключевых сотрудника не ладят. Обстановка накаляется. Качество работы падает.',
+    trigger: { randomChance: 0.05 },
+    options: [
+      {
+        id: 'mediate',
+        text: 'Провести медиацию (-2 000 ₽, восстановить атмосферу)',
+        consequences: { balanceDelta: -2000, loyaltyDelta: 5 },
+      },
+      {
+        id: 'separate',
+        text: 'Перевести одного в другой отдел (смена расписания)',
+        consequences: { loyaltyDelta: -3 },
+      },
+      {
+        id: 'ignore-conflict',
+        text: 'Игнорировать конфликт (-8% качество)',
+        consequences: { reputationDelta: -8 },
+      },
+    ],
+  },
+  {
+    id: 'STAFF_QUIT',
+    title: 'Сотрудник уходит в отставку',
+    description: 'Один из сотрудников решил уйти. Нужно срочно найти замену!',
+    trigger: { randomChance: 0.04 },
+    options: [
+      {
+        id: 'hire-replacement',
+        text: 'Нанять замену вдвое дороже (-более высокая зарплата)',
+        consequences: { balanceDelta: -2000 },
+      },
+      {
+        id: 'promote-internal',
+        text: 'Повысить внутреннего кандидата (+2 репутация)',
+        consequences: { reputationDelta: 5 },
+      },
+      {
+        id: 'accept-loss',
+        text: 'Остаться в недостатке (-30% пропускная способность)',
+        consequences: { checkModifier: -0.3, checkModifierDays: 14 },
+      },
+    ],
+  },
+  {
+    id: 'STAFF_ACHIEVEMENT',
+    title: 'Сотрудник получил награду',
+    description: 'Один из ваших сотрудников выиграл профессиональное признание! Моральный подъём в команде!',
+    trigger: { randomChance: 0.03 },
+    options: [
+      {
+        id: 'celebrate',
+        text: 'Устроить празднование (-1 000 ₽, +7 лояльности)',
+        consequences: { balanceDelta: -1000, loyaltyDelta: 7 },
+      },
+      {
+        id: 'bonus',
+        text: 'Выплатить премию (-2 000 ₽, +12 лояльности)',
+        consequences: { balanceDelta: -2000, loyaltyDelta: 12 },
+      },
+      {
+        id: 'acknowledge',
+        text: 'Просто поблагодарить (+3 лояльности)',
+        consequences: { loyaltyDelta: 3 },
+      },
+    ],
+  },
+  {
+    id: 'SUPPLIER_DELIVERY',
+    title: 'Задержка поставки от поставщика',
+    description: 'Поставщик задержал доставку. Товара не будет несколько дней!',
+    trigger: { randomChance: 0.04 },
+    options: [
+      {
+        id: 'find-alternative',
+        text: 'Найти альтернативного поставщика (-4 000 ₽, но дороже)',
+        consequences: { balanceDelta: -4000 },
+      },
+      {
+        id: 'wait-suffer',
+        text: 'Ждать (-20% выручка на 3 дня)',
+        consequences: { checkModifier: -0.2, checkModifierDays: 3 },
+      },
+      {
+        id: 'complain',
+        text: 'Потребовать компенсацию (-1 000 ₽ скидка)',
+        consequences: { balanceDelta: 1000 },
+      },
+    ],
+  },
 ]
 
 export function generateEvent(day: number, state: GameState): Event | null {
