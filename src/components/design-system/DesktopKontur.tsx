@@ -32,7 +32,7 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
 
   const totalCost = servicesList
     .filter(s => s.isActive)
-    .reduce((sum, s) => sum + s.monthlyPrice, 0)
+    .reduce((sum, s) => sum + s.yearlyPrice, 0)
 
   const roi = totalCost > 0 ? Math.round(savedBalance / totalCost) : 0
 
@@ -105,7 +105,7 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
           </div>
           <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6 }}>
             {totalCost > 0
-              ? `Экономит в ${roi} раз больше, чем стоит подписка (${totalCost.toLocaleString('ru-RU')} ₽/мес).`
+              ? `Экономит в ${roi} раз больше, чем стоит подписка (${totalCost.toLocaleString('ru-RU')} ₽/год).`
               : 'Подключите сервисы для максимальной экономии.'}
           </div>
         </div>
@@ -174,7 +174,7 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
             padding: '8px 14px', borderRadius: 999,
             background: 'var(--k-ink)', color: '#fff',
             fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap', flexShrink: 0,
-          }}>Подключено {servicesList.filter(s => s.isActive).length} · {totalCost.toLocaleString('ru-RU')} ₽/мес</div>
+          }}>Подключено {servicesList.filter(s => s.isActive).length} · {totalCost.toLocaleString('ru-RU')} ₽/год</div>
         </div>
 
         <div style={{
@@ -225,28 +225,28 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.6 }}>ЦЕНА</div>
                   <div style={{ fontSize: 14, fontWeight: 800 }} className="k-num">
-                    {s.monthlyPrice} ₽<span style={{ fontSize: 10, opacity: 0.7 }}>/мес</span>
+                    {s.yearlyPrice.toLocaleString('ru-RU')} ₽<span style={{ fontSize: 10, opacity: 0.7 }}>/год</span>
                   </div>
                 </div>
                 <button
                   onClick={() => toggleService(s.id)}
-                  disabled={!s.isActive && balance < s.monthlyPrice}
+                  disabled={!s.isActive && balance < s.yearlyPrice}
                   style={{
-                    border: 'none', cursor: !s.isActive && balance < s.monthlyPrice ? 'not-allowed' : 'pointer',
+                    border: 'none', cursor: !s.isActive && balance < s.yearlyPrice ? 'not-allowed' : 'pointer',
                     fontFamily: 'inherit',
                     padding: '6px 12px', borderRadius: 999,
                     background: s.isActive
                       ? 'rgba(0,0,0,0.2)'
-                      : balance >= s.monthlyPrice
+                      : balance >= s.yearlyPrice
                       ? 'var(--k-ink)'
                       : 'rgba(0,0,0,0.1)',
                     color: s.isActive
                       ? 'currentColor'
-                      : balance >= s.monthlyPrice
+                      : balance >= s.yearlyPrice
                       ? '#fff'
                       : 'var(--k-ink-50)',
                     fontSize: 11, fontWeight: 700,
-                    opacity: s.isActive || balance >= s.monthlyPrice ? 1 : 0.6,
+                    opacity: s.isActive || balance >= s.yearlyPrice ? 1 : 0.6,
                     transition: 'opacity 0.2s',
                   }}
                 >

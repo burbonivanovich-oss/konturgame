@@ -145,7 +145,7 @@ export default function ServicePanel() {
         </div>
       )}
       {visibleServices.map((service) => {
-        const canAfford = balance >= service.monthlyPrice
+        const canAfford = balance >= service.yearlyPrice
         const isUnlocked = unlockedServices.includes(service.id)
         return (
           <div
@@ -162,7 +162,7 @@ export default function ServicePanel() {
               <span style={{ fontSize: 20 }}>{service.icon}</span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 12, fontWeight: 700 }}>{service.name}</div>
-                <div style={{ fontSize: 10, opacity: 0.7 }}>{service.monthlyPrice.toLocaleString('ru-RU')} ₽/мес</div>
+                <div style={{ fontSize: 10, opacity: 0.7 }}>{service.yearlyPrice.toLocaleString('ru-RU')} ₽/год</div>
               </div>
             </div>
             <div style={{ fontSize: 11, opacity: 0.8, lineHeight: 1.3 }}>{service.description}</div>
@@ -208,7 +208,7 @@ export default function ServicePanel() {
                   <span style={{ fontSize: 20 }}>{service.icon}</span>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 12, fontWeight: 700 }}>{service.name}</div>
-                    <div style={{ fontSize: 10, opacity: 0.7 }}>{service.monthlyPrice.toLocaleString('ru-RU')} ₽/мес</div>
+                    <div style={{ fontSize: 10, opacity: 0.7 }}>{service.yearlyPrice.toLocaleString('ru-RU')} ₽/год</div>
                   </div>
                   <div style={{ fontSize: 18 }}>🔒</div>
                 </div>

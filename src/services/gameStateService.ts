@@ -90,8 +90,8 @@ export class GameStateService {
     if (!service) return false
     if (service.isActive) return false
 
-    // Check balance for first month
-    if (currentBalance < service.monthlyPrice) {
+    // Check balance for first year
+    if (currentBalance < service.yearlyPrice) {
       return false
     }
 

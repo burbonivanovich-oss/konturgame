@@ -104,7 +104,7 @@ function makeDayResult(overrides: Partial<any> = {}): any {
 function makeActiveServices(): GameState['services'] {
   const services = {} as GameState['services']
   for (const id of ALL_SERVICE_IDS) {
-    services[id] = { id, name: '', description: '', monthlyPrice: 0, isActive: true, effects: {} }
+    services[id] = { id, name: '', description: '', monthlyPrice: 0, yearlyPrice: 0, isActive: true, effects: {} }
   }
   return services
 }
@@ -147,7 +147,7 @@ describe('getAllServicesActive', () => {
   it('returns false when some services inactive', () => {
     const state = makeState({
       services: {
-        market: { id: 'market', name: '', description: '', monthlyPrice: 0, isActive: true, effects: {} },
+        market: { id: 'market', name: '', description: '', monthlyPrice: 0, yearlyPrice: 0, isActive: true, effects: {} },
       } as GameState['services'],
     })
     expect(getAllServicesActive(state)).toBe(false)
