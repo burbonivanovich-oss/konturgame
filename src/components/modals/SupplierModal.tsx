@@ -10,9 +10,8 @@ export default function SupplierModal({ isOpen, onClose }: SupplierModalProps) {
   const { suppliers, activeSupplierId, setActiveSupplierId } = useGameStore()
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} title="Выбрать поставщика" onClose={onClose}>
       <div style={{ maxWidth: 520 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 20 }}>Выбрать поставщика</h2>
 
         {suppliers.length === 0 ? (
           <div style={{
