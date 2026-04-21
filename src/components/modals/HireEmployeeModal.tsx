@@ -4,10 +4,12 @@ import { useGameStore } from '../../stores/gameStore'
 import type { EmployeePosition } from '../../types/game'
 
 const EMPLOYEE_POSITIONS: Array<{ id: EmployeePosition; label: string; baseSalary: number }> = [
-  { id: 'cashier', label: '💳 Кассир', baseSalary: 15000 },
-  { id: 'assistant', label: '🛍️ Помощник', baseSalary: 12000 },
-  { id: 'manager', label: '👔 Менеджер', baseSalary: 25000 },
-  { id: 'specialist', label: '🎓 Специалист', baseSalary: 30000 },
+  { id: 'cashier', label: '💳 Кассир', baseSalary: 45000 },
+  { id: 'assistant', label: '🛍️ Помощник', baseSalary: 50000 },
+  { id: 'manager', label: '👔 Менеджер', baseSalary: 75000 },
+  { id: 'specialist', label: '🎓 Специалист', baseSalary: 70000 },
+  { id: 'supervisor', label: '🔝 Супервайзер', baseSalary: 90000 },
+  { id: 'trainer', label: '📚 Тренер', baseSalary: 85000 },
 ]
 
 interface HireEmployeeModalProps {
@@ -37,7 +39,7 @@ export default function HireEmployeeModal({ isOpen, onClose }: HireEmployeeModal
           <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.55, marginBottom: 12 }}>
             Должность
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
             {EMPLOYEE_POSITIONS.map((pos) => (
               <button
                 key={pos.id}

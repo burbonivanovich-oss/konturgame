@@ -1,5 +1,5 @@
 import type { GameState, Employee, EmployeePosition } from '../types/game'
-import { createEmployee, getTotalEmployeeEfficiency, getTotalEmployeeSalary, getTotalEmployeeEnergyCost } from '../constants/employees'
+import { createEmployee, getTotalEmployeeEfficiency, getTotalEmployeeSalary, getTotalEmployeeEnergyCost, EMPLOYEE_SALARIES, EMPLOYEE_ENERGY_COST } from '../constants/employees'
 import { UPGRADES_CONFIG } from '../constants/business'
 
 /**
@@ -93,26 +93,14 @@ export function getWeeklyEnergyCost(state: GameState): number {
  * Get base salary for position
  */
 export function getBaseSalaryForPosition(position: EmployeePosition): number {
-  const salaries: Record<EmployeePosition, number> = {
-    cashier: 25000,
-    assistant: 30000,
-    manager: 45000,
-    specialist: 40000,
-  }
-  return salaries[position]
+  return EMPLOYEE_SALARIES[position]
 }
 
 /**
  * Get energy cost for position
  */
 export function getEnergyCostForPosition(position: EmployeePosition): number {
-  const costs: Record<EmployeePosition, number> = {
-    cashier: 5,
-    assistant: 7,
-    manager: 10,
-    specialist: 8,
-  }
-  return costs[position]
+  return EMPLOYEE_ENERGY_COST[position]
 }
 
 /**

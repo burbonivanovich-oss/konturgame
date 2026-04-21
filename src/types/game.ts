@@ -8,7 +8,7 @@ export type CashRegisterType = 'mobile' | 'reliable' | 'fast'
 
 export type SupplierTier = 'economy' | 'standard' | 'premium'
 
-export type EmployeePosition = 'cashier' | 'assistant' | 'manager' | 'specialist'
+export type EmployeePosition = 'cashier' | 'assistant' | 'manager' | 'specialist' | 'supervisor' | 'trainer'
 
 export interface CashRegister {
   type: CashRegisterType

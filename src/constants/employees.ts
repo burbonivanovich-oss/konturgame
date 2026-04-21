@@ -5,13 +5,17 @@ export const EMPLOYEE_NAMES: Record<EmployeePosition, string[]> = {
   assistant: ['Елена', 'Жанна', 'Захар', 'Ирина', 'Константин'],
   manager: ['Людмила', 'Максим', 'Наталья', 'Олег', 'Павел'],
   specialist: ['Роман', 'Светлана', 'Татьяна', 'Ульяна', 'Фёдор'],
+  supervisor: ['Алексей', 'Вероника', 'Геннадий', 'Дарья', 'Евгений'],
+  trainer: ['Зинаида', 'Игорь', 'Юлия', 'Кирилл', 'Лариса'],
 }
 
 export const EMPLOYEE_SALARIES: Record<EmployeePosition, number> = {
-  cashier: 25000,      // базовая зарплата кассира
-  assistant: 30000,    // помощник
-  manager: 45000,      // управляющий
-  specialist: 40000,   // специалист (например, бариста, парикмахер)
+  cashier: 45000,      // базовая зарплата кассира
+  assistant: 50000,    // помощник
+  manager: 75000,      // управляющий
+  specialist: 70000,   // специалист (например, бариста, парикмахер)
+  supervisor: 90000,   // супервайзер/начальник смены
+  trainer: 85000,      // тренер/обучающий персонал
 }
 
 export const EMPLOYEE_EFFICIENCY: Record<EmployeePosition, { min: number; max: number }> = {
@@ -19,6 +23,8 @@ export const EMPLOYEE_EFFICIENCY: Record<EmployeePosition, { min: number; max: n
   assistant: { min: 0.9, max: 1.3 },
   manager: { min: 1.0, max: 1.5 },
   specialist: { min: 1.1, max: 1.4 },
+  supervisor: { min: 1.2, max: 1.6 },
+  trainer: { min: 1.1, max: 1.5 },
 }
 
 export const EMPLOYEE_ENERGY_COST: Record<EmployeePosition, number> = {
@@ -26,6 +32,8 @@ export const EMPLOYEE_ENERGY_COST: Record<EmployeePosition, number> = {
   assistant: 7,
   manager: 10,
   specialist: 8,
+  supervisor: 6,     // супервайзеры требуют меньше управления
+  trainer: 9,        // тренеры требуют больше внимания
 }
 
 export function generateEmployeeId(): string {
