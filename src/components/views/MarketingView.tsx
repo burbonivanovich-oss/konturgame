@@ -2,7 +2,7 @@ import { useGameStore } from '../../stores/gameStore'
 import { AD_CAMPAIGNS_CONFIG } from '../../constants/business'
 
 export function MarketingView() {
-  const { activeAdCampaigns, balance, businessType, addAdCampaign, removeAdCampaign } = useGameStore()
+  const { activeAdCampaigns, balance, businessType, currentWeek, addAdCampaign, removeAdCampaign } = useGameStore()
 
   const availableCampaigns = AD_CAMPAIGNS_CONFIG.filter(cfg => {
     if (!('businessTypes' in cfg)) return true
@@ -14,15 +14,27 @@ export function MarketingView() {
   const handleLaunch = (cfg: typeof AD_CAMPAIGNS_CONFIG[number]) => {
     if (balance < cfg.cost) return
     addAdCampaign({
-      id: cfg.id,
+      id: `campaign_${Date.now()}`,
       name: cfg.name,
       duration: cfg.duration,
       cost: cfg.cost,
       clientEffect: cfg.clientEffect,
       checkEffect: cfg.checkEffect ?? 0,
       daysRemaining: cfg.duration,
+      startWeek: currentWeek + 2,  // 2-week delay before effects
     })
   }
+
+  // Categorize campaigns
+  const activeCampaigns = activeAdCampaigns.filter(c => {
+    const startWeek = c.startWeek ?? currentWeek
+    return startWeek <= currentWeek
+  })
+
+  const pendingCampaigns = activeAdCampaigns.filter(c => {
+    const startWeek = c.startWeek ?? currentWeek
+    return startWeek > currentWeek
+  })
 
   return (
     <div style={{
@@ -36,13 +48,70 @@ export function MarketingView() {
         <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.025em' }}>Маркетинг</div>
       </div>
 
-      {/* Active campaigns */}
-      {activeAdCampaigns.length > 0 && (
+      {/* Info banner */}
+      <div style={{ background: 'var(--k-orange-soft)', borderRadius: 16, padding: 14, display: 'flex', gap: 10 }}>
+        <span style={{ fontSize: 16, flexShrink: 0 }}>⏰</span>
+        <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.5, color: 'var(--k-orange)' }}>
+          Эффект рекламы приходит через 2 недели. Это время на "разогрев" кампании и привлечение первых клиентов.
+        </div>
+      </div>
+
+      {/* Pending campaigns (waiting to activate) */}
+      {pendingCampaigns.length > 0 && (
         <div style={{ background: '#fff', borderRadius: 20, padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.45 }}>
-            АКТИВНЫЕ КАМПАНИИ · {activeAdCampaigns.length}
+            КАМПАНИИ НА СТАРТЕ (ЖДУТ АКТИВАЦИИ) · {pendingCampaigns.length}
           </div>
-          {activeAdCampaigns.map(campaign => {
+          {pendingCampaigns.map(campaign => {
+            const startWeek = campaign.startWeek ?? currentWeek
+            const weeksLeft = startWeek - currentWeek
+            return (
+              <div key={campaign.id} style={{
+                background: 'var(--k-surface-2)',
+                border: '1.5px solid rgba(14,17,22,0.2)',
+                borderRadius: 14, padding: 14,
+                display: 'flex', alignItems: 'center', gap: 14,
+                opacity: 0.7,
+              }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 14, fontWeight: 800 }}>{campaign.name}</span>
+                    <span style={{
+                      fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 4,
+                      background: 'var(--k-orange)', color: '#fff', letterSpacing: '0.06em',
+                    }}>ОЖИДАЕТ</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 12, marginTop: 4, fontSize: 11, fontWeight: 600, opacity: 0.6 }}>
+                    <span>+{Math.round(campaign.clientEffect * 100)}% клиентов (когда активна)</span>
+                  </div>
+                  <div style={{ marginTop: 8, fontSize: 10, fontWeight: 700, opacity: 0.55 }}>
+                    ⏳ Активируется на неделе {startWeek} (через {weeksLeft} {weeksLeft === 1 ? 'неделю' : 'недели'})
+                  </div>
+                </div>
+                <button
+                  onClick={() => removeAdCampaign(campaign.id)}
+                  style={{
+                    border: '1.5px solid rgba(14,17,22,0.12)', cursor: 'pointer',
+                    background: 'transparent', color: 'var(--k-ink)',
+                    padding: '6px 12px', borderRadius: 999,
+                    fontFamily: 'inherit', fontSize: 11, fontWeight: 700,
+                    flexShrink: 0,
+                  }}>
+                  Отменить
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Active campaigns */}
+      {activeCampaigns.length > 0 && (
+        <div style={{ background: '#fff', borderRadius: 20, padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.45 }}>
+            АКТИВНЫЕ КАМПАНИИ · {activeCampaigns.length}
+          </div>
+          {activeCampaigns.map(campaign => {
             const cfg = AD_CAMPAIGNS_CONFIG.find(c => c.id === campaign.id)
             const total = cfg?.duration ?? campaign.duration
             const pct = Math.round((campaign.daysRemaining / total) * 100)
