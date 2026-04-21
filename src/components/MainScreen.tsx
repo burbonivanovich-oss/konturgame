@@ -640,6 +640,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
         <OperationsView
           onShowHireModal={() => setShowHireEmployeeModal(true)}
           onShowSupplierModal={() => setShowSupplierModal(true)}
+          onShowUpgradesModal={() => setShowUpgradesModal(true)}
         />
       )}
       {activeView === 'statistics' && <StatisticsView />}
