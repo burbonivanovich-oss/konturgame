@@ -5,7 +5,7 @@ import { Spark } from './design-system'
 export default function KPIPanel() {
   const state = useGameStore()
   const lastResult = state.lastDayResult
-  const { qualityLevel } = state
+  const { qualityLevel, entrepreneurEnergy } = state
 
   const kpi = useMemo(() => ({
     week: state.currentWeek,
@@ -27,7 +27,7 @@ export default function KPIPanel() {
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: '1.3fr 1fr 1fr 1fr',
+      gridTemplateColumns: '1.3fr 1fr 1fr 1fr 1fr',
       gap: 10,
       height: 146,
     }}>
@@ -112,6 +112,29 @@ export default function KPIPanel() {
             borderRadius: 999, overflow: 'hidden',
           }}>
             <div style={{ width: `${qualityLevel}%`, height: '100%', background: '#fff' }}/>
+          </div>
+        </div>
+      </div>
+
+      {/* Entrepreneur Energy */}
+      <div style={{
+        background: entrepreneurEnergy > 70 ? '#3498db' : entrepreneurEnergy > 40 ? 'var(--k-orange)' : 'var(--k-bad)',
+        color: '#fff',
+        borderRadius: 20, padding: 18,
+        display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.75 }}>
+          ЭНЕРГИЯ
+        </div>
+        <div>
+          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }} className="k-num">
+            {entrepreneurEnergy}%
+          </div>
+          <div style={{
+            marginTop: 6, height: 5, background: 'rgba(255,255,255,0.22)',
+            borderRadius: 999, overflow: 'hidden',
+          }}>
+            <div style={{ width: `${entrepreneurEnergy}%`, height: '100%', background: '#fff' }}/>
           </div>
         </div>
       </div>

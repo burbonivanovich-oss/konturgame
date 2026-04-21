@@ -9,7 +9,7 @@ function getStatusColor(value: number): { color: string; icon: string } {
 }
 
 export default function Indicators() {
-  const { reputation, loyalty, stockBatches, capacity, lastDayResult, balance } = useGameStore()
+  const { reputation, loyalty, stockBatches, capacity, lastDayResult, balance, entrepreneurEnergy, restoreEnergyAtWeekStart } = useGameStore()
   const { addBalance, addLoyalty } = useGameStore()
 
   const stockLevel = useMemo(() => {
@@ -32,6 +32,7 @@ export default function Indicators() {
   const repColor = getStatusColor(reputation)
   const loyaltyColor = getStatusColor(loyalty)
   const stockColor = getStatusColor(stockLevel)
+  const energyColor = getStatusColor(entrepreneurEnergy)
 
   const servedPct = lastDayResult && lastDayResult.clients > 0
     ? Math.round((lastDayResult.served / lastDayResult.clients) * 100)
@@ -94,6 +95,30 @@ export default function Indicators() {
             💰 Премия персоналу ({premiumCost.toLocaleString('ru-RU')} ₽)
           </button>
         )}
+      </div>
+
+      {/* Энергия владельца */}
+      <div style={{
+        background: 'var(--k-white)', borderRadius: 16, padding: 16,
+        display: 'flex', flexDirection: 'column', gap: 8,
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em' }}>⚡ ВЫГОРАНИЕ</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: energyColor.color }} className="k-num">
+            {entrepreneurEnergy}/100
+          </div>
+        </div>
+        <div style={{
+          height: 6, background: 'var(--k-ink-10)', borderRadius: 999, overflow: 'hidden',
+        }}>
+          <div style={{
+            height: '100%', background: energyColor.color, width: `${entrepreneurEnergy}%`,
+            transition: 'width 0.3s ease',
+          }}/>
+        </div>
+        <div style={{ fontSize: 10, opacity: 0.6, lineHeight: 1.3 }}>
+          {entrepreneurEnergy > 70 ? '✅ Полна энергии' : entrepreneurEnergy > 40 ? '⚠️ Нужен отдых' : '🔴 Требуется восстановление'}
+        </div>
       </div>
 
       {/* Склад */}
