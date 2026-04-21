@@ -83,10 +83,22 @@ export function getWeeklySalaryCost(state: GameState): number {
 }
 
 /**
- * Calculate weekly energy cost for managing employees
+ * Calculate weekly energy cost including base stress + employee management
  */
 export function getWeeklyEnergyCost(state: GameState): number {
-  return getTotalEmployeeEnergyCost(state.employees)
+  // Base cost for running the business (stress, decisions, customers)
+  const baseCost = 15
+
+  // Cost from managing employees
+  const employeeCost = getTotalEmployeeEnergyCost(state.employees)
+
+  // Extra cost if working solo (no employees = more stress)
+  let understaffPenalty = 0
+  if (state.employees.length === 0) {
+    understaffPenalty = 10  // Running solo is exhausting
+  }
+
+  return baseCost + employeeCost + understaffPenalty
 }
 
 /**
