@@ -11,43 +11,47 @@ const CAMPAIGNS = [
   {
     id: 'social-media',
     name: '📱 Социальные сети',
-    description: 'Дешевая реклама с низким охватом',
-    cost: 5000,
+    description: 'Реклама в соцсетях (эффект через 2-3 недели)',
+    cost: 50000,
     clientBonus: 0.15,
-    duration: 5,
+    duration: 21,
+    delay: 2,
   },
   {
     id: 'local-ads',
     name: '📰 Местная реклама',
-    description: 'Средняя реклама для среднего бюджета',
-    cost: 15000,
+    description: 'Объявления в местных изданиях (эффект через 2-3 недели)',
+    cost: 150000,
     clientBonus: 0.35,
-    duration: 10,
+    duration: 28,
+    delay: 2,
   },
   {
     id: 'influencer',
     name: '⭐ Инфлюэнсер',
-    description: 'Дорогая, но эффективная реклама',
-    cost: 40000,
+    description: 'Сотрудничество с инфлюэнсером (эффект через 2-3 недели)',
+    cost: 400000,
     clientBonus: 0.75,
-    duration: 15,
+    duration: 35,
+    delay: 3,
   },
 ]
 
 export default function CampaignModal({ isOpen, onClose }: CampaignModalProps) {
-  const { balance, addAdCampaign, setBalance } = useGameStore()
+  const { balance, addAdCampaign, setBalance, currentWeek } = useGameStore()
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null)
 
   const handleStartCampaign = (campaign: typeof CAMPAIGNS[0]) => {
     if (balance >= campaign.cost) {
       addAdCampaign({
-        id: campaign.id,
+        id: `campaign_${Date.now()}`,
         name: campaign.name,
         duration: campaign.duration,
         cost: campaign.cost,
         clientEffect: campaign.clientBonus,
         checkEffect: 0,
         daysRemaining: campaign.duration,
+        startWeek: currentWeek + campaign.delay,
       })
       setBalance(balance - campaign.cost)
       setSelectedCampaign(null)
@@ -58,6 +62,10 @@ export default function CampaignModal({ isOpen, onClose }: CampaignModalProps) {
   return (
     <Modal isOpen={isOpen} title="📢 Рекламные кампании" onClose={onClose} size="lg">
       <div className="space-y-4">
+        <div className="bg-yellow-50 border border-yellow-300 rounded-md p-3 text-xs text-yellow-800">
+          ⚠️ Эффект от рекламы приходит через 2-3 недели после запуска
+        </div>
+
         <div className="space-y-3">
           {CAMPAIGNS.map((campaign) => {
             const canAfford = balance >= campaign.cost
@@ -82,8 +90,9 @@ export default function CampaignModal({ isOpen, onClose }: CampaignModalProps) {
                 </div>
                 <p className="text-sm text-gray-600 mb-3">{campaign.description}</p>
                 <div className="text-xs space-y-1 text-gray-700">
-                  <p>👥 +{(campaign.clientBonus * 100).toFixed(0)}% клиентов</p>
-                  <p>📅 {campaign.duration} дней</p>
+                  <p>👥 +{(campaign.clientBonus * 100).toFixed(0)}% клиентов (когда активна)</p>
+                  <p>📅 {campaign.duration} дней активности</p>
+                  <p>⏰ Эффект начнется на неделе {currentWeek + campaign.delay}</p>
                 </div>
               </div>
             )

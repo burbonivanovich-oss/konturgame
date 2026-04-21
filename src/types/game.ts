@@ -256,6 +256,7 @@ export interface AdCampaign {
   checkEffect: number
   businessTypes?: BusinessType[]
   daysRemaining: number
+  startWeek?: number  // Week when campaign started (for delayed effects)
 }
 
 export interface Upgrade {

@@ -67,7 +67,11 @@ export function calculateActiveAdModifiers(state: GameState): { clientMod: numbe
   let clientMod = 0
   let checkMod = 0
   for (const campaign of state.activeAdCampaigns) {
-    if (campaign.daysRemaining > 0) {
+    // Campaign only has effect if:
+    // 1. It has days remaining
+    // 2. Current week >= start week (delay period has passed)
+    const startWeek = campaign.startWeek ?? state.currentWeek  // Default to current week if not set
+    if (campaign.daysRemaining > 0 && state.currentWeek >= startWeek) {
       clientMod += campaign.clientEffect
       checkMod += campaign.checkEffect
     }
