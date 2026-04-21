@@ -6,7 +6,7 @@ export function FinanceView() {
   const goalAmount = 1_000_000
   const toGoalPct = Math.min((balance / goalAmount) * 100, 100)
   const activeServices = Object.values(services).filter(s => s.isActive)
-  const yearlySubscription = activeServices.reduce((s, svc) => s + (svc.yearlyPrice ?? 0), 0)
+  const yearlySubscription = activeServices.reduce((s, svc) => s + (svc.annualPrice ?? 0), 0)
 
   const incomeItems = lastDayResult ? [
     { label: 'Выручка от продаж', value: lastDayResult.revenue, positive: true },
@@ -204,7 +204,7 @@ export function FinanceView() {
                   borderBottom: '1px dashed var(--k-ink-10)',
                 }}>
                   <span style={{ opacity: 0.7 }}>{svc.name}</span>
-                  <span className="k-num">{svc.yearlyPrice.toLocaleString('ru-RU')} ₽/год</span>
+                  <span className="k-num">{svc.annualPrice.toLocaleString('ru-RU')} ₽/год</span>
                 </div>
               ))
             )}
