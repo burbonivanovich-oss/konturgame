@@ -15,6 +15,8 @@ import PromoCodeModal from './modals/PromoCodeModal'
 import PromoWalletModal from './modals/PromoWalletModal'
 import BundleModal from './modals/BundleModal'
 import MicroEventModal from './modals/MicroEventModal'
+import HireEmployeeModal from './modals/HireEmployeeModal'
+import SupplierModal from './modals/SupplierModal'
 import { DesktopRecap } from './design-system/DesktopRecap'
 import { DesktopKontur } from './design-system/DesktopKontur'
 import { WarehouseView } from './views/WarehouseView'
@@ -496,6 +498,8 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const [showAchievementsModal, setShowAchievementsModal] = useState(false)
   const [showCashRegisterModal, setShowCashRegisterModal] = useState(false)
   const [showPromoWalletModal, setShowPromoWalletModal] = useState(false)
+  const [showHireEmployeeModal, setShowHireEmployeeModal] = useState(false)
+  const [showSupplierModal, setShowSupplierModal] = useState(false)
   const [dayBlockedMsg, setDayBlockedMsg] = useState<string | null>(null)
   const [savingsToast, setSavingsToast] = useState<number | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -632,7 +636,12 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       {activeView === 'marketing' && <MarketingView />}
       {activeView === 'finance' && <FinanceView />}
       {activeView === 'reputation' && <ReputationView />}
-      {activeView === 'operations' && <OperationsView />}
+      {activeView === 'operations' && (
+        <OperationsView
+          onShowHireModal={() => setShowHireEmployeeModal(true)}
+          onShowSupplierModal={() => setShowSupplierModal(true)}
+        />
+      )}
       {activeView === 'statistics' && <StatisticsView />}
 
       {/* Global modals */}
@@ -640,6 +649,8 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} onRestart={onRestart} />
       <AchievementsModal isOpen={showAchievementsModal} onClose={() => setShowAchievementsModal(false)} />
       <CashRegisterModal isOpen={showCashRegisterModal} onClose={() => setShowCashRegisterModal(false)} />
+      <HireEmployeeModal isOpen={showHireEmployeeModal} onClose={() => setShowHireEmployeeModal(false)} />
+      <SupplierModal isOpen={showSupplierModal} onClose={() => setShowSupplierModal(false)} />
       <AssortmentModal isOpen={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} />
       <PromoCodeModal />
       <PromoWalletModal isOpen={showPromoWalletModal} onClose={() => setShowPromoWalletModal(false)} />
