@@ -91,7 +91,7 @@ export class GameStateService {
     if (service.isActive) return false
 
     // Check balance for first year
-    if (currentBalance < service.yearlyPrice) {
+    if (currentBalance < service.annualPrice) {
       return false
     }
 

@@ -173,7 +173,7 @@ describe('calculateCapacity', () => {
   it('adds market bonus', () => {
     const state = makeState({
       services: {
-        market: { id: 'market', name: '', description: '', monthlyPrice: 0, yearlyPrice: 24000, isActive: true, effects: {} },
+        market: { id: 'market', name: '', description: '', annualPrice: 24000, isActive: true, effects: {} },
       } as GameState['services'],
     })
     expect(calculateCapacity(state)).toBe(Math.round(60 * 1.2))
@@ -236,7 +236,7 @@ describe('calculateDailySubscriptions', () => {
   it('calculates daily cost for one active service', () => {
     const state = makeState({
       services: {
-        market: { id: 'market', name: '', description: '', monthlyPrice: 2000, yearlyPrice: 24000, isActive: true, effects: {} },
+        market: { id: 'market', name: '', description: '', annualPrice: 24000, isActive: true, effects: {} },
       } as GameState['services'],
     })
     expect(calculateDailySubscriptions(state)).toBeCloseTo(24000 / 365)
@@ -245,7 +245,7 @@ describe('calculateDailySubscriptions', () => {
   it('ignores inactive services', () => {
     const state = makeState({
       services: {
-        market: { id: 'market', name: '', description: '', monthlyPrice: 2000, yearlyPrice: 24000, isActive: false, effects: {} },
+        market: { id: 'market', name: '', description: '', annualPrice: 24000, isActive: false, effects: {} },
       } as GameState['services'],
     })
     expect(calculateDailySubscriptions(state)).toBe(0)
@@ -283,7 +283,7 @@ describe('buildModifiers', () => {
   it('includes market check bonus when market is active', () => {
     const state = makeState({
       services: {
-        market: { id: 'market', name: '', description: '', monthlyPrice: 0, yearlyPrice: 24000, isActive: true, effects: {} },
+        market: { id: 'market', name: '', description: '', annualPrice: 24000, isActive: true, effects: {} },
       } as GameState['services'],
     })
     const mods = buildModifiers(state)

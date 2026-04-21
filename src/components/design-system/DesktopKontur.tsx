@@ -32,7 +32,7 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
 
   const totalCost = servicesList
     .filter(s => s.isActive)
-    .reduce((sum, s) => sum + s.yearlyPrice, 0)
+    .reduce((sum, s) => sum + s.annualPrice, 0)
 
   const roi = totalCost > 0 ? Math.round(savedBalance / totalCost) : 0
 
@@ -225,28 +225,28 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.6 }}>ЦЕНА</div>
                   <div style={{ fontSize: 14, fontWeight: 800 }} className="k-num">
-                    {s.yearlyPrice.toLocaleString('ru-RU')} ₽<span style={{ fontSize: 10, opacity: 0.7 }}>/год</span>
+                    {s.annualPrice.toLocaleString('ru-RU')} ₽<span style={{ fontSize: 10, opacity: 0.7 }}>/год</span>
                   </div>
                 </div>
                 <button
                   onClick={() => toggleService(s.id)}
-                  disabled={!s.isActive && balance < s.yearlyPrice}
+                  disabled={!s.isActive && balance < s.annualPrice}
                   style={{
-                    border: 'none', cursor: !s.isActive && balance < s.yearlyPrice ? 'not-allowed' : 'pointer',
+                    border: 'none', cursor: !s.isActive && balance < s.annualPrice ? 'not-allowed' : 'pointer',
                     fontFamily: 'inherit',
                     padding: '6px 12px', borderRadius: 999,
                     background: s.isActive
                       ? 'rgba(0,0,0,0.2)'
-                      : balance >= s.yearlyPrice
+                      : balance >= s.annualPrice
                       ? 'var(--k-ink)'
                       : 'rgba(0,0,0,0.1)',
                     color: s.isActive
                       ? 'currentColor'
-                      : balance >= s.yearlyPrice
+                      : balance >= s.annualPrice
                       ? '#fff'
                       : 'var(--k-ink-50)',
                     fontSize: 11, fontWeight: 700,
-                    opacity: s.isActive || balance >= s.yearlyPrice ? 1 : 0.6,
+                    opacity: s.isActive || balance >= s.annualPrice ? 1 : 0.6,
                     transition: 'opacity 0.2s',
                   }}
                 >
