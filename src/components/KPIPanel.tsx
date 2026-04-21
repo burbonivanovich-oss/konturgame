@@ -5,6 +5,7 @@ import { Spark } from './design-system'
 export default function KPIPanel() {
   const state = useGameStore()
   const lastResult = state.lastDayResult
+  const { qualityLevel } = state
 
   const kpi = useMemo(() => ({
     week: state.currentWeek,
@@ -92,24 +93,25 @@ export default function KPIPanel() {
         </div>
       </div>
 
-      {/* To Goal */}
+      {/* Quality Level */}
       <div style={{
-        background: 'var(--k-purple)', color: '#fff',
+        background: qualityLevel > 70 ? 'var(--k-green)' : qualityLevel > 40 ? 'var(--k-orange)' : 'var(--k-bad)',
+        color: '#fff',
         borderRadius: 20, padding: 18,
         display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
       }}>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.7 }}>
-          К ЦЕЛИ
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.75 }}>
+          КАЧЕСТВО
         </div>
         <div>
           <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }} className="k-num">
-            {kpi.goalRemaining.toLocaleString('ru-RU')} ₽
+            {qualityLevel}%
           </div>
           <div style={{
             marginTop: 6, height: 5, background: 'rgba(255,255,255,0.22)',
             borderRadius: 999, overflow: 'hidden',
           }}>
-            <div style={{ width: `${kpi.goalProgress}%`, height: '100%', background: '#fff' }}/>
+            <div style={{ width: `${qualityLevel}%`, height: '100%', background: '#fff' }}/>
           </div>
         </div>
       </div>

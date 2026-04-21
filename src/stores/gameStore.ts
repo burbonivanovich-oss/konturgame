@@ -237,6 +237,16 @@ interface GameStoreActions {
   setPendingMicroEvent: (event: any) => void
   resolveMicroEvent: (optionId: string) => void
   clearSeenMicroEvents: () => void  // Reset when week changes
+
+  // Employees
+  hireEmployee: (position: any, name: string, salary: number) => void
+  fireEmployee: (employeeId: string) => void
+
+  // Suppliers
+  setActiveSupplierId: (supplierId: string | null) => void
+
+  // Quality level
+  adjustQualityLevel: (delta: number) => void
 }
 
 interface GameStore extends GameState, GameStoreActions {}
@@ -869,6 +879,45 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     clearSeenMicroEvents: () => {
       set({ seenMicroEventIds: [], lastUpdated: Date.now() })
+    },
+
+    // Employees
+    hireEmployee: (position: any, name: string, salary: number) => {
+      set((state) => ({
+        employees: [...state.employees, {
+          id: `emp_${Date.now()}`,
+          position,
+          name,
+          salary,
+          efficiency: 1.0,
+          hireDay: state.currentWeek,
+          energyCost: Math.round(salary / 2000),
+        }],
+        lastUpdated: Date.now(),
+      }))
+    },
+
+    fireEmployee: (employeeId: string) => {
+      set((state) => ({
+        employees: state.employees.filter(e => e.id !== employeeId),
+        lastUpdated: Date.now(),
+      }))
+    },
+
+    // Suppliers
+    setActiveSupplierId: (supplierId: string | null) => {
+      set({
+        activeSupplierId: supplierId,
+        lastUpdated: Date.now(),
+      })
+    },
+
+    // Quality level
+    adjustQualityLevel: (delta: number) => {
+      set((state) => ({
+        qualityLevel: Math.max(0, Math.min(100, state.qualityLevel + delta)),
+        lastUpdated: Date.now(),
+      }))
     },
   }))
 

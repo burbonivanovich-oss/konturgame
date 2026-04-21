@@ -7,10 +7,16 @@ const SERVICE_NAMES: Record<string, string> = {
   diadoc: 'Диадок', fokus: 'Фокус', elba: 'Эльба', extern: 'Экстерн',
 }
 
-export default function OperationsView() {
+interface OperationsViewProps {
+  onShowHireModal?: () => void
+  onShowSupplierModal?: () => void
+}
+
+export default function OperationsView({ onShowHireModal, onShowSupplierModal }: OperationsViewProps) {
   const {
     businessType, cashRegisters, enabledCategories, services,
-    buyCashRegister, toggleCategory,
+    buyCashRegister, toggleCategory, employees, suppliers, qualityLevel,
+    fireEmployee, setActiveSupplierId, activeSupplierId, balance,
   } = useGameStore()
 
   const config = BUSINESS_CONFIGS[businessType]
@@ -184,6 +190,148 @@ export default function OperationsView() {
           </div>
         </div>
       )}
+
+      {/* Quality Level */}
+      <div style={{ marginTop: 32, marginBottom: 32 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>Качество услуг</h3>
+        <div style={{ padding: 16, borderRadius: 14, border: '1px solid rgba(14,17,22,0.12)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, opacity: 0.55 }}>Уровень качества</span>
+            <span style={{ fontSize: 20, fontWeight: 800, color: 'var(--k-green)' }}>{qualityLevel}%</span>
+          </div>
+          <div style={{ height: 8, background: 'var(--k-surface)', borderRadius: 999, overflow: 'hidden' }}>
+            <div style={{
+              width: `${qualityLevel}%`,
+              height: '100%',
+              background: qualityLevel > 70 ? 'var(--k-green)' : qualityLevel > 40 ? 'var(--k-orange)' : 'var(--k-bad)',
+              borderRadius: 999,
+              transition: 'width 0.3s',
+            }} />
+          </div>
+          <div style={{ fontSize: 10, opacity: 0.5, marginTop: 8, lineHeight: 1.4 }}>
+            ✓ Повышает репутацию и лояльность клиентов<br/>
+            ✓ Зависит от уровня сотрудников и поставщика
+          </div>
+        </div>
+      </div>
+
+      {/* Employees */}
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 800 }}>Сотрудники</h3>
+          <span style={{ fontSize: 11, opacity: 0.5 }}>
+            {employees.length} человек
+          </span>
+        </div>
+
+        {employees.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+            {employees.map((emp) => (
+              <div
+                key={emp.id}
+                style={{
+                  borderRadius: 12, padding: 12, border: '1px solid rgba(14,17,22,0.12)',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{emp.name}</div>
+                  <div style={{ fontSize: 10, opacity: 0.55 }}>
+                    {emp.position} · {emp.salary.toLocaleString('ru-RU')} ₽/мес · эффективность {(emp.efficiency * 100).toFixed(0)}%
+                  </div>
+                </div>
+                <button
+                  onClick={() => fireEmployee(emp.id)}
+                  style={{
+                    padding: '6px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700,
+                    border: '1px solid rgba(220,50,50,0.3)', background: 'rgba(220,50,50,0.05)',
+                    color: '#c0392b', cursor: 'pointer', marginLeft: 12,
+                  }}
+                >
+                  Уволить
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <button
+          onClick={onShowHireModal}
+          style={{
+            width: '100%', padding: '12px', borderRadius: 10,
+            background: 'var(--k-orange)', color: '#fff',
+            border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+            transition: 'opacity 0.2s',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
+          onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+        >
+          + Нанять сотрудника
+        </button>
+        <div style={{ fontSize: 10, opacity: 0.45, marginTop: 10, textAlign: 'center' }}>
+          Сотрудники улучшают качество и эффективность работы
+        </div>
+      </div>
+
+      {/* Suppliers */}
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 800 }}>Поставщик</h3>
+          {suppliers.length > 0 && (
+            <button
+              onClick={onShowSupplierModal}
+              style={{
+                fontSize: 11, fontWeight: 700, padding: '6px 12px',
+                borderRadius: 8, background: 'var(--k-surface)', border: 'none',
+                cursor: 'pointer', transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+            >
+              Изменить
+            </button>
+          )}
+        </div>
+        {suppliers.length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {suppliers.map((supplier) => (
+              <div
+                key={supplier.id}
+                onClick={() => setActiveSupplierId(activeSupplierId === supplier.id ? null : supplier.id)}
+                style={{
+                  borderRadius: 12, padding: 14,
+                  border: activeSupplierId === supplier.id ? '2px solid var(--k-green)' : '1px solid rgba(14,17,22,0.12)',
+                  background: activeSupplierId === supplier.id ? 'rgba(0,180,120,0.04)' : '#fff',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{supplier.name}</div>
+                    <div style={{ display: 'flex', gap: 14, fontSize: 10, opacity: 0.6 }}>
+                      <span>Качество: <span style={{ fontWeight: 700, color: supplier.qualityModifier > 0 ? 'var(--k-green)' : 'var(--k-orange)' }}>
+                        {supplier.qualityModifier > 0 ? '+' : ''}{(supplier.qualityModifier * 100).toFixed(0)}%
+                      </span></span>
+                      <span>Цена: <span style={{ fontWeight: 700, color: supplier.priceModifier < 0 ? 'var(--k-green)' : 'var(--k-orange)' }}>
+                        {supplier.priceModifier > 0 ? '+' : ''}{(supplier.priceModifier * 100).toFixed(0)}%
+                      </span></span>
+                      <span>Надёжность: <span style={{ fontWeight: 700 }}>{(supplier.reliability * 100).toFixed(0)}%</span></span>
+                    </div>
+                  </div>
+                  {activeSupplierId === supplier.id && (
+                    <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--k-green)', marginLeft: 12 }}>✓</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ padding: 20, textAlign: 'center', opacity: 0.5 }}>
+            Нет доступных поставщиков
+          </div>
+        )}
+      </div>
     </div>
   )
 }
