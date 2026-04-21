@@ -81,7 +81,7 @@ export interface Service {
   id: ServiceType
   name: string
   description: string
-  monthlyPrice: number
+  annualPrice: number  // Годовая стоимость сервиса
   isActive: boolean
   effects: {
     capacityBonus?: number

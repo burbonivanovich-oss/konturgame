@@ -19,7 +19,7 @@ const createInitialServices = (): Record<ServiceType, Service> => {
       id: config.id,
       name: config.name,
       description: config.description,
-      monthlyPrice: config.monthlyPrice,
+      annualPrice: config.annualPrice,
       isActive: false,
       effects: config.effects,
     }
@@ -671,7 +671,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const state = get()
       return state
         .getActivatedServices()
-        .reduce((sum: number, service: Service) => sum + service.monthlyPrice, 0)
+        .reduce((sum: number, service: Service) => sum + service.annualPrice, 0)
     },
 
     hasService: (serviceId: ServiceType) => {

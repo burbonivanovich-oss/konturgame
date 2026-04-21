@@ -81,10 +81,10 @@ export function calculateDailySubscriptions(state: GameState): number {
   for (const key of Object.keys(state.services)) {
     const service = state.services[key as keyof typeof state.services]
     if (service?.isActive) {
-      total += service.monthlyPrice
+      total += service.annualPrice
     }
   }
-  return total / 30
+  return total / 365  // Дневная стоимость от годовой подписки
 }
 
 export function calculateMonthlyExpenses(state: GameState): number {
@@ -100,7 +100,7 @@ export function calculateMonthlyExpenses(state: GameState): number {
     for (const key of Object.keys(state.services)) {
       const service = state.services[key as keyof typeof state.services]
       if (service?.isActive) {
-        subscriptions += service.monthlyPrice
+        subscriptions += service.annualPrice / 12  // Месячная часть от годовой подписки
       }
     }
   }
