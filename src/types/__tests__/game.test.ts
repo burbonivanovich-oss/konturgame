@@ -74,7 +74,9 @@ describe('Game Types', () => {
       employees: [],
       qualityLevel: 50,
       weeksSinceCompetitorEvent: 0,
-    loans: [],
+      loans: [],
+      campaignROI: [],
+      milestoneStatus: { week10: false, week20: false, week30: false },
       createdAt: Date.now(),
       lastUpdated: Date.now(),
     }

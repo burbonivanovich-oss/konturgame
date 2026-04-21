@@ -71,6 +71,12 @@ export function processWeek(state: GameState): DayResult {
   if (state.weeksSinceCompetitorEvent === undefined) {
     state.weeksSinceCompetitorEvent = 0
   }
+  if (!state.campaignROI) {
+    state.campaignROI = []
+  }
+  if (!state.milestoneStatus) {
+    state.milestoneStatus = { week10: false, week20: false, week30: false }
+  }
 
   // Unlock suppliers based on progression
   unlockSuppliersIfNeeded(state)
@@ -365,8 +371,22 @@ export function processWeek(state: GameState): DayResult {
     state.consecutiveNoExpiry = 0
   }
 
-  // Decrement ad campaigns by 7 days
+  // Decrement ad campaigns by 7 days and track ROI
   if (state.activeAdCampaigns?.length) {
+    for (const campaign of state.activeAdCampaigns) {
+      // Track campaign ROI
+      const campaignROI = {
+        id: `roi_${campaign.id}_w${state.currentWeek}`,
+        campaignId: campaign.id,
+        launchedWeek: state.currentWeek,
+        costSpent: campaign.cost,
+        revenueGenerated: weekRevenue,
+        clientsAcquired: Math.round(weekRevenue / (300 * 0.7)), // Estimate from revenue
+        roi: ((weekRevenue - campaign.cost) / campaign.cost) * 100, // ROI percentage
+      }
+      if (!state.campaignROI) state.campaignROI = []
+      state.campaignROI.push(campaignROI)
+    }
     state.activeAdCampaigns = state.activeAdCampaigns
       .map((c) => ({ ...c, daysRemaining: Math.max(0, c.daysRemaining - 7) }))
       .filter((c) => c.daysRemaining > 0)
@@ -391,6 +411,35 @@ export function processWeek(state: GameState): DayResult {
     state.gameOverReason = 'reputation'
   } else if (checkVictory(state)) {
     state.isVictory = true
+  }
+
+  // Check milestone achievements
+  if (!state.milestoneStatus) {
+    state.milestoneStatus = { week10: false, week20: false, week30: false }
+  }
+
+  if (state.currentWeek === 10 && !state.milestoneStatus.week10) {
+    const achievedMilestone = newBalance >= 100000 || weekNetProfit >= 1000
+    if (achievedMilestone) {
+      state.milestoneStatus.week10 = true
+      state.achievements.push('milestone_week10')
+    }
+  }
+
+  if (state.currentWeek === 20 && !state.milestoneStatus.week20) {
+    const achievedMilestone = newBalance >= 250000 || weekNetProfit >= 5000
+    if (achievedMilestone) {
+      state.milestoneStatus.week20 = true
+      state.achievements.push('milestone_week20')
+    }
+  }
+
+  if (state.currentWeek === 30 && !state.milestoneStatus.week30) {
+    const achievedMilestone = newBalance >= 500000 || weekNetProfit >= 10000
+    if (achievedMilestone) {
+      state.milestoneStatus.week30 = true
+      state.achievements.push('milestone_week30')
+    }
   }
 
   // Check and grant new achievements
@@ -429,4 +478,35 @@ export function processWeek(state: GameState): DayResult {
 
   state.lastDayResult = result
   return result
+}
+
+export function getCampaignStats(state: GameState) {
+  if (!state.campaignROI || state.campaignROI.length === 0) {
+    return {
+      totalCampaigns: 0,
+      totalSpent: 0,
+      totalRevenue: 0,
+      averageROI: 0,
+      campaigns: [],
+    }
+  }
+
+  const totalSpent = state.campaignROI.reduce((sum, c) => sum + c.costSpent, 0)
+  const totalRevenue = state.campaignROI.reduce((sum, c) => sum + c.revenueGenerated, 0)
+  const averageROI = state.campaignROI.reduce((sum, c) => sum + c.roi, 0) / state.campaignROI.length
+
+  return {
+    totalCampaigns: state.campaignROI.length,
+    totalSpent,
+    totalRevenue,
+    averageROI,
+    campaigns: state.campaignROI,
+  }
+}
+
+export function getMilestoneProgress(state: GameState) {
+  if (!state.milestoneStatus) {
+    return { week10: false, week20: false, week30: false }
+  }
+  return state.milestoneStatus
 }

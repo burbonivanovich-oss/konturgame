@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type {
   GameState, BusinessType, ServiceType, Service, DayResult, Event,
   AdCampaign, StockBatch, CashRegisterType, CashRegister, OnboardingStage,
+  CampaignROI, MilestoneStatus,
 } from '../types/game'
 import { SERVICES_CONFIG, BUSINESS_CONFIGS, ECONOMY_CONSTANTS } from '../constants/business'
 import { SERVICE_UNLOCK_MAP } from '../constants/onboarding'
@@ -126,6 +127,16 @@ const createInitialState = (businessType: BusinessType): GameState => {
 
     // Loans system (NEW v2.1)
     loans: [],
+
+    // Campaign ROI tracking (NEW v2.2)
+    campaignROI: [],
+
+    // Milestone status (NEW v2.2)
+    milestoneStatus: {
+      week10: false,
+      week20: false,
+      week30: false,
+    },
   }
 }
 
@@ -254,6 +265,10 @@ interface GameStoreActions {
   // Loans
   takeLoan: (amount: number, type: 'micro' | 'standard' | 'long-term') => boolean
   repayLoan: (loanId: string, amount: number) => boolean
+
+  // Campaign ROI tracking
+  addCampaignROI: (roi: CampaignROI) => void
+  updateMilestoneStatus: (milestones: MilestoneStatus) => void
 }
 
 interface GameStore extends GameState, GameStoreActions {}
@@ -990,6 +1005,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
       })
       return true
     },
+
+    // Campaign ROI tracking
+    addCampaignROI: (roi: CampaignROI) => {
+      set((state) => ({
+        campaignROI: [...(state.campaignROI || []), roi],
+        lastUpdated: Date.now(),
+      }))
+    },
+
+    // Milestone status
+    updateMilestoneStatus: (milestones: MilestoneStatus) => {
+      set({
+        milestoneStatus: milestones,
+        lastUpdated: Date.now(),
+      })
+    },
   }))
 
 // LocalStorage persistence
@@ -1022,6 +1053,8 @@ function extractState(state: any): GameState {
     suppliers, activeSupplierId, employees, qualityLevel, weeksSinceCompetitorEvent,
     // v2.1 new fields
     loans,
+    // v2.2 new fields
+    campaignROI, milestoneStatus,
   } = state
 
   // Migration: convert old currentDay to currentWeek
@@ -1067,6 +1100,13 @@ function extractState(state: any): GameState {
     weeksSinceCompetitorEvent: weeksSinceCompetitorEvent ?? 0,
     // v2.1 fields with defaults
     loans: loans ?? [],
+    // v2.2 fields with defaults
+    campaignROI: campaignROI ?? [],
+    milestoneStatus: milestoneStatus ?? {
+      week10: false,
+      week20: false,
+      week30: false,
+    },
   }
 }
 

@@ -55,6 +55,8 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     qualityLevel: 50,
     weeksSinceCompetitorEvent: 0,
     loans: [],
+    campaignROI: [],
+    milestoneStatus: { week10: false, week20: false, week30: false },
     createdAt: Date.now(),
     lastUpdated: Date.now(),
     ...overrides,

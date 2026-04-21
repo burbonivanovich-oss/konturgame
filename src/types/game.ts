@@ -72,6 +72,22 @@ export interface Loan {
   type: 'micro' | 'standard' | 'long-term'
 }
 
+export interface CampaignROI {
+  id: string
+  campaignId: string
+  launchedWeek: number
+  costSpent: number
+  revenueGenerated: number
+  clientsAcquired: number
+  roi: number  // percentage
+}
+
+export interface MilestoneStatus {
+  week10: boolean  // achieved 100k balance or 1k weekly profit
+  week20: boolean  // achieved 250k balance or 5k weekly profit
+  week30: boolean  // achieved 500k balance or 10k weekly profit
+}
+
 export interface OnboardingStep {
   id: string
   title: string
@@ -385,4 +401,10 @@ export interface GameState {
 
   // Loans system (NEW v2.1)
   loans: Loan[]
+
+  // Campaign ROI tracking (NEW v2.2)
+  campaignROI: CampaignROI[]
+
+  // Milestone status (NEW v2.2)
+  milestoneStatus: MilestoneStatus
 }
