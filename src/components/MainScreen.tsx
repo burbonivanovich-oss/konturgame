@@ -256,7 +256,7 @@ function DashboardView({
   const activeServiceIds = Object.values(services).filter(s => s.isActive).map(s => s.id)
   const activeCount = activeServiceIds.length
   const dailyIncome = lastDayResult?.revenue ?? 0
-  const monthlyExpenses = Object.values(services).filter(s => s.isActive).reduce((sum, s) => sum + (s.monthlyPrice ?? 0), 0)
+  const monthlyExpenses = Object.values(services).filter(s => s.isActive).reduce((sum, s) => sum + ((s.annualPrice ?? 0) / 12), 0)
   const goalAmount = 1_000_000
   const toGoalPercent = Math.min((balance / goalAmount) * 100, 100)
   const isDayBlocked = !!pendingEvent

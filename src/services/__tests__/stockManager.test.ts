@@ -173,7 +173,7 @@ describe('checkExpiry', () => {
     const state = makeState({
       currentWeek: 11,
       services: {
-        market: { id: 'market', name: '', description: '', monthlyPrice: 0, isActive: true, effects: {} },
+        market: { id: 'market', name: '', description: '', monthlyPrice: 0, yearlyPrice: 24000, isActive: true, effects: {} },
       } as GameState['services'],
     })
     state.stockBatches = [

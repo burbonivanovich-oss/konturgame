@@ -113,7 +113,9 @@ describe('GameStore', () => {
 
   describe('Services Management', () => {
     it('should toggle service activation', () => {
-      const { toggleService } = useGameStore.getState()
+      const { toggleService, advanceOnboardingStage } = useGameStore.getState()
+      advanceOnboardingStage() // Stage 1: unlocks bank, ofd
+      advanceOnboardingStage() // Stage 2: unlocks market
       toggleService('market')
       expect(useGameStore.getState().services.market.isActive).toBe(true)
 
@@ -123,12 +125,14 @@ describe('GameStore', () => {
 
     it('should activate service', () => {
       const { activateService } = useGameStore.getState()
+      // bank is unlocked at stage 0 by default
       activateService('bank')
       expect(useGameStore.getState().services.bank.isActive).toBe(true)
     })
 
     it('should deactivate service', () => {
-      const { activateService, deactivateService } = useGameStore.getState()
+      const { activateService, deactivateService, advanceOnboardingStage } = useGameStore.getState()
+      advanceOnboardingStage() // Stage 1: unlocks ofd
       activateService('ofd')
       expect(useGameStore.getState().services.ofd.isActive).toBe(true)
 

@@ -6,7 +6,7 @@ export function FinanceView() {
   const goalAmount = 1_000_000
   const toGoalPct = Math.min((balance / goalAmount) * 100, 100)
   const activeServices = Object.values(services).filter(s => s.isActive)
-  const monthlySubscription = activeServices.reduce((s, svc) => s + (svc.monthlyPrice ?? 0), 0)
+  const yearlySubscription = activeServices.reduce((s, svc) => s + (svc.yearlyPrice ?? 0), 0)
 
   const incomeItems = lastDayResult ? [
     { label: 'Выручка от продаж', value: lastDayResult.revenue, positive: true },
@@ -191,9 +191,9 @@ export function FinanceView() {
             </div>
           </div>
 
-          {/* Monthly fixed costs */}
+          {/* Годовые расходы на подписки */}
           <div style={{ background: '#fff', borderRadius: 20, padding: 18 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.4, marginBottom: 10 }}>ЕЖЕМЕСЯЧНЫЕ РАСХОДЫ</div>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.4, marginBottom: 10 }}>ГОДОВАЯ СТОИМОСТЬ ПОДПИСОК</div>
             {activeServices.length === 0 ? (
               <div style={{ fontSize: 12, opacity: 0.4 }}>Нет активных подписок</div>
             ) : (
@@ -204,18 +204,18 @@ export function FinanceView() {
                   borderBottom: '1px dashed var(--k-ink-10)',
                 }}>
                   <span style={{ opacity: 0.7 }}>{svc.name}</span>
-                  <span className="k-num">{svc.monthlyPrice.toLocaleString('ru-RU')} ₽/мес</span>
+                  <span className="k-num">{svc.yearlyPrice.toLocaleString('ru-RU')} ₽/год</span>
                 </div>
               ))
             )}
-            {monthlySubscription > 0 && (
+            {yearlySubscription > 0 && (
               <div style={{
                 display: 'flex', justifyContent: 'space-between',
                 fontSize: 13, fontWeight: 800, paddingTop: 8, marginTop: 4,
                 borderTop: '1.5px solid var(--k-ink)',
               }}>
                 <span>Подписки итого</span>
-                <span className="k-num">{monthlySubscription.toLocaleString('ru-RU')} ₽/мес</span>
+                <span className="k-num">{yearlySubscription.toLocaleString('ru-RU')} ₽/год</span>
               </div>
             )}
           </div>
@@ -226,9 +226,9 @@ export function FinanceView() {
             <div style={{ fontSize: 28, fontWeight: 800, marginTop: 4, color: 'var(--k-green)' }} className="k-num">
               {(savedBalance ?? 0).toLocaleString('ru-RU')} ₽
             </div>
-            {monthlySubscription > 0 && savedBalance > 0 && (
+            {yearlySubscription > 0 && savedBalance > 0 && (
               <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.65, marginTop: 4 }}>
-                ROI ×{(savedBalance / monthlySubscription).toFixed(1)} от стоимости подписки
+                ROI ×{(savedBalance / yearlySubscription).toFixed(1)} от стоимости подписки
               </div>
             )}
           </div>

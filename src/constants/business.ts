@@ -58,7 +58,7 @@ export interface ServiceConfig {
   id: ServiceType
   name: string
   description: string
-  monthlyPrice: number
+  annualPrice: number  // Годовая оплата вместо месячной
   effects: {
     capacityBonus?: number
     checkBonus?: number
@@ -76,7 +76,7 @@ export const SERVICES_CONFIG: Record<ServiceType, ServiceConfig> = {
     id: 'market',
     name: 'Контур.Маркет',
     description: 'Автоматизация торговли: +20% пропускной, +15% к чеку, снижение убытков от просрочки.',
-    monthlyPrice: 2000,
+    annualPrice: 24000,  // 2000 * 12 месяцев
     effects: {
       capacityBonus: 0.2,
       checkBonus: 0.15,
@@ -87,7 +87,7 @@ export const SERVICES_CONFIG: Record<ServiceType, ServiceConfig> = {
     id: 'bank',
     name: 'Контур.Банк',
     description: 'Льготное кредитование бизнеса по ставке 5%.',
-    monthlyPrice: 1500,
+    annualPrice: 18000,  // 1500 * 12 месяцев
     effects: {
       creditRate: 0.05,
     },
@@ -96,7 +96,7 @@ export const SERVICES_CONFIG: Record<ServiceType, ServiceConfig> = {
     id: 'ofd',
     name: 'Контур.ОФД',
     description: 'Онлайн-касса. Синергия с Маркетом: +2 репутации в день.',
-    monthlyPrice: 500,
+    annualPrice: 6000,  // 500 * 12 месяцев
     effects: {
       reputationBonus: 0,
     },
@@ -105,7 +105,7 @@ export const SERVICES_CONFIG: Record<ServiceType, ServiceConfig> = {
     id: 'diadoc',
     name: 'Контур.Диадок',
     description: 'Электронный документооборот. Ускоряет поставки: +5% клиентов.',
-    monthlyPrice: 1000,
+    annualPrice: 12000,  // 1000 * 12 месяцев
     effects: {
       clientBonus: 0.05,
     },
@@ -114,7 +114,7 @@ export const SERVICES_CONFIG: Record<ServiceType, ServiceConfig> = {
     id: 'fokus',
     name: 'Контур.Фокус',
     description: 'Проверка контрагентов. Защита от недобросовестных поставщиков: +1 репутации/день.',
-    monthlyPrice: 1000,
+    annualPrice: 12000,  // 1000 * 12 месяцев
     effects: {
       reputationBonus: 1,
     },
@@ -123,7 +123,7 @@ export const SERVICES_CONFIG: Record<ServiceType, ServiceConfig> = {
     id: 'elba',
     name: 'Контур.Эльба',
     description: 'Онлайн-бухгалтерия. Оптимизирует управление персоналом: +2 лояльности/день, снижает штрафы перегрузки.',
-    monthlyPrice: 1500,
+    annualPrice: 18000,  // 1500 * 12 месяцев
     effects: {
       loyaltyBonus: 2,
     },
@@ -132,7 +132,7 @@ export const SERVICES_CONFIG: Record<ServiceType, ServiceConfig> = {
     id: 'extern',
     name: 'Контур.Экстерн',
     description: 'Сдача отчётности онлайн. Снижает налоговую нагрузку на 2%.',
-    monthlyPrice: 2000,
+    annualPrice: 24000,  // 2000 * 12 месяцев
     effects: {
       taxSaving: 0.02,
     },
@@ -144,7 +144,7 @@ export interface MarketModule {
   id: string
   name: string
   description: string
-  monthlyPrice: number
+  annualPrice: number  // Годовая оплата
   requiredService: ServiceType
   effects: {
     categoryUnlock?: string[]
@@ -159,7 +159,7 @@ export const MARKET_MODULES: MarketModule[] = [
     id: 'egais',
     name: 'ЕГАИС',
     description: 'Система учета алкоголя. Разблокирует продажу алкогольных напитков.',
-    monthlyPrice: 1500,
+    annualPrice: 18000,  // 1500 * 12 месяцев
     requiredService: 'market',
     effects: {
       categoryUnlock: ['alcohol'],
@@ -170,7 +170,7 @@ export const MARKET_MODULES: MarketModule[] = [
     id: 'merkuriy',
     name: 'Меркурий',
     description: 'Система учета лекарств и БАДов. Разблокирует категорию фармацевтики.',
-    monthlyPrice: 1200,
+    annualPrice: 14400,  // 1200 * 12 месяцев
     requiredService: 'market',
     effects: {
       categoryUnlock: ['pharmacy'],
@@ -181,7 +181,7 @@ export const MARKET_MODULES: MarketModule[] = [
     id: 'marking',
     name: 'Маркировка товаров',
     description: 'Система отслеживания маркированных товаров (обувь, табак, парфюм).',
-    monthlyPrice: 800,
+    annualPrice: 9600,  // 800 * 12 месяцев
     requiredService: 'market',
     effects: {
       categoryUnlock: ['marked_goods'],
