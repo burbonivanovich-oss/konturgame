@@ -1,61 +1,31 @@
 ```
-# Dependencies
-node_modules/
+# Test coverage and cache
+coverage/
+.nyc_output/
+.jest/
+__pycache__/
 
-# Build artifacts
+# Build outputs
 dist/
 build/
-*.min.js
-*.min.css
+*.js.map
+*.ts.map
 
-# Environment variables
+# Environment
 .env
 .env.local
-*.env.*
+.env.*
 
-# IDE and editor files
+# Editors
 .vscode/
 .idea/
 *.swp
 *.swo
+*.tmp
 
 # Logs
 *.log
 
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Coverage reports
-coverage/
-htmlcov/
-*.coverage
-
-# Temporary files
-*.tmp
-*.temp
-
-# Package manager caches
-.npm/
-.yarn/
-.pnpm-store/
-
-# TypeScript
-*.tsbuildinfo
-*.js.map
-
-# Browserslist
-.browserslistcache
-
-# Vitest
-.vitest/
-
-# Tailwind CSS
-.tailwindcss/
-
-# Lock files
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-
+# Dependencies
+node_modules/
 ```

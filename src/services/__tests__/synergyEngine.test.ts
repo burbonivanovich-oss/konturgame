@@ -61,6 +61,11 @@ function makeState(activeServices: ServiceType[] = []): GameState {
     seenMicroEventIds: [],
     pendingMicroEvent: null,
     weeklyEnergyRestored: false,
+    suppliers: [],
+    activeSupplierId: null,
+    employees: [],
+    qualityLevel: 50,
+    weeksSinceCompetitorEvent: 0,
     createdAt: Date.now(),
     lastUpdated: Date.now(),
   }

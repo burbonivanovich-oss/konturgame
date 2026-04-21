@@ -69,6 +69,11 @@ describe('Game Types', () => {
       weeklyEnergyRestored: false,
       seenMicroEventIds: [],
       pendingMicroEvent: null,
+      suppliers: [],
+      activeSupplierId: null,
+      employees: [],
+      qualityLevel: 50,
+      weeksSinceCompetitorEvent: 0,
       createdAt: Date.now(),
       lastUpdated: Date.now(),
     }
