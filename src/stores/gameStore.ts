@@ -920,7 +920,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }))
     },
   }))
-)
 
 // LocalStorage persistence
 function saveToStorage(state: GameState) {
