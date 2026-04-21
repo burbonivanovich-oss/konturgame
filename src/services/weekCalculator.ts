@@ -27,6 +27,7 @@ import { calculateCategoryRevenue } from './assortmentEngine'
 import { initializeSuppliers, unlockSuppliersIfNeeded, getQualityModifier, getPriceModifier, calculateStockCost } from './supplierManager'
 import { initializeEmployees, getWeeklySalaryCost, getWeeklyEnergyCost, getEmployeeCapacityBonus, getUpgradeEnergyBonus } from './employeeManager'
 import { initializeQuality, updateQualityWeekly, getQualityReputationBonus, getQualityLoyaltyBonus, getQualityPricePremium } from './qualityManager'
+import { getQualityClientModifier, getQualityPriceModifier, getSeasonalityModifier, getBrandEffect } from './qualityModifier'
 
 export function checkWeekBlocked(state: GameState): { blocked: boolean; reason?: string } {
   if (state.pendingEvent) {
@@ -111,8 +112,20 @@ export function processWeek(state: GameState): DayResult {
     }
 
     // 3. Calculate daily metrics
-    const totalClients = calculateClients(config.baseClients, modifiers)
-    
+    let totalClients = calculateClients(config.baseClients, modifiers)
+
+    // Apply quality modifier (affects client acquisition)
+    const qualityClientMod = getQualityClientModifier(state.qualityLevel)
+    totalClients = Math.round(totalClients * (1 + qualityClientMod))
+
+    // Apply seasonality modifier
+    const seasonalityMod = getSeasonalityModifier(state.currentWeek, config.seasonality)
+    totalClients = Math.round(totalClients * (1 + seasonalityMod))
+
+    // Apply brand effect (reputation + loyalty synergy)
+    const brandEffect = getBrandEffect(state.reputation, state.loyalty)
+    totalClients = Math.round(totalClients * (1 + brandEffect.clientMod))
+
     // Capacity with employee bonus
     let capacity = calculateCapacity(state)
     if (employeeCapacityBonus > 0) {
@@ -130,9 +143,16 @@ export function processWeek(state: GameState): DayResult {
     const bankPaymentRatio = getBankPaymentRatio(state)
     const effectiveServed = Math.floor(served * bankPaymentRatio)
 
-    // 5. Average check with quality premium
+    // 5. Average check with quality and brand premiums
     let avgCheck = calculateAverageCheck(config.avgCheck, modifiers)
-    avgCheck = Math.round(avgCheck * (1 + qualityPricePremium))
+
+    // Add quality price modifier (quality > 80% = +15% price)
+    const qualityPriceMod = getQualityPriceModifier(state.qualityLevel)
+
+    // Add brand effect price modifier
+    const totalPriceModifier = qualityPricePremium + qualityPriceMod + brandEffect.priceMod
+
+    avgCheck = Math.round(avgCheck * (1 + totalPriceModifier))
 
     // 6. Revenue (daily)
     let dailyRevenue: number
@@ -142,14 +162,16 @@ export function processWeek(state: GameState): DayResult {
     if (config.usesAssortment && (state.enabledCategories?.length ?? 0) > 0) {
       const catResult = calculateCategoryRevenue(state)
       const baseRevenue = Math.round(catResult.totalRevenue * bankPaymentRatio)
-      dailyRevenue = Math.round(baseRevenue * (1 + synergyMods.revenueBonus))
+      const totalRevenueBonus = synergyMods.revenueBonus + brandEffect.revenueMod
+      dailyRevenue = Math.round(baseRevenue * (1 + totalRevenueBonus))
       totalDailyCategoryCost = catResult.totalDailyCost
       for (const [catId, data] of Object.entries(catResult.breakdown)) {
         if (data.fine > 0) categoryFines[catId] = data.fine
       }
     } else {
       const baseRevenue = calculateRevenue(effectiveServed, avgCheck)
-      dailyRevenue = Math.round(baseRevenue * (1 + synergyMods.revenueBonus))
+      const totalRevenueBonus = synergyMods.revenueBonus + brandEffect.revenueMod
+      dailyRevenue = Math.round(baseRevenue * (1 + totalRevenueBonus))
     }
 
     // 7. Register penalty
