@@ -1,7 +1,7 @@
 # Управление состоянием (ЭТАП 3) — v2.0
 
-**Версия:** 2.0 (недельный цикл)  
-**Дата обновления:** 2026-04-20
+**Версия:** 2.1 (полная реализация критических систем)  
+**Дата обновления:** 2026-04-21
 
 Здесь описан полный стек управления состоянием приложения на базе Zustand.
 
@@ -310,15 +310,17 @@ function App() {
 
 ## Типы данных
 
-### GameState
+### GameState (v2.1)
 ```typescript
 interface GameState {
   // Основная информация
   businessType: BusinessType
-  currentDay: number
+  currentWeek: number      // 1-52+ (неделя игры)
+  dayOfWeek: number        // 0-6 (0 = Monday)
   balance: number
   reputation: number
   loyalty: number
+  entrepreneurEnergy: number  // 0-100, восстанавливается еженедельно
 
   // Инвентарь
   stock: Stock[]
@@ -350,11 +352,42 @@ interface GameState {
   daysReputationZero: number
   daysSinceLastMonthly: number
   purchaseOfferedThisDay: boolean
+  weeklyEnergyRestored: boolean  // Восстановлена ли энергия на этой неделе
 
   // Модификаторы
   temporaryClientMod: number
   temporaryCheckMod: number
   temporaryModDaysLeft: number
+
+  // Кассовые аппараты
+  cashRegisters: CashRegister[]
+
+  // Ассортимент
+  enabledCategories: string[]
+
+  // Промокоды
+  promoCodesRevealed: ServiceType[]
+  pendingPromoCode: ServiceType | null
+
+  // Микро-события
+  seenMicroEventIds: string[]
+  pendingMicroEvent: MicroEvent | null
+
+  // === НОВЫЕ СИСТЕМЫ v2.1 ===
+  
+  // Поставщики
+  suppliers: Supplier[]           // Все доступные поставщики
+  activeSupplierId: string | null // ID текущего поставщика
+
+  // Сотрудники
+  employees: Employee[]           // Нанятые сотрудники
+
+  // Качество сервиса/товара
+  qualityLevel: number            // 0-100, старт: 50
+
+  // Конкуренция (циклическая)
+  competitorEventTriggered: boolean  // Флаг активного события
+  weeksSinceCompetitorEvent: number  // Недель с последнего события
 
   // Временные метки
   createdAt: number
