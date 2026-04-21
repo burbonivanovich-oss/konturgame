@@ -161,7 +161,15 @@ export function processWeek(state: GameState): DayResult {
     const registerBroke = checkRegisterBreakdown(state.cashRegisters)
     const breakdownPenalty = registerBroke ? Math.round(dailyRevenue * 0.15) : 0
 
-    const dayRevenue = Math.max(0, dailyRevenue - registerPenalty - breakdownPenalty)
+    // Apply energy penalty: low energy = reduced productivity
+    let energyModifier = 1
+    if (state.entrepreneurEnergy < 30) {
+      energyModifier = 0.8  // -20% if critical burnout
+    } else if (state.entrepreneurEnergy < 60) {
+      energyModifier = 0.9  // -10% if tired
+    }
+
+    const dayRevenue = Math.max(0, Math.round((dailyRevenue - registerPenalty - breakdownPenalty) * energyModifier))
 
     // 8. Stock and costs with supplier modifier
     let purchaseCost = 0
