@@ -327,6 +327,114 @@ export const EVENTS_DATABASE: EventTemplate[] = [
       },
     ],
   },
+  {
+    id: 'FAMILY01',
+    title: 'Выходной с семьей',
+    description: 'Семья давно не видела вас. Может быть, стоит провести выходной вместе?',
+    trigger: { randomChance: 0.06 },
+    options: [
+      {
+        id: 'family-time',
+        text: 'Провести выходной с семьей (-8 000 ₽, +40% энергии)',
+        consequences: { balanceDelta: -8000, energyDelta: 40 },
+      },
+      {
+        id: 'work-again',
+        text: 'Продолжить работать (-5% репутация)',
+        consequences: { reputationDelta: -5 },
+      },
+    ],
+  },
+  {
+    id: 'VACATION01',
+    title: 'Отпуск на неделю',
+    description: 'Вы совсем забыли об отдыхе. Недельный отпуск поможет вернуть силы и переосмыслить жизнь.',
+    trigger: { dayMin: 30, randomChance: 0.04, oneTime: true },
+    options: [
+      {
+        id: 'vacation',
+        text: 'Уехать в отпуск (-15 000 ₽, +70% энергии)',
+        consequences: { balanceDelta: -15000, energyDelta: 70 },
+      },
+      {
+        id: 'no-vacation',
+        text: 'Остаться на месте (-20% энергии)',
+        consequences: { energyDelta: -20 },
+      },
+    ],
+  },
+  {
+    id: 'HEALTH01',
+    title: 'Здоровье требует внимания',
+    description: 'Вы чувствуете усталость и стресс. Может быть, стоит посетить врача или начать заниматься спортом?',
+    trigger: { randomChance: 0.05 },
+    options: [
+      {
+        id: 'doctor',
+        text: 'Посетить врача и спортзал (-5 000 ₽, +30% энергии)',
+        consequences: { balanceDelta: -5000, energyDelta: 30 },
+      },
+      {
+        id: 'ignore-health',
+        text: 'Игнорировать сигналы организма (-15% энергии)',
+        consequences: { energyDelta: -15 },
+      },
+    ],
+  },
+  {
+    id: 'HOBBIES01',
+    title: 'Давно не занимались хобби?',
+    description: 'Ваше любимое занятие ждёт вас. Может, уделить ему время и отвлечься от забот?',
+    trigger: { randomChance: 0.05 },
+    options: [
+      {
+        id: 'hobby-time',
+        text: 'Провести вечер с хобби (-3 000 ₽, +25% энергии)',
+        consequences: { balanceDelta: -3000, energyDelta: 25 },
+      },
+      {
+        id: 'skip-hobby',
+        text: 'Работать дальше',
+        consequences: {},
+      },
+    ],
+  },
+  {
+    id: 'FRIENDS01',
+    title: 'Встреча со старыми друзьями',
+    description: 'Друзья организуют встречу. Давно вас не видели и очень скучают.',
+    trigger: { randomChance: 0.04 },
+    options: [
+      {
+        id: 'meet-friends',
+        text: 'Встретиться со друзьями (-4 000 ₽, +35% энергии)',
+        consequences: { balanceDelta: -4000, energyDelta: 35 },
+      },
+      {
+        id: 'decline',
+        text: 'Отказать (остаться в работе)',
+        consequences: {},
+      },
+    ],
+  },
+  {
+    id: 'MEDITATION01',
+    title: 'Медитация и внимательность',
+    description: 'Стресс накапливается. Может быть, попробовать медитацию или йогу?',
+    trigger: { randomChance: 0.04 },
+    options: [
+      {
+        id: 'meditate',
+        text: 'Медитировать в течение часа (+20% энергии)',
+        consequences: { energyDelta: 20 },
+      },
+      {
+        id: 'no-meditate',
+        text: 'Продолжить работу',
+        consequences: {},
+      },
+    ],
+  },
 ]
 
 export function generateEvent(day: number, state: GameState): Event | null {
@@ -393,6 +501,9 @@ export function applyEventConsequence(
   }
   if (c.loyaltyDelta !== undefined) {
     state.loyalty = Math.max(0, Math.min(100, state.loyalty + c.loyaltyDelta))
+  }
+  if (c.energyDelta !== undefined) {
+    state.entrepreneurEnergy = Math.max(0, Math.min(100, state.entrepreneurEnergy + c.energyDelta))
   }
   if (c.clientModifier !== undefined) {
     state.temporaryClientMod = (state.temporaryClientMod ?? 0) + c.clientModifier

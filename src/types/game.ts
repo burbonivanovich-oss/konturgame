@@ -149,6 +149,7 @@ export interface EventOption {
     balanceDelta?: number
     reputationDelta?: number
     loyaltyDelta?: number
+    energyDelta?: number
     serviceId?: ServiceType
     serviceDiscount?: number
     clientModifier?: number
