@@ -17,6 +17,7 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal }:
     businessType, cashRegisters, enabledCategories, services,
     buyCashRegister, toggleCategory, employees, suppliers, qualityLevel,
     fireEmployee, setActiveSupplierId, activeSupplierId, balance,
+    entrepreneurEnergy, setEntrepreneurEnergy,
   } = useGameStore()
 
   const config = BUSINESS_CONFIGS[businessType]
@@ -25,6 +26,52 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal }:
 
   return (
     <div style={{ padding: 20, maxWidth: 640 }}>
+      {/* Owner Energy */}
+      <div style={{ marginBottom: 32 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>Энергия владельца</h3>
+        <div style={{
+          padding: 16, borderRadius: 14, background: entrepreneurEnergy > 70 ? 'rgba(0,180,120,0.06)' : entrepreneurEnergy > 40 ? 'rgba(255,107,0,0.06)' : 'rgba(220,50,50,0.06)',
+          border: `1px solid ${entrepreneurEnergy > 70 ? 'rgba(0,180,120,0.2)' : entrepreneurEnergy > 40 ? 'rgba(255,107,0,0.2)' : 'rgba(220,50,50,0.2)'}`,
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, opacity: 0.55 }}>Уровень выгорания</span>
+            <span style={{
+              fontSize: 20, fontWeight: 800,
+              color: entrepreneurEnergy > 70 ? 'var(--k-green)' : entrepreneurEnergy > 40 ? 'var(--k-orange)' : 'var(--k-bad)',
+            }}>
+              {entrepreneurEnergy}%
+            </span>
+          </div>
+          <div style={{ height: 8, background: 'rgba(14,17,22,0.1)', borderRadius: 999, overflow: 'hidden', marginBottom: 12 }}>
+            <div style={{
+              width: `${entrepreneurEnergy}%`,
+              height: '100%',
+              background: entrepreneurEnergy > 70 ? 'var(--k-green)' : entrepreneurEnergy > 40 ? 'var(--k-orange)' : 'var(--k-bad)',
+              borderRadius: 999,
+              transition: 'width 0.3s',
+            }} />
+          </div>
+          <div style={{ fontSize: 11, opacity: 0.6, lineHeight: 1.4, marginBottom: 12 }}>
+            {entrepreneurEnergy > 70 ? '✅ Полна энергии - можете работать в полную силу' : entrepreneurEnergy > 40 ? '⚠️ Устаёте - скоро потребуется отдых' : '🔴 Выгорание - срочно нужен отдых, производительность снижена'}
+          </div>
+          {entrepreneurEnergy < 100 && (
+            <button
+              onClick={() => setEntrepreneurEnergy(Math.min(100, entrepreneurEnergy + 20))}
+              style={{
+                width: '100%', padding: '10px', borderRadius: 10,
+                background: 'var(--k-green)', color: '#fff',
+                border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                transition: 'opacity 0.2s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+            >
+              💤 Отдохнуть (+20%)
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Cash Registers */}
       <div style={{ marginBottom: 32 }}>
         <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>Кассовые системы</h3>
