@@ -173,7 +173,7 @@ describe('calculateCapacity', () => {
   it('adds market bonus', () => {
     const state = makeState({
       services: {
-        market: { id: 'market', name: '', description: '', monthlyPrice: 0, yearlyPrice: 0, isActive: true, effects: {} },
+        market: { id: 'market', name: '', description: '', monthlyPrice: 0, yearlyPrice: 24000, isActive: true, effects: {} },
       } as GameState['services'],
     })
     expect(calculateCapacity(state)).toBe(Math.round(60 * 1.2))
@@ -283,7 +283,7 @@ describe('buildModifiers', () => {
   it('includes market check bonus when market is active', () => {
     const state = makeState({
       services: {
-        market: { id: 'market', name: '', description: '', monthlyPrice: 0, yearlyPrice: 0, isActive: true, effects: {} },
+        market: { id: 'market', name: '', description: '', monthlyPrice: 0, yearlyPrice: 24000, isActive: true, effects: {} },
       } as GameState['services'],
     })
     const mods = buildModifiers(state)

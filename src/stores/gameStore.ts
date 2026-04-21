@@ -259,6 +259,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         return {
           dayOfWeek: newDayOfWeek,
           currentWeek: advancedWeek,
+          daysSinceLastMonthly: state.daysSinceLastMonthly + 1,
           lastUpdated: Date.now(),
           weeklyEnergyRestored: false,
         }

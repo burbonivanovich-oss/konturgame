@@ -1,89 +1,79 @@
-```gitignore
+```
 # Dependencies
 node_modules/
 
-# Build artifacts
+# Build outputs
 dist/
 build/
-*.js.map
-*.ts.map
-
-# Logs
-*.log
+target/
 
 # Environment variables
 .env
 .env.local
 *.env.*
 
-# Editor/IDE
+# IDE specific
 .vscode/
 .idea/
 *.swp
 *.swo
-*.tmp
+
+# Logs
+*.log
 
 # Coverage
 coverage/
 htmlcov/
 .coverage
 
-# Testing
-.nyc_output/
-coverage-final.json
+# Temporary files
+*.tmp
+*.temp
 
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Python (if applicable)
+# Python related (if applicable)
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
 *.so
-.venv/
-venv/
+.eggs/
+eggs/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage.*
+.cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git/
 .mypy_cache/
 .pytest_cache/
+.hypothesis/
 
-# Node.js (if applicable)
+# Node related (if applicable)
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+node_modules/
+jspm_packages/
+typings/
+.nyc_output
+coverage/
+*.lcov
 
-# Compiled JavaScript (if applicable)
-*.min.js
-*.bundle.js
+# TypeScript/JavaScript testing
+.jest/
+jest-coverage/
 
-# Temporary files
-*.tmp
-*.temp
-*.bak
-*.backup
-
-# Compression
-*.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 ```
