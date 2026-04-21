@@ -61,6 +61,17 @@ export interface PainLossRecord {
   total: number
 }
 
+export interface Loan {
+  id: string
+  amount: number
+  borrowedWeek: number
+  dueWeek: number
+  weeklyInterest: number
+  totalInterestPaid: number
+  isRepaid: boolean
+  type: 'micro' | 'standard' | 'long-term'
+}
+
 export interface OnboardingStep {
   id: string
   title: string
@@ -371,4 +382,7 @@ export interface GameState {
 
   // Competitor events tracking (UPDATED v2.0)
   weeksSinceCompetitorEvent: number  // Track weeks since last competitor event
+
+  // Loans system (NEW v2.1)
+  loans: Loan[]
 }

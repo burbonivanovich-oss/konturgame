@@ -54,6 +54,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     employees: [],
     qualityLevel: 50,
     weeksSinceCompetitorEvent: 0,
+    loans: [],
     createdAt: Date.now(),
     lastUpdated: Date.now(),
     ...overrides,
