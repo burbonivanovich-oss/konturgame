@@ -30,9 +30,8 @@ export default function HireEmployeeModal({ isOpen, onClose }: HireEmployeeModal
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} title="Нанять сотрудника" onClose={onClose}>
       <div style={{ maxWidth: 500 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 20 }}>Нанять сотрудника</h2>
 
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.55, marginBottom: 12 }}>
