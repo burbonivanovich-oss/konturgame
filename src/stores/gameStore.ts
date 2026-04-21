@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type {
   GameState, BusinessType, ServiceType, Service, DayResult, Event,
   AdCampaign, StockBatch, CashRegisterType, CashRegister, OnboardingStage,
+  CampaignROI, MilestoneStatus,
 } from '../types/game'
 import { SERVICES_CONFIG, BUSINESS_CONFIGS, ECONOMY_CONSTANTS } from '../constants/business'
 import { SERVICE_UNLOCK_MAP } from '../constants/onboarding'
@@ -123,6 +124,19 @@ const createInitialState = (businessType: BusinessType): GameState => {
 
     // Competitor events tracking (UPDATED v2.0)
     weeksSinceCompetitorEvent: 0,
+
+    // Loans system (NEW v2.1)
+    loans: [],
+
+    // Campaign ROI tracking (NEW v2.2)
+    campaignROI: [],
+
+    // Milestone status (NEW v2.2)
+    milestoneStatus: {
+      week10: false,
+      week20: false,
+      week30: false,
+    },
   }
 }
 
@@ -247,6 +261,14 @@ interface GameStoreActions {
 
   // Quality level
   adjustQualityLevel: (delta: number) => void
+
+  // Loans
+  takeLoan: (amount: number, type: 'micro' | 'standard' | 'long-term') => boolean
+  repayLoan: (loanId: string, amount: number) => boolean
+
+  // Campaign ROI tracking
+  addCampaignROI: (roi: CampaignROI) => void
+  updateMilestoneStatus: (milestones: MilestoneStatus) => void
 }
 
 interface GameStore extends GameState, GameStoreActions {}
@@ -919,6 +941,86 @@ export const useGameStore = create<GameStore>((set, get) => ({
         lastUpdated: Date.now(),
       }))
     },
+
+    // Loans
+    takeLoan: (amount: number, type: 'micro' | 'standard' | 'long-term') => {
+      const state = get()
+
+      // Loan parameters
+      const params = {
+        micro: { weeks: 2, weeklyRate: 0.15 / 2 },      // 15% total over 2 weeks
+        standard: { weeks: 4, weeklyRate: 0.10 / 4 },   // 10% total over 4 weeks
+        'long-term': { weeks: 12, weeklyRate: 0.08 / 12 }, // 8% total over 12 weeks
+      }
+      const param = params[type]
+
+      const newLoan = {
+        id: `loan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        amount,
+        borrowedWeek: state.currentWeek,
+        dueWeek: state.currentWeek + param.weeks,
+        weeklyInterest: param.weeklyRate,
+        totalInterestPaid: 0,
+        isRepaid: false,
+        type,
+      }
+
+      set((s) => ({
+        loans: [...(s.loans || []), newLoan],
+        balance: s.balance + amount,
+        lastUpdated: Date.now(),
+      }))
+      return true
+    },
+
+    repayLoan: (loanId: string, amount: number) => {
+      const state = get()
+      const loan = state.loans?.find(l => l.id === loanId)
+      if (!loan || loan.isRepaid) return false
+      if (state.balance < amount) return false
+
+      set((s) => {
+        const loans = [...(s.loans || [])]
+        const loanIndex = loans.findIndex(l => l.id === loanId)
+        if (loanIndex === -1) return s
+
+        const updatedLoan = { ...loans[loanIndex] }
+        const principalLeft = updatedLoan.amount - updatedLoan.totalInterestPaid
+        const interestThisPayment = Math.min(
+          amount * updatedLoan.weeklyInterest,
+          principalLeft * updatedLoan.weeklyInterest
+        )
+
+        updatedLoan.totalInterestPaid += interestThisPayment
+        if (updatedLoan.totalInterestPaid >= updatedLoan.amount) {
+          updatedLoan.isRepaid = true
+        }
+
+        loans[loanIndex] = updatedLoan
+        return {
+          loans,
+          balance: s.balance - amount,
+          lastUpdated: Date.now(),
+        }
+      })
+      return true
+    },
+
+    // Campaign ROI tracking
+    addCampaignROI: (roi: CampaignROI) => {
+      set((state) => ({
+        campaignROI: [...(state.campaignROI || []), roi],
+        lastUpdated: Date.now(),
+      }))
+    },
+
+    // Milestone status
+    updateMilestoneStatus: (milestones: MilestoneStatus) => {
+      set({
+        milestoneStatus: milestones,
+        lastUpdated: Date.now(),
+      })
+    },
   }))
 
 // LocalStorage persistence
@@ -949,6 +1051,10 @@ function extractState(state: any): GameState {
     daysBalanceNegative, competitorEventTriggered, lastDayPainLosses, bundlePromoShown,
     // v2.0 new fields
     suppliers, activeSupplierId, employees, qualityLevel, weeksSinceCompetitorEvent,
+    // v2.1 new fields
+    loans,
+    // v2.2 new fields
+    campaignROI, milestoneStatus,
   } = state
 
   // Migration: convert old currentDay to currentWeek
@@ -992,6 +1098,15 @@ function extractState(state: any): GameState {
     employees: employees ?? [],
     qualityLevel: qualityLevel ?? 50,
     weeksSinceCompetitorEvent: weeksSinceCompetitorEvent ?? 0,
+    // v2.1 fields with defaults
+    loans: loans ?? [],
+    // v2.2 fields with defaults
+    campaignROI: campaignROI ?? [],
+    milestoneStatus: milestoneStatus ?? {
+      week10: false,
+      week20: false,
+      week30: false,
+    },
   }
 }
 

@@ -66,6 +66,9 @@ function makeState(activeServices: ServiceType[] = []): GameState {
     employees: [],
     qualityLevel: 50,
     weeksSinceCompetitorEvent: 0,
+    loans: [],
+    campaignROI: [],
+    milestoneStatus: { week10: false, week20: false, week30: false },
     createdAt: Date.now(),
     lastUpdated: Date.now(),
   }

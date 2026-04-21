@@ -1,5 +1,6 @@
 import type { GameState, Employee, EmployeePosition } from '../types/game'
-import { createEmployee, getTotalEmployeeEfficiency, getTotalEmployeeSalary, getTotalEmployeeEnergyCost } from '../constants/employees'
+import { createEmployee, getTotalEmployeeEfficiency, getTotalEmployeeSalary, getTotalEmployeeEnergyCost, EMPLOYEE_SALARIES, EMPLOYEE_ENERGY_COST } from '../constants/employees'
+import { UPGRADES_CONFIG } from '../constants/business'
 
 /**
  * Initialize employees for a new game (start with no employees)
@@ -82,36 +83,36 @@ export function getWeeklySalaryCost(state: GameState): number {
 }
 
 /**
- * Calculate weekly energy cost for managing employees
+ * Calculate weekly energy cost including base stress + employee management
  */
 export function getWeeklyEnergyCost(state: GameState): number {
-  return getTotalEmployeeEnergyCost(state.employees)
+  // Base cost for running the business (stress, decisions, customers)
+  const baseCost = 15
+
+  // Cost from managing employees
+  const employeeCost = getTotalEmployeeEnergyCost(state.employees)
+
+  // Extra cost if working solo (no employees = more stress)
+  let understaffPenalty = 0
+  if (state.employees.length === 0) {
+    understaffPenalty = 10  // Running solo is exhausting
+  }
+
+  return baseCost + employeeCost + understaffPenalty
 }
 
 /**
  * Get base salary for position
  */
 export function getBaseSalaryForPosition(position: EmployeePosition): number {
-  const salaries: Record<EmployeePosition, number> = {
-    cashier: 25000,
-    assistant: 30000,
-    manager: 45000,
-    specialist: 40000,
-  }
-  return salaries[position]
+  return EMPLOYEE_SALARIES[position]
 }
 
 /**
  * Get energy cost for position
  */
 export function getEnergyCostForPosition(position: EmployeePosition): number {
-  const costs: Record<EmployeePosition, number> = {
-    cashier: 5,
-    assistant: 7,
-    manager: 10,
-    specialist: 8,
-  }
-  return costs[position]
+  return EMPLOYEE_ENERGY_COST[position]
 }
 
 /**
@@ -146,4 +147,20 @@ export function checkEmployeeEvent(state: GameState): { type: string; effect: nu
 export function getEmployeeCount(state: GameState, position?: EmployeePosition): number {
   if (!position) return state.employees.length
   return state.employees.filter(e => e.position === position).length
+}
+
+/**
+ * Calculate energy recovery bonus from purchased upgrades
+ */
+export function getUpgradeEnergyBonus(state: GameState): number {
+  if (!state.purchasedUpgrades || state.purchasedUpgrades.length === 0) return 0
+
+  const upgrades = UPGRADES_CONFIG[state.businessType] ?? []
+
+  return upgrades.reduce((total: number, upgrade: any) => {
+    if (state.purchasedUpgrades.includes(upgrade.id) && upgrade.energyBonus) {
+      return total + upgrade.energyBonus
+    }
+    return total
+  }, 0)
 }

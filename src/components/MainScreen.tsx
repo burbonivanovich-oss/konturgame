@@ -25,9 +25,11 @@ import { FinanceView } from './views/FinanceView'
 import { ReputationView } from './views/ReputationView'
 import OperationsView from './views/OperationsView'
 import StatisticsView from './views/StatisticsView'
+import { CampaignROIView } from './views/CampaignROIView'
+import { MilestoneView } from './views/MilestoneView'
 import { useGameStore } from '../stores/gameStore'
 
-type ActiveView = 'dashboard' | 'recap' | 'ecosystem' | 'warehouse' | 'marketing' | 'finance' | 'reputation' | 'operations' | 'statistics'
+type ActiveView = 'dashboard' | 'recap' | 'ecosystem' | 'warehouse' | 'marketing' | 'finance' | 'reputation' | 'operations' | 'statistics' | 'campaigns' | 'milestones'
 
 function Spark({ data, color = 'currentColor', fill = false }: { data: number[]; color?: string; fill?: boolean }) {
   const w = 100, h = 32
@@ -64,6 +66,8 @@ const NAV_ITEMS: Array<{ n: string; g: string; view: ActiveView | null }> = [
   { n: 'Экосистема', g: '□', view: 'ecosystem' },
   { n: 'Финансы', g: '₽', view: 'finance' },
   { n: 'Статистика', g: '📊', view: 'statistics' },
+  { n: 'ROI Кампаний', g: '📈', view: 'campaigns' },
+  { n: 'Вехи', g: '🏆', view: 'milestones' },
   { n: 'Достижения', g: '◈', view: null },
 ]
 
@@ -640,9 +644,24 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
         <OperationsView
           onShowHireModal={() => setShowHireEmployeeModal(true)}
           onShowSupplierModal={() => setShowSupplierModal(true)}
+          onShowUpgradesModal={() => setShowUpgradesModal(true)}
         />
       )}
       {activeView === 'statistics' && <StatisticsView />}
+      {activeView === 'campaigns' && (
+        <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '20px 24px', flex: 1 }}>
+            <CampaignROIView />
+          </div>
+        </div>
+      )}
+      {activeView === 'milestones' && (
+        <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '20px 24px', flex: 1 }}>
+            <MilestoneView />
+          </div>
+        </div>
+      )}
 
       {/* Global modals */}
       <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />

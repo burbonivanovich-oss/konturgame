@@ -8,7 +8,7 @@ export type CashRegisterType = 'mobile' | 'reliable' | 'fast'
 
 export type SupplierTier = 'economy' | 'standard' | 'premium'
 
-export type EmployeePosition = 'cashier' | 'assistant' | 'manager' | 'specialist'
+export type EmployeePosition = 'cashier' | 'assistant' | 'manager' | 'specialist' | 'supervisor' | 'trainer'
 
 export interface CashRegister {
   type: CashRegisterType
@@ -59,6 +59,33 @@ export interface PainLossRecord {
   elba: number
   extern: number
   total: number
+}
+
+export interface Loan {
+  id: string
+  amount: number
+  borrowedWeek: number
+  dueWeek: number
+  weeklyInterest: number
+  totalInterestPaid: number
+  isRepaid: boolean
+  type: 'micro' | 'standard' | 'long-term'
+}
+
+export interface CampaignROI {
+  id: string
+  campaignId: string
+  launchedWeek: number
+  costSpent: number
+  revenueGenerated: number
+  clientsAcquired: number
+  roi: number  // percentage
+}
+
+export interface MilestoneStatus {
+  week10: boolean  // achieved 100k balance or 1k weekly profit
+  week20: boolean  // achieved 250k balance or 5k weekly profit
+  week30: boolean  // achieved 500k balance or 10k weekly profit
 }
 
 export interface OnboardingStep {
@@ -149,6 +176,7 @@ export interface EventOption {
     balanceDelta?: number
     reputationDelta?: number
     loyaltyDelta?: number
+    energyDelta?: number
     serviceId?: ServiceType
     serviceDiscount?: number
     clientModifier?: number
@@ -370,4 +398,13 @@ export interface GameState {
 
   // Competitor events tracking (UPDATED v2.0)
   weeksSinceCompetitorEvent: number  // Track weeks since last competitor event
+
+  // Loans system (NEW v2.1)
+  loans: Loan[]
+
+  // Campaign ROI tracking (NEW v2.2)
+  campaignROI: CampaignROI[]
+
+  // Milestone status (NEW v2.2)
+  milestoneStatus: MilestoneStatus
 }

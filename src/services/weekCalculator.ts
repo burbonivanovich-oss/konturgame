@@ -25,8 +25,9 @@ import { calculatePainLosses, getBankPaymentRatio } from './painEngine'
 import { getTotalThroughput, calculateRegisterPenalty, checkRegisterBreakdown } from './cashRegisterEngine'
 import { calculateCategoryRevenue } from './assortmentEngine'
 import { initializeSuppliers, unlockSuppliersIfNeeded, getQualityModifier, getPriceModifier, calculateStockCost } from './supplierManager'
-import { initializeEmployees, getWeeklySalaryCost, getWeeklyEnergyCost, getEmployeeCapacityBonus } from './employeeManager'
+import { initializeEmployees, getWeeklySalaryCost, getWeeklyEnergyCost, getEmployeeCapacityBonus, getUpgradeEnergyBonus } from './employeeManager'
 import { initializeQuality, updateQualityWeekly, getQualityReputationBonus, getQualityLoyaltyBonus, getQualityPricePremium } from './qualityManager'
+import { getQualityClientModifier, getQualityPriceModifier, getSeasonalityModifier, getBrandEffect } from './qualityModifier'
 
 export function checkWeekBlocked(state: GameState): { blocked: boolean; reason?: string } {
   if (state.pendingEvent) {
@@ -70,6 +71,12 @@ export function processWeek(state: GameState): DayResult {
   if (state.weeksSinceCompetitorEvent === undefined) {
     state.weeksSinceCompetitorEvent = 0
   }
+  if (!state.campaignROI) {
+    state.campaignROI = []
+  }
+  if (!state.milestoneStatus) {
+    state.milestoneStatus = { week10: false, week20: false, week30: false }
+  }
 
   // Unlock suppliers based on progression
   unlockSuppliersIfNeeded(state)
@@ -111,8 +118,20 @@ export function processWeek(state: GameState): DayResult {
     }
 
     // 3. Calculate daily metrics
-    const totalClients = calculateClients(config.baseClients, modifiers)
-    
+    let totalClients = calculateClients(config.baseClients, modifiers)
+
+    // Apply quality modifier (affects client acquisition)
+    const qualityClientMod = getQualityClientModifier(state.qualityLevel)
+    totalClients = Math.round(totalClients * (1 + qualityClientMod))
+
+    // Apply seasonality modifier
+    const seasonalityMod = getSeasonalityModifier(state.currentWeek, config.seasonality)
+    totalClients = Math.round(totalClients * (1 + seasonalityMod))
+
+    // Apply brand effect (reputation + loyalty synergy)
+    const brandEffect = getBrandEffect(state.reputation, state.loyalty)
+    totalClients = Math.round(totalClients * (1 + brandEffect.clientMod))
+
     // Capacity with employee bonus
     let capacity = calculateCapacity(state)
     if (employeeCapacityBonus > 0) {
@@ -130,9 +149,16 @@ export function processWeek(state: GameState): DayResult {
     const bankPaymentRatio = getBankPaymentRatio(state)
     const effectiveServed = Math.floor(served * bankPaymentRatio)
 
-    // 5. Average check with quality premium
+    // 5. Average check with quality and brand premiums
     let avgCheck = calculateAverageCheck(config.avgCheck, modifiers)
-    avgCheck = Math.round(avgCheck * (1 + qualityPricePremium))
+
+    // Add quality price modifier (quality > 80% = +15% price)
+    const qualityPriceMod = getQualityPriceModifier(state.qualityLevel)
+
+    // Add brand effect price modifier
+    const totalPriceModifier = qualityPricePremium + qualityPriceMod + brandEffect.priceMod
+
+    avgCheck = Math.round(avgCheck * (1 + totalPriceModifier))
 
     // 6. Revenue (daily)
     let dailyRevenue: number
@@ -142,14 +168,16 @@ export function processWeek(state: GameState): DayResult {
     if (config.usesAssortment && (state.enabledCategories?.length ?? 0) > 0) {
       const catResult = calculateCategoryRevenue(state)
       const baseRevenue = Math.round(catResult.totalRevenue * bankPaymentRatio)
-      dailyRevenue = Math.round(baseRevenue * (1 + synergyMods.revenueBonus))
+      const totalRevenueBonus = synergyMods.revenueBonus + brandEffect.revenueMod
+      dailyRevenue = Math.round(baseRevenue * (1 + totalRevenueBonus))
       totalDailyCategoryCost = catResult.totalDailyCost
       for (const [catId, data] of Object.entries(catResult.breakdown)) {
         if (data.fine > 0) categoryFines[catId] = data.fine
       }
     } else {
       const baseRevenue = calculateRevenue(effectiveServed, avgCheck)
-      dailyRevenue = Math.round(baseRevenue * (1 + synergyMods.revenueBonus))
+      const totalRevenueBonus = synergyMods.revenueBonus + brandEffect.revenueMod
+      dailyRevenue = Math.round(baseRevenue * (1 + totalRevenueBonus))
     }
 
     // 7. Register penalty
@@ -161,7 +189,15 @@ export function processWeek(state: GameState): DayResult {
     const registerBroke = checkRegisterBreakdown(state.cashRegisters)
     const breakdownPenalty = registerBroke ? Math.round(dailyRevenue * 0.15) : 0
 
-    const dayRevenue = Math.max(0, dailyRevenue - registerPenalty - breakdownPenalty)
+    // Apply energy penalty: low energy = reduced productivity
+    let energyModifier = 1
+    if (state.entrepreneurEnergy < 30) {
+      energyModifier = 0.8  // -20% if critical burnout
+    } else if (state.entrepreneurEnergy < 60) {
+      energyModifier = 0.9  // -10% if tired
+    }
+
+    const dayRevenue = Math.max(0, Math.round((dailyRevenue - registerPenalty - breakdownPenalty) * energyModifier))
 
     // 8. Stock and costs with supplier modifier
     let purchaseCost = 0
@@ -267,8 +303,10 @@ export function processWeek(state: GameState): DayResult {
   // Update quality weekly
   updateQualityWeekly(state)
 
-  // Deduct weekly employee energy cost
-  state.entrepreneurEnergy = Math.max(0, state.entrepreneurEnergy - weeklyEnergyCost)
+  // Deduct weekly employee energy cost, minus upgrade bonuses
+  const upgradeEnergyBonus = getUpgradeEnergyBonus(state)
+  const actualEnergyCost = Math.max(0, weeklyEnergyCost - upgradeEnergyBonus)
+  state.entrepreneurEnergy = Math.max(0, state.entrepreneurEnergy - actualEnergyCost)
 
   // Check if entrepreneur energy reached 0 (end of week)
   if (state.entrepreneurEnergy <= 0) {
@@ -333,8 +371,22 @@ export function processWeek(state: GameState): DayResult {
     state.consecutiveNoExpiry = 0
   }
 
-  // Decrement ad campaigns by 7 days
+  // Decrement ad campaigns by 7 days and track ROI
   if (state.activeAdCampaigns?.length) {
+    for (const campaign of state.activeAdCampaigns) {
+      // Track campaign ROI
+      const campaignROI = {
+        id: `roi_${campaign.id}_w${state.currentWeek}`,
+        campaignId: campaign.id,
+        launchedWeek: state.currentWeek,
+        costSpent: campaign.cost,
+        revenueGenerated: weekRevenue,
+        clientsAcquired: Math.round(weekRevenue / (300 * 0.7)), // Estimate from revenue
+        roi: ((weekRevenue - campaign.cost) / campaign.cost) * 100, // ROI percentage
+      }
+      if (!state.campaignROI) state.campaignROI = []
+      state.campaignROI.push(campaignROI)
+    }
     state.activeAdCampaigns = state.activeAdCampaigns
       .map((c) => ({ ...c, daysRemaining: Math.max(0, c.daysRemaining - 7) }))
       .filter((c) => c.daysRemaining > 0)
@@ -359,6 +411,35 @@ export function processWeek(state: GameState): DayResult {
     state.gameOverReason = 'reputation'
   } else if (checkVictory(state)) {
     state.isVictory = true
+  }
+
+  // Check milestone achievements
+  if (!state.milestoneStatus) {
+    state.milestoneStatus = { week10: false, week20: false, week30: false }
+  }
+
+  if (state.currentWeek === 10 && !state.milestoneStatus.week10) {
+    const achievedMilestone = newBalance >= 100000 || weekNetProfit >= 1000
+    if (achievedMilestone) {
+      state.milestoneStatus.week10 = true
+      state.achievements.push('milestone_week10')
+    }
+  }
+
+  if (state.currentWeek === 20 && !state.milestoneStatus.week20) {
+    const achievedMilestone = newBalance >= 250000 || weekNetProfit >= 5000
+    if (achievedMilestone) {
+      state.milestoneStatus.week20 = true
+      state.achievements.push('milestone_week20')
+    }
+  }
+
+  if (state.currentWeek === 30 && !state.milestoneStatus.week30) {
+    const achievedMilestone = newBalance >= 500000 || weekNetProfit >= 10000
+    if (achievedMilestone) {
+      state.milestoneStatus.week30 = true
+      state.achievements.push('milestone_week30')
+    }
   }
 
   // Check and grant new achievements
@@ -397,4 +478,35 @@ export function processWeek(state: GameState): DayResult {
 
   state.lastDayResult = result
   return result
+}
+
+export function getCampaignStats(state: GameState) {
+  if (!state.campaignROI || state.campaignROI.length === 0) {
+    return {
+      totalCampaigns: 0,
+      totalSpent: 0,
+      totalRevenue: 0,
+      averageROI: 0,
+      campaigns: [],
+    }
+  }
+
+  const totalSpent = state.campaignROI.reduce((sum, c) => sum + c.costSpent, 0)
+  const totalRevenue = state.campaignROI.reduce((sum, c) => sum + c.revenueGenerated, 0)
+  const averageROI = state.campaignROI.reduce((sum, c) => sum + c.roi, 0) / state.campaignROI.length
+
+  return {
+    totalCampaigns: state.campaignROI.length,
+    totalSpent,
+    totalRevenue,
+    averageROI,
+    campaigns: state.campaignROI,
+  }
+}
+
+export function getMilestoneProgress(state: GameState) {
+  if (!state.milestoneStatus) {
+    return { week10: false, week20: false, week30: false }
+  }
+  return state.milestoneStatus
 }

@@ -1,5 +1,5 @@
 import { useGameStore } from '../../stores/gameStore'
-import { BUSINESS_CONFIGS } from '../../constants/business'
+import { BUSINESS_CONFIGS, getUpgradesForBusiness } from '../../constants/business'
 import { PRODUCT_CATEGORIES, isCategoryAllowed } from '../../services/assortmentEngine'
 
 const SERVICE_NAMES: Record<string, string> = {
@@ -10,14 +10,15 @@ const SERVICE_NAMES: Record<string, string> = {
 interface OperationsViewProps {
   onShowHireModal?: () => void
   onShowSupplierModal?: () => void
+  onShowUpgradesModal?: () => void
 }
 
-export default function OperationsView({ onShowHireModal, onShowSupplierModal }: OperationsViewProps) {
+export default function OperationsView({ onShowHireModal, onShowSupplierModal, onShowUpgradesModal }: OperationsViewProps) {
   const {
     businessType, cashRegisters, enabledCategories, services,
     buyCashRegister, toggleCategory, employees, suppliers, qualityLevel,
     fireEmployee, setActiveSupplierId, activeSupplierId, balance,
-    entrepreneurEnergy, setEntrepreneurEnergy,
+    entrepreneurEnergy, setEntrepreneurEnergy, purchasedUpgrades,
   } = useGameStore()
 
   const config = BUSINESS_CONFIGS[businessType]
@@ -376,6 +377,59 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal }:
         ) : (
           <div style={{ padding: 20, textAlign: 'center', opacity: 0.5 }}>
             Нет доступных поставщиков
+          </div>
+        )}
+      </div>
+
+      {/* Upgrades */}
+      <div style={{ marginTop: 32 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 800 }}>🔧 Улучшения</h3>
+          <button
+            onClick={onShowUpgradesModal}
+            style={{
+              fontSize: 11, fontWeight: 700, padding: '6px 12px',
+              borderRadius: 8, background: 'var(--k-surface)', border: 'none',
+              cursor: 'pointer', transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+          >
+            Все улучшения
+          </button>
+        </div>
+        {getUpgradesForBusiness(businessType).length > 0 ? (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {getUpgradesForBusiness(businessType).slice(0, 4).map((upgrade) => {
+              const isPurchased = purchasedUpgrades.includes(upgrade.id)
+              return (
+                <div
+                  key={upgrade.id}
+                  style={{
+                    padding: 12, borderRadius: 12,
+                    border: isPurchased ? '2px solid var(--k-green)' : '1px solid rgba(14,17,22,0.12)',
+                    background: isPurchased ? 'rgba(0,180,120,0.04)' : '#fff',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700 }}>{upgrade.name}</div>
+                    {isPurchased && <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--k-green)' }}>✓</span>}
+                  </div>
+                  <div style={{ fontSize: 10, opacity: 0.65, marginBottom: 6, lineHeight: 1.3 }}>
+                    {upgrade.effect}
+                  </div>
+                  {!isPurchased && (
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--k-orange)' }}>
+                      {upgrade.cost.toLocaleString('ru-RU')} ₽
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div style={{ padding: 20, textAlign: 'center', opacity: 0.5 }}>
+            Нет доступных улучшений
           </div>
         )}
       </div>
