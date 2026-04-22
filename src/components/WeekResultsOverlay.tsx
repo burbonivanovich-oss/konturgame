@@ -32,6 +32,7 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
       background: 'rgba(14,17,22,0.82)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       backdropFilter: 'blur(6px)',
+      animation: 'fadeOverlay 0.2s ease',
     }}>
       <div style={{
         background: 'var(--k-surface)',
@@ -43,6 +44,7 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
         display: 'flex',
         flexDirection: 'column',
         gap: 24,
+        animation: 'fadeIn 0.25s ease',
       }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', opacity: 0.45, marginBottom: 6 }}>

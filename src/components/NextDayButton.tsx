@@ -4,71 +4,56 @@ import { useGameStore } from '../stores/gameStore'
 export default function NextDayButton() {
   const [isLoading, setIsLoading] = useState(false)
   const [blockedReason, setBlockedReason] = useState<string | null>(null)
-  const { currentWeek, isGameOver, isVictory } = useGameStore()
+  const { currentWeek, isGameOver, isVictory, pendingEvent } = useGameStore()
 
   const handleClick = useCallback(async () => {
     if (isLoading) return
+    if (pendingEvent) {
+      setBlockedReason('Сначала разрешите событие')
+      setTimeout(() => setBlockedReason(null), 2500)
+      return
+    }
     setIsLoading(true)
     setBlockedReason(null)
     try {
-      const result = useGameStore.getState().advanceDay()
+      const result = useGameStore.getState().completeActionsPhase()
       if (result.blocked) {
         setBlockedReason(result.reason ?? 'Действие заблокировано')
       }
     } finally {
       setIsLoading(false)
     }
-  }, [isLoading])
+  }, [isLoading, pendingEvent])
 
   const isDisabled = isGameOver || isVictory
-  const isCrisisDay = currentWeek > 0 && currentWeek % 9 === 0
-  const statusText = isGameOver ? '❌ Игра окончена' : isVictory ? '🎉 Победа!' : ''
 
   return (
     <div style={{ textAlign: 'center' }}>
-      {isCrisisDay && !isDisabled && (
-        <div style={{
-          fontSize: 13, fontWeight: 700, marginBottom: 16, padding: '10px 16px',
-          background: 'rgba(255, 90, 90, 0.12)', borderRadius: 12,
-          border: '1.5px solid var(--k-bad)', color: 'var(--k-bad)',
-        }}>
-          ⚠️ Кризисный день — возможны события
-        </div>
-      )}
       <button
         onClick={handleClick}
         disabled={isDisabled || isLoading}
         style={{
           padding: '18px 32px', borderRadius: 999, fontWeight: 800, fontSize: 16,
           border: 'none', cursor: isDisabled || isLoading ? 'not-allowed' : 'pointer',
-          background: isDisabled
-            ? 'var(--k-ink-10)'
-            : isCrisisDay
-            ? 'var(--k-orange)'
-            : 'var(--k-green)',
-          color: isDisabled
-            ? 'var(--k-ink-50)'
-            : isCrisisDay
-            ? 'var(--k-ink)'
-            : 'var(--k-ink)',
+          background: isDisabled ? 'var(--k-ink-10)' : pendingEvent ? 'var(--k-surface-2)' : 'var(--k-orange)',
+          color: isDisabled ? 'var(--k-ink-50)' : 'var(--k-ink)',
           transition: 'all 0.2s ease',
           opacity: isLoading ? 0.8 : 1,
-          transform: isLoading ? 'scale(0.98)' : 'scale(1)',
+          width: '100%',
         }}
       >
         {isLoading
-          ? `⏳ Расчёт...`
-          : isCrisisDay
-          ? `⚡ День ${currentWeek} — Кризис`
-          : `→ Следующий день`}
+          ? '⏳ Расчёт...'
+          : pendingEvent
+          ? '⏸ Разрешите событие'
+          : isGameOver
+          ? '❌ Игра окончена'
+          : isVictory
+          ? '🎉 Победа!'
+          : 'Завершить неделю →'}
       </button>
-      {statusText && (
-        <p style={{ fontSize: 13, fontWeight: 700, marginTop: 16, color: 'var(--k-good)' }}>
-          {statusText}
-        </p>
-      )}
       {blockedReason && (
-        <p style={{ fontSize: 13, fontWeight: 700, marginTop: 16, color: 'var(--k-orange)' }}>
+        <p style={{ fontSize: 13, fontWeight: 700, marginTop: 12, color: 'var(--k-orange)' }}>
           ⚠️ {blockedReason}
         </p>
       )}
