@@ -87,7 +87,7 @@ export function getWeeklySalaryCost(state: GameState): number {
  */
 export function getWeeklyEnergyCost(state: GameState): number {
   // Base cost for running the business (stress, decisions, customers)
-  const baseCost = 15
+  const baseCost = 20
 
   // Cost from managing employees
   const employeeCost = getTotalEmployeeEnergyCost(state.employees)
@@ -95,7 +95,7 @@ export function getWeeklyEnergyCost(state: GameState): number {
   // Extra cost if working solo (no employees = more stress)
   let understaffPenalty = 0
   if (state.employees.length === 0) {
-    understaffPenalty = 10  // Running solo is exhausting
+    understaffPenalty = 15  // Running solo is very exhausting
   }
 
   return baseCost + employeeCost + understaffPenalty

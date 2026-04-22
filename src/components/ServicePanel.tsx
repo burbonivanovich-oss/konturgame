@@ -37,7 +37,7 @@ const SERVICE_UNLOCK_STAGE: Record<string, OnboardingStage> = {
 
 export default function ServicePanel() {
   const [isExpanded, setIsExpanded] = useState(false)
-  const { services, toggleService, balance, unlockedServices } = useGameStore()
+  const { services, toggleService, balance, unlockedServices, onboardingStage } = useGameStore()
 
   const activeSynergies = useMemo(() => {
     return SYNERGIES_CONFIG.filter((syn) =>
@@ -188,40 +188,56 @@ export default function ServicePanel() {
         )
       })}
 
-      {/* Locked services */}
-      {lockedServices.length > 0 && (
-        <>
-          <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.35, letterSpacing: '0.08em', marginTop: 4 }}>
-            🔒 ОТКРОЕТСЯ ПОЗЖЕ
-          </div>
-          {lockedServices.map((service) => {
-            const unlockStage = SERVICE_UNLOCK_STAGE[service.id]
-            const stageLabel = unlockStage !== undefined ? ONBOARDING_STAGE_LABELS[unlockStage] : ''
-            return (
-              <div key={service.id} style={{
-                borderRadius: 12, padding: 12, border: '1px dashed var(--k-ink-10)',
-                display: 'flex', flexDirection: 'column', gap: 6,
-                opacity: 0.45,
-                filter: 'grayscale(0.8)',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 20 }}>{service.icon}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700 }}>{service.name}</div>
-                    <div style={{ fontSize: 10, opacity: 0.7 }}>{service.annualPrice.toLocaleString('ru-RU')} ₽/год</div>
-                  </div>
-                  <div style={{ fontSize: 18 }}>🔒</div>
-                </div>
-                {stageLabel && (
-                  <div style={{ fontSize: 10, fontStyle: 'italic' }}>
-                    Откроется на этапе: {stageLabel}
-                  </div>
-                )}
+      {/* Locked services: only show next stage in detail, hide the rest */}
+      {lockedServices.length > 0 && (() => {
+        const nextStage = (onboardingStage + 1) as OnboardingStage
+        const nextServices = lockedServices.filter(s => SERVICE_UNLOCK_STAGE[s.id] === nextStage)
+        const furtherCount = lockedServices.filter(s => (SERVICE_UNLOCK_STAGE[s.id] ?? 99) > nextStage).length
+        return (
+          <>
+            {nextServices.length > 0 && (
+              <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.35, letterSpacing: '0.08em', marginTop: 4 }}>
+                🔒 СЛЕДУЮЩИЙ ЭТАП
               </div>
-            )
-          })}
-        </>
-      )}
+            )}
+            {nextServices.map((service) => {
+              const stageLabel = ONBOARDING_STAGE_LABELS[nextStage] ?? ''
+              return (
+                <div key={service.id} style={{
+                  borderRadius: 12, padding: 12, border: '1px dashed var(--k-ink-10)',
+                  display: 'flex', flexDirection: 'column', gap: 6,
+                  opacity: 0.5,
+                  filter: 'grayscale(0.6)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 20 }}>{service.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700 }}>{service.name}</div>
+                      <div style={{ fontSize: 10, opacity: 0.7 }}>{service.annualPrice.toLocaleString('ru-RU')} ₽/год</div>
+                    </div>
+                    <div style={{ fontSize: 18 }}>🔒</div>
+                  </div>
+                  {stageLabel && (
+                    <div style={{ fontSize: 10, fontStyle: 'italic', opacity: 0.8 }}>
+                      Откроется на этапе: {stageLabel}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+            {furtherCount > 0 && (
+              <div style={{
+                borderRadius: 10, padding: '10px 14px',
+                border: '1px dashed var(--k-ink-10)',
+                fontSize: 11, fontWeight: 600, opacity: 0.4,
+                textAlign: 'center',
+              }}>
+                🔒 Ещё {furtherCount} {furtherCount === 1 ? 'сервис откроется' : furtherCount < 5 ? 'сервиса откроется' : 'сервисов откроется'} по мере роста
+              </div>
+            )}
+          </>
+        )
+      })()}
 
       {activeSynergies.length > 0 && (
         <div style={{
