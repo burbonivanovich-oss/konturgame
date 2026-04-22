@@ -3,6 +3,7 @@ import type {
   GameState, BusinessType, ServiceType, Service, DayResult, Event,
   AdCampaign, StockBatch, CashRegisterType, CashRegister, OnboardingStage,
   CampaignROI, MilestoneStatus, WeekPhase, NPC, PlayerBackstory, NpcMemoryEntry,
+  DecisionLogEntry,
 } from '../types/game'
 import { SERVICES_CONFIG, BUSINESS_CONFIGS, ECONOMY_CONSTANTS } from '../constants/business'
 import { SERVICE_UNLOCK_MAP } from '../constants/onboarding'
@@ -156,6 +157,10 @@ const createInitialState = (businessType: BusinessType): GameState => {
     activeChainIds: [],
     completedChainIds: [],
     pendingChainFollowUps: [],
+
+    // Narrative systems (v3.1)
+    decisionLog: [],
+    seenNewspaperWeeks: [],
   }
 }
 
@@ -308,6 +313,10 @@ interface GameStoreActions {
   markChainCompleted: (chainId: string) => void
   addActiveChain: (chainId: string) => void
   consumePendingChainFollowUp: (chainEventId: string) => void
+
+  // Narrative systems (v3.1)
+  addDecisionLogEntry: (entry: DecisionLogEntry) => void
+  addSeenNewspaper: (week: number) => void
 }
 
 interface GameStore extends GameState, GameStoreActions {}
@@ -784,6 +793,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         activeChainIds: state.activeChainIds ?? [],
         completedChainIds: state.completedChainIds ?? [],
         pendingChainFollowUps: state.pendingChainFollowUps ?? [],
+        // v3.1 narrative systems
+        decisionLog: state.decisionLog ?? [],
+        seenNewspaperWeeks: state.seenNewspaperWeeks ?? [],
       }
       set(migrated)
       saveToStorage(migrated)
@@ -1219,6 +1231,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
         lastUpdated: Date.now(),
       }))
     },
+
+    // Narrative systems (v3.1)
+    addDecisionLogEntry: (entry: DecisionLogEntry) => {
+      set((state) => ({
+        decisionLog: [...(state.decisionLog ?? []), entry],
+        lastUpdated: Date.now(),
+      }))
+    },
+
+    addSeenNewspaper: (week: number) => {
+      set((state) => ({
+        seenNewspaperWeeks: [...(state.seenNewspaperWeeks ?? []), week],
+        lastUpdated: Date.now(),
+      }))
+    },
   }))
 
 // LocalStorage persistence
@@ -1257,6 +1284,8 @@ function extractState(state: any): GameState {
     purchasedOwnerItems, ownerSubscriptions,
     // v3.0 NPC system
     npcs, playerBackstory, activeChainIds, completedChainIds, pendingChainFollowUps,
+    // v3.1 narrative
+    decisionLog, seenNewspaperWeeks,
   } = state
 
   // Migration: convert old currentDay to currentWeek
@@ -1319,6 +1348,9 @@ function extractState(state: any): GameState {
     activeChainIds: activeChainIds ?? [],
     completedChainIds: completedChainIds ?? [],
     pendingChainFollowUps: pendingChainFollowUps ?? [],
+    // v3.1 narrative systems
+    decisionLog: decisionLog ?? [],
+    seenNewspaperWeeks: seenNewspaperWeeks ?? [],
   }
 }
 

@@ -2,6 +2,7 @@ import type { GameState, DayResult } from '../types/game'
 import { BUSINESS_CONFIGS, ECONOMY_CONSTANTS } from '../constants/business'
 import { ensureNPCsInitialized, applyNPCPassiveEffects, getInspectorChain2EventId } from './npcManager'
 import { getChainEvent, getChainStartEvent, CHAIN_TRIGGER_WEEKS, type ChainId } from '../constants/eventChains'
+import { getNewspaperForWeek } from '../constants/cityNewspaper'
 import { templateToEvent, applyEventConsequence } from './eventGenerator'
 import {
   buildModifiers,
@@ -493,6 +494,17 @@ export function processWeek(state: GameState): DayResult {
 
   // Auto-resolve expired decision timers (pick first non-Kontour option)
   autoResolveExpiredDecisions(state)
+
+  // Trigger city newspaper event every 10 weeks
+  if (state.currentWeek % 10 === 0 && !(state.seenNewspaperWeeks ?? []).includes(state.currentWeek)) {
+    const newspaper = getNewspaperForWeek(state.currentWeek)
+    if (newspaper && !state.triggeredEventIds.includes(newspaper.id)) {
+      const newsEvent = templateToEvent(newspaper, state.currentWeek * 7, state.currentWeek)
+      if (!state.seenNewspaperWeeks) state.seenNewspaperWeeks = []
+      state.seenNewspaperWeeks.push(state.currentWeek)
+      queueChainEvent(state, newsEvent)
+    }
+  }
 
   // Generate 1-2 events every week (crisis weeks always get 2)
   if (!state.isGameOver && !state.isVictory && !state.pendingEvent) {

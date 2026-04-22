@@ -31,12 +31,13 @@ import OperationsView from './views/OperationsView'
 import StatisticsView from './views/StatisticsView'
 import { CampaignROIView } from './views/CampaignROIView'
 import { MilestoneView } from './views/MilestoneView'
+import { DecisionLogView } from './views/DecisionLogView'
 import { useGameStore } from '../stores/gameStore'
 import { ONBOARDING_STAGES } from '../constants/onboarding'
 import { ECONOMY_CONSTANTS } from '../constants/business'
 import type { BusinessType } from '../types/game'
 
-type ActiveView = 'dashboard' | 'ecosystem' | 'warehouse' | 'marketing' | 'finance' | 'reputation' | 'operations' | 'statistics' | 'campaigns' | 'milestones'
+type ActiveView = 'dashboard' | 'ecosystem' | 'warehouse' | 'marketing' | 'finance' | 'reputation' | 'operations' | 'statistics' | 'campaigns' | 'milestones' | 'journal'
 
 // Maps onboarding required actions to the nav item name that should be highlighted
 const ONBOARDING_ACTION_TO_NAV: Record<string, string> = {
@@ -86,6 +87,7 @@ const NAV_ITEMS: Array<{ n: string; g: string; view: ActiveView | null }> = [
   { n: 'Статистика', g: '📊', view: 'statistics' },
   { n: 'ROI Кампаний', g: '📈', view: 'campaigns' },
   { n: 'Вехи', g: '🏆', view: 'milestones' },
+  { n: 'Журнал', g: '📓', view: 'journal' },
   { n: 'Достижения', g: '◈', view: null },
 ]
 
@@ -663,6 +665,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
     milestoneStatus, businessType, npcs,
     updateNPCRelationship: storeUpdateNPCRelationship,
     addChainFollowUp,
+    addDecisionLogEntry,
   } = useGameStore()
 
   // Track which milestones the player has seen (opened the Вехи tab after they fired)
@@ -713,6 +716,20 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       const delay = CHAIN_FOLLOWUP_DELAY[option.chainFollowUpId] ?? 2
       addChainFollowUp(option.chainFollowUpId, currentWeek + delay)
     }
+
+    // Log the decision
+    const logImpact = (c.balanceDelta ?? 0) > 0 || (c.reputationDelta ?? 0) > 0 || (c.loyaltyDelta ?? 0) > 0
+      ? 'positive'
+      : (c.balanceDelta ?? 0) < 0 || (c.reputationDelta ?? 0) < 0 || (c.loyaltyDelta ?? 0) < 0
+        ? 'negative'
+        : 'neutral'
+    addDecisionLogEntry({
+      week: currentWeek,
+      text: `${pendingEvent.title} → ${option.text}`,
+      type: pendingEvent.npcId ? 'npc' : pendingEvent.isMoralDilemma ? 'choice' : 'choice',
+      impact: logImpact as 'positive' | 'negative' | 'neutral',
+      npcId: pendingEvent.npcId,
+    })
 
     if (option.isContourOption && c.balanceDelta !== undefined) {
       const nonKontour = pendingEvent.options.filter((o) => !o.isContourOption)
@@ -831,6 +848,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
           <MilestoneView />
         </div>
       )}
+      {activeView === 'journal' && <DecisionLogView />}
 
       {/* Global modals */}
       <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
