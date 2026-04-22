@@ -12,6 +12,8 @@ export type EmployeePosition = 'cashier' | 'assistant' | 'manager' | 'specialist
 
 export type WeekPhase = 'summary' | 'actions' | 'events' | 'results'
 
+export type BusinessStage = 'startup' | 'small' | 'growing' | 'medium' | 'large'
+
 export interface CashRegister {
   type: CashRegisterType
   count: number
@@ -413,4 +415,8 @@ export interface GameState {
 
   // Milestone status (NEW v2.2)
   milestoneStatus: MilestoneStatus
+
+  // Owner investments (v2.3)
+  purchasedOwnerItems: string[]  // permanent investment ids (laptop, chair)
+  ownerSubscriptions: Array<{ id: string; weeksLeft: number; energyPerWeek: number }>
 }

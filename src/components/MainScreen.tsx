@@ -17,6 +17,7 @@ import BundleModal from './modals/BundleModal'
 import MicroEventModal from './modals/MicroEventModal'
 import HireEmployeeModal from './modals/HireEmployeeModal'
 import SupplierModal from './modals/SupplierModal'
+import OwnerInvestmentsModal from './modals/OwnerInvestmentsModal'
 import { WeekSummaryOverlay } from './WeekSummaryOverlay'
 import { WeekResultsOverlay } from './WeekResultsOverlay'
 import { DesktopKontur } from './design-system/DesktopKontur'
@@ -240,7 +241,7 @@ function DashboardView({
   showCampaignModal, setShowCampaignModal,
   showUpgradesModal, setShowUpgradesModal,
   showCashRegisterModal, setShowCashRegisterModal,
-  handleEventOption,
+  handleEventOption, onOpenOwnerInvestments,
 }: {
   onNextDay: () => void
   dayBlockedMsg: string | null
@@ -253,10 +254,12 @@ function DashboardView({
   showCashRegisterModal: boolean
   setShowCashRegisterModal: (v: boolean) => void
   handleEventOption: (id: string) => void
+  onOpenOwnerInvestments: () => void
 }) {
   const {
     currentWeek, balance, reputation, loyalty, services,
     pendingEvent, pendingEventsQueue, lastDayResult, savedBalance,
+    entrepreneurEnergy,
   } = useGameStore()
 
   const incomeSparkData = Array.from({ length: 10 }, (_, i) => Math.sin(i * 0.8) * 20 + 30)
@@ -401,18 +404,45 @@ function DashboardView({
           {/* Indicators */}
           <div style={{
             background: '#fff', borderRadius: 20, padding: 14,
-            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8,
+            display: 'flex', flexDirection: 'column', gap: 8,
           }}>
-            {[
-              { l: 'Репутация', v: String(reputation), bg: 'var(--k-green-soft)' },
-              { l: 'Лояльность', v: `${loyalty}%`, bg: 'var(--k-surface-2)' },
-              { l: 'Неделя', v: String(currentWeek), bg: 'var(--k-surface-2)' },
-            ].map(i => (
-              <div key={i.l} style={{ padding: 10, borderRadius: 12, background: i.bg }}>
-                <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.55 }}>{i.l}</div>
-                <div style={{ fontSize: 15, fontWeight: 800 }}>{i.v}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+              {[
+                { l: 'Репутация', v: String(reputation), bg: 'var(--k-green-soft)' },
+                { l: 'Лояльность', v: `${loyalty}%`, bg: 'var(--k-surface-2)' },
+                { l: 'Неделя', v: String(currentWeek), bg: 'var(--k-surface-2)' },
+              ].map(i => (
+                <div key={i.l} style={{ padding: 10, borderRadius: 12, background: i.bg }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.55 }}>{i.l}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800 }}>{i.v}</div>
+                </div>
+              ))}
+            </div>
+            {/* Energy bar with restore button */}
+            <div
+              onClick={onOpenOwnerInvestments}
+              style={{
+                padding: '10px 12px', borderRadius: 12,
+                background: entrepreneurEnergy < 40 ? 'rgba(220,53,69,0.06)' : 'var(--k-surface-2)',
+                cursor: 'pointer', userSelect: 'none',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 10, fontWeight: 700, opacity: 0.55 }}>
+                <span>ЭНЕРГИЯ</span>
+                <span style={{ color: entrepreneurEnergy < 40 ? 'var(--k-bad)' : 'inherit' }}>
+                  {entrepreneurEnergy}/100 {entrepreneurEnergy < 40 ? '⚠ Восстановить →' : '⚡'}
+                </span>
               </div>
-            ))}
+              <div style={{ height: 6, background: 'rgba(0,0,0,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  width: `${entrepreneurEnergy}%`,
+                  background: entrepreneurEnergy < 40 ? 'var(--k-bad)' : 'var(--k-orange)',
+                  borderRadius: 3,
+                  transition: 'width 0.3s',
+                }} />
+              </div>
+            </div>
           </div>
 
         </div>
@@ -505,6 +535,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const [showPromoWalletModal, setShowPromoWalletModal] = useState(false)
   const [showHireEmployeeModal, setShowHireEmployeeModal] = useState(false)
   const [showSupplierModal, setShowSupplierModal] = useState(false)
+  const [showOwnerInvestmentsModal, setShowOwnerInvestmentsModal] = useState(false)
   const [dayBlockedMsg, setDayBlockedMsg] = useState<string | null>(null)
   const [savingsToast, setSavingsToast] = useState<number | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -615,6 +646,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
           showCashRegisterModal={showCashRegisterModal}
           setShowCashRegisterModal={setShowCashRegisterModal}
           handleEventOption={handleEventOption}
+          onOpenOwnerInvestments={() => setShowOwnerInvestmentsModal(true)}
         />
       )}
 
@@ -658,6 +690,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       <CashRegisterModal isOpen={showCashRegisterModal} onClose={() => setShowCashRegisterModal(false)} />
       <HireEmployeeModal isOpen={showHireEmployeeModal} onClose={() => setShowHireEmployeeModal(false)} />
       <SupplierModal isOpen={showSupplierModal} onClose={() => setShowSupplierModal(false)} />
+      <OwnerInvestmentsModal isOpen={showOwnerInvestmentsModal} onClose={() => setShowOwnerInvestmentsModal(false)} />
       <AssortmentModal isOpen={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} />
       <PromoCodeModal />
       <PromoWalletModal isOpen={showPromoWalletModal} onClose={() => setShowPromoWalletModal(false)} />

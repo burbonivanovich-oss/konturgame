@@ -4,15 +4,25 @@ export interface AchievementDef {
   description: string
   icon: string
   category: 'progress' | 'business' | 'services' | 'special'
+  wave: 1 | 2 | 3 | 4  // unlock wave (1=always, 2=wk12, 3=wk26, 4=wk52)
+}
+
+export const WAVE_UNLOCK_WEEKS: Record<number, number> = {
+  1: 0,
+  2: 12,
+  3: 26,
+  4: 52,
 }
 
 export const ACHIEVEMENTS: AchievementDef[] = [
+  // Wave 1 — always available (weeks 1-8 goals)
   {
     id: 'first_day',
     name: 'Первый рабочий день',
     description: 'Завершить первый день работы',
     icon: '📅',
     category: 'progress',
+    wave: 1,
   },
   {
     id: 'week_done',
@@ -20,6 +30,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     description: 'Проработать 7 дней',
     icon: '📆',
     category: 'progress',
+    wave: 1,
   },
   {
     id: 'month_done',
@@ -27,6 +38,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     description: 'Проработать 30 дней',
     icon: '🗓️',
     category: 'progress',
+    wave: 1,
   },
   {
     id: 'profitable_day',
@@ -34,69 +46,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     description: 'Получить положительную прибыль за день',
     icon: '💹',
     category: 'business',
-  },
-  {
-    id: 'big_profit',
-    name: 'Большой день',
-    description: 'Заработать 50 000 ₽ прибыли за один день',
-    icon: '💰',
-    category: 'business',
-  },
-  {
-    id: 'millionaire',
-    name: 'Первый миллион',
-    description: 'Накопить 1 000 000 ₽ на счету',
-    icon: '🤑',
-    category: 'business',
-  },
-  {
-    id: 'high_rep',
-    name: 'Уважаемый бизнес',
-    description: 'Достичь репутации 90 и выше',
-    icon: '⭐',
-    category: 'business',
-  },
-  {
-    id: 'loyal_staff',
-    name: 'Счастливая команда',
-    description: 'Достичь лояльности персонала 90 и выше',
-    icon: '🤝',
-    category: 'business',
-  },
-  {
-    id: 'perfect_day',
-    name: 'Идеальный день',
-    description: 'Обслужить всех пришедших клиентов без потерь',
-    icon: '✨',
-    category: 'business',
-  },
-  {
-    id: 'first_service',
-    name: 'Контур в деле',
-    description: 'Подключить первый сервис Контура',
-    icon: '🔌',
-    category: 'services',
-  },
-  {
-    id: 'three_services',
-    name: 'Тройной контур',
-    description: 'Одновременно иметь 3 сервиса Контура',
-    icon: '⚡',
-    category: 'services',
-  },
-  {
-    id: 'all_services',
-    name: 'Полный Контур',
-    description: 'Подключить все 7 сервисов Контура',
-    icon: '🏆',
-    category: 'services',
-  },
-  {
-    id: 'synergy',
-    name: 'Синергия',
-    description: 'Активировать 3 и более синергии одновременно',
-    icon: '🔗',
-    category: 'services',
+    wave: 1,
   },
   {
     id: 'first_campaign',
@@ -104,41 +54,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     description: 'Запустить первую рекламную кампанию',
     icon: '📢',
     category: 'business',
-  },
-  {
-    id: 'hall_upgrade',
-    name: 'Расширение',
-    description: 'Купить расширение торгового зала',
-    icon: '🏗️',
-    category: 'business',
-  },
-  {
-    id: 'level_5',
-    name: 'Профессионал',
-    description: 'Достичь 5-го уровня',
-    icon: '🎖️',
-    category: 'progress',
-  },
-  {
-    id: 'level_10',
-    name: 'Мастер бизнеса',
-    description: 'Достичь 10-го уровня',
-    icon: '👑',
-    category: 'progress',
-  },
-  {
-    id: 'event_veteran',
-    name: 'Ветеран',
-    description: 'Пережить 10 различных событий',
-    icon: '🎭',
-    category: 'special',
-  },
-  {
-    id: 'resilient',
-    name: 'Несломимый',
-    description: 'Восстановить репутацию с критического уровня (≤20) до 60+',
-    icon: '💪',
-    category: 'special',
+    wave: 1,
   },
   {
     id: 'stock_master',
@@ -146,6 +62,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     description: 'Не допустить просрочки товара 10 дней подряд',
     icon: '📦',
     category: 'business',
+    wave: 1,
   },
   {
     id: 'first_register',
@@ -153,20 +70,15 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     description: 'Купить первую кассовую систему',
     icon: '🖥️',
     category: 'business',
+    wave: 1,
   },
   {
-    id: 'promo_collector',
-    name: 'Коллекционер',
-    description: 'Собрать 5 промокодов на услуги Контура',
-    icon: '🎟️',
-    category: 'services',
-  },
-  {
-    id: 'full_promo',
-    name: 'Полный набор',
-    description: 'Собрать все 7 промокодов на услуги Контура',
-    icon: '🏆',
-    category: 'services',
+    id: 'event_veteran',
+    name: 'Ветеран',
+    description: 'Пережить 10 различных событий',
+    icon: '🎭',
+    category: 'special',
+    wave: 1,
   },
   {
     id: 'survived_competitor',
@@ -174,6 +86,115 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     description: 'Выжить во время атаки конкурента на неделю 4+',
     icon: '🛡️',
     category: 'special',
+    wave: 1,
+  },
+
+  // Wave 2 — unlocks week 12
+  {
+    id: 'big_profit',
+    name: 'Большой день',
+    description: 'Заработать 50 000 ₽ прибыли за один день',
+    icon: '💰',
+    category: 'business',
+    wave: 2,
+  },
+  {
+    id: 'high_rep',
+    name: 'Уважаемый бизнес',
+    description: 'Достичь репутации 90 и выше',
+    icon: '⭐',
+    category: 'business',
+    wave: 2,
+  },
+  {
+    id: 'loyal_staff',
+    name: 'Счастливая команда',
+    description: 'Достичь лояльности персонала 90 и выше',
+    icon: '🤝',
+    category: 'business',
+    wave: 2,
+  },
+  {
+    id: 'hall_upgrade',
+    name: 'Расширение',
+    description: 'Купить расширение торгового зала',
+    icon: '🏗️',
+    category: 'business',
+    wave: 2,
+  },
+  {
+    id: 'first_service',
+    name: 'Контур в деле',
+    description: 'Подключить первый сервис Контура',
+    icon: '🔌',
+    category: 'services',
+    wave: 2,
+  },
+  {
+    id: 'three_services',
+    name: 'Тройной контур',
+    description: 'Одновременно иметь 3 сервиса Контура',
+    icon: '⚡',
+    category: 'services',
+    wave: 2,
+  },
+  {
+    id: 'synergy',
+    name: 'Синергия',
+    description: 'Активировать 3 и более синергии одновременно',
+    icon: '🔗',
+    category: 'services',
+    wave: 2,
+  },
+  {
+    id: 'promo_collector',
+    name: 'Коллекционер',
+    description: 'Собрать 5 промокодов на услуги Контура',
+    icon: '🎟️',
+    category: 'services',
+    wave: 2,
+  },
+  {
+    id: 'resilient',
+    name: 'Несломимый',
+    description: 'Восстановить репутацию с критического уровня (≤20) до 60+',
+    icon: '💪',
+    category: 'special',
+    wave: 2,
+  },
+
+  // Wave 3 — unlocks week 26
+  {
+    id: 'millionaire',
+    name: 'Первый миллион',
+    description: 'Накопить 1 000 000 ₽ на счету',
+    icon: '🤑',
+    category: 'business',
+    wave: 3,
+  },
+  {
+    id: 'level_5',
+    name: 'Профессионал',
+    description: 'Достичь 5-го уровня',
+    icon: '🎖️',
+    category: 'progress',
+    wave: 3,
+  },
+  {
+    id: 'all_services',
+    name: 'Полный Контур',
+    description: 'Подключить все 7 сервисов Контура',
+    icon: '🏆',
+    category: 'services',
+    wave: 3,
+  },
+  {
+    id: 'full_promo',
+    name: 'Полный набор',
+    description: 'Собрать все 7 промокодов на услуги Контура',
+    icon: '🏆',
+    category: 'services',
+    wave: 3,
   },
   {
     id: 'survival_year_one',
@@ -181,5 +202,24 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     description: 'Прожить весь первый год с положительным балансом и репутацией',
     icon: '🎉',
     category: 'special',
+    wave: 3,
+  },
+
+  // Wave 4 — unlocks week 52
+  {
+    id: 'perfect_day',
+    name: 'Идеальный день',
+    description: 'Обслужить всех пришедших клиентов без потерь',
+    icon: '✨',
+    category: 'business',
+    wave: 4,
+  },
+  {
+    id: 'level_10',
+    name: 'Мастер бизнеса',
+    description: 'Достичь 10-го уровня',
+    icon: '👑',
+    category: 'progress',
+    wave: 4,
   },
 ]

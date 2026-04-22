@@ -68,6 +68,8 @@ describe('Game Types', () => {
       bundlePromoShown: false,
       weeklyEnergyRestored: false,
       weekPhase: 'actions' as const,
+      purchasedOwnerItems: [],
+      ownerSubscriptions: [],
       seenMicroEventIds: [],
       pendingMicroEvent: null,
       suppliers: [],

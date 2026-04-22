@@ -9,6 +9,9 @@ import { SERVICE_UNLOCK_MAP } from '../constants/onboarding'
 import { CASH_REGISTER_CONFIGS, REGISTER_COMBO_DISCOUNTS } from '../constants/cashRegisters'
 import { getDefaultCategories } from '../services/assortmentEngine'
 import { checkWeekBlocked, processWeek } from '../services/weekCalculator'
+import { getBusinessStage, STAGE_CONFIG } from '../constants/businessStages'
+import { OWNER_INVESTMENTS_MAP } from '../constants/ownerInvestments'
+import type { OwnerInvestmentId } from '../constants/ownerInvestments'
 
 const STORAGE_KEY = 'konturgame_state'
 const ROLLBACK_STORAGE_KEY = 'konturgame_rollback'
@@ -140,6 +143,10 @@ const createInitialState = (businessType: BusinessType): GameState => {
       week20: false,
       week30: false,
     },
+
+    // Owner investments (v2.3)
+    purchasedOwnerItems: [],
+    ownerSubscriptions: [],
   }
 }
 
@@ -277,6 +284,12 @@ interface GameStoreActions {
   // Campaign ROI tracking
   addCampaignROI: (roi: CampaignROI) => void
   updateMilestoneStatus: (milestones: MilestoneStatus) => void
+
+  // Owner investments (v2.3)
+  purchaseOwnerInvestment: (id: OwnerInvestmentId) => boolean
+
+  // Business stage helper
+  getBusinessStage: () => import('../types/game').BusinessStage
 }
 
 interface GameStore extends GameState, GameStoreActions {}
@@ -343,10 +356,34 @@ export const useGameStore = create<GameStore>((set, get) => ({
     },
 
     completeResultsPhase: () => {
+      const state = get()
+      const purchasedOwnerItems = state.purchasedOwnerItems ?? []
+      const ownerSubscriptions = state.ownerSubscriptions ?? []
+
+      // Compute energy bonus from permanent items
+      let weeklyBonus = 0
+      if (purchasedOwnerItems.includes('chair')) weeklyBonus += 10
+      // laptop reduces costs, not adds energy
+
+      // Process subscriptions: add energy and decrement
+      const nextSubscriptions = ownerSubscriptions
+        .map(sub => ({ ...sub, weeksLeft: sub.weeksLeft - 1 }))
+        .filter(sub => sub.weeksLeft > 0)
+
+      for (const sub of ownerSubscriptions) {
+        weeklyBonus += sub.energyPerWeek
+      }
+
+      const restoredEnergy = Math.min(
+        ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY + weeklyBonus,
+        ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY + 30  // absolute cap
+      )
+
       set({
         weekPhase: 'summary' as WeekPhase,
-        entrepreneurEnergy: ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY,
+        entrepreneurEnergy: restoredEnergy,
         weeklyEnergyRestored: true,
+        ownerSubscriptions: nextSubscriptions,
         lastUpdated: Date.now(),
       })
     },
@@ -420,9 +457,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (activeServices.includes('diadoc')) costModifier *= (1 - ECONOMY_CONSTANTS.ENERGY_REDUCTION_DIADOC)
       if (activeServices.includes('elba')) costModifier *= (1 - ECONOMY_CONSTANTS.ENERGY_REDUCTION_ELBA)
 
+      const laptopReduction = (state.purchasedOwnerItems ?? []).includes('laptop') ? 3 : 0
       const actualCost = Math.max(
         ECONOMY_CONSTANTS.ENERGY_COST_ZERO_THRESHOLD,
-        Math.ceil(baseCost * costModifier)
+        Math.ceil(baseCost * costModifier) - laptopReduction
       )
 
       if (state.entrepreneurEnergy >= actualCost) {
@@ -942,15 +980,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // Employees
     hireEmployee: (position: any, name: string, salary: number) => {
+      const state = get()
+      const stage = getBusinessStage(state.currentWeek, state.level)
+      const maxEmployees = STAGE_CONFIG[stage].maxEmployees
+      if ((state.employees ?? []).length >= maxEmployees) return
       get().spendEnergy(ECONOMY_CONSTANTS.ENERGY_COST_BASE_OPERATION)
-      set((state) => ({
-        employees: [...state.employees, {
+      set((s) => ({
+        employees: [...s.employees, {
           id: `emp_${Date.now()}`,
           position,
           name,
           salary,
           efficiency: 1.0,
-          hireDay: state.currentWeek,
+          hireDay: s.currentWeek,
           energyCost: Math.round(salary / 2000),
         }],
         lastUpdated: Date.now(),
@@ -1059,6 +1101,55 @@ export const useGameStore = create<GameStore>((set, get) => ({
         lastUpdated: Date.now(),
       })
     },
+
+    // Owner investments (v2.3)
+    purchaseOwnerInvestment: (id: OwnerInvestmentId) => {
+      const config = OWNER_INVESTMENTS_MAP[id]
+      if (!config) return false
+      const state = get()
+      if (state.balance < config.cost) return false
+
+      // Permanent items can only be bought once
+      if (config.type === 'permanent' && (state.purchasedOwnerItems ?? []).includes(id)) return false
+
+      const maxEnergy = ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY
+
+      if (config.type === 'one-time') {
+        const addEnergy = config.effect.energyImmediate ?? 0
+        set((s) => ({
+          balance: s.balance - config.cost,
+          entrepreneurEnergy: Math.min(maxEnergy, s.entrepreneurEnergy + addEnergy),
+          lastUpdated: Date.now(),
+        }))
+      } else if (config.type === 'permanent') {
+        const addEnergy = config.effect.energyImmediate ?? 0
+        set((s) => ({
+          balance: s.balance - config.cost,
+          purchasedOwnerItems: [...(s.purchasedOwnerItems ?? []), id],
+          entrepreneurEnergy: addEnergy > 0 ? Math.min(maxEnergy, s.entrepreneurEnergy + addEnergy) : s.entrepreneurEnergy,
+          lastUpdated: Date.now(),
+        }))
+      } else {
+        // subscription
+        const weeks = config.subscriptionWeeks ?? 4
+        const energyPerWeek = config.effect.energyPerWeek ?? 0
+        set((s) => ({
+          balance: s.balance - config.cost,
+          ownerSubscriptions: [
+            ...(s.ownerSubscriptions ?? []),
+            { id, weeksLeft: weeks, energyPerWeek },
+          ],
+          lastUpdated: Date.now(),
+        }))
+      }
+      return true
+    },
+
+    // Business stage helper
+    getBusinessStage: () => {
+      const state = get()
+      return getBusinessStage(state.currentWeek, state.level)
+    },
   }))
 
 // LocalStorage persistence
@@ -1093,6 +1184,8 @@ function extractState(state: any): GameState {
     loans,
     // v2.2 new fields
     campaignROI, milestoneStatus,
+    // v2.3 owner investments
+    purchasedOwnerItems, ownerSubscriptions,
   } = state
 
   // Migration: convert old currentDay to currentWeek
@@ -1146,6 +1239,9 @@ function extractState(state: any): GameState {
       week20: false,
       week30: false,
     },
+    // v2.3 owner investments
+    purchasedOwnerItems: purchasedOwnerItems ?? [],
+    ownerSubscriptions: ownerSubscriptions ?? [],
   }
 }
 
