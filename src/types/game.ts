@@ -2,8 +2,18 @@ export type BusinessType = 'shop' | 'cafe' | 'beauty-salon'
 
 export type NpcRole = 'supplier' | 'employee' | 'inspector' | 'competitor'
 
-export type BackstoryMotivation = 'fired' | 'dream' | 'debt'
-export type BackstoryPersonal = 'alone' | 'partner' | 'family'
+export type BackstoryMotivation = 'corp' | 'contest' | 'accident'
+export type BackstoryPersonal = 'free' | 'friend' | 'hometown'
+
+export type DecisionImpact = 'positive' | 'negative' | 'neutral'
+
+export interface DecisionLogEntry {
+  week: number
+  text: string
+  type: 'choice' | 'chain' | 'milestone' | 'npc' | 'newspaper' | 'customer'
+  impact: DecisionImpact
+  npcId?: string
+}
 
 export interface NpcMemoryEntry {
   week: number
@@ -465,4 +475,8 @@ export interface GameState {
   activeChainIds: string[]
   completedChainIds: string[]
   pendingChainFollowUps: Array<{ chainEventId: string; triggerWeek: number }>
+
+  // Narrative systems (v3.1)
+  decisionLog: DecisionLogEntry[]
+  seenNewspaperWeeks: number[]
 }

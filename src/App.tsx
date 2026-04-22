@@ -40,31 +40,24 @@ export default function App() {
     if (pendingBackstory) {
       setPlayerBackstory(pendingBackstory)
 
-      // Apply backstory effects to starting state
+      // Apply backstory effects
       const store = useGameStore.getState()
-      if (pendingBackstory.motivation === 'dream') {
-        // Dream: +5 starting reputation
-        useGameStore.setState({ reputation: store.reputation + 5 })
-      } else if (pendingBackstory.motivation === 'debt') {
-        // Debt: start with a small loan to repay
-        useGameStore.setState({
-          balance: Math.max(0, store.balance - 20000),
-          loans: [
-            ...store.loans,
-            {
-              id: `backstory_loan_${Date.now()}`,
-              amount: 20000,
-              borrowedWeek: 1,
-              dueWeek: 12,
-              weeklyInterest: 0.01,
-              totalInterestPaid: 0,
-              isRepaid: false,
-              type: 'long-term' as const,
-            },
-          ],
-        })
+      if (pendingBackstory.motivation === 'corp') {
+        // Уволился из корпорации: +10 репутации (люди уважают смелость)
+        useGameStore.setState({ reputation: Math.min(100, store.reputation + 10) })
+      } else if (pendingBackstory.motivation === 'accident') {
+        // Так получилось: +15 энергии (энтузиазм новичка)
+        useGameStore.setState({ entrepreneurEnergy: Math.min(100, store.entrepreneurEnergy + 15) })
       }
-      // 'fired' motivation: no change (80k balance is already set)
+      // 'contest': без изменений (полный капитал, хорошее настроение)
+
+      if (pendingBackstory.personal === 'hometown') {
+        // Родной район: +5 репутации (знают тебя здесь)
+        useGameStore.setState({ reputation: Math.min(100, useGameStore.getState().reputation + 5) })
+      } else if (pendingBackstory.personal === 'friend') {
+        // Лучший друг рядом: +5 лояльности (первые клиенты приходят по рекомендации)
+        useGameStore.setState({ loyalty: Math.min(100, store.loyalty + 5) })
+      }
     }
     setScreen('game')
   }

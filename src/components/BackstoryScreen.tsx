@@ -13,25 +13,25 @@ const MOTIVATIONS: Array<{
   hint: string
 }> = [
   {
-    id: 'fired',
-    icon: '📋',
-    title: 'Уволили с работы',
-    description: 'После 8 лет в найме вас сократили. Выходное пособие — 80 000 ₽. Это шанс начать своё.',
-    hint: 'Старт с полным капиталом, но высоким давлением',
+    id: 'corp',
+    icon: '🏢',
+    title: 'Надоела корпорация',
+    description: 'Восемь лет опенспейс, KPI и совещания по совещаниям. В пятницу написали заявление. В понедельник — первый рабочий день на себя.',
+    hint: '+10 репутации на старте — люди уважают решительность',
   },
   {
-    id: 'dream',
-    icon: '✨',
-    title: 'Давняя мечта',
-    description: 'Вы всегда хотели своё дело. Откладывали годами. Наконец решились.',
-    hint: 'Репутация +5 на старте — люди чувствуют энтузиазм',
+    id: 'contest',
+    icon: '🏆',
+    title: 'Выиграл грант',
+    description: 'Подали заявку на конкурс малого бизнеса — почти в шутку. Пришло письмо: «Поздравляем». 80 000 ₽ и ни одного повода не попробовать.',
+    hint: 'Старт с полным капиталом и хорошим настроением',
   },
   {
-    id: 'debt',
-    icon: '💰',
-    title: 'Нужны деньги',
-    description: 'Долг перед банком. Срок — год. Либо бизнес начнёт давать деньги, либо опись имущества.',
-    hint: 'Старт с займом −20 000 ₽, но вы очень мотивированы',
+    id: 'accident',
+    icon: '🎲',
+    title: 'Так получилось',
+    description: 'Один разговор с другом, одна аренда помещения, одна случайная идея. Иногда лучшие решения — это те, которые не планировались.',
+    hint: '+15 энергии на старте — энтузиазм новичка',
   },
 ]
 
@@ -42,22 +42,22 @@ const PERSONAL_SITUATIONS: Array<{
   description: string
 }> = [
   {
-    id: 'alone',
-    icon: '🧍',
-    title: 'Один',
-    description: 'Никаких зависимостей. Гибкость максимальная, но рассчитывать только на себя.',
+    id: 'free',
+    icon: '🧭',
+    title: 'Полная свобода',
+    description: 'Никаких обязательств. Можно работать в 2 ночи или уйти в 3 дня. Всё только на ваш вкус.',
   },
   {
-    id: 'partner',
-    icon: '👫',
-    title: 'С партнёром',
-    description: 'Партнёр поддерживает, но и рассчитывает на стабильный доход с вашего дела.',
+    id: 'friend',
+    icon: '🤝',
+    title: 'Лучший друг — болельщик №1',
+    description: 'Димка верит в вас больше, чем вы сами. Звонит каждую неделю, спрашивает как дела. Иногда заходит помочь.',
   },
   {
-    id: 'family',
-    icon: '👨‍👩‍👧',
-    title: 'Семья',
-    description: 'Дети, ипотека. Каждое решение касается не только вас.',
+    id: 'hometown',
+    icon: '🏘️',
+    title: 'Возвращение в свой район',
+    description: 'Выросли здесь. Знаете половину жителей. Они знают вас. Хочется сделать что-то настоящее для своего места.',
   },
 ]
 
@@ -66,11 +66,6 @@ export default function BackstoryScreen({ onComplete }: BackstoryScreenProps) {
   const [personal, setPersonal] = useState<BackstoryPersonal | null>(null)
 
   const canProceed = motivation !== null && personal !== null
-
-  const handleStart = () => {
-    if (!motivation || !personal) return
-    onComplete({ motivation, personal })
-  }
 
   return (
     <div style={{
@@ -107,7 +102,7 @@ export default function BackstoryScreen({ onComplete }: BackstoryScreenProps) {
             color: 'var(--k-ink, #0e1116)',
             lineHeight: 1.1,
           }}>
-            Расскажите о себе
+            С чего всё началось?
           </h1>
           <p style={{
             fontSize: 15,
@@ -116,8 +111,8 @@ export default function BackstoryScreen({ onComplete }: BackstoryScreenProps) {
             margin: 0,
             lineHeight: 1.5,
           }}>
-            Это не просто симулятор бизнеса — это ваша история.
-            Выборы будут отражать ситуацию, в которой вы оказались.
+            Ваша история повлияет на то, что будет происходить в игре.<br />
+            Выберите — и начнём.
           </p>
         </div>
 
@@ -130,7 +125,7 @@ export default function BackstoryScreen({ onComplete }: BackstoryScreenProps) {
             opacity: 0.4,
             marginBottom: 14,
           }}>
-            ПОЧЕМУ ВЫ ОТКРЫВАЕТЕ БИЗНЕС?
+            КАК ВЫ ЗДЕСЬ ОКАЗАЛИСЬ?
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {MOTIVATIONS.map(m => (
@@ -155,28 +150,16 @@ export default function BackstoryScreen({ onComplete }: BackstoryScreenProps) {
                   <div style={{ fontSize: 13, fontWeight: 500, opacity: 0.6, lineHeight: 1.4, marginBottom: 6 }}>
                     {m.description}
                   </div>
-                  <div style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: 'var(--k-orange, #ff6b00)',
-                    opacity: 0.8,
-                  }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--k-orange, #ff6b00)', opacity: 0.9 }}>
                     {m.hint}
                   </div>
                 </div>
                 {motivation === m.id && (
                   <div style={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: '50%',
+                    width: 22, height: 22, borderRadius: '50%',
                     background: 'var(--k-orange, #ff6b00)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    fontSize: 12,
-                    color: '#fff',
-                    fontWeight: 800,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, fontSize: 12, color: '#fff', fontWeight: 800,
                   }}>✓</div>
                 )}
               </div>
@@ -193,7 +176,7 @@ export default function BackstoryScreen({ onComplete }: BackstoryScreenProps) {
             opacity: 0.4,
             marginBottom: 14,
           }}>
-            КТО ЗАВИСИТ ОТ ВАШЕГО УСПЕХА?
+            КТО РЯДОМ?
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
             {PERSONAL_SITUATIONS.map(p => (
@@ -222,7 +205,7 @@ export default function BackstoryScreen({ onComplete }: BackstoryScreenProps) {
 
         {/* CTA */}
         <button
-          onClick={handleStart}
+          onClick={() => canProceed && onComplete({ motivation: motivation!, personal: personal! })}
           disabled={!canProceed}
           style={{
             width: '100%',
