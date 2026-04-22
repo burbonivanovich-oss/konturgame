@@ -1,4 +1,7 @@
 import type { GameState, Event, EventTemplate } from '../types/game'
+import { MORAL_DILEMMA_EVENTS } from '../constants/moralDilemmas'
+import { getChainEvent, CHAIN_FOLLOWUP_DELAY } from '../constants/eventChains'
+import { RECURRING_CUSTOMER_EVENTS } from '../constants/recurringCustomers'
 
 export const EVENTS_DATABASE: EventTemplate[] = [
   {
@@ -675,7 +678,9 @@ export function generateEvent(day: number, state: GameState): Event | null {
   const triggered = state.triggeredEventIds ?? []
   const candidates: EventTemplate[] = []
 
-  for (const template of EVENTS_DATABASE) {
+  const allTemplates = [...EVENTS_DATABASE, ...MORAL_DILEMMA_EVENTS, ...RECURRING_CUSTOMER_EVENTS]
+
+  for (const template of allTemplates) {
     if (template.trigger.oneTime && triggered.includes(template.id)) continue
     if (template.trigger.dayMin !== undefined && day < template.trigger.dayMin) continue
     if (template.trigger.dayMax !== undefined && day > template.trigger.dayMax) continue
@@ -713,13 +718,24 @@ export function generateEvent(day: number, state: GameState): Event | null {
 
   const chosen = candidates[Math.floor(Math.random() * candidates.length)]
 
+  return templateToEvent(chosen, day, state.currentWeek)
+}
+
+export function templateToEvent(template: EventTemplate, day: number, currentWeek: number): Event {
+  const deadline = template.decisionDeadlineWeeks !== undefined
+    ? currentWeek + template.decisionDeadlineWeeks
+    : undefined
+
   return {
-    id: chosen.id,
+    id: template.id,
     day,
-    title: chosen.title,
-    description: chosen.description,
-    options: chosen.options,
+    title: template.title,
+    description: template.description,
+    options: template.options,
     isResolved: false,
+    npcId: template.npcId,
+    isMoralDilemma: template.isMoralDilemma,
+    decisionDeadlineWeek: deadline,
   }
 }
 
@@ -758,6 +774,37 @@ export function applyEventConsequence(
       state.temporaryModDaysLeft ?? 0,
       c.checkModifierDays ?? 1,
     )
+  }
+
+  // NPC relationship delta
+  if (option.npcRelationshipDelta !== undefined && event.npcId) {
+    const npcId = event.npcId
+    const delta = option.npcRelationshipDelta
+    state.npcs = (state.npcs ?? []).map(npc => {
+      if (npc.id !== npcId) return npc
+      return {
+        ...npc,
+        relationshipLevel: Math.max(0, Math.min(100, npc.relationshipLevel + delta)),
+        isRevealed: true,
+        memory: [
+          ...npc.memory.slice(-9),
+          { week: state.currentWeek, eventId: event.id, choiceId: optionId, note: option.text.slice(0, 60) },
+        ],
+      }
+    })
+  }
+
+  // Chain follow-up scheduling
+  if (option.chainFollowUpId) {
+    const followUpTemplate = getChainEvent(option.chainFollowUpId)
+    if (followUpTemplate) {
+      const delay = CHAIN_FOLLOWUP_DELAY[option.chainFollowUpId] ?? 2
+      if (!state.pendingChainFollowUps) state.pendingChainFollowUps = []
+      state.pendingChainFollowUps.push({
+        chainEventId: option.chainFollowUpId,
+        triggerWeek: state.currentWeek + delay,
+      })
+    }
   }
 
   event.isResolved = true

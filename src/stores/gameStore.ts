@@ -2,7 +2,8 @@ import { create } from 'zustand'
 import type {
   GameState, BusinessType, ServiceType, Service, DayResult, Event,
   AdCampaign, StockBatch, CashRegisterType, CashRegister, OnboardingStage,
-  CampaignROI, MilestoneStatus, WeekPhase,
+  CampaignROI, MilestoneStatus, WeekPhase, NPC, PlayerBackstory, NpcMemoryEntry,
+  DecisionLogEntry,
 } from '../types/game'
 import { SERVICES_CONFIG, BUSINESS_CONFIGS, ECONOMY_CONSTANTS } from '../constants/business'
 import { SERVICE_UNLOCK_MAP } from '../constants/onboarding'
@@ -12,6 +13,8 @@ import { checkWeekBlocked, processWeek } from '../services/weekCalculator'
 import { getBusinessStage, STAGE_CONFIG } from '../constants/businessStages'
 import { OWNER_INVESTMENTS_MAP } from '../constants/ownerInvestments'
 import type { OwnerInvestmentId } from '../constants/ownerInvestments'
+import { createInitialNPCs } from '../constants/npcs'
+import { updateNPCRelationship, recordNPCMemory } from '../services/npcManager'
 
 const STORAGE_KEY = 'konturgame_state'
 const ROLLBACK_STORAGE_KEY = 'konturgame_rollback'
@@ -147,6 +150,17 @@ const createInitialState = (businessType: BusinessType): GameState => {
     // Owner investments (v2.3)
     purchasedOwnerItems: [],
     ownerSubscriptions: [],
+
+    // NPC system (v3.0)
+    npcs: createInitialNPCs(),
+    playerBackstory: null,
+    activeChainIds: [],
+    completedChainIds: [],
+    pendingChainFollowUps: [],
+
+    // Narrative systems (v3.1)
+    decisionLog: [],
+    seenNewspaperWeeks: [],
   }
 }
 
@@ -290,6 +304,19 @@ interface GameStoreActions {
 
   // Business stage helper
   getBusinessStage: () => import('../types/game').BusinessStage
+
+  // NPC system (v3.0)
+  updateNPCRelationship: (npcId: string, delta: number) => void
+  recordNPCMemory: (npcId: string, entry: NpcMemoryEntry) => void
+  setPlayerBackstory: (backstory: PlayerBackstory) => void
+  addChainFollowUp: (chainEventId: string, triggerWeek: number) => void
+  markChainCompleted: (chainId: string) => void
+  addActiveChain: (chainId: string) => void
+  consumePendingChainFollowUp: (chainEventId: string) => void
+
+  // Narrative systems (v3.1)
+  addDecisionLogEntry: (entry: DecisionLogEntry) => void
+  addSeenNewspaper: (week: number) => void
 }
 
 interface GameStore extends GameState, GameStoreActions {}
@@ -760,6 +787,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
         competitorEventTriggered: state.competitorEventTriggered ?? false,
         lastDayPainLosses: state.lastDayPainLosses ?? null,
         bundlePromoShown: state.bundlePromoShown ?? false,
+        // v3.0 NPC system
+        npcs: state.npcs ?? createInitialNPCs(),
+        playerBackstory: state.playerBackstory ?? null,
+        activeChainIds: state.activeChainIds ?? [],
+        completedChainIds: state.completedChainIds ?? [],
+        pendingChainFollowUps: state.pendingChainFollowUps ?? [],
+        // v3.1 narrative systems
+        decisionLog: state.decisionLog ?? [],
+        seenNewspaperWeeks: state.seenNewspaperWeeks ?? [],
       }
       set(migrated)
       saveToStorage(migrated)
@@ -1139,6 +1175,77 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const state = get()
       return getBusinessStage(state.currentWeek, state.level)
     },
+
+    // NPC system (v3.0)
+    updateNPCRelationship: (npcId: string, delta: number) => {
+      set((state) => ({
+        npcs: updateNPCRelationship(state.npcs ?? [], npcId, delta),
+        lastUpdated: Date.now(),
+      }))
+    },
+
+    recordNPCMemory: (npcId: string, entry: NpcMemoryEntry) => {
+      set((state) => ({
+        npcs: recordNPCMemory(state.npcs ?? [], npcId, entry),
+        lastUpdated: Date.now(),
+      }))
+    },
+
+    setPlayerBackstory: (backstory: PlayerBackstory) => {
+      set({ playerBackstory: backstory, lastUpdated: Date.now() })
+    },
+
+    addChainFollowUp: (chainEventId: string, triggerWeek: number) => {
+      set((state) => ({
+        pendingChainFollowUps: [
+          ...(state.pendingChainFollowUps ?? []),
+          { chainEventId, triggerWeek },
+        ],
+        lastUpdated: Date.now(),
+      }))
+    },
+
+    markChainCompleted: (chainId: string) => {
+      set((state) => ({
+        activeChainIds: (state.activeChainIds ?? []).filter(id => id !== chainId),
+        completedChainIds: [...(state.completedChainIds ?? []), chainId],
+        lastUpdated: Date.now(),
+      }))
+    },
+
+    addActiveChain: (chainId: string) => {
+      set((state) => {
+        if ((state.activeChainIds ?? []).includes(chainId)) return {}
+        return {
+          activeChainIds: [...(state.activeChainIds ?? []), chainId],
+          lastUpdated: Date.now(),
+        }
+      })
+    },
+
+    consumePendingChainFollowUp: (chainEventId: string) => {
+      set((state) => ({
+        pendingChainFollowUps: (state.pendingChainFollowUps ?? []).filter(
+          f => f.chainEventId !== chainEventId
+        ),
+        lastUpdated: Date.now(),
+      }))
+    },
+
+    // Narrative systems (v3.1)
+    addDecisionLogEntry: (entry: DecisionLogEntry) => {
+      set((state) => ({
+        decisionLog: [...(state.decisionLog ?? []), entry],
+        lastUpdated: Date.now(),
+      }))
+    },
+
+    addSeenNewspaper: (week: number) => {
+      set((state) => ({
+        seenNewspaperWeeks: [...(state.seenNewspaperWeeks ?? []), week],
+        lastUpdated: Date.now(),
+      }))
+    },
   }))
 
 // LocalStorage persistence
@@ -1175,6 +1282,10 @@ function extractState(state: any): GameState {
     campaignROI, milestoneStatus,
     // v2.3 owner investments
     purchasedOwnerItems, ownerSubscriptions,
+    // v3.0 NPC system
+    npcs, playerBackstory, activeChainIds, completedChainIds, pendingChainFollowUps,
+    // v3.1 narrative
+    decisionLog, seenNewspaperWeeks,
   } = state
 
   // Migration: convert old currentDay to currentWeek
@@ -1231,6 +1342,15 @@ function extractState(state: any): GameState {
     // v2.3 owner investments
     purchasedOwnerItems: purchasedOwnerItems ?? [],
     ownerSubscriptions: ownerSubscriptions ?? [],
+    // v3.0 NPC system
+    npcs: npcs ?? createInitialNPCs(),
+    playerBackstory: playerBackstory ?? null,
+    activeChainIds: activeChainIds ?? [],
+    completedChainIds: completedChainIds ?? [],
+    pendingChainFollowUps: pendingChainFollowUps ?? [],
+    // v3.1 narrative systems
+    decisionLog: decisionLog ?? [],
+    seenNewspaperWeeks: seenNewspaperWeeks ?? [],
   }
 }
 

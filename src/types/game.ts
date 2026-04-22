@@ -1,5 +1,42 @@
 export type BusinessType = 'shop' | 'cafe' | 'beauty-salon'
 
+export type NpcRole = 'supplier' | 'employee' | 'inspector' | 'competitor'
+
+export type BackstoryMotivation = 'corp' | 'contest' | 'accident'
+export type BackstoryPersonal = 'free' | 'friend' | 'hometown'
+
+export type DecisionImpact = 'positive' | 'negative' | 'neutral'
+
+export interface DecisionLogEntry {
+  week: number
+  text: string
+  type: 'choice' | 'chain' | 'milestone' | 'npc' | 'newspaper' | 'customer'
+  impact: DecisionImpact
+  npcId?: string
+}
+
+export interface NpcMemoryEntry {
+  week: number
+  eventId: string
+  choiceId: string
+  note: string
+}
+
+export interface NPC {
+  id: string
+  name: string
+  role: NpcRole
+  portrait: string
+  relationshipLevel: number  // 0-100
+  isRevealed: boolean
+  memory: NpcMemoryEntry[]
+}
+
+export interface PlayerBackstory {
+  motivation: BackstoryMotivation
+  personal: BackstoryPersonal
+}
+
 export type ServiceType = 'market' | 'bank' | 'ofd' | 'diadoc' | 'fokus' | 'elba' | 'extern'
 
 export type OnboardingStage = 0 | 1 | 2 | 3 | 4
@@ -192,6 +229,8 @@ export interface EventOption {
   hasServiceAlternative?: boolean
   requiredService?: ServiceType
   isContourOption?: boolean
+  npcRelationshipDelta?: number
+  chainFollowUpId?: string
 }
 
 export interface Event {
@@ -201,6 +240,9 @@ export interface Event {
   description: string
   options: EventOption[]
   isResolved: boolean
+  npcId?: string
+  isMoralDilemma?: boolean
+  decisionDeadlineWeek?: number
 }
 
 export interface EventTemplate {
@@ -217,8 +259,13 @@ export interface EventTemplate {
     noService?: ServiceType
     businessTypes?: BusinessType[]
     oneTime?: boolean
+    chainId?: string
+    chainStep?: number
   }
   options: EventOption[]
+  npcId?: string
+  isMoralDilemma?: boolean
+  decisionDeadlineWeeks?: number
 }
 
 // Legacy stock type (kept for compatibility)
@@ -421,4 +468,15 @@ export interface GameState {
   // Owner investments (v2.3)
   purchasedOwnerItems: string[]  // permanent investment ids (laptop, chair)
   ownerSubscriptions: Array<{ id: string; weeksLeft: number; energyPerWeek: number }>
+
+  // NPC system (v3.0)
+  npcs: NPC[]
+  playerBackstory: PlayerBackstory | null
+  activeChainIds: string[]
+  completedChainIds: string[]
+  pendingChainFollowUps: Array<{ chainEventId: string; triggerWeek: number }>
+
+  // Narrative systems (v3.1)
+  decisionLog: DecisionLogEntry[]
+  seenNewspaperWeeks: number[]
 }
