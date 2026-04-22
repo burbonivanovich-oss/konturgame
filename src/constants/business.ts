@@ -68,6 +68,7 @@ export interface ServiceConfig {
     reputationBonus?: number
     loyaltyBonus?: number
     taxSaving?: number
+    energyReduction?: number
   }
 }
 
@@ -75,21 +76,22 @@ export const SERVICES_CONFIG: Record<ServiceType, ServiceConfig> = {
   market: {
     id: 'market',
     name: 'Контур.Маркет',
-    description: 'Автоматизация торговли: +12% пропускной, +7% к чеку, снижение убытков от просрочки. Главное — защита от катастрофических срывов поставок.',
+    description: 'Автоматизация торговли: +20% пропускной, +15% к чеку, -20% убытков от просрочки. Главное — защита от катастрофических срывов поставок.',
     annualPrice: 48000,
     effects: {
-      capacityBonus: 0.12,
-      checkBonus: 0.07,
+      capacityBonus: 0.2,
+      checkBonus: 0.15,
       writeOffReduction: 0.2,
     },
   },
   bank: {
     id: 'bank',
     name: 'Контур.Банк',
-    description: 'Льготное кредитование бизнеса по ставке 5%.',
-    annualPrice: 36000,  // ↑ Было 18000
+    description: 'Льготное кредитование бизнеса по ставке 5%. Автоматизация платежей: -30% энергии на операции.',
+    annualPrice: 36000,
     effects: {
       creditRate: 0.05,
+      energyReduction: 0.3,
     },
   },
   ofd: {

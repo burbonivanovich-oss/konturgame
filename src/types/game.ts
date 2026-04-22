@@ -123,6 +123,7 @@ export interface Service {
     reputationBonus?: number
     loyaltyBonus?: number
     taxSaving?: number
+    energyReduction?: number
   }
 }
 
