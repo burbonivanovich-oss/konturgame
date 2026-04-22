@@ -88,7 +88,7 @@ const NAV_ITEMS: Array<{ n: string; g: string; view: ActiveView | null }> = [
 function LeftRail({
   currentDay, savedBalance, activeNav, activeCount,
   pendingEventCount, onNavClick, onHelp, onSettings,
-  onPromoWallet, promoCodesCount, highlightNav,
+  onPromoWallet, promoCodesCount, highlightNav, milestoneBadge,
 }: {
   currentDay: number
   savedBalance: number
@@ -101,6 +101,7 @@ function LeftRail({
   onPromoWallet: () => void
   promoCodesCount: number
   highlightNav?: string
+  milestoneBadge?: number
 }) {
   return (
     <aside style={{
@@ -134,7 +135,8 @@ function LeftRail({
           const isHighlighted = !isActive && highlightNav === item.n
           const badge =
             item.n === 'Дневной цикл' && pendingEventCount > 0 ? String(pendingEventCount) :
-            item.n === 'Экосистема' ? `${activeCount}/7` : undefined
+            item.n === 'Экосистема' ? `${activeCount}/7` :
+            item.n === 'Вехи' && milestoneBadge && milestoneBadge > 0 ? '🏆 NEW' : undefined
           return (
             <div
               key={item.n}
@@ -572,7 +574,14 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
     addSavedBalance, setTemporaryModifiers, advanceDay,
     weekPhase, completeActionsPhase, completeResultsPhase, completeSummaryPhase,
     onboardingStage, onboardingStepIndex, onboardingCompleted,
+    milestoneStatus,
   } = useGameStore()
+
+  // Track which milestones the player has seen (opened the Вехи tab after they fired)
+  const seenMilestonesRef = useRef({ week10: false, week20: false, week30: false })
+  const achievedCount = [milestoneStatus?.week10, milestoneStatus?.week20, milestoneStatus?.week30].filter(Boolean).length
+  const seenCount = [seenMilestonesRef.current.week10, seenMilestonesRef.current.week20, seenMilestonesRef.current.week30].filter(Boolean).length
+  const milestoneBadge = achievedCount - seenCount
 
   const activeServiceIds = Object.values(services).filter(s => s.isActive).map(s => s.id)
   const activeCount = activeServiceIds.length
@@ -642,6 +651,9 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       setShowAchievementsModal(true)
       return
     }
+    if (name === 'Вехи' && milestoneStatus) {
+      seenMilestonesRef.current = { ...milestoneStatus }
+    }
     const item = NAV_ITEMS.find(i => i.n === name)
     if (item?.view) setActiveView(item.view)
   }
@@ -668,6 +680,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
         onPromoWallet={() => setShowPromoWalletModal(true)}
         promoCodesCount={promoCodesRevealed?.length ?? 0}
         highlightNav={highlightNav}
+        milestoneBadge={milestoneBadge}
       />
 
       {activeView === 'dashboard' && (
