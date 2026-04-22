@@ -18,6 +18,8 @@ import MicroEventModal from './modals/MicroEventModal'
 import HireEmployeeModal from './modals/HireEmployeeModal'
 import SupplierModal from './modals/SupplierModal'
 import { DesktopRecap } from './design-system/DesktopRecap'
+import { WeekSummaryOverlay } from './WeekSummaryOverlay'
+import { WeekResultsOverlay } from './WeekResultsOverlay'
 import { DesktopKontur } from './design-system/DesktopKontur'
 import { WarehouseView } from './views/WarehouseView'
 import { MarketingView } from './views/MarketingView'
@@ -513,6 +515,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
     isGameOver, isVictory, savedBalance, promoCodesRevealed,
     addBalance, addReputation, addLoyalty, markEventAsResolved, activateService,
     addSavedBalance, setTemporaryModifiers, advanceDay,
+    weekPhase, completeActionsPhase, completeResultsPhase, completeSummaryPhase,
   } = useGameStore()
 
   const activeServiceIds = Object.values(services).filter(s => s.isActive).map(s => s.id)
@@ -560,13 +563,10 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       setTimeout(() => setDayBlockedMsg(null), 2500)
       return
     }
-    const result = advanceDay()
+    const result = completeActionsPhase()
     if (result.blocked) {
-      setDayBlockedMsg(result.reason ?? 'День заблокирован')
+      setDayBlockedMsg(result.reason ?? 'Действие заблокировано')
       setTimeout(() => setDayBlockedMsg(null), 2500)
-    } else {
-      setActiveView('recap')
-      setActiveNav('Дневной цикл')
     }
   }
 
@@ -677,6 +677,14 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       <MicroEventModal />
       <VictoryModal isOpen={isVictory} type="victory" />
       <VictoryModal isOpen={isGameOver && !isVictory} type="defeat" />
+
+      {/* 4-phase weekly cycle overlays */}
+      {weekPhase === 'summary' && !isGameOver && !isVictory && (
+        <WeekSummaryOverlay onStart={completeSummaryPhase} />
+      )}
+      {weekPhase === 'results' && !isGameOver && !isVictory && (
+        <WeekResultsOverlay onContinue={completeResultsPhase} />
+      )}
 
       {/* Savings toast */}
       {savingsToast !== null && (

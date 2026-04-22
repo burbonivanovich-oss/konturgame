@@ -10,6 +10,8 @@ export type SupplierTier = 'economy' | 'standard' | 'premium'
 
 export type EmployeePosition = 'cashier' | 'assistant' | 'manager' | 'specialist' | 'supervisor' | 'trainer'
 
+export type WeekPhase = 'summary' | 'actions' | 'events' | 'results'
+
 export interface CashRegister {
   type: CashRegisterType
   count: number
@@ -323,6 +325,9 @@ export interface GameState {
   daysReputationZero: number
   daysSinceLastMonthly: number
   purchaseOfferedThisDay: boolean
+
+  // 4-phase weekly cycle
+  weekPhase: WeekPhase
 
   // Week-based counters
   weeklyEnergyRestored: boolean  // Track if energy was restored this week

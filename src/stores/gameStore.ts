@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type {
   GameState, BusinessType, ServiceType, Service, DayResult, Event,
   AdCampaign, StockBatch, CashRegisterType, CashRegister, OnboardingStage,
-  CampaignROI, MilestoneStatus,
+  CampaignROI, MilestoneStatus, WeekPhase,
 } from '../types/game'
 import { SERVICES_CONFIG, BUSINESS_CONFIGS, ECONOMY_CONSTANTS } from '../constants/business'
 import { SERVICE_UNLOCK_MAP } from '../constants/onboarding'
@@ -105,6 +105,9 @@ const createInitialState = (businessType: BusinessType): GameState => {
     // Bundle promo
     bundlePromoShown: false,
 
+    // 4-phase weekly cycle (week 1 starts in actions — no prior summary to show)
+    weekPhase: 'actions' as const,
+
     // Week energy restore
     weeklyEnergyRestored: false,
 
@@ -146,6 +149,11 @@ interface GameStoreActions {
   nextDay: () => void
   advanceDay: () => { blocked: boolean; reason?: string }
   advanceWeek: () => { blocked: boolean; reason?: string }
+
+  // 4-phase weekly cycle
+  completeActionsPhase: () => { blocked: boolean; reason?: string }
+  completeResultsPhase: () => void
+  completeSummaryPhase: () => void
 
   // Balance and metrics
   setBalance: (amount: number) => void
@@ -319,6 +327,35 @@ export const useGameStore = create<GameStore>((set, get) => ({
       processWeek(stateCopy)
       set({ ...stateCopy })
       return { blocked: false }
+    },
+
+    // 4-phase weekly cycle actions
+    completeActionsPhase: () => {
+      const store = get()
+      const stateCopy = JSON.parse(JSON.stringify(extractState(store))) as GameState
+      const { blocked, reason } = checkWeekBlocked(stateCopy)
+      if (blocked) return { blocked: true, reason }
+      processWeek(stateCopy)
+      const hasPendingEvents = (stateCopy.pendingEventsQueue?.length ?? 0) > 0 || stateCopy.pendingEvent !== null
+      stateCopy.weekPhase = (hasPendingEvents ? 'events' : 'results') as WeekPhase
+      set({ ...stateCopy })
+      return { blocked: false }
+    },
+
+    completeResultsPhase: () => {
+      set({
+        weekPhase: 'summary' as WeekPhase,
+        entrepreneurEnergy: ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY,
+        weeklyEnergyRestored: true,
+        lastUpdated: Date.now(),
+      })
+    },
+
+    completeSummaryPhase: () => {
+      set({
+        weekPhase: 'actions' as WeekPhase,
+        lastUpdated: Date.now(),
+      })
     },
 
     // Balance and metrics
@@ -545,12 +582,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       set((state) => {
         const queue = state.pendingEventsQueue ?? []
         const nextEvent = queue.length > 0 ? queue[0] : null
+        const allCleared = nextEvent === null
         return {
           triggeredEventIds: state.triggeredEventIds.includes(eventId)
             ? state.triggeredEventIds
             : [...state.triggeredEventIds, eventId],
           pendingEvent: nextEvent,
           pendingEventsQueue: queue.slice(1),
+          weekPhase: (allCleared && state.weekPhase === 'events' ? 'results' : state.weekPhase) as WeekPhase,
           lastUpdated: Date.now(),
         }
       })
@@ -1041,7 +1080,7 @@ function extractState(state: any): GameState {
     isGameOver, isVictory, gameOverReason, consecutiveOverloadDays, daysReputationZero,
     daysSinceLastMonthly, purchaseOfferedThisDay, activeAdCampaigns, purchasedUpgrades,
     temporaryClientMod, temporaryCheckMod, temporaryModDaysLeft, createdAt, lastUpdated,
-    hadLowReputation, consecutiveNoExpiry, weeklyEnergyRestored,
+    hadLowReputation, consecutiveNoExpiry, weeklyEnergyRestored, weekPhase,
     // Legacy fields for migration
     currentDay,
     // New fields
@@ -1077,6 +1116,7 @@ function extractState(state: any): GameState {
     hadLowReputation: hadLowReputation ?? false,
     consecutiveNoExpiry: consecutiveNoExpiry ?? 0,
     weeklyEnergyRestored: weeklyEnergyRestored ?? false,
+    weekPhase: (weekPhase ?? 'actions') as WeekPhase,
     // New fields with migration defaults
     onboardingStage: onboardingStage ?? 0,
     onboardingCompleted: onboardingCompleted ?? false,
