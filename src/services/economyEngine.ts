@@ -99,17 +99,8 @@ export function calculateMonthlyExpenses(state: GameState): number {
   if (state.purchasedUpgrades?.includes('hall-expansion')) rent += 15000
   if (state.purchasedUpgrades?.includes('hire-admin')) salary += 5000
 
-  let subscriptions = 0
-  if (state.services) {
-    for (const key of Object.keys(state.services)) {
-      const service = state.services[key as keyof typeof state.services]
-      if (service?.isActive) {
-        subscriptions += service.annualPrice / 12  // Месячная часть от годовой подписки
-      }
-    }
-  }
-
-  return rent + salary + subscriptions
+  // Subscriptions are already charged daily via calculateDailySubscriptions — do NOT add them here
+  return rent + salary
 }
 
 export function buildModifiers(state: GameState): Modifiers {

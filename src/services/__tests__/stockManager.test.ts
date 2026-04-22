@@ -78,7 +78,8 @@ describe('addStock', () => {
     expect(state.stockBatches).toHaveLength(1)
     expect(state.stockBatches[0].quantity).toBe(100)
     expect(state.stockBatches[0].costPerUnit).toBe(5)
-    expect(state.stockBatches[0].dayReceived).toBe(1)
+    // dayReceived = currentWeek * 7 + dayOfWeek = 1*7+0 = 7
+    expect(state.stockBatches[0].dayReceived).toBe(7)
     expect(state.stockBatches[0].expirationDays).toBe(10) // shop default
   })
 
@@ -188,8 +189,9 @@ describe('checkExpiry', () => {
 
   it('does not expire fresh batches', () => {
     const state = makeState({ currentWeek: 5 })
+    // currentWeek=5, dayOfWeek=0 → currentDay=35; dayReceived=30 → age=5 < 10 → fresh
     state.stockBatches = [
-      { id: 'b1', quantity: 50, costPerUnit: 5, dayReceived: 1, expirationDays: 10 },
+      { id: 'b1', quantity: 50, costPerUnit: 5, dayReceived: 30, expirationDays: 10 },
     ]
     const result = checkExpiry(state)
     expect(result.expired).toBe(0)

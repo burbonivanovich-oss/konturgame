@@ -168,33 +168,36 @@ describe('calculateClients', () => {
 })
 
 describe('calculateCapacity', () => {
+  // Shop base capacity from BUSINESS_CONFIGS = 35
+  const BASE = 35
+
   it('base capacity for shop without services', () => {
     const state = makeState()
-    expect(calculateCapacity(state)).toBe(60)
+    expect(calculateCapacity(state)).toBe(BASE)
   })
 
   it('adds market bonus', () => {
     const state = makeState({
       services: {
-        market: { id: 'market', name: '', description: '', annualPrice: 24000, isActive: true, effects: {} },
+        market: { id: 'market', name: '', description: '', annualPrice: 48000, isActive: true, effects: {} },
       } as GameState['services'],
     })
-    expect(calculateCapacity(state)).toBe(Math.round(60 * 1.2))
+    expect(calculateCapacity(state)).toBe(Math.round(BASE * 1.2))
   })
 
   it('adds loyalty > 80 bonus', () => {
     const state = makeState({ loyalty: 85 })
-    expect(calculateCapacity(state)).toBe(Math.round(60 * 1.1))
+    expect(calculateCapacity(state)).toBe(Math.round(BASE * 1.1))
   })
 
   it('applies loyalty < 30 penalty', () => {
     const state = makeState({ loyalty: 20 })
-    expect(calculateCapacity(state)).toBe(Math.round(60 * 0.85))
+    expect(calculateCapacity(state)).toBe(Math.round(BASE * 0.85))
   })
 
   it('adds hall-expansion upgrade', () => {
     const state = makeState({ purchasedUpgrades: ['hall-expansion'] })
-    expect(calculateCapacity(state)).toBe(Math.round(60 * (1 + 0.4)))
+    expect(calculateCapacity(state)).toBe(Math.round(BASE * (1 + 0.4)))
   })
 })
 
@@ -258,18 +261,27 @@ describe('calculateDailySubscriptions', () => {
 describe('calculateMonthlyExpenses', () => {
   it('returns rent + salary for shop with no upgrades', () => {
     const state = makeState()
-    // 15000 rent + 20000 salary = 35000
-    expect(calculateMonthlyExpenses(state)).toBe(35000)
+    // shop: 50000 rent + 40000 salary = 90000 (subscriptions excluded — charged daily)
+    expect(calculateMonthlyExpenses(state)).toBe(90000)
   })
 
   it('adds hall-expansion rent increase', () => {
     const state = makeState({ purchasedUpgrades: ['hall-expansion'] })
-    expect(calculateMonthlyExpenses(state)).toBe(35000 + 15000)
+    expect(calculateMonthlyExpenses(state)).toBe(90000 + 15000)
   })
 
   it('adds hire-admin salary increase', () => {
     const state = makeState({ purchasedUpgrades: ['hire-admin'] })
-    expect(calculateMonthlyExpenses(state)).toBe(35000 + 5000)
+    expect(calculateMonthlyExpenses(state)).toBe(90000 + 5000)
+  })
+
+  it('does NOT include active service subscriptions (charged daily instead)', () => {
+    const state = makeState({
+      services: {
+        bank: { id: 'bank', name: '', description: '', annualPrice: 36000, isActive: true, effects: {} },
+      } as GameState['services'],
+    })
+    expect(calculateMonthlyExpenses(state)).toBe(90000)
   })
 })
 

@@ -8,7 +8,7 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
       description: 'Крупы, консервы, макароны. Простой старт без требований.',
       margin: 0.15,
       dailyCost: 500,
-      baseRevenue: 3500,
+      baseRevenue: 5500,
       requiredServices: [],
       icon: '🏪',
     },
@@ -181,6 +181,6 @@ export function calculateCategoryRevenue(state: GameState): CategoryRevenueResul
 export function getDefaultCategories(businessType: BusinessType): string[] {
   const cats = PRODUCT_CATEGORIES[businessType]
   if (!cats || cats.length === 0) return []
-  // Start with just the first (basic) category enabled by default
-  return [cats[0].id]
+  // Enable all categories that require no services by default
+  return cats.filter(c => c.requiredServices.length === 0).map(c => c.id)
 }

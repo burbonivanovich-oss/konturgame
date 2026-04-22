@@ -18,16 +18,17 @@ describe('MainScreen Integration', () => {
   it('should have KPI values from store', () => {
     const state = useGameStore.getState()
     expect(state.currentWeek).toBe(1)
-    expect(state.balance).toBe(50000)
+    expect(state.balance).toBe(80000)
   })
 
   it('should update services', () => {
     const state = useGameStore.getState()
-    const initialMarketActive = state.services.market.isActive
+    // Bank is unlocked at onboarding stage 0 (default)
+    const initialBankActive = state.services.bank.isActive
 
-    state.toggleService('market')
+    state.toggleService('bank')
     const newState = useGameStore.getState()
-    expect(newState.services.market.isActive).not.toBe(initialMarketActive)
+    expect(newState.services.bank.isActive).not.toBe(initialBankActive)
   })
 
   it('should track next day button state', () => {

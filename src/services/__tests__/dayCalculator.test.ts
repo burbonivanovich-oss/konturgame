@@ -65,16 +65,14 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
 }
 
 describe('checkDayBlocked', () => {
-  it('not blocked for cafe with stock (no hasStock)', () => {
-    const state = makeState({ businessType: 'cafe' })
-    addStock(state, 200, 3)
+  it('not blocked when onboarding complete (cafe)', () => {
+    const state = makeState({ businessType: 'cafe', onboardingCompleted: true })
     const result = checkDayBlocked(state)
     expect(result.blocked).toBe(false)
   })
 
   it('blocked when pending event exists', () => {
-    const state = makeState()
-    addStock(state, 200, 5)
+    const state = makeState({ onboardingCompleted: true })
     state.pendingEvent = {
       id: 'EVT',
       day: 1,
@@ -88,23 +86,21 @@ describe('checkDayBlocked', () => {
     expect(result.reason).toContain('событие')
   })
 
-  it('blocked when shop has no stock', () => {
-    const state = makeState({ businessType: 'shop' })
-    // No stock added
+  it('blocked when bank not activated (onboarding stage 0)', () => {
+    const state = makeState({ businessType: 'shop', onboardingStage: 0, onboardingCompleted: false })
     const result = checkDayBlocked(state)
     expect(result.blocked).toBe(true)
-    expect(result.reason).toContain('пуст')
+    expect(result.reason).toContain('Банк')
   })
 
-  it('not blocked when shop has stock', () => {
-    const state = makeState({ businessType: 'shop' })
-    addStock(state, 200, 5)
+  it('not blocked when onboarding complete (shop)', () => {
+    const state = makeState({ businessType: 'shop', onboardingCompleted: true })
     const result = checkDayBlocked(state)
     expect(result.blocked).toBe(false)
   })
 
-  it('not blocked for beauty-salon (no stock needed)', () => {
-    const state = makeState({ businessType: 'beauty-salon' })
+  it('not blocked when onboarding complete (beauty-salon)', () => {
+    const state = makeState({ businessType: 'beauty-salon', onboardingCompleted: true })
     const result = checkDayBlocked(state)
     expect(result.blocked).toBe(false)
   })
@@ -146,36 +142,29 @@ describe('processDay', () => {
     vi.restoreAllMocks()
   })
 
-  it('consumes stock for shop', () => {
+  it('does not consume raw stock batches for assortment-based shop', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.99)
     const state = makeState({ businessType: 'shop' })
     addStock(state, 200, 5)
-    const stockBefore = 200
     processDay(state)
-    expect(state.stockBatches.reduce((s, b) => s + b.quantity, 0)).toBeLessThan(stockBefore)
+    // Shop uses assortment system, raw stock batches are not consumed via FIFO
+    expect(state.stockBatches.reduce((s, b) => s + b.quantity, 0)).toBe(200)
     vi.restoreAllMocks()
   })
 
-  it('sets isGameOver when balance goes negative', () => {
+  it('sets isGameOver when balance stays negative for 3 consecutive days', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.99)
-    const state = makeState({
-      businessType: 'beauty-salon',
-      balance: -1, // already negative
-    })
-    // Since processDay doesn't block on negative balance before starting, force bankruptcy check
-    // We actually need balance to go negative AFTER calculations
-    // Let's create a state where monthly expenses exceed balance
+    // Pre-set daysBalanceNegative: 2 so one more negative-balance day triggers bankruptcy
     const poorState = makeState({
       businessType: 'beauty-salon',
       balance: 1,
       daysSinceLastMonthly: 30,
+      daysBalanceNegative: 2,
     })
     processDay(poorState)
-    // Monthly expenses = 35000, balance = 1, so will go negative
-    if (poorState.balance < 0) {
-      expect(poorState.isGameOver).toBe(true)
-      expect(poorState.gameOverReason).toBe('bankruptcy')
-    }
+    // Monthly expenses (115000) exceed balance (1), goes negative → daysBalanceNegative = 3 → game over
+    expect(poorState.isGameOver).toBe(true)
+    expect(poorState.gameOverReason).toBe('bankruptcy')
     vi.restoreAllMocks()
   })
 

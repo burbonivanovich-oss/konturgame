@@ -96,6 +96,8 @@ export function processWeek(state: GameState): DayResult {
 
   // Process each day of the week (7 iterations)
   for (let dayNum = 0; dayNum < 7; dayNum++) {
+    // Track actual day-of-week so pain triggers fire at most once per N-day cycle
+    state.dayOfWeek = dayNum
     const modifiers = buildModifiers(state)
     const synergyMods = calculateSynergyModifiers(state)
 

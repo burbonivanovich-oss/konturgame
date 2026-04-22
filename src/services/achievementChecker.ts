@@ -9,8 +9,9 @@ const ACHIEVEMENT_CHECKS: Record<string, CheckFn> = {
   first_day: (s) => s.currentWeek >= 1,
   week_done: (s) => s.currentWeek >= 2,
   month_done: (s) => s.currentWeek >= 5,
-  profitable_week: (_, r) => (r?.netProfit ?? 0) > 0,
-  big_profit: (_, r) => (r?.netProfit ?? 0) >= 100000,  // Weekly instead of daily
+  profitable_day: (_, r) => (r?.netProfit ?? 0) > 0,
+  perfect_day: (_, r) => (r?.missed ?? 1) === 0 && (r?.clients ?? 0) > 0,
+  big_profit: (_, r) => (r?.netProfit ?? 0) >= 100000,
   millionaire: (s) => s.balance >= 1000000,
   high_rep: (s) => s.reputation >= 90,
   loyal_staff: (s) => s.loyalty >= 90,
