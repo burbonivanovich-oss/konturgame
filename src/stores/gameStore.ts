@@ -374,8 +374,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
         weeklyBonus += sub.energyPerWeek
       }
 
+      // Partial restoration: +40 per week (not full reset).
+      // Sustained overwork with many employees will gradually drain energy to 0.
+      const currentEnergy = get().entrepreneurEnergy
       const restoredEnergy = Math.min(
-        ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY + weeklyBonus,
+        currentEnergy + 40 + weeklyBonus,
         ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY + 30  // absolute cap
       )
 
@@ -1026,6 +1029,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     takeLoan: (amount: number, type: 'micro' | 'standard' | 'long-term') => {
       const state = get()
 
+      // Max 1 active loan at a time
+      const activeLoans = (state.loans ?? []).filter(l => !l.isRepaid)
+      if (activeLoans.length >= 1) return false
+
       // Loan parameters
       const params = {
         micro: { weeks: 2, weeklyRate: 0.15 / 2 },      // 15% total over 2 weeks
@@ -1060,28 +1067,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (state.balance < amount) return false
 
       set((s) => {
-        const loans = [...(s.loans || [])]
-        const loanIndex = loans.findIndex(l => l.id === loanId)
-        if (loanIndex === -1) return s
-
-        const updatedLoan = { ...loans[loanIndex] }
-        const principalLeft = updatedLoan.amount - updatedLoan.totalInterestPaid
-        const interestThisPayment = Math.min(
-          amount * updatedLoan.weeklyInterest,
-          principalLeft * updatedLoan.weeklyInterest
+        const loans = (s.loans || []).map(l =>
+          l.id === loanId ? { ...l, isRepaid: true } : l
         )
-
-        updatedLoan.totalInterestPaid += interestThisPayment
-        if (updatedLoan.totalInterestPaid >= updatedLoan.amount) {
-          updatedLoan.isRepaid = true
-        }
-
-        loans[loanIndex] = updatedLoan
-        return {
-          loans,
-          balance: s.balance - amount,
-          lastUpdated: Date.now(),
-        }
+        return { loans, balance: s.balance - amount, lastUpdated: Date.now() }
       })
       return true
     },

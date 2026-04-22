@@ -1,4 +1,5 @@
 import { useGameStore } from '../../stores/gameStore'
+import { ECONOMY_CONSTANTS } from '../../constants/business'
 
 interface DesktopRecapProps {
   onContinue?: () => void
@@ -10,7 +11,7 @@ export function DesktopRecap({ onContinue, embedded = false }: DesktopRecapProps
 
   if (!lastDayResult) return null
 
-  const goalAmount = 1_000_000
+  const goalAmount = ECONOMY_CONSTANTS.GOAL_AMOUNT
   const toGoalPercent = Math.min((balance / goalAmount) * 100, 100)
 
   // Estimate "without Kontour" for comparison

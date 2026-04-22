@@ -1,9 +1,31 @@
 import { useGameStore } from '../../stores/gameStore'
+import type { Loan } from '../../types/game'
+import { ECONOMY_CONSTANTS } from '../../constants/business'
+
+function calcTotalOwed(loan: Loan): number {
+  const weeks = loan.dueWeek - loan.borrowedWeek
+  return Math.round(loan.amount * (1 + loan.weeklyInterest * weeks))
+}
+
+const LOAN_LABELS: Record<Loan['type'], string> = {
+  micro: 'Микрозайм',
+  standard: 'Стандартный',
+  'long-term': 'Долгосрочный',
+}
+
+const LOAN_OPTIONS: Array<{ type: Loan['type']; amount: number; label: string; weeks: number; rate: string }> = [
+  { type: 'micro', amount: 50000, label: '50 000 ₽ · 2 нед · 15%', weeks: 2, rate: '15%' },
+  { type: 'standard', amount: 100000, label: '100 000 ₽ · 4 нед · 10%', weeks: 4, rate: '10%' },
+  { type: 'long-term', amount: 200000, label: '200 000 ₽ · 12 нед · 8%', weeks: 12, rate: '8%' },
+]
 
 export function FinanceView() {
-  const { balance, savedBalance, lastDayResult, services, currentWeek } = useGameStore()
+  const { balance, savedBalance, lastDayResult, services, currentWeek, loans, takeLoan, repayLoan } = useGameStore()
 
-  const goalAmount = 1_000_000
+  const activeLoans = (loans ?? []).filter(l => !l.isRepaid)
+  const bankActive = services?.bank?.isActive ?? false
+
+  const goalAmount = ECONOMY_CONSTANTS.GOAL_AMOUNT
   const toGoalPct = Math.min((balance / goalAmount) * 100, 100)
   const activeServices = Object.values(services).filter(s => s.isActive)
   const yearlySubscription = activeServices.reduce((s, svc) => s + (svc.annualPrice ?? 0), 0)
@@ -229,6 +251,96 @@ export function FinanceView() {
             {yearlySubscription > 0 && savedBalance > 0 && (
               <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.65, marginTop: 4 }}>
                 ROI ×{(savedBalance / yearlySubscription).toFixed(1)} от стоимости подписки
+              </div>
+            )}
+          </div>
+
+          {/* Loans */}
+          <div style={{ background: '#fff', borderRadius: 20, padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.4 }}>
+              ЗАЙМЫ · КОНТУР.БАНК
+            </div>
+
+            {/* Active loans */}
+            {activeLoans.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {activeLoans.map(loan => {
+                  const totalOwed = calcTotalOwed(loan)
+                  const weeksLeft = Math.max(0, loan.dueWeek - currentWeek)
+                  const overdue = weeksLeft === 0
+                  return (
+                    <div key={loan.id} style={{
+                      borderRadius: 12, padding: 12,
+                      background: overdue ? 'rgba(220,50,50,0.06)' : 'var(--k-surface)',
+                      border: `1px solid ${overdue ? 'rgba(220,50,50,0.3)' : 'var(--k-ink-10)'}`,
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 700 }}>{LOAN_LABELS[loan.type]}</div>
+                          <div style={{ fontSize: 10, opacity: 0.55, marginTop: 1 }}>
+                            {overdue ? '⚠️ Просрочен' : `Осталось ${weeksLeft} нед.`}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: 12, fontWeight: 800, color: overdue ? 'var(--k-bad)' : 'var(--k-ink)' }} className="k-num">
+                            {totalOwed.toLocaleString('ru-RU')} ₽
+                          </div>
+                          <div style={{ fontSize: 10, opacity: 0.45 }}>к возврату</div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => repayLoan(loan.id, totalOwed)}
+                        disabled={balance < totalOwed}
+                        style={{
+                          width: '100%', padding: '7px', borderRadius: 8, fontSize: 11, fontWeight: 700,
+                          background: balance >= totalOwed ? 'var(--k-blue)' : 'var(--k-ink-10)',
+                          color: balance >= totalOwed ? '#fff' : 'var(--k-ink-50)',
+                          border: 'none', cursor: balance >= totalOwed ? 'pointer' : 'not-allowed',
+                          transition: 'opacity 0.2s',
+                        }}
+                        onMouseEnter={e => { if (balance >= totalOwed) e.currentTarget.style.opacity = '0.8' }}
+                        onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
+                      >
+                        Погасить {totalOwed.toLocaleString('ru-RU')} ₽
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Take new loan — only if bank connected and no active loan */}
+            {bankActive ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {activeLoans.length === 0 ? (
+                  <>
+                    <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.5, letterSpacing: '0.05em' }}>ВЗЯТЬ ЗАЙМ</div>
+                    {LOAN_OPTIONS.map(opt => (
+                      <button
+                        key={opt.type}
+                        onClick={() => takeLoan(opt.amount, opt.type)}
+                        style={{
+                          width: '100%', padding: '9px 12px', borderRadius: 10, fontSize: 11, fontWeight: 700,
+                          background: 'var(--k-surface)', color: 'var(--k-blue)',
+                          border: '1px solid var(--k-blue)', cursor: 'pointer',
+                          textAlign: 'left', transition: 'opacity 0.2s',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.opacity = '0.75' }}
+                        onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <div style={{ fontSize: 11, opacity: 0.5, lineHeight: 1.5 }}>
+                    Погасите текущий займ, чтобы взять новый
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ fontSize: 11, opacity: 0.45, lineHeight: 1.5 }}>
+                🏦 Подключите Контур.Банк, чтобы получить доступ к займам на выгодных условиях
               </div>
             )}
           </div>

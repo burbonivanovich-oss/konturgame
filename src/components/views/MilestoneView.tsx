@@ -1,106 +1,178 @@
-import React from 'react'
 import { useGameStore } from '../../stores/gameStore'
 import { getMilestoneProgress } from '../../services/weekCalculator'
-import '../styles/MilestoneView.css'
 
-interface MilestoneGoal {
-  week: number
-  balanceTarget: number
-  profitTarget: number
-  achieved: boolean
-}
+const MILESTONES = [
+  {
+    key: 'week10' as const,
+    week: 10,
+    label: 'Первый квартал',
+    balanceTarget: 100_000,
+    profitTarget: 1_000,
+    icon: '🌱',
+  },
+  {
+    key: 'week20' as const,
+    week: 20,
+    label: 'Полгода работы',
+    balanceTarget: 250_000,
+    profitTarget: 5_000,
+    icon: '🚀',
+  },
+  {
+    key: 'week30' as const,
+    week: 30,
+    label: 'Три квартала',
+    balanceTarget: 500_000,
+    profitTarget: 10_000,
+    icon: '🏆',
+  },
+]
 
 export function MilestoneView() {
   const state = useGameStore()
   const milestones = getMilestoneProgress(state)
-
-  const goals: MilestoneGoal[] = [
-    {
-      week: 10,
-      balanceTarget: 100000,
-      profitTarget: 1000,
-      achieved: milestones.week10,
-    },
-    {
-      week: 20,
-      balanceTarget: 250000,
-      profitTarget: 5000,
-      achieved: milestones.week20,
-    },
-    {
-      week: 30,
-      balanceTarget: 500000,
-      profitTarget: 10000,
-      achieved: milestones.week30,
-    },
-  ]
-
-  const currentWeek = state.currentWeek
-  const currentBalance = state.balance
-  const lastWeeklyProfit = state.lastDayResult?.netProfit ?? 0
+  const { currentWeek, balance, lastDayResult } = state
+  const weeklyProfit = lastDayResult?.netProfit ?? 0
 
   return (
-    <div className="milestone-view">
-      <h2>Business Milestones</h2>
-      <div className="milestone-progress">
-        <div className="current-status">
-          <div className="status-card">
-            <div className="status-label">Current Week</div>
-            <div className="status-value">{currentWeek} / 52</div>
+    <div style={{
+      flex: 1, padding: '20px 24px', overflow: 'auto',
+      display: 'flex', flexDirection: 'column', gap: 12,
+      fontFamily: 'Manrope, sans-serif', color: 'var(--k-ink)', letterSpacing: '-0.01em',
+    }}>
+      {/* Header */}
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.45 }}>ПРОГРЕСС</div>
+        <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.025em' }}>Вехи</div>
+      </div>
+
+      {/* Current status strip */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+        <div style={{ background: '#fff', borderRadius: 16, padding: 16 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.4 }}>НЕДЕЛЯ</div>
+          <div style={{ fontSize: 26, fontWeight: 800, marginTop: 4 }}>{currentWeek}</div>
+        </div>
+        <div style={{ background: '#fff', borderRadius: 16, padding: 16 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.4 }}>БАЛАНС</div>
+          <div style={{ fontSize: 18, fontWeight: 800, marginTop: 4, color: 'var(--k-green)' }} className="k-num">
+            {balance.toLocaleString('ru-RU')} ₽
           </div>
-          <div className="status-card">
-            <div className="status-label">Current Balance</div>
-            <div className="status-value">${currentBalance.toLocaleString()}</div>
-          </div>
-          <div className="status-card">
-            <div className="status-label">Last Weekly Profit</div>
-            <div className={`status-value ${lastWeeklyProfit >= 0 ? 'positive' : 'negative'}`}>
-              ${lastWeeklyProfit.toLocaleString()}
-            </div>
+        </div>
+        <div style={{ background: '#fff', borderRadius: 16, padding: 16 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.4 }}>ПРИБЫЛЬ СЕГОДНЯ</div>
+          <div style={{
+            fontSize: 18, fontWeight: 800, marginTop: 4,
+            color: weeklyProfit >= 0 ? 'var(--k-green)' : 'var(--k-bad)',
+          }} className="k-num">
+            {weeklyProfit >= 0 ? '+' : ''}{weeklyProfit.toLocaleString('ru-RU')} ₽
           </div>
         </div>
       </div>
 
-      <div className="milestones-grid">
-        {goals.map((goal) => {
-          const balanceProgress = Math.min(100, (currentBalance / goal.balanceTarget) * 100)
-          const profitProgress = Math.min(100, (lastWeeklyProfit / goal.profitTarget) * 100)
-          const isCurrentWeekMilestone = currentWeek >= goal.week
+      {/* Milestone cards */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {MILESTONES.map(m => {
+          const achieved = milestones[m.key]
+          const isPast = currentWeek > m.week
+          const isCurrent = currentWeek >= m.week && !achieved
+
+          const balancePct = Math.min(100, Math.round((balance / m.balanceTarget) * 100))
+          const profitPct = Math.min(100, Math.round((weeklyProfit / m.profitTarget) * 100))
+
+          let borderColor = 'var(--k-ink-10)'
+          let bg = '#fff'
+          if (achieved) { borderColor = 'var(--k-green)'; bg = 'rgba(0,180,120,0.04)' }
+          else if (isCurrent) { borderColor = 'var(--k-orange)'; bg = 'rgba(255,107,0,0.04)' }
 
           return (
-            <div key={goal.week} className={`milestone-card ${goal.achieved ? 'achieved' : ''}`}>
-              <div className="milestone-header">
-                <h3>Week {goal.week}</h3>
-                {goal.achieved && <span className="achievement-badge">✓ Achieved</span>}
+            <div key={m.key} style={{
+              background: bg,
+              border: `1.5px solid ${borderColor}`,
+              borderRadius: 20, padding: 18,
+              display: 'flex', flexDirection: 'column', gap: 12,
+            }}>
+              {/* Card header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 14, flexShrink: 0,
+                  background: achieved ? 'var(--k-green)' : isCurrent ? 'var(--k-orange)' : 'var(--k-ink-10)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 22,
+                  filter: (!achieved && !isCurrent) ? 'grayscale(1)' : 'none',
+                  opacity: (!achieved && !isCurrent) ? 0.5 : 1,
+                }}>
+                  {m.icon}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800 }}>{m.label}</div>
+                  <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.5, marginTop: 1 }}>
+                    Неделя {m.week}
+                  </div>
+                </div>
+                {achieved ? (
+                  <div style={{
+                    fontSize: 11, fontWeight: 800, padding: '4px 10px', borderRadius: 8,
+                    background: 'var(--k-green)', color: '#fff',
+                  }}>
+                    ✓ Выполнено
+                  </div>
+                ) : isPast ? (
+                  <div style={{
+                    fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 8,
+                    background: 'var(--k-ink-10)', color: 'var(--k-ink-50)',
+                  }}>
+                    Не достигнута
+                  </div>
+                ) : (
+                  <div style={{
+                    fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 8,
+                    background: 'var(--k-orange)', color: '#fff',
+                    opacity: isCurrent ? 1 : 0.5,
+                  }}>
+                    {isCurrent ? 'Проверяется' : `Через ${m.week - currentWeek} нед.`}
+                  </div>
+                )}
               </div>
 
-              <div className="milestone-goals">
-                <div className="goal">
-                  <div className="goal-label">Balance: ${goal.balanceTarget.toLocaleString()}</div>
-                  <div className="progress-bar">
-                    <div
-                      className="progress-fill"
-                      style={{ width: `${balanceProgress}%` }}
-                    />
-                  </div>
-                  <div className="progress-text">${currentBalance.toLocaleString()}</div>
-                </div>
-
-                <div className="goal">
-                  <div className="goal-label">Weekly Profit: ${goal.profitTarget.toLocaleString()}</div>
-                  <div className="progress-bar">
-                    <div
-                      className="progress-fill"
-                      style={{ width: `${profitProgress}%` }}
-                    />
-                  </div>
-                  <div className="progress-text">${lastWeeklyProfit.toLocaleString()}</div>
-                </div>
+              {/* Targets */}
+              <div style={{
+                fontSize: 11, fontWeight: 700, opacity: 0.55,
+                background: 'var(--k-surface)', borderRadius: 10, padding: '8px 12px',
+              }}>
+                Условие: баланс ≥ {m.balanceTarget.toLocaleString('ru-RU')} ₽ &nbsp;ИЛИ&nbsp; прибыль ≥ {m.profitTarget.toLocaleString('ru-RU')} ₽ за день
               </div>
 
-              {!goal.achieved && isCurrentWeekMilestone && (
-                <div className="milestone-status">
-                  Available this week
+              {/* Progress bars — only when not yet achieved */}
+              {!achieved && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {/* Balance progress */}
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 11, fontWeight: 600, opacity: 0.6 }}>
+                      <span>Баланс</span>
+                      <span className="k-num">{balance.toLocaleString('ru-RU')} / {m.balanceTarget.toLocaleString('ru-RU')} ₽ · {balancePct}%</span>
+                    </div>
+                    <div style={{ height: 6, background: 'var(--k-ink-10)', borderRadius: 999, overflow: 'hidden' }}>
+                      <div style={{
+                        width: `${balancePct}%`, height: '100%', borderRadius: 999,
+                        background: balancePct >= 100 ? 'var(--k-green)' : 'var(--k-blue)',
+                        transition: 'width 0.4s',
+                      }} />
+                    </div>
+                  </div>
+                  {/* Profit progress */}
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 11, fontWeight: 600, opacity: 0.6 }}>
+                      <span>Дневная прибыль</span>
+                      <span className="k-num">{weeklyProfit.toLocaleString('ru-RU')} / {m.profitTarget.toLocaleString('ru-RU')} ₽ · {Math.max(0, profitPct)}%</span>
+                    </div>
+                    <div style={{ height: 6, background: 'var(--k-ink-10)', borderRadius: 999, overflow: 'hidden' }}>
+                      <div style={{
+                        width: `${Math.max(0, profitPct)}%`, height: '100%', borderRadius: 999,
+                        background: profitPct >= 100 ? 'var(--k-green)' : 'var(--k-orange)',
+                        transition: 'width 0.4s',
+                      }} />
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -108,8 +180,8 @@ export function MilestoneView() {
         })}
       </div>
 
-      <div className="milestone-info">
-        <p>Achieve either balance OR weekly profit target to earn the milestone!</p>
+      <div style={{ fontSize: 11, opacity: 0.4, textAlign: 'center', paddingBottom: 8 }}>
+        Достаточно выполнить одно из двух условий каждой вехи
       </div>
     </div>
   )
