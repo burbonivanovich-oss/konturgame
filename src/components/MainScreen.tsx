@@ -309,7 +309,7 @@ function DashboardView({
   const {
     currentWeek, balance, reputation, loyalty, services,
     pendingEvent, pendingEventsQueue, lastDayResult, savedBalance,
-    entrepreneurEnergy,
+    entrepreneurEnergy, npcs,
   } = useGameStore()
 
   const incomeSparkData = Array.from({ length: 10 }, (_, i) => Math.sin(i * 0.8) * 20 + 30)
