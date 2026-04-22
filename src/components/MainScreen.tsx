@@ -17,7 +17,6 @@ import BundleModal from './modals/BundleModal'
 import MicroEventModal from './modals/MicroEventModal'
 import HireEmployeeModal from './modals/HireEmployeeModal'
 import SupplierModal from './modals/SupplierModal'
-import { DesktopRecap } from './design-system/DesktopRecap'
 import { WeekSummaryOverlay } from './WeekSummaryOverlay'
 import { WeekResultsOverlay } from './WeekResultsOverlay'
 import { DesktopKontur } from './design-system/DesktopKontur'
@@ -31,7 +30,7 @@ import { CampaignROIView } from './views/CampaignROIView'
 import { MilestoneView } from './views/MilestoneView'
 import { useGameStore } from '../stores/gameStore'
 
-type ActiveView = 'dashboard' | 'recap' | 'ecosystem' | 'warehouse' | 'marketing' | 'finance' | 'reputation' | 'operations' | 'statistics' | 'campaigns' | 'milestones'
+type ActiveView = 'dashboard' | 'ecosystem' | 'warehouse' | 'marketing' | 'finance' | 'reputation' | 'operations' | 'statistics' | 'campaigns' | 'milestones'
 
 function Spark({ data, color = 'currentColor', fill = false }: { data: number[]; color?: string; fill?: boolean }) {
   const w = 100, h = 32
@@ -580,11 +579,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
     if (item?.view) setActiveView(item.view)
   }
 
-  const handleRecapContinue = () => {
-    setActiveView('dashboard')
-    setActiveNav('Дневной цикл')
-  }
-
   return (
     <div style={{
       width: '100%', minHeight: '100vh',
@@ -622,12 +616,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
           setShowCashRegisterModal={setShowCashRegisterModal}
           handleEventOption={handleEventOption}
         />
-      )}
-
-      {activeView === 'recap' && (
-        <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-          <DesktopRecap embedded onContinue={handleRecapContinue} />
-        </div>
       )}
 
       {activeView === 'ecosystem' && (

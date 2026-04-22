@@ -559,15 +559,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // Upgrades
     purchaseUpgrade: (upgradeId) => {
-      set((state) => {
-        if (state.purchasedUpgrades.includes(upgradeId)) {
-          return { lastUpdated: Date.now() }
-        }
-        return {
-          purchasedUpgrades: [...state.purchasedUpgrades, upgradeId],
-          lastUpdated: Date.now(),
-        }
-      })
+      const state = get()
+      if (state.purchasedUpgrades.includes(upgradeId)) return
+      get().spendEnergy(ECONOMY_CONSTANTS.ENERGY_COST_PURCHASE)
+      set((s) => ({
+        purchasedUpgrades: [...s.purchasedUpgrades, upgradeId],
+        lastUpdated: Date.now(),
+      }))
     },
 
     // Events
@@ -944,6 +942,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // Employees
     hireEmployee: (position: any, name: string, salary: number) => {
+      get().spendEnergy(ECONOMY_CONSTANTS.ENERGY_COST_BASE_OPERATION)
       set((state) => ({
         employees: [...state.employees, {
           id: `emp_${Date.now()}`,
