@@ -1,28 +1,31 @@
 import { useGameStore } from '../stores/gameStore'
 import { useMemo } from 'react'
-import { Spark } from './design-system'
+import { ECONOMY_CONSTANTS } from '../constants/business'
 
 export default function KPIPanel() {
   const state = useGameStore()
   const lastResult = state.lastDayResult
-  const { qualityLevel, entrepreneurEnergy } = state
+  const { qualityLevel, entrepreneurEnergy, daysSinceLastMonthly } = state
 
-  const kpi = useMemo(() => ({
-    week: state.currentWeek,
-    balance: state.balance,
-    savedMoney: state.savedBalance,
-    weeklyRevenue: lastResult?.revenue || 0,
-    weeklyExpenses: lastResult?.expenses || 0,
-    netProfit: lastResult?.netProfit || 0,
-    monthlyExpenses: lastResult?.monthlyExpense || 0,
-    weeksUntilExpense: 4,
-    goalRemaining: 500000,
-    goalProgress: 0,
-  }), [state.currentWeek, state.balance, state.savedBalance, lastResult])
-
-  const revenueHistory = useMemo(() => {
-    return [8, 11, 9, 14, 13, 18, 16, 22, 19, 25]
-  }, [])
+  const kpi = useMemo(() => {
+    const daysInCycle = ECONOMY_CONSTANTS.MONTHLY_CYCLE_WEEKS * 7
+    const daysRemaining = Math.max(0, daysInCycle - (daysSinceLastMonthly ?? 0))
+    const weeksUntilExpense = Math.max(1, Math.ceil(daysRemaining / 7))
+    const goalRemaining = Math.max(0, ECONOMY_CONSTANTS.GOAL_AMOUNT - state.balance)
+    const goalProgress = Math.min((state.balance / ECONOMY_CONSTANTS.GOAL_AMOUNT) * 100, 100)
+    return {
+      week: state.currentWeek,
+      balance: state.balance,
+      savedMoney: state.savedBalance,
+      weeklyRevenue: lastResult?.revenue || 0,
+      weeklyExpenses: lastResult?.expenses || 0,
+      netProfit: lastResult?.netProfit || 0,
+      monthlyExpenses: lastResult?.monthlyExpense || 0,
+      weeksUntilExpense,
+      goalRemaining,
+      goalProgress,
+    }
+  }, [state.currentWeek, state.balance, state.savedBalance, lastResult, daysSinceLastMonthly])
 
   return (
     <div style={{
@@ -37,22 +40,14 @@ export default function KPIPanel() {
         borderRadius: 20, padding: 20,
         display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.65 }}>
-              ДОХОД ЗА ДЕНЬ
-            </div>
-            <div style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.03em', marginTop: 2 }} className="k-num">
-              {kpi.weeklyRevenue.toLocaleString('ru-RU')} ₽
-            </div>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.65 }}>
+            ДОХОД ЗА ДЕНЬ
           </div>
-          <div style={{
-            padding: '4px 8px', borderRadius: 999,
-            background: 'var(--k-ink)', color: 'var(--k-orange)',
-            fontSize: 11, fontWeight: 800,
-          }}>+18%</div>
+          <div style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.03em', marginTop: 2 }} className="k-num">
+            {kpi.weeklyRevenue.toLocaleString('ru-RU')} ₽
+          </div>
         </div>
-        <Spark data={revenueHistory} color="#0E1116" fill/>
       </div>
 
       {/* Net Profit */}

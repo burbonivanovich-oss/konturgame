@@ -31,6 +31,8 @@ import { CampaignROIView } from './views/CampaignROIView'
 import { MilestoneView } from './views/MilestoneView'
 import { useGameStore } from '../stores/gameStore'
 import { ONBOARDING_STAGES } from '../constants/onboarding'
+import { ECONOMY_CONSTANTS } from '../constants/business'
+import type { BusinessType } from '../types/game'
 
 type ActiveView = 'dashboard' | 'ecosystem' | 'warehouse' | 'marketing' | 'finance' | 'reputation' | 'operations' | 'statistics' | 'campaigns' | 'milestones'
 
@@ -85,10 +87,25 @@ const NAV_ITEMS: Array<{ n: string; g: string; view: ActiveView | null }> = [
   { n: 'Достижения', g: '◈', view: null },
 ]
 
+const BUSINESS_NAMES: Record<BusinessType, string> = {
+  shop: 'Магазин',
+  cafe: 'Кафе',
+  'beauty-salon': 'Салон красоты',
+}
+
+function getSeason(week: number): string {
+  const month = Math.ceil((week / 52) * 12)
+  if (month <= 2 || month === 12) return 'Зима'
+  if (month <= 5) return 'Весна'
+  if (month <= 8) return 'Лето'
+  return 'Осень'
+}
+
 function LeftRail({
   currentDay, savedBalance, activeNav, activeCount,
   pendingEventCount, onNavClick, onHelp, onSettings,
   onPromoWallet, promoCodesCount, highlightNav, milestoneBadge,
+  businessType, currentWeek,
 }: {
   currentDay: number
   savedBalance: number
@@ -102,6 +119,8 @@ function LeftRail({
   promoCodesCount: number
   highlightNav?: string
   milestoneBadge?: number
+  businessType: BusinessType
+  currentWeek: number
 }) {
   return (
     <aside style={{
@@ -120,11 +139,11 @@ function LeftRail({
 
       {/* Day info */}
       <div style={{ padding: 12, borderRadius: 12, background: 'var(--k-surface)', marginBottom: 20 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', opacity: 0.45 }}>КОФЕЙНЯ «ЗЕРНО»</div>
-        <div style={{ fontSize: 18, fontWeight: 800, marginTop: 2 }}>День {currentDay}</div>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', opacity: 0.45 }}>{BUSINESS_NAMES[businessType]}</div>
+        <div style={{ fontSize: 18, fontWeight: 800, marginTop: 2 }}>Неделя {currentDay}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 11, fontWeight: 600, opacity: 0.55 }}>
           <div style={{ width: 14, height: 14, borderRadius: 4, background: 'var(--k-green)' }} />
-          Весна · солнечно · +8%
+          {getSeason(currentWeek)}
         </div>
       </div>
 
@@ -294,7 +313,7 @@ function DashboardView({
   const activeCount = activeServiceIds.length
   const dailyIncome = lastDayResult?.revenue ?? 0
   const monthlyExpenses = Object.values(services).filter(s => s.isActive).reduce((sum, s) => sum + ((s.annualPrice ?? 0) / 12), 0)
-  const goalAmount = 1_000_000
+  const goalAmount = ECONOMY_CONSTANTS.GOAL_AMOUNT
   const toGoalPercent = Math.min((balance / goalAmount) * 100, 100)
   const isDayBlocked = !!pendingEvent
 
@@ -574,7 +593,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
     addSavedBalance, setTemporaryModifiers, advanceDay,
     weekPhase, completeActionsPhase, completeResultsPhase, completeSummaryPhase,
     onboardingStage, onboardingStepIndex, onboardingCompleted,
-    milestoneStatus,
+    milestoneStatus, businessType,
   } = useGameStore()
 
   // Track which milestones the player has seen (opened the Вехи tab after they fired)
@@ -681,6 +700,8 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
         promoCodesCount={promoCodesRevealed?.length ?? 0}
         highlightNav={highlightNav}
         milestoneBadge={milestoneBadge}
+        businessType={businessType}
+        currentWeek={currentWeek}
       />
 
       {activeView === 'dashboard' && (

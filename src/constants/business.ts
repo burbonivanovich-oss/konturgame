@@ -296,6 +296,8 @@ export const ECONOMY_CONSTANTS = {
 
   TOTAL_WEEKS_PER_YEAR: 52,
   SURVIVAL_YEAR_ACHIEVEMENT: 'survival_year_one',
+
+  GOAL_AMOUNT: 1_000_000,
 } as const
 
 export const LEVEL_TABLE: Array<{ level: number; expRequired: number }> = [

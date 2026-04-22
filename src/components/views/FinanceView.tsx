@@ -1,5 +1,6 @@
 import { useGameStore } from '../../stores/gameStore'
 import type { Loan } from '../../types/game'
+import { ECONOMY_CONSTANTS } from '../../constants/business'
 
 function calcTotalOwed(loan: Loan): number {
   const weeks = loan.dueWeek - loan.borrowedWeek
@@ -24,7 +25,7 @@ export function FinanceView() {
   const activeLoans = (loans ?? []).filter(l => !l.isRepaid)
   const bankActive = services?.bank?.isActive ?? false
 
-  const goalAmount = 1_000_000
+  const goalAmount = ECONOMY_CONSTANTS.GOAL_AMOUNT
   const toGoalPct = Math.min((balance / goalAmount) * 100, 100)
   const activeServices = Object.values(services).filter(s => s.isActive)
   const yearlySubscription = activeServices.reduce((s, svc) => s + (svc.annualPrice ?? 0), 0)

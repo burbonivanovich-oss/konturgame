@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useGameStore } from '../../stores/gameStore'
 import { ECONOMY_CONSTANTS } from '../../constants/business'
+import { ACHIEVEMENTS } from '../../constants/achievements'
 
 const HISTORY_KEY = 'konturgame_history'
 
@@ -52,7 +53,7 @@ export default function StatisticsView() {
 Баланс: ${balance.toLocaleString('ru-RU')} ₽
 Репутация: ${reputation}%
 Уровень: ${level}
-Ачивки: ${achievements.length}/20
+Ачивки: ${achievements.length}/${ACHIEVEMENTS.length}
 
 ${isYearComplete ? '✨ Выжил первый год! ✨' : `Прогресс: ${weekProgress.toFixed(0)}%`}
 
@@ -102,7 +103,7 @@ ${isYearComplete ? '✨ Выжил первый год! ✨' : `Прогресс
             { label: 'СОТРУДНИКИ', value: String(employees?.length ?? 0) },
             { label: 'КАМПАНИИ', value: String(campaignsLaunched) },
             { label: 'ВЕХИ', value: `${milestonesAchieved}/3` },
-            { label: 'АЧИВКИ', value: `${achievements.length}/20` },
+            { label: 'АЧИВКИ', value: `${achievements.length}/${ACHIEVEMENTS.length}` },
             { label: 'УЛУЧШЕНИЯ', value: String(purchasedUpgrades?.length ?? 0) },
           ].map(item => (
             <div key={item.label} style={{ padding: 12, borderRadius: 12, background: 'var(--k-surface)' }}>
