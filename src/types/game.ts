@@ -213,6 +213,7 @@ export interface EventTemplate {
     reputationMax?: number
     reputationMin?: number
     requiredService?: ServiceType
+    noService?: ServiceType
     businessTypes?: BusinessType[]
     oneTime?: boolean
   }

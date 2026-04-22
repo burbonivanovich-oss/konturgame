@@ -60,7 +60,7 @@ function makeGameState(overrides: Partial<GameState> = {}): GameState {
     onboardingCompleted: true,
     onboardingStepIndex: 0,
     unlockedServices: ['bank', 'ofd', 'market', 'diadoc', 'fokus', 'elba', 'extern'],
-    cashRegisters: [{ type: 'mobile', count: 1, purchasedAt: 1, totalServed: 0 }],
+    cashRegisters: [{ type: 'mobile', count: 1, purchaseDay: 1 }],
     enabledCategories: ['basic'],
     promoCodesRevealed: [],
     pendingPromoCode: null,

@@ -75,11 +75,11 @@ export const SERVICES_CONFIG: Record<ServiceType, ServiceConfig> = {
   market: {
     id: 'market',
     name: 'Контур.Маркет',
-    description: 'Автоматизация торговли: +20% пропускной, +15% к чеку, снижение убытков от просрочки.',
-    annualPrice: 48000,  // ↑ Было 24000
+    description: 'Автоматизация торговли: +12% пропускной, +7% к чеку, снижение убытков от просрочки. Главное — защита от катастрофических срывов поставок.',
+    annualPrice: 48000,
     effects: {
-      capacityBonus: 0.2,
-      checkBonus: 0.15,
+      capacityBonus: 0.12,
+      checkBonus: 0.07,
       writeOffReduction: 0.2,
     },
   },
@@ -104,17 +104,17 @@ export const SERVICES_CONFIG: Record<ServiceType, ServiceConfig> = {
   diadoc: {
     id: 'diadoc',
     name: 'Контур.Диадок',
-    description: 'Электронный документооборот. Ускоряет поставки: +5% клиентов.',
-    annualPrice: 24000,  // ↑ Было 12000
+    description: 'Электронный документооборот: +2% клиентов. Главное — защита от штрафов за бумажный документооборот (до −30 000 ₽).',
+    annualPrice: 24000,
     effects: {
-      clientBonus: 0.05,
+      clientBonus: 0.02,
     },
   },
   fokus: {
     id: 'fokus',
     name: 'Контур.Фокус',
-    description: 'Проверка контрагентов. Защита от недобросовестных поставщиков: +1 репутации/день.',
-    annualPrice: 24000,  // ↑ Было 12000
+    description: 'Проверка контрагентов: +1 репутации/день. Главное — защита от мошенников-поставщиков (до −55 000 ₽ потерь).',
+    annualPrice: 24000,
     effects: {
       reputationBonus: 1,
     },
@@ -122,10 +122,10 @@ export const SERVICES_CONFIG: Record<ServiceType, ServiceConfig> = {
   elba: {
     id: 'elba',
     name: 'Контур.Эльба',
-    description: 'Онлайн-бухгалтерия. Оптимизирует управление персоналом: +2 лояльности/день, снижает штрафы перегрузки.',
-    annualPrice: 36000,  // ↑ Было 18000
+    description: 'Онлайн-бухгалтерия: +1 лояльности/день. Главное — защита от бунта персонала (до −25 000 ₽ + потеря команды).',
+    annualPrice: 36000,
     effects: {
-      loyaltyBonus: 2,
+      loyaltyBonus: 1,
     },
   },
   extern: {
@@ -194,30 +194,30 @@ export const SYNERGIES_CONFIG: SynergyBonus[] = [
   {
     id: 'market_ofd',
     name: 'Кассовый порядок',
-    description: 'Маркет + ОФД: +2 репутации в день',
+    description: 'Маркет + ОФД: +1 репутации в день',
     requiredServices: ['market', 'ofd'],
-    effects: { reputationBonus: 2 },
+    effects: { reputationBonus: 1 },
   },
   {
     id: 'market_diadoc',
     name: 'Цепочка поставок',
-    description: 'Маркет + Диадок: +10% к пропускной способности',
+    description: 'Маркет + Диадок: +5% к пропускной способности',
     requiredServices: ['market', 'diadoc'],
-    effects: { capacityBonus: 0.1 },
+    effects: { capacityBonus: 0.05 },
   },
   {
     id: 'bank_elba',
     name: 'Финансовый контроль',
-    description: 'Банк + Эльба: +5% к выручке',
+    description: 'Банк + Эльба: +2% к выручке',
     requiredServices: ['bank', 'elba'],
-    effects: { revenueBonus: 0.05 },
+    effects: { revenueBonus: 0.02 },
   },
   {
     id: 'fokus_diadoc',
     name: 'Надёжный контрагент',
-    description: 'Фокус + Диадок: +5% клиентов от репутации надёжности',
+    description: 'Фокус + Диадок: +2% клиентов от репутации надёжности',
     requiredServices: ['fokus', 'diadoc'],
-    effects: { clientBonus: 0.05 },
+    effects: { clientBonus: 0.02 },
   },
   {
     id: 'extern_bank',
@@ -229,16 +229,16 @@ export const SYNERGIES_CONFIG: SynergyBonus[] = [
   {
     id: 'elba_extern',
     name: 'Полная бухгалтерия',
-    description: 'Эльба + Экстерн: +2 лояльности в день',
+    description: 'Эльба + Экстерн: +1 лояльности в день',
     requiredServices: ['elba', 'extern'],
-    effects: { loyaltyBonus: 2 },
+    effects: { loyaltyBonus: 1 },
   },
   {
     id: 'full_kontour',
     name: 'Полный Контур',
-    description: 'Все 7 сервисов активны: +15% к выручке и +1 репутации/день',
+    description: 'Все 7 сервисов активны: +5% к выручке и +1 репутации/день',
     requiredServices: ['market', 'bank', 'ofd', 'diadoc', 'fokus', 'elba', 'extern'],
-    effects: { revenueBonus: 0.15, reputationBonus: 1 },
+    effects: { revenueBonus: 0.05, reputationBonus: 1 },
   },
 ]
 
