@@ -2,7 +2,7 @@ import { useGameStore } from '../../stores/gameStore'
 import { BUSINESS_CONFIGS, getUpgradesForBusiness } from '../../constants/business'
 import { PRODUCT_CATEGORIES, isCategoryAllowed } from '../../services/assortmentEngine'
 import { getBusinessStage, STAGE_CONFIG, getNextStage } from '../../constants/businessStages'
-import { OWNER_INVESTMENTS_MAP } from '../../constants/ownerInvestments'
+import { OWNER_INVESTMENTS_MAP, type OwnerInvestmentId } from '../../constants/ownerInvestments'
 
 const SERVICE_NAMES: Record<string, string> = {
   market: 'Маркет', bank: 'Банк', ofd: 'ОФД',
@@ -85,7 +85,7 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal, o
 
         {(() => {
           const permanentItems = (purchasedOwnerItems ?? [])
-            .map(id => OWNER_INVESTMENTS_MAP[id])
+            .map(id => OWNER_INVESTMENTS_MAP[id as OwnerInvestmentId])
             .filter(Boolean)
           const activeSubs = (ownerSubscriptions ?? [])
             .map(sub => ({ config: OWNER_INVESTMENTS_MAP[sub.id as keyof typeof OWNER_INVESTMENTS_MAP], weeksLeft: sub.weeksLeft }))
