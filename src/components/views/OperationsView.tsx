@@ -1,6 +1,7 @@
 import { useGameStore } from '../../stores/gameStore'
 import { BUSINESS_CONFIGS, getUpgradesForBusiness } from '../../constants/business'
 import { PRODUCT_CATEGORIES, isCategoryAllowed } from '../../services/assortmentEngine'
+import { getBusinessStage, STAGE_CONFIG, getNextStage } from '../../constants/businessStages'
 
 const SERVICE_NAMES: Record<string, string> = {
   market: 'Маркет', bank: 'Банк', ofd: 'ОФД',
@@ -24,6 +25,13 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal, o
   const config = BUSINESS_CONFIGS[businessType]
   const categories = PRODUCT_CATEGORIES[businessType] ?? []
   const state = useGameStore.getState()
+
+  const { currentWeek, level } = useGameStore()
+  const stage = getBusinessStage(currentWeek, level)
+  const stageConfig = STAGE_CONFIG[stage]
+  const nextStage = getNextStage(stage)
+  const nextStageConfig = nextStage ? STAGE_CONFIG[nextStage] : null
+  const atHireLimit = employees.length >= stageConfig.maxEmployees
 
   return (
     <div style={{ padding: 20, maxWidth: 640 }}>
@@ -263,12 +271,29 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal, o
         </div>
       </div>
 
+      {/* Business Stage */}
+      <div style={{ marginBottom: 24, padding: '14px 16px', background: 'var(--k-surface-2)', borderRadius: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', opacity: 0.45, marginBottom: 4 }}>СТАДИЯ БИЗНЕСА</div>
+            <div style={{ fontSize: 16, fontWeight: 800 }}>{stageConfig.label}</div>
+            <div style={{ fontSize: 11, opacity: 0.55, marginTop: 2 }}>{stageConfig.description}</div>
+          </div>
+          {nextStageConfig && (
+            <div style={{ textAlign: 'right', fontSize: 11, opacity: 0.5 }}>
+              <div>Следующая: {nextStageConfig.label}</div>
+              <div>нед. {nextStageConfig.weeksMin} · ур. {nextStageConfig.levelMin}</div>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Employees */}
       <div style={{ marginBottom: 32 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
           <h3 style={{ fontSize: 16, fontWeight: 800 }}>Сотрудники</h3>
           <span style={{ fontSize: 11, opacity: 0.5 }}>
-            {employees.length} человек
+            {employees.length} / {stageConfig.maxEmployees} (лимит стадии)
           </span>
         </div>
 
@@ -303,8 +328,14 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal, o
           </div>
         )}
 
+        {atHireLimit && (
+          <div style={{ fontSize: 11, color: 'var(--k-bad)', marginBottom: 8, fontWeight: 600 }}>
+            Лимит найма для стадии «{stageConfig.label}». Развивайте бизнес до «{nextStageConfig?.label ?? '—'}» для расширения команды.
+          </div>
+        )}
         <button
-          onClick={onShowHireModal}
+          onClick={atHireLimit ? undefined : onShowHireModal}
+          disabled={atHireLimit}
           style={{
             width: '100%', padding: '12px', borderRadius: 10,
             background: 'var(--k-orange)', color: '#fff',

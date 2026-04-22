@@ -69,6 +69,9 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     loans: [],
     campaignROI: [],
     milestoneStatus: { week10: false, week20: false, week30: false },
+    weekPhase: 'actions' as const,
+    purchasedOwnerItems: [],
+    ownerSubscriptions: [],
     createdAt: Date.now(),
     lastUpdated: Date.now(),
     ...overrides,
@@ -108,7 +111,8 @@ function makeDayResult(overrides: Partial<DayResult> = {}): DayResult {
 
 describe('checkNewAchievements', () => {
   it('returns empty array when no conditions met', () => {
-    const state = makeState()
+    // first_day is already in achievements so it won't be returned again
+    const state = makeState({ achievements: ['first_day'] })
     expect(checkNewAchievements(state)).toHaveLength(0)
   })
 
@@ -145,8 +149,8 @@ describe('checkNewAchievements', () => {
     expect(checkNewAchievements(state)).not.toContain('profitable_day')
   })
 
-  it('grants big_profit when netProfit >= 50000', () => {
-    const state = makeState({ lastDayResult: makeDayResult({ netProfit: 50000 }) })
+  it('grants big_profit when netProfit >= 100000', () => {
+    const state = makeState({ lastDayResult: makeDayResult({ netProfit: 100000 }) })
     expect(checkNewAchievements(state)).toContain('big_profit')
   })
 

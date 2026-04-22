@@ -67,6 +67,9 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     loans: [],
     campaignROI: [],
     milestoneStatus: { week10: false, week20: false, week30: false },
+    weekPhase: 'actions' as const,
+    purchasedOwnerItems: [],
+    ownerSubscriptions: [],
     createdAt: Date.now(),
     lastUpdated: Date.now(),
     ...overrides,
@@ -121,8 +124,8 @@ describe('checkBankruptcy', () => {
     expect(checkBankruptcy(makeState({ balance: 0 }))).toBe(false)
   })
 
-  it('returns true when balance is negative', () => {
-    expect(checkBankruptcy(makeState({ balance: -1 }))).toBe(true)
+  it('returns true when balance is negative for 3+ days', () => {
+    expect(checkBankruptcy(makeState({ balance: -1, daysBalanceNegative: 3 }))).toBe(true)
   })
 })
 
@@ -136,8 +139,8 @@ describe('checkReputationLoss', () => {
     expect(checkReputationLoss(state)).toBe(false)
   })
 
-  it('returns true when reputation = 0 for 3+ days', () => {
-    const state = makeState({ reputation: 0, daysReputationZero: 3 })
+  it('returns true when reputation = 0 for 6+ days', () => {
+    const state = makeState({ reputation: 0, daysReputationZero: 6 })
     expect(checkReputationLoss(state)).toBe(true)
   })
 })
@@ -166,7 +169,7 @@ describe('getVictoryStatus', () => {
   it('all conditions false for new game', () => {
     const state = makeState()
     const status = getVictoryStatus(state)
-    expect(status.dailyProfitReached).toBe(false)
+    expect(status.weeklyProfitReached).toBe(false)
     expect(status.balanceReached).toBe(false)
     expect(status.allServicesConnected).toBe(false)
     expect(status.levelReached).toBe(false)
@@ -193,12 +196,12 @@ describe('getVictoryStatus', () => {
     expect(status.achievementsReached).toBe(true)
   })
 
-  it('dailyProfitReached true when last result >= 100000', () => {
+  it('weeklyProfitReached true when last result netProfit >= 20000', () => {
     const state = makeState({
-      lastDayResult: makeDayResult({ netProfit: 100000 }),
+      lastDayResult: makeDayResult({ netProfit: 20000 }),
     })
     const status = getVictoryStatus(state)
-    expect(status.dailyProfitReached).toBe(true)
+    expect(status.weeklyProfitReached).toBe(true)
   })
 })
 

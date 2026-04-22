@@ -3,23 +3,23 @@ import type { GameState, Event, EventTemplate } from '../types/game'
 export const EVENTS_DATABASE: EventTemplate[] = [
   {
     id: 'TAX01',
-    title: 'Налоговая проверка',
-    description: 'К вам пришла налоговая инспекция. Нужно разобраться с документами.',
+    title: 'Налоговая проверка — серьёзные нарушения',
+    description: 'ФНС выявила грубые нарушения в отчётности за прошлые периоды. Требование об уплате недоимки и штрафа. Без системы отчётности разобраться почти нереально.',
     trigger: { dayMin: 10, randomChance: 0.04, oneTime: true },
     options: [
       {
         id: 'self',
-        text: 'Разобраться самому',
-        consequences: { balanceDelta: -30000, reputationDelta: -5 },
+        text: 'Разобраться самому (−80 000 ₽ штраф + нервы)',
+        consequences: { balanceDelta: -80000, reputationDelta: -10 },
       },
       {
         id: 'lawyer',
-        text: 'Нанять юриста (-18 000 ₽)',
-        consequences: { balanceDelta: -18000, reputationDelta: -2 },
+        text: 'Нанять налогового юриста (−40 000 ₽)',
+        consequences: { balanceDelta: -40000, reputationDelta: -3 },
       },
       {
         id: 'extern',
-        text: 'Решить через Контур.Экстерн (-5 000 ₽)',
+        text: 'Урегулировать через Контур.Экстерн (−5 000 ₽)',
         consequences: { balanceDelta: -5000, reputationDelta: 0 },
         requiredService: 'extern',
         isContourOption: true,
@@ -41,18 +41,18 @@ export const EVENTS_DATABASE: EventTemplate[] = [
   },
   {
     id: 'SUPPLY01',
-    title: 'Проблема с поставщиком',
-    description: 'Поставщик задержал партию товара. Есть риск потерь.',
+    title: 'Полный срыв поставки в сезон',
+    description: 'Поставщик бесследно исчез вместе с предоплатой. Склад пуст, заказы сорваны, клиенты уходят к конкуренту. Без цифрового учёта найти замену — дни потерь.',
     trigger: { randomChance: 0.05 },
     options: [
       {
         id: 'wait',
-        text: 'Ждать поставщика (-5 000 ₽ штраф)',
-        consequences: { balanceDelta: -5000 },
+        text: 'Судорожно искать нового поставщика (−35 000 ₽ + −30% клиентов на 3 дня)',
+        consequences: { balanceDelta: -35000, clientModifier: -0.3, clientModifierDays: 3 },
       },
       {
         id: 'market-find',
-        text: 'Найти нового через Контур.Маркет (-2 000 ₽)',
+        text: 'Найти проверенного через Контур.Маркет (−2 000 ₽)',
         consequences: { balanceDelta: -2000 },
         requiredService: 'market',
         isContourOption: true,
@@ -74,24 +74,24 @@ export const EVENTS_DATABASE: EventTemplate[] = [
   },
   {
     id: 'STAFF01',
-    title: 'Недовольство персонала',
-    description: 'Сотрудники устали от высокой нагрузки. Лояльность падает.',
+    title: 'Бунт персонала — угроза коллективного ухода',
+    description: 'Три ключевых сотрудника выставили ультиматум: повышение зарплаты на 40% или уходят всей командой. Без нормального учёта рабочего времени до этого и дошло.',
     trigger: { randomChance: 0.05 },
     options: [
       {
         id: 'ignore',
-        text: 'Продолжать работу как прежде',
-        consequences: { loyaltyDelta: -15 },
+        text: 'Дать уйти. Нанять новых (−25 000 ₽ + лояльность −30)',
+        consequences: { balanceDelta: -25000, loyaltyDelta: -30 },
       },
       {
         id: 'bonus',
-        text: 'Выплатить премию (-5 000 ₽)',
-        consequences: { balanceDelta: -5000, loyaltyDelta: 10 },
+        text: 'Пойти на уступки (−12 000 ₽ доп. расходы, лояльность +5)',
+        consequences: { balanceDelta: -12000, loyaltyDelta: 5 },
       },
       {
         id: 'elba-manage',
-        text: 'Оптимизировать графики через Контур.Эльба',
-        consequences: { loyaltyDelta: 5 },
+        text: 'Оптимизировать графики через Контур.Эльба (лояльность +10)',
+        consequences: { loyaltyDelta: 10 },
         requiredService: 'elba',
         isContourOption: true,
       },
@@ -135,19 +135,19 @@ export const EVENTS_DATABASE: EventTemplate[] = [
   },
   {
     id: 'AUDIT01',
-    title: 'Проверка нового поставщика',
-    description: 'Новый поставщик вызвал сомнения. Нужна проверка репутации.',
+    title: 'Поставщик оказался мошенником',
+    description: 'Вы работали с поставщиком три месяца — и только сейчас выяснилось, что он в реестре недобросовестных. Крупная предоплата пропала, товар оказался бракованным. Ваша репутация под ударом.',
     trigger: { randomChance: 0.03 },
     options: [
       {
         id: 'trust',
-        text: 'Довериться поставщику (риск потерь)',
-        consequences: { balanceDelta: -10000, reputationDelta: -3 },
+        text: 'Разбираться через суд (−55 000 ₽ + репутация −10)',
+        consequences: { balanceDelta: -55000, reputationDelta: -10 },
       },
       {
         id: 'fokus-check',
-        text: 'Проверить через Контур.Фокус (-2 000 ₽)',
-        consequences: { balanceDelta: -2000 },
+        text: 'Контур.Фокус выявил риск заранее (−3 000 ₽ за проверку)',
+        consequences: { balanceDelta: -3000 },
         requiredService: 'fokus',
         isContourOption: true,
       },
@@ -173,19 +173,19 @@ export const EVENTS_DATABASE: EventTemplate[] = [
   },
   {
     id: 'CASH01',
-    title: 'Кассовый разрыв',
-    description: 'Деньги на счету заканчиваются. Срочно нужно финансирование.',
+    title: 'Кассовый разрыв — нужны деньги сегодня',
+    description: 'Платёж поставщику завтра, а на счету пусто. Банки требуют недели на рассмотрение. Микрофинансовые организации дают деньги сразу, но процент убийственный.',
     trigger: { randomChance: 0.03 },
     options: [
       {
         id: 'loan',
-        text: 'Взять кредит (переплата 20%)',
-        consequences: { balanceDelta: 20000 },
+        text: 'МФО — 30% годовых (получить +20 000 ₽, но −6 000 ₽ комиссия)',
+        consequences: { balanceDelta: 14000 },
       },
       {
         id: 'bank-loan',
-        text: 'Кредит через Контур.Банк (ставка 5%)',
-        consequences: { balanceDelta: 20000 },
+        text: 'Контур.Банк — 5% годовых (+20 000 ₽, −1 000 ₽ комиссия)',
+        consequences: { balanceDelta: 19000 },
         requiredService: 'bank',
         isContourOption: true,
       },
@@ -242,18 +242,18 @@ export const EVENTS_DATABASE: EventTemplate[] = [
   },
   {
     id: 'DIADOC01',
-    title: 'Бумажная волокита',
-    description: 'Поставщик срочно требует пакет документов для продолжения сотрудничества.',
+    title: 'Штраф за нарушение документооборота',
+    description: 'Налоговая провела камеральную проверку и нашла нарушения в первичных документах с контрагентами. Всё оформлялось на бумаге — теперь за это штраф. И это не последний.',
     trigger: { randomChance: 0.04 },
     options: [
       {
         id: 'manual',
-        text: 'Оформить вручную (потеря рабочего времени)',
-        consequences: { clientModifier: -0.5, clientModifierDays: 1 },
+        text: 'Заплатить штраф и переоформить всё вручную (−30 000 ₽)',
+        consequences: { balanceDelta: -30000 },
       },
       {
         id: 'diadoc-send',
-        text: 'Отправить мгновенно через Контур.Диадок',
+        text: 'Контур.Диадок закрыл бы этот вопрос автоматически (−0 ₽)',
         consequences: {},
         requiredService: 'diadoc',
         isContourOption: true,
@@ -633,6 +633,42 @@ export const EVENTS_DATABASE: EventTemplate[] = [
       },
     ],
   },
+  {
+    id: 'OFD_FINE01',
+    title: 'Штраф ФНС за работу без онлайн-кассы',
+    description: 'Налоговая инспекция выявила, что вы принимаете оплату без зарегистрированной онлайн-кассы. Штраф — до 100% выручки за период. Контур.ОФД подключил бы онлайн-кассу за 5 минут и застраховал от этого.',
+    trigger: { dayMin: 14, randomChance: 0.08, noService: 'ofd', oneTime: true },
+    options: [
+      {
+        id: 'pay-fine',
+        text: 'Оплатить штраф ФНС (−60 000 ₽ + репутация −15)',
+        consequences: { balanceDelta: -60000, reputationDelta: -15 },
+      },
+      {
+        id: 'dispute',
+        text: 'Оспорить через юриста (−30 000 ₽ + репутация −5)',
+        consequences: { balanceDelta: -30000, reputationDelta: -5 },
+      },
+    ],
+  },
+  {
+    id: 'MARKET_STOCKOUT',
+    title: 'Внезапный дефицит — склад опустел',
+    description: 'Пик сезона, а товара нет. Вы не успели отследить остатки вручную. Клиенты уходят к конкурентам, некоторые уже пишут гневные отзывы. Контур.Маркет предупредил бы за неделю.',
+    trigger: { dayMin: 20, randomChance: 0.05, noService: 'market', oneTime: false },
+    options: [
+      {
+        id: 'emergency-buy',
+        text: 'Экстренная закупка по завышенной цене (−45 000 ₽ + репутация −5)',
+        consequences: { balanceDelta: -45000, reputationDelta: -5 },
+      },
+      {
+        id: 'wait-restock',
+        text: 'Ждать обычную поставку (−40% клиентов на 4 дня)',
+        consequences: { clientModifier: -0.4, clientModifierDays: 4 },
+      },
+    ],
+  },
 ]
 
 export function generateEvent(day: number, state: GameState): Event | null {
@@ -656,6 +692,12 @@ export function generateEvent(day: number, state: GameState): Event | null {
     if (
       template.trigger.businessTypes &&
       !template.trigger.businessTypes.includes(state.businessType)
+    )
+      continue
+    // Only fire if the specified service is NOT active (crisis events)
+    if (
+      template.trigger.noService !== undefined &&
+      state.services[template.trigger.noService]?.isActive === true
     )
       continue
     if (

@@ -16,6 +16,8 @@ import AssortmentModal from './modals/AssortmentModal'
 import PromoCodeModal from './modals/PromoCodeModal'
 import PromoWalletModal from './modals/PromoWalletModal'
 import BundleModal from './modals/BundleModal'
+import { WeekSummaryOverlay } from './WeekSummaryOverlay'
+import { WeekResultsOverlay } from './WeekResultsOverlay'
 import { useGameStore } from '../stores/gameStore'
 
 interface MobileMainScreenProps {
@@ -34,7 +36,10 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
   const [showPromoWalletModal, setShowPromoWalletModal] = useState(false)
   const [activeTab, setActiveTab] = useState('day')
 
-  const { pendingEvent, pendingEventsQueue, isGameOver, isVictory, businessType, achievements, promoCodesRevealed } = useGameStore()
+  const {
+    pendingEvent, pendingEventsQueue, isGameOver, isVictory, businessType, achievements, promoCodesRevealed,
+    weekPhase, completeResultsPhase, completeSummaryPhase,
+  } = useGameStore()
   const [savingsToast, setSavingsToast] = useState<number | null>(null)
 
   const handleEventOption = (optionId: string) => {
@@ -315,6 +320,14 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
       <BundleModal />
       <VictoryModal isOpen={isVictory} type="victory" />
       <VictoryModal isOpen={isGameOver && !isVictory} type="defeat" />
+
+      {/* 4-phase weekly cycle overlays */}
+      {weekPhase === 'summary' && !isGameOver && !isVictory && (
+        <WeekSummaryOverlay onStart={completeSummaryPhase} />
+      )}
+      {weekPhase === 'results' && !isGameOver && !isVictory && (
+        <WeekResultsOverlay onContinue={completeResultsPhase} />
+      )}
     </div>
   )
 }

@@ -1,6 +1,12 @@
 import type { GameState, Modifiers } from '../types/game'
-import { BUSINESS_CONFIGS, MONTHLY_EXPENSES } from '../constants/business'
+import { BUSINESS_CONFIGS, MONTHLY_EXPENSES, UPGRADES_CONFIG } from '../constants/business'
 import { calculateSynergyModifiers } from './synergyEngine'
+
+function getPurchasedUpgradeConfigs(state: GameState) {
+  if (!state.purchasedUpgrades?.length) return []
+  const all = UPGRADES_CONFIG[state.businessType] ?? []
+  return all.filter(u => state.purchasedUpgrades.includes(u.id))
+}
 
 export function getSeasonalModifier(businessType: string, dayNumber: number): number {
   const config = BUSINESS_CONFIGS[businessType as keyof typeof BUSINESS_CONFIGS]
@@ -38,18 +44,19 @@ export function calculateCapacity(state: GameState): number {
 }
 
 export function getCapacityUpgradesBonus(state: GameState): number {
-  if (!state.purchasedUpgrades?.length) return 0
-  let bonus = 0
-  if (state.purchasedUpgrades.includes('hall-expansion')) bonus += 0.4
-  if (state.purchasedUpgrades.includes('hire-admin')) bonus += 0.2
-  return bonus
+  return getPurchasedUpgradeConfigs(state).reduce((sum, u) => sum + (u.capacityBonus ?? 0), 0)
 }
 
 export function getCheckUpgradesBonus(state: GameState): number {
-  if (!state.purchasedUpgrades?.length) return 0
-  let bonus = 0
-  if (state.purchasedUpgrades.includes('premium-categories')) bonus += 0.15
-  return bonus
+  return getPurchasedUpgradeConfigs(state).reduce((sum, u) => sum + (u.checkBonus ?? 0), 0)
+}
+
+export function getClientUpgradesBonus(state: GameState): number {
+  return getPurchasedUpgradeConfigs(state).reduce((sum, u) => sum + (u.clientBonus ?? 0), 0)
+}
+
+export function getLoyaltyUpgradesBonus(state: GameState): number {
+  return getPurchasedUpgradeConfigs(state).reduce((sum, u) => sum + (u.loyaltyBonus ?? 0), 0)
 }
 
 export function calculateAverageCheck(baseCheck: number, modifiers: Modifiers): number {
@@ -96,30 +103,24 @@ export function calculateMonthlyExpenses(state: GameState): number {
   let rent = base.rent
   let salary = base.baseSalary
 
-  if (state.purchasedUpgrades?.includes('hall-expansion')) rent += 15000
-  if (state.purchasedUpgrades?.includes('hire-admin')) salary += 5000
-
-  let subscriptions = 0
-  if (state.services) {
-    for (const key of Object.keys(state.services)) {
-      const service = state.services[key as keyof typeof state.services]
-      if (service?.isActive) {
-        subscriptions += service.annualPrice / 12  // Месячная часть от годовой подписки
-      }
-    }
+  for (const u of getPurchasedUpgradeConfigs(state)) {
+    rent += u.monthlyRentIncrease ?? 0
+    salary += u.monthlySalaryIncrease ?? 0
   }
 
-  return rent + salary + subscriptions
+  // Subscriptions are already charged daily via calculateDailySubscriptions — do NOT add them here
+  return rent + salary
 }
 
 export function buildModifiers(state: GameState): Modifiers {
   const adMods = calculateActiveAdModifiers(state)
   const synergyMods = calculateSynergyModifiers(state)
 
-  // Service client bonuses (diadoc) + synergy client bonuses
+  // Service client bonuses (diadoc) + synergy client bonuses + upgrade client bonuses
   const serviceClientBonus =
     (state.services?.diadoc?.isActive ? (state.services.diadoc.effects.clientBonus ?? 0) : 0) +
-    synergyMods.clientBonus
+    synergyMods.clientBonus +
+    getClientUpgradesBonus(state)
 
   // Check bonus includes temporary event modifier (bug fix: was missing)
   const serviceCheckBonus =

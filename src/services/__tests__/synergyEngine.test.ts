@@ -69,6 +69,9 @@ function makeState(activeServices: ServiceType[] = []): GameState {
     loans: [],
     campaignROI: [],
     milestoneStatus: { week10: false, week20: false, week30: false },
+    weekPhase: 'actions' as const,
+    purchasedOwnerItems: [],
+    ownerSubscriptions: [],
     createdAt: Date.now(),
     lastUpdated: Date.now(),
   }
@@ -127,13 +130,13 @@ describe('calculateSynergyModifiers', () => {
   it('adds market+ofd reputation bonus', () => {
     const state = makeState(['market', 'ofd'])
     const mods = calculateSynergyModifiers(state)
-    expect(mods.reputationBonus).toBe(2)
+    expect(mods.reputationBonus).toBe(1)
   })
 
   it('adds bank+elba revenue bonus', () => {
     const state = makeState(['bank', 'elba'])
     const mods = calculateSynergyModifiers(state)
-    expect(mods.revenueBonus).toBe(0.05)
+    expect(mods.revenueBonus).toBe(0.02)
   })
 
   it('adds extern+bank tax saving', () => {
@@ -145,14 +148,16 @@ describe('calculateSynergyModifiers', () => {
   it('stacks bonuses from multiple synergies', () => {
     const state = makeState(['market', 'ofd', 'bank', 'elba'])
     const mods = calculateSynergyModifiers(state)
-    expect(mods.reputationBonus).toBe(2)
-    expect(mods.revenueBonus).toBe(0.05)
+    // market+ofd: +1 rep; bank+elba: +2% revenue
+    expect(mods.reputationBonus).toBe(1)
+    expect(mods.revenueBonus).toBe(0.02)
   })
 
-  it('full kontour adds 15% revenue bonus on top', () => {
+  it('full kontour adds 5% revenue bonus on top of individual synergies', () => {
     const state = makeState(['market', 'bank', 'ofd', 'diadoc', 'fokus', 'elba', 'extern'])
     const mods = calculateSynergyModifiers(state)
-    expect(mods.revenueBonus).toBeGreaterThanOrEqual(0.15)
+    // full_kontour: +5% revenue + 1 rep; plus sub-synergies
+    expect(mods.revenueBonus).toBeGreaterThanOrEqual(0.05)
     expect(mods.reputationBonus).toBeGreaterThanOrEqual(1)
   })
 })

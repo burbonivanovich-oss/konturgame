@@ -10,6 +10,10 @@ export type SupplierTier = 'economy' | 'standard' | 'premium'
 
 export type EmployeePosition = 'cashier' | 'assistant' | 'manager' | 'specialist' | 'supervisor' | 'trainer'
 
+export type WeekPhase = 'summary' | 'actions' | 'events' | 'results'
+
+export type BusinessStage = 'startup' | 'small' | 'growing' | 'medium' | 'large'
+
 export interface CashRegister {
   type: CashRegisterType
   count: number
@@ -119,6 +123,7 @@ export interface Service {
     reputationBonus?: number
     loyaltyBonus?: number
     taxSaving?: number
+    energyReduction?: number
   }
 }
 
@@ -209,6 +214,7 @@ export interface EventTemplate {
     reputationMax?: number
     reputationMin?: number
     requiredService?: ServiceType
+    noService?: ServiceType
     businessTypes?: BusinessType[]
     oneTime?: boolean
   }
@@ -324,6 +330,9 @@ export interface GameState {
   daysSinceLastMonthly: number
   purchaseOfferedThisDay: boolean
 
+  // 4-phase weekly cycle
+  weekPhase: WeekPhase
+
   // Week-based counters
   weeklyEnergyRestored: boolean  // Track if energy was restored this week
 
@@ -408,4 +417,8 @@ export interface GameState {
 
   // Milestone status (NEW v2.2)
   milestoneStatus: MilestoneStatus
+
+  // Owner investments (v2.3)
+  purchasedOwnerItems: string[]  // permanent investment ids (laptop, chair)
+  ownerSubscriptions: Array<{ id: string; weeksLeft: number; energyPerWeek: number }>
 }

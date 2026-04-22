@@ -8,6 +8,7 @@ import {
   calculateRevenue,
   calculateDailySubscriptions,
   calculateMonthlyExpenses,
+  getLoyaltyUpgradesBonus,
 } from './economyEngine'
 import { consumeStock, checkExpiry, getTotalStock } from './stockManager'
 import { generateEvent } from './eventGenerator'
@@ -93,9 +94,12 @@ export function processWeek(state: GameState): DayResult {
   const weeklySalaryCost = getWeeklySalaryCost(state)
   const weeklyEnergyCost = getWeeklyEnergyCost(state)
   const employeeCapacityBonus = getEmployeeCapacityBonus(state)
+  const loyaltyUpgradesBonus = getLoyaltyUpgradesBonus(state)
 
   // Process each day of the week (7 iterations)
   for (let dayNum = 0; dayNum < 7; dayNum++) {
+    // Track actual day-of-week so pain triggers fire at most once per N-day cycle
+    state.dayOfWeek = dayNum
     const modifiers = buildModifiers(state)
     const synergyMods = calculateSynergyModifiers(state)
 
@@ -265,7 +269,7 @@ export function processWeek(state: GameState): DayResult {
     }
     const elbaLoyaltyBonus = elbaActive ? (state.services.elba.effects.loyaltyBonus ?? 0) : 0
     const qualityLoyaltyBonus = getQualityLoyaltyBonus(state)
-    dayLoyaltyChange += elbaLoyaltyBonus + synergyMods.loyaltyBonus + qualityLoyaltyBonus
+    dayLoyaltyChange += elbaLoyaltyBonus + synergyMods.loyaltyBonus + qualityLoyaltyBonus + loyaltyUpgradesBonus
 
     // 17. Accumulate week results
     weekRevenue += dayRevenue
@@ -284,6 +288,8 @@ export function processWeek(state: GameState): DayResult {
       if (state.temporaryModDaysLeft === 0) {
         state.temporaryClientMod = 0
         state.temporaryCheckMod = 0
+        // Competitor effect ended — allow the next cycle to trigger
+        state.competitorEventTriggered = false
       }
     }
 
@@ -354,8 +360,23 @@ export function processWeek(state: GameState): DayResult {
     categoryFines: {},
   }
 
+  // Process active loans: deduct weekly interest; repay principal at dueWeek
+  if (state.loans?.length) {
+    for (const loan of state.loans) {
+      if (loan.isRepaid) continue
+      const weeklyPayment = Math.round(loan.amount * loan.weeklyInterest)
+      state.balance -= weeklyPayment
+      loan.totalInterestPaid += weeklyPayment
+      if (state.currentWeek >= loan.dueWeek) {
+        // Срок истёк — принудительное погашение основного долга
+        state.balance -= loan.amount
+        loan.isRepaid = true
+      }
+    }
+  }
+
   // Update counters
-  if (newBalance < 0) {
+  if (state.balance < 0) {
     state.daysBalanceNegative = (state.daysBalanceNegative ?? 0) + 1
   } else {
     state.daysBalanceNegative = 0
@@ -373,18 +394,23 @@ export function processWeek(state: GameState): DayResult {
 
   // Decrement ad campaigns by 7 days and track ROI
   if (state.activeAdCampaigns?.length) {
+    if (!state.campaignROI) state.campaignROI = []
     for (const campaign of state.activeAdCampaigns) {
-      // Track campaign ROI
+      // Incremental revenue: the share of weekly revenue attributable to the campaign's
+      // client boost. If campaign adds +X% clients, incremental ≈ weekRevenue * X / (1 + X).
+      const clientEffect = Math.max(0, campaign.clientEffect)
+      const incrementalRevenue = clientEffect > 0
+        ? Math.round(weekRevenue * clientEffect / (1 + clientEffect))
+        : 0
       const campaignROI = {
         id: `roi_${campaign.id}_w${state.currentWeek}`,
         campaignId: campaign.id,
         launchedWeek: state.currentWeek,
         costSpent: campaign.cost,
-        revenueGenerated: weekRevenue,
-        clientsAcquired: Math.round(weekRevenue / (300 * 0.7)), // Estimate from revenue
-        roi: ((weekRevenue - campaign.cost) / campaign.cost) * 100, // ROI percentage
+        revenueGenerated: incrementalRevenue,
+        clientsAcquired: Math.round(incrementalRevenue / Math.max(1, config.avgCheck)),
+        roi: campaign.cost > 0 ? ((incrementalRevenue - campaign.cost) / campaign.cost) * 100 : 0,
       }
-      if (!state.campaignROI) state.campaignROI = []
       state.campaignROI.push(campaignROI)
     }
     state.activeAdCampaigns = state.activeAdCampaigns
@@ -422,7 +448,6 @@ export function processWeek(state: GameState): DayResult {
     const achievedMilestone = newBalance >= 100000 || weekNetProfit >= 1000
     if (achievedMilestone) {
       state.milestoneStatus.week10 = true
-      state.achievements.push('milestone_week10')
     }
   }
 
@@ -430,7 +455,6 @@ export function processWeek(state: GameState): DayResult {
     const achievedMilestone = newBalance >= 250000 || weekNetProfit >= 5000
     if (achievedMilestone) {
       state.milestoneStatus.week20 = true
-      state.achievements.push('milestone_week20')
     }
   }
 
@@ -438,7 +462,6 @@ export function processWeek(state: GameState): DayResult {
     const achievedMilestone = newBalance >= 500000 || weekNetProfit >= 10000
     if (achievedMilestone) {
       state.milestoneStatus.week30 = true
-      state.achievements.push('milestone_week30')
     }
   }
 

@@ -17,7 +17,9 @@ import BundleModal from './modals/BundleModal'
 import MicroEventModal from './modals/MicroEventModal'
 import HireEmployeeModal from './modals/HireEmployeeModal'
 import SupplierModal from './modals/SupplierModal'
-import { DesktopRecap } from './design-system/DesktopRecap'
+import OwnerInvestmentsModal from './modals/OwnerInvestmentsModal'
+import { WeekSummaryOverlay } from './WeekSummaryOverlay'
+import { WeekResultsOverlay } from './WeekResultsOverlay'
 import { DesktopKontur } from './design-system/DesktopKontur'
 import { WarehouseView } from './views/WarehouseView'
 import { MarketingView } from './views/MarketingView'
@@ -28,8 +30,20 @@ import StatisticsView from './views/StatisticsView'
 import { CampaignROIView } from './views/CampaignROIView'
 import { MilestoneView } from './views/MilestoneView'
 import { useGameStore } from '../stores/gameStore'
+import { ONBOARDING_STAGES } from '../constants/onboarding'
 
-type ActiveView = 'dashboard' | 'recap' | 'ecosystem' | 'warehouse' | 'marketing' | 'finance' | 'reputation' | 'operations' | 'statistics' | 'campaigns' | 'milestones'
+type ActiveView = 'dashboard' | 'ecosystem' | 'warehouse' | 'marketing' | 'finance' | 'reputation' | 'operations' | 'statistics' | 'campaigns' | 'milestones'
+
+// Maps onboarding required actions to the nav item name that should be highlighted
+const ONBOARDING_ACTION_TO_NAV: Record<string, string> = {
+  activate_bank: 'Экосистема',
+  activate_ofd: 'Экосистема',
+  activate_market: 'Экосистема',
+  activate_diadoc: 'Экосистема',
+  activate_elba: 'Экосистема',
+  activate_fokus: 'Экосистема',
+  activate_extern: 'Экосистема',
+}
 
 function Spark({ data, color = 'currentColor', fill = false }: { data: number[]; color?: string; fill?: boolean }) {
   const w = 100, h = 32
@@ -74,7 +88,7 @@ const NAV_ITEMS: Array<{ n: string; g: string; view: ActiveView | null }> = [
 function LeftRail({
   currentDay, savedBalance, activeNav, activeCount,
   pendingEventCount, onNavClick, onHelp, onSettings,
-  onPromoWallet, promoCodesCount,
+  onPromoWallet, promoCodesCount, highlightNav,
 }: {
   currentDay: number
   savedBalance: number
@@ -86,6 +100,7 @@ function LeftRail({
   onSettings: () => void
   onPromoWallet: () => void
   promoCodesCount: number
+  highlightNav?: string
 }) {
   return (
     <aside style={{
@@ -116,6 +131,7 @@ function LeftRail({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {NAV_ITEMS.map(item => {
           const isActive = activeNav === item.n
+          const isHighlighted = !isActive && highlightNav === item.n
           const badge =
             item.n === 'Дневной цикл' && pendingEventCount > 0 ? String(pendingEventCount) :
             item.n === 'Экосистема' ? `${activeCount}/7` : undefined
@@ -126,21 +142,32 @@ function LeftRail({
               style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '10px 12px', borderRadius: 10,
-                background: isActive ? 'var(--k-orange)' : 'transparent',
+                background: isActive ? 'var(--k-orange)' : isHighlighted ? 'rgba(255,107,0,0.08)' : 'transparent',
                 color: isActive ? '#fff' : 'var(--k-ink)',
                 fontSize: 13, fontWeight: 600,
                 cursor: 'pointer', transition: 'background 0.15s',
                 userSelect: 'none',
+                outline: isHighlighted ? '2px solid var(--k-orange)' : 'none',
+                animation: isHighlighted ? 'navPulse 1.8s ease-in-out infinite' : 'none',
+                position: 'relative',
               }}>
               <span style={{
                 width: 22, height: 22, borderRadius: 6,
-                background: isActive ? 'rgba(255,255,255,0.22)' : 'var(--k-surface)',
-                color: isActive ? '#fff' : 'var(--k-ink)',
+                background: isActive ? 'rgba(255,255,255,0.22)' : isHighlighted ? 'var(--k-orange)' : 'var(--k-surface)',
+                color: isActive || isHighlighted ? '#fff' : 'var(--k-ink)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 12, fontWeight: 800,
               }}>{item.g}</span>
               <span style={{ flex: 1 }}>{item.n}</span>
-              {badge && (
+              {isHighlighted && (
+                <span style={{
+                  fontSize: 9, fontWeight: 800,
+                  padding: '2px 5px', borderRadius: 999,
+                  background: 'var(--k-orange)', color: '#fff',
+                  letterSpacing: '0.04em',
+                }}>→ СЮДА</span>
+              )}
+              {!isHighlighted && badge && (
                 <span style={{
                   fontSize: 10, fontWeight: 800,
                   padding: '2px 6px', borderRadius: 999,
@@ -239,7 +266,7 @@ function DashboardView({
   showCampaignModal, setShowCampaignModal,
   showUpgradesModal, setShowUpgradesModal,
   showCashRegisterModal, setShowCashRegisterModal,
-  handleEventOption,
+  handleEventOption, onOpenOwnerInvestments,
 }: {
   onNextDay: () => void
   dayBlockedMsg: string | null
@@ -252,10 +279,12 @@ function DashboardView({
   showCashRegisterModal: boolean
   setShowCashRegisterModal: (v: boolean) => void
   handleEventOption: (id: string) => void
+  onOpenOwnerInvestments: () => void
 }) {
   const {
     currentWeek, balance, reputation, loyalty, services,
     pendingEvent, pendingEventsQueue, lastDayResult, savedBalance,
+    entrepreneurEnergy,
   } = useGameStore()
 
   const incomeSparkData = Array.from({ length: 10 }, (_, i) => Math.sin(i * 0.8) * 20 + 30)
@@ -400,18 +429,45 @@ function DashboardView({
           {/* Indicators */}
           <div style={{
             background: '#fff', borderRadius: 20, padding: 14,
-            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8,
+            display: 'flex', flexDirection: 'column', gap: 8,
           }}>
-            {[
-              { l: 'Репутация', v: String(reputation), bg: 'var(--k-green-soft)' },
-              { l: 'Лояльность', v: `${loyalty}%`, bg: 'var(--k-surface-2)' },
-              { l: 'Неделя', v: String(currentWeek), bg: 'var(--k-surface-2)' },
-            ].map(i => (
-              <div key={i.l} style={{ padding: 10, borderRadius: 12, background: i.bg }}>
-                <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.55 }}>{i.l}</div>
-                <div style={{ fontSize: 15, fontWeight: 800 }}>{i.v}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+              {[
+                { l: 'Репутация', v: String(reputation), bg: 'var(--k-green-soft)' },
+                { l: 'Лояльность', v: `${loyalty}%`, bg: 'var(--k-surface-2)' },
+                { l: 'Неделя', v: String(currentWeek), bg: 'var(--k-surface-2)' },
+              ].map(i => (
+                <div key={i.l} style={{ padding: 10, borderRadius: 12, background: i.bg }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.55 }}>{i.l}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800 }}>{i.v}</div>
+                </div>
+              ))}
+            </div>
+            {/* Energy bar with restore button */}
+            <div
+              onClick={onOpenOwnerInvestments}
+              style={{
+                padding: '10px 12px', borderRadius: 12,
+                background: entrepreneurEnergy < 40 ? 'rgba(220,53,69,0.06)' : 'var(--k-surface-2)',
+                cursor: 'pointer', userSelect: 'none',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 10, fontWeight: 700, opacity: 0.55 }}>
+                <span>ЭНЕРГИЯ</span>
+                <span style={{ color: entrepreneurEnergy < 40 ? 'var(--k-bad)' : 'inherit' }}>
+                  {entrepreneurEnergy}/100 {entrepreneurEnergy < 40 ? '⚠ Восстановить →' : '⚡'}
+                </span>
               </div>
-            ))}
+              <div style={{ height: 6, background: 'rgba(0,0,0,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  width: `${entrepreneurEnergy}%`,
+                  background: entrepreneurEnergy < 40 ? 'var(--k-bad)' : 'var(--k-orange)',
+                  borderRadius: 3,
+                  transition: 'width 0.3s',
+                }} />
+              </div>
+            </div>
           </div>
 
         </div>
@@ -504,6 +560,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const [showPromoWalletModal, setShowPromoWalletModal] = useState(false)
   const [showHireEmployeeModal, setShowHireEmployeeModal] = useState(false)
   const [showSupplierModal, setShowSupplierModal] = useState(false)
+  const [showOwnerInvestmentsModal, setShowOwnerInvestmentsModal] = useState(false)
   const [dayBlockedMsg, setDayBlockedMsg] = useState<string | null>(null)
   const [savingsToast, setSavingsToast] = useState<number | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -513,11 +570,23 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
     isGameOver, isVictory, savedBalance, promoCodesRevealed,
     addBalance, addReputation, addLoyalty, markEventAsResolved, activateService,
     addSavedBalance, setTemporaryModifiers, advanceDay,
+    weekPhase, completeActionsPhase, completeResultsPhase, completeSummaryPhase,
+    onboardingStage, onboardingStepIndex, onboardingCompleted,
   } = useGameStore()
 
   const activeServiceIds = Object.values(services).filter(s => s.isActive).map(s => s.id)
   const activeCount = activeServiceIds.length
   const pendingEventCount = (pendingEvent ? 1 : 0) + (pendingEventsQueue?.length ?? 0)
+
+  // Compute which nav item to highlight based on current onboarding step
+  const highlightNav = (() => {
+    if (onboardingCompleted) return undefined
+    const stage = ONBOARDING_STAGES[onboardingStage as 0 | 1 | 2 | 3 | 4]
+    if (!stage) return undefined
+    const step = stage.steps[onboardingStepIndex ?? 0]
+    if (!step?.requiresAction) return undefined
+    return ONBOARDING_ACTION_TO_NAV[step.requiresAction]
+  })()
 
   const handleEventOption = (optionId: string) => {
     if (!pendingEvent) return
@@ -560,13 +629,10 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       setTimeout(() => setDayBlockedMsg(null), 2500)
       return
     }
-    const result = advanceDay()
+    const result = completeActionsPhase()
     if (result.blocked) {
-      setDayBlockedMsg(result.reason ?? 'День заблокирован')
+      setDayBlockedMsg(result.reason ?? 'Действие заблокировано')
       setTimeout(() => setDayBlockedMsg(null), 2500)
-    } else {
-      setActiveView('recap')
-      setActiveNav('Дневной цикл')
     }
   }
 
@@ -578,11 +644,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
     }
     const item = NAV_ITEMS.find(i => i.n === name)
     if (item?.view) setActiveView(item.view)
-  }
-
-  const handleRecapContinue = () => {
-    setActiveView('dashboard')
-    setActiveNav('Дневной цикл')
   }
 
   return (
@@ -606,6 +667,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
         onSettings={() => setShowSettingsModal(true)}
         onPromoWallet={() => setShowPromoWalletModal(true)}
         promoCodesCount={promoCodesRevealed?.length ?? 0}
+        highlightNav={highlightNav}
       />
 
       {activeView === 'dashboard' && (
@@ -621,13 +683,8 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
           showCashRegisterModal={showCashRegisterModal}
           setShowCashRegisterModal={setShowCashRegisterModal}
           handleEventOption={handleEventOption}
+          onOpenOwnerInvestments={() => setShowOwnerInvestmentsModal(true)}
         />
-      )}
-
-      {activeView === 'recap' && (
-        <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-          <DesktopRecap embedded onContinue={handleRecapContinue} />
-        </div>
       )}
 
       {activeView === 'ecosystem' && (
@@ -670,6 +727,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       <CashRegisterModal isOpen={showCashRegisterModal} onClose={() => setShowCashRegisterModal(false)} />
       <HireEmployeeModal isOpen={showHireEmployeeModal} onClose={() => setShowHireEmployeeModal(false)} />
       <SupplierModal isOpen={showSupplierModal} onClose={() => setShowSupplierModal(false)} />
+      <OwnerInvestmentsModal isOpen={showOwnerInvestmentsModal} onClose={() => setShowOwnerInvestmentsModal(false)} />
       <AssortmentModal isOpen={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} />
       <PromoCodeModal />
       <PromoWalletModal isOpen={showPromoWalletModal} onClose={() => setShowPromoWalletModal(false)} />
@@ -677,6 +735,14 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       <MicroEventModal />
       <VictoryModal isOpen={isVictory} type="victory" />
       <VictoryModal isOpen={isGameOver && !isVictory} type="defeat" />
+
+      {/* 4-phase weekly cycle overlays */}
+      {weekPhase === 'summary' && !isGameOver && !isVictory && (
+        <WeekSummaryOverlay onStart={completeSummaryPhase} />
+      )}
+      {weekPhase === 'results' && !isGameOver && !isVictory && (
+        <WeekResultsOverlay onContinue={completeResultsPhase} />
+      )}
 
       {/* Savings toast */}
       {savingsToast !== null && (

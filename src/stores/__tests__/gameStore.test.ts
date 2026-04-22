@@ -17,7 +17,7 @@ describe('GameStore', () => {
       const state = useGameStore.getState()
       expect(state.businessType).toBe('shop')
       expect(state.currentWeek).toBe(1)
-      expect(state.balance).toBe(50000)
+      expect(state.balance).toBe(80000)
       expect(state.reputation).toBe(50)
       expect(state.loyalty).toBe(50)
     })
@@ -27,7 +27,7 @@ describe('GameStore', () => {
       startNewGame('cafe')
       const state = useGameStore.getState()
       expect(state.businessType).toBe('cafe')
-      expect(state.balance).toBe(40000)
+      expect(state.balance).toBe(80000)
     })
 
     it('should initialize services as inactive', () => {
@@ -47,7 +47,7 @@ describe('GameStore', () => {
     it('should add balance delta', () => {
       const { addBalance } = useGameStore.getState()
       addBalance(10000)
-      expect(useGameStore.getState().balance).toBe(60000)
+      expect(useGameStore.getState().balance).toBe(90000)
     })
 
     it('should prevent negative balance', () => {
@@ -98,9 +98,15 @@ describe('GameStore', () => {
   })
 
   describe('Day Progression', () => {
-    it('should increment day', () => {
+    it('should increment dayOfWeek', () => {
       const { nextDay } = useGameStore.getState()
       nextDay()
+      expect(useGameStore.getState().dayOfWeek).toBe(1)
+    })
+
+    it('should increment currentWeek after 7 nextDay calls', () => {
+      const { nextDay } = useGameStore.getState()
+      for (let i = 0; i < 7; i++) nextDay()
       expect(useGameStore.getState().currentWeek).toBe(2)
     })
 
