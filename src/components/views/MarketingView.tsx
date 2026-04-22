@@ -2,7 +2,9 @@ import { useGameStore } from '../../stores/gameStore'
 import { AD_CAMPAIGNS_CONFIG } from '../../constants/business'
 
 export function MarketingView() {
-  const { activeAdCampaigns, balance, businessType, addAdCampaign, removeAdCampaign } = useGameStore()
+  const { activeAdCampaigns, balance, businessType, addAdCampaign, removeAdCampaign, campaignROI } = useGameStore()
+
+  const recentROI = [...(campaignROI ?? [])].reverse().slice(0, 5)
 
   const availableCampaigns = AD_CAMPAIGNS_CONFIG.filter(cfg => {
     if (!('businessTypes' in cfg)) return true
@@ -164,6 +166,49 @@ export function MarketingView() {
           })}
         </div>
       </div>
+
+      {/* Campaign ROI history */}
+      {recentROI.length > 0 && (
+        <div style={{ background: '#fff', borderRadius: 20, padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.45 }}>
+            ИСТОРИЯ КАМПАНИЙ · последние {recentROI.length}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {recentROI.map(entry => {
+              const cfg = AD_CAMPAIGNS_CONFIG.find(c => c.id === entry.campaignId)
+              const name = cfg?.name ?? entry.campaignId
+              const positive = entry.roi >= 0
+              return (
+                <div key={entry.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '8px 10px', borderRadius: 10,
+                  background: 'var(--k-surface)',
+                }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {name}
+                    </div>
+                    <div style={{ fontSize: 10, opacity: 0.5, marginTop: 1 }}>
+                      Неделя {entry.launchedWeek} · потрачено {entry.costSpent.toLocaleString('ru-RU')} ₽
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{
+                      fontSize: 13, fontWeight: 800,
+                      color: positive ? 'var(--k-green)' : 'var(--k-bad)',
+                    }}>
+                      {positive ? '+' : ''}{entry.roi.toFixed(0)}% ROI
+                    </div>
+                    <div style={{ fontSize: 10, opacity: 0.5 }}>
+                      {entry.revenueGenerated.toLocaleString('ru-RU')} ₽ выручки
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Tip */}
       <div style={{ background: 'var(--k-orange-soft)', borderRadius: 16, padding: 14, display: 'flex', gap: 10 }}>

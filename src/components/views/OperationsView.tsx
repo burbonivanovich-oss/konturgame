@@ -2,6 +2,7 @@ import { useGameStore } from '../../stores/gameStore'
 import { BUSINESS_CONFIGS, getUpgradesForBusiness } from '../../constants/business'
 import { PRODUCT_CATEGORIES, isCategoryAllowed } from '../../services/assortmentEngine'
 import { getBusinessStage, STAGE_CONFIG, getNextStage } from '../../constants/businessStages'
+import { OWNER_INVESTMENTS_MAP } from '../../constants/ownerInvestments'
 
 const SERVICE_NAMES: Record<string, string> = {
   market: 'Маркет', bank: 'Банк', ofd: 'ОФД',
@@ -12,14 +13,15 @@ interface OperationsViewProps {
   onShowHireModal?: () => void
   onShowSupplierModal?: () => void
   onShowUpgradesModal?: () => void
+  onOpenOwnerInvestments?: () => void
 }
 
-export default function OperationsView({ onShowHireModal, onShowSupplierModal, onShowUpgradesModal }: OperationsViewProps) {
+export default function OperationsView({ onShowHireModal, onShowSupplierModal, onShowUpgradesModal, onOpenOwnerInvestments }: OperationsViewProps) {
   const {
     businessType, cashRegisters, enabledCategories, services,
     buyCashRegister, toggleCategory, employees, suppliers, qualityLevel,
     fireEmployee, setActiveSupplierId, activeSupplierId, balance,
-    entrepreneurEnergy, purchasedUpgrades,
+    entrepreneurEnergy, purchasedUpgrades, purchasedOwnerItems, ownerSubscriptions,
   } = useGameStore()
 
   const config = BUSINESS_CONFIGS[businessType]
@@ -64,6 +66,81 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal, o
             {entrepreneurEnergy > 70 ? '✅ Полна энергии - работаете в полную силу' : entrepreneurEnergy > 40 ? '⚠️ Устаёте - энергия восстановится в конце недели' : '🔴 Выгорание - производительность снижена, срочно завершайте неделю'}
           </div>
         </div>
+      </div>
+
+      {/* Owner Investments status */}
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>Инвестиции в себя</h3>
+          <button
+            onClick={onOpenOwnerInvestments}
+            style={{
+              padding: '6px 14px', borderRadius: 8, fontSize: 11, fontWeight: 700,
+              background: 'var(--k-orange)', color: '#fff', border: 'none', cursor: 'pointer',
+            }}
+          >
+            + Купить
+          </button>
+        </div>
+
+        {(() => {
+          const permanentItems = (purchasedOwnerItems ?? [])
+            .map(id => OWNER_INVESTMENTS_MAP[id])
+            .filter(Boolean)
+          const activeSubs = (ownerSubscriptions ?? [])
+            .map(sub => ({ config: OWNER_INVESTMENTS_MAP[sub.id as keyof typeof OWNER_INVESTMENTS_MAP], weeksLeft: sub.weeksLeft }))
+            .filter(s => s.config)
+
+          if (permanentItems.length === 0 && activeSubs.length === 0) {
+            return (
+              <div style={{
+                padding: 14, borderRadius: 12, border: '1px dashed var(--k-ink-10)',
+                fontSize: 12, opacity: 0.45, textAlign: 'center',
+              }}>
+                Нет активных инвестиций · покупки помогают восстанавливать энергию быстрее
+              </div>
+            )
+          }
+
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {permanentItems.map(item => (
+                <div key={item.id} style={{
+                  padding: '10px 14px', borderRadius: 12,
+                  background: 'rgba(0,180,120,0.06)', border: '1px solid rgba(0,180,120,0.2)',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                }}>
+                  <span style={{ fontSize: 20 }}>{item.icon}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700 }}>{item.name}</div>
+                    <div style={{ fontSize: 10, opacity: 0.6 }}>{item.description}</div>
+                  </div>
+                  <span style={{
+                    fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 6,
+                    background: 'var(--k-green)', color: '#fff',
+                  }}>ПОСТОЯННО</span>
+                </div>
+              ))}
+              {activeSubs.map(({ config: item, weeksLeft }) => (
+                <div key={item.id} style={{
+                  padding: '10px 14px', borderRadius: 12,
+                  background: 'rgba(255,107,0,0.04)', border: '1px solid rgba(255,107,0,0.2)',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                }}>
+                  <span style={{ fontSize: 20 }}>{item.icon}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700 }}>{item.name}</div>
+                    <div style={{ fontSize: 10, opacity: 0.6 }}>{item.description}</div>
+                  </div>
+                  <span style={{
+                    fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 6,
+                    background: 'var(--k-orange)', color: '#fff',
+                  }}>ещё {weeksLeft} нед.</span>
+                </div>
+              ))}
+            </div>
+          )
+        })()}
       </div>
 
       {/* Cash Registers */}

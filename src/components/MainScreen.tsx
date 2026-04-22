@@ -715,6 +715,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
           onShowHireModal={() => setShowHireEmployeeModal(true)}
           onShowSupplierModal={() => setShowSupplierModal(true)}
           onShowUpgradesModal={() => setShowUpgradesModal(true)}
+          onOpenOwnerInvestments={() => setShowOwnerInvestmentsModal(true)}
         />
       )}
       {activeView === 'statistics' && <StatisticsView />}
