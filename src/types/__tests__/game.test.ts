@@ -80,6 +80,13 @@ describe('Game Types', () => {
       loans: [],
       campaignROI: [],
       milestoneStatus: { week10: false, week20: false, week30: false },
+      npcs: [],
+      playerBackstory: null,
+      activeChainIds: [],
+      completedChainIds: [],
+      pendingChainFollowUps: [],
+      decisionLog: [],
+      seenNewspaperWeeks: [],
       createdAt: Date.now(),
       lastUpdated: Date.now(),
     }

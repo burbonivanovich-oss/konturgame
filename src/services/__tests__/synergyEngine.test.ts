@@ -72,6 +72,13 @@ function makeState(activeServices: ServiceType[] = []): GameState {
     weekPhase: 'actions' as const,
     purchasedOwnerItems: [],
     ownerSubscriptions: [],
+    npcs: [],
+    playerBackstory: null,
+    activeChainIds: [],
+    completedChainIds: [],
+    pendingChainFollowUps: [],
+    decisionLog: [],
+    seenNewspaperWeeks: [],
     createdAt: Date.now(),
     lastUpdated: Date.now(),
   }
