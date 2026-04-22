@@ -1,5 +1,5 @@
 import type { GameState, DayResult } from '../types/game'
-import { ACHIEVEMENTS } from '../constants/achievements'
+import { ACHIEVEMENTS, WAVE_UNLOCK_WEEKS } from '../constants/achievements'
 import { getActiveSynergies } from './synergyEngine'
 import { ECONOMY_CONSTANTS } from '../constants/business'
 
@@ -31,6 +31,9 @@ const ACHIEVEMENT_CHECKS: Record<string, CheckFn> = {
   full_promo: (s) => (s.promoCodesRevealed?.length ?? 0) >= 7,
   survived_competitor: (s) => s.currentWeek >= 4 && (s.competitorEventTriggered ?? false),
   survival_year_one: (s) => s.currentWeek >= ECONOMY_CONSTANTS.TOTAL_WEEKS_PER_YEAR && s.balance > 0 && s.reputation > 0,
+  milestone_week10: (s) => s.milestoneStatus?.week10 ?? false,
+  milestone_week20: (s) => s.milestoneStatus?.week20 ?? false,
+  milestone_week30: (s) => s.milestoneStatus?.week30 ?? false,
 }
 
 export function checkNewAchievements(state: GameState): string[] {
@@ -40,6 +43,7 @@ export function checkNewAchievements(state: GameState): string[] {
 
   for (const ach of ACHIEVEMENTS) {
     if (current.includes(ach.id)) continue
+    if ((state.currentWeek ?? 0) < WAVE_UNLOCK_WEEKS[ach.wave]) continue
     const checkFn = ACHIEVEMENT_CHECKS[ach.id]
     if (checkFn && checkFn(state, lastResult)) {
       newIds.push(ach.id)

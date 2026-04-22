@@ -8,6 +8,7 @@ import {
   calculateRevenue,
   calculateDailySubscriptions,
   calculateMonthlyExpenses,
+  getLoyaltyUpgradesBonus,
 } from './economyEngine'
 import { consumeStock, checkExpiry, getTotalStock } from './stockManager'
 import { generateEvent } from './eventGenerator'
@@ -93,6 +94,7 @@ export function processWeek(state: GameState): DayResult {
   const weeklySalaryCost = getWeeklySalaryCost(state)
   const weeklyEnergyCost = getWeeklyEnergyCost(state)
   const employeeCapacityBonus = getEmployeeCapacityBonus(state)
+  const loyaltyUpgradesBonus = getLoyaltyUpgradesBonus(state)
 
   // Process each day of the week (7 iterations)
   for (let dayNum = 0; dayNum < 7; dayNum++) {
@@ -267,7 +269,7 @@ export function processWeek(state: GameState): DayResult {
     }
     const elbaLoyaltyBonus = elbaActive ? (state.services.elba.effects.loyaltyBonus ?? 0) : 0
     const qualityLoyaltyBonus = getQualityLoyaltyBonus(state)
-    dayLoyaltyChange += elbaLoyaltyBonus + synergyMods.loyaltyBonus + qualityLoyaltyBonus
+    dayLoyaltyChange += elbaLoyaltyBonus + synergyMods.loyaltyBonus + qualityLoyaltyBonus + loyaltyUpgradesBonus
 
     // 17. Accumulate week results
     weekRevenue += dayRevenue
@@ -424,7 +426,6 @@ export function processWeek(state: GameState): DayResult {
     const achievedMilestone = newBalance >= 100000 || weekNetProfit >= 1000
     if (achievedMilestone) {
       state.milestoneStatus.week10 = true
-      state.achievements.push('milestone_week10')
     }
   }
 
@@ -432,7 +433,6 @@ export function processWeek(state: GameState): DayResult {
     const achievedMilestone = newBalance >= 250000 || weekNetProfit >= 5000
     if (achievedMilestone) {
       state.milestoneStatus.week20 = true
-      state.achievements.push('milestone_week20')
     }
   }
 
@@ -440,7 +440,6 @@ export function processWeek(state: GameState): DayResult {
     const achievedMilestone = newBalance >= 500000 || weekNetProfit >= 10000
     if (achievedMilestone) {
       state.milestoneStatus.week30 = true
-      state.achievements.push('milestone_week30')
     }
   }
 

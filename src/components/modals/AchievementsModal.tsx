@@ -14,6 +14,20 @@ const WAVE_LABELS: Record<number, string> = {
   4: 'Волна 4 — Мастерство',
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  progress: 'Прогресс',
+  business: 'Бизнес',
+  services: 'Контур',
+  special: 'Особое',
+}
+
+const CATEGORY_COLORS: Record<string, string> = {
+  progress: 'var(--k-blue)',
+  business: 'var(--k-good)',
+  services: 'var(--k-orange)',
+  special: '#9b59b6',
+}
+
 const WAVES = [1, 2, 3, 4] as const
 
 export default function AchievementsModal({ isOpen, onClose }: AchievementsModalProps) {
@@ -98,19 +112,29 @@ export default function AchievementsModal({ isOpen, onClose }: AchievementsModal
                             {ach.icon}
                           </span>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                               <p style={{
                                 fontSize: 12, fontWeight: 800,
                                 color: isUnlocked ? 'var(--k-ink)' : 'var(--k-ink-50)',
-                                margin: 0,
+                                margin: 0, flex: 1,
                               }}>
                                 {ach.name}
                               </p>
+                              <span style={{
+                                fontSize: 9, fontWeight: 700,
+                                color: CATEGORY_COLORS[ach.category],
+                                padding: '1px 5px', borderRadius: 3,
+                                border: `1px solid ${CATEGORY_COLORS[ach.category]}`,
+                                opacity: isUnlocked ? 1 : 0.5,
+                                flexShrink: 0,
+                              }}>
+                                {CATEGORY_LABELS[ach.category]}
+                              </span>
                               {isUnlocked && (
                                 <span style={{
                                   fontSize: 10, fontWeight: 800,
                                   background: 'var(--k-good)', color: 'white',
-                                  padding: '2px 6px', borderRadius: 4,
+                                  padding: '2px 6px', borderRadius: 4, flexShrink: 0,
                                 }}>✓</span>
                               )}
                             </div>

@@ -19,7 +19,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'first_day',
     name: 'Первый рабочий день',
-    description: 'Завершить первый день работы',
+    description: 'Завершить первую неделю работы',
     icon: '📅',
     category: 'progress',
     wave: 1,
@@ -88,14 +88,30 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     category: 'special',
     wave: 1,
   },
+  {
+    id: 'milestone_week10',
+    name: 'Первый рубеж',
+    description: 'Достичь вехи на 10-й неделе: 100 000 ₽ на балансе или 1 000 ₽ прибыли за неделю',
+    icon: '🎯',
+    category: 'progress',
+    wave: 1,
+  },
 
   // Wave 2 — unlocks week 12
   {
     id: 'big_profit',
-    name: 'Большой день',
-    description: 'Заработать 50 000 ₽ прибыли за один день',
+    name: 'Большая неделя',
+    description: 'Заработать 100 000 ₽ прибыли за одну неделю',
     icon: '💰',
     category: 'business',
+    wave: 2,
+  },
+  {
+    id: 'milestone_week20',
+    name: 'Полпути',
+    description: 'Достичь вехи на 20-й неделе: 250 000 ₽ на балансе или 5 000 ₽ прибыли за неделю',
+    icon: '🏁',
+    category: 'progress',
     wave: 2,
   },
   {
@@ -194,6 +210,14 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     description: 'Собрать все 7 промокодов на услуги Контура',
     icon: '🏆',
     category: 'services',
+    wave: 3,
+  },
+  {
+    id: 'milestone_week30',
+    name: 'Три квартала',
+    description: 'Достичь вехи на 30-й неделе: 500 000 ₽ на балансе или 10 000 ₽ прибыли за неделю',
+    icon: '🚀',
+    category: 'progress',
     wave: 3,
   },
   {
