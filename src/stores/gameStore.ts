@@ -1029,6 +1029,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     takeLoan: (amount: number, type: 'micro' | 'standard' | 'long-term') => {
       const state = get()
 
+      // Max 1 active loan at a time
+      const activeLoans = (state.loans ?? []).filter(l => !l.isRepaid)
+      if (activeLoans.length >= 1) return false
+
       // Loan parameters
       const params = {
         micro: { weeks: 2, weeklyRate: 0.15 / 2 },      // 15% total over 2 weeks

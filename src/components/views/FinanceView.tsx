@@ -308,29 +308,34 @@ export function FinanceView() {
               </div>
             )}
 
-            {/* Take new loan — only if bank connected */}
+            {/* Take new loan — only if bank connected and no active loan */}
             {bankActive ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {activeLoans.length === 0 && (
-                  <div style={{ fontSize: 11, opacity: 0.5, marginBottom: 2 }}>Нет активных займов</div>
+                {activeLoans.length === 0 ? (
+                  <>
+                    <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.5, letterSpacing: '0.05em' }}>ВЗЯТЬ ЗАЙМ</div>
+                    {LOAN_OPTIONS.map(opt => (
+                      <button
+                        key={opt.type}
+                        onClick={() => takeLoan(opt.amount, opt.type)}
+                        style={{
+                          width: '100%', padding: '9px 12px', borderRadius: 10, fontSize: 11, fontWeight: 700,
+                          background: 'var(--k-surface)', color: 'var(--k-blue)',
+                          border: '1px solid var(--k-blue)', cursor: 'pointer',
+                          textAlign: 'left', transition: 'opacity 0.2s',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.opacity = '0.75' }}
+                        onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <div style={{ fontSize: 11, opacity: 0.5, lineHeight: 1.5 }}>
+                    Погасите текущий займ, чтобы взять новый
+                  </div>
                 )}
-                <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.5, letterSpacing: '0.05em' }}>ВЗЯТЬ ЗАЙМ</div>
-                {LOAN_OPTIONS.map(opt => (
-                  <button
-                    key={opt.type}
-                    onClick={() => takeLoan(opt.amount, opt.type)}
-                    style={{
-                      width: '100%', padding: '9px 12px', borderRadius: 10, fontSize: 11, fontWeight: 700,
-                      background: 'var(--k-surface)', color: 'var(--k-blue)',
-                      border: '1px solid var(--k-blue)', cursor: 'pointer',
-                      textAlign: 'left', transition: 'opacity 0.2s',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.opacity = '0.75' }}
-                    onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
               </div>
             ) : (
               <div style={{ fontSize: 11, opacity: 0.45, lineHeight: 1.5 }}>
