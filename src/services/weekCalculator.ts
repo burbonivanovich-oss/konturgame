@@ -1,5 +1,8 @@
 import type { GameState, DayResult } from '../types/game'
 import { BUSINESS_CONFIGS, ECONOMY_CONSTANTS } from '../constants/business'
+import { ensureNPCsInitialized, applyNPCPassiveEffects, getInspectorChain2EventId } from './npcManager'
+import { getChainEvent, getChainStartEvent, CHAIN_TRIGGER_WEEKS, type ChainId } from '../constants/eventChains'
+import { templateToEvent, applyEventConsequence } from './eventGenerator'
 import {
   buildModifiers,
   calculateClients,
@@ -78,6 +81,9 @@ export function processWeek(state: GameState): DayResult {
   if (!state.milestoneStatus) {
     state.milestoneStatus = { week10: false, week20: false, week30: false }
   }
+
+  // Initialize NPC system
+  ensureNPCsInitialized(state)
 
   // Unlock suppliers based on progression
   unlockSuppliersIfNeeded(state)
@@ -476,6 +482,18 @@ export function processWeek(state: GameState): DayResult {
   // Advance onboarding stage if needed
   advanceOnboardingIfNeeded(state)
 
+  // Apply NPC passive effects each week
+  applyNPCPassiveEffects(state)
+
+  // Trigger chain events that are due this week
+  triggerDueChainEvents(state)
+
+  // Trigger first steps of chains that haven't started yet
+  triggerNewChainStarts(state)
+
+  // Auto-resolve expired decision timers (pick first non-Kontour option)
+  autoResolveExpiredDecisions(state)
+
   // Generate 1-2 events every week (crisis weeks always get 2)
   if (!state.isGameOver && !state.isVictory && !state.pendingEvent) {
     const firstEvent = generateEvent(state.currentWeek * 7, state)
@@ -501,6 +519,91 @@ export function processWeek(state: GameState): DayResult {
 
   state.lastDayResult = result
   return result
+}
+
+// ── Chain system helpers ─────────────────────────────────────────────────────
+
+function triggerDueChainEvents(state: GameState): void {
+  const due = (state.pendingChainFollowUps ?? []).filter(
+    f => f.triggerWeek <= state.currentWeek
+  )
+  if (due.length === 0) return
+
+  for (const followUp of due) {
+    // inspector_chain step 2 branches depending on Petrov relationship
+    const eventId = followUp.chainEventId.startsWith('inspector_chain_2')
+      ? getInspectorChain2EventId(state)
+      : followUp.chainEventId
+
+    const template = getChainEvent(eventId)
+    if (!template) continue
+
+    // Skip if already triggered
+    if ((state.triggeredEventIds ?? []).includes(template.id)) continue
+
+    const event = templateToEvent(template, state.currentWeek * 7, state.currentWeek)
+    queueChainEvent(state, event)
+  }
+
+  // Remove consumed follow-ups
+  state.pendingChainFollowUps = (state.pendingChainFollowUps ?? []).filter(
+    f => f.triggerWeek > state.currentWeek
+  )
+}
+
+function triggerNewChainStarts(state: GameState): void {
+  const triggered = state.triggeredEventIds ?? []
+  const active = state.activeChainIds ?? []
+  const completed = state.completedChainIds ?? []
+
+  for (const [chainId, minWeek] of Object.entries(CHAIN_TRIGGER_WEEKS) as [ChainId, number][]) {
+    if (state.currentWeek < minWeek) continue
+    if (active.includes(chainId) || completed.includes(chainId)) continue
+
+    // Special condition for 'legacy' chain: requires reputation >= 70
+    if (chainId === 'legacy' && state.reputation < 70) continue
+
+    const startEvent = getChainStartEvent(chainId)
+    if (!startEvent) continue
+    if (triggered.includes(startEvent.id)) continue
+
+    // Add small random jitter to avoid all chains firing on exact week
+    const jitterWeek = minWeek + Math.floor(Math.random() * 3)
+    if (state.currentWeek < jitterWeek) continue
+
+    const event = templateToEvent(startEvent, state.currentWeek * 7, state.currentWeek)
+    queueChainEvent(state, event)
+    if (!active.includes(chainId)) {
+      state.activeChainIds = [...active, chainId]
+    }
+    break  // Only start one new chain per week
+  }
+}
+
+function autoResolveExpiredDecisions(state: GameState): void {
+  if (!state.pendingEvent) return
+  const event = state.pendingEvent
+  if (!event.decisionDeadlineWeek) return
+  if (state.currentWeek <= event.decisionDeadlineWeek) return
+
+  // Deadline passed — pick first non-Kontour option as auto-resolve
+  const defaultOption = event.options.find(o => !o.isContourOption) ?? event.options[0]
+  if (!defaultOption) return
+
+  applyEventConsequence(state, event, defaultOption.id)
+  if (!state.triggeredEventIds.includes(event.id)) {
+    state.triggeredEventIds.push(event.id)
+  }
+  state.pendingEvent = state.pendingEventsQueue?.[0] ?? null
+  state.pendingEventsQueue = state.pendingEventsQueue?.slice(1) ?? []
+}
+
+function queueChainEvent(state: GameState, event: ReturnType<typeof templateToEvent>): void {
+  if (state.pendingEvent === null) {
+    state.pendingEvent = event
+  } else {
+    state.pendingEventsQueue = [...(state.pendingEventsQueue ?? []), event]
+  }
 }
 
 export function getCampaignStats(state: GameState) {

@@ -1,4 +1,6 @@
 import { useState, useRef } from 'react'
+import { CHAIN_FOLLOWUP_DELAY, getChainEvent } from '../constants/eventChains'
+import { getNPCDefinition } from '../constants/npcs'
 import ResponsiveLayout from './ResponsiveLayout'
 import MobileMainScreen from './MobileMainScreen'
 import { OnboardingPanel } from './OnboardingPanel'
@@ -384,68 +386,133 @@ function DashboardView({
         {/* LEFT column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-          {/* Pending event — inline white card with orange accent */}
-          {pendingEvent && (
-            <div style={{
-              background: '#fff', color: 'var(--k-ink)',
-              borderRadius: 20, padding: 20,
-              display: 'flex', flexDirection: 'column', gap: 14,
-              border: '1.5px solid var(--k-orange)',
-              borderTop: '3px solid var(--k-orange)',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{
-                    background: 'var(--k-orange)', color: '#fff',
-                    fontSize: 10, fontWeight: 800, letterSpacing: '0.06em',
-                    padding: '4px 10px', borderRadius: 999,
-                  }}>СОБЫТИЕ · ТРЕБУЕТ РЕШЕНИЯ</span>
-                  <span style={{ fontSize: 11, fontWeight: 500, opacity: 0.45 }}>Блокирует Следующий день</span>
-                </div>
-                <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.45 }}>
-                  1 / {1 + (pendingEventsQueue?.length ?? 0)}
-                </span>
-              </div>
-              <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.05 }}>
-                {pendingEvent.title}
-              </div>
-              {pendingEvent.description && (
-                <div style={{ fontSize: 13, fontWeight: 500, opacity: 0.65, lineHeight: 1.45 }}>
-                  {pendingEvent.description}
-                </div>
-              )}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                {pendingEvent.options.map((opt: any) => (
-                  <div
-                    key={opt.id}
-                    onClick={() => handleEventOption(opt.id)}
-                    style={{
-                      background: opt.isContourOption ? 'var(--k-green-soft)' : 'var(--k-surface)',
-                      color: 'var(--k-ink)',
-                      border: opt.isContourOption ? '1.5px solid var(--k-green)' : '1.5px solid rgba(14,17,22,0.08)',
-                      borderRadius: 14, padding: 14,
-                      cursor: 'pointer', transition: 'opacity 0.15s',
+          {/* Pending event — inline white card with orange/amber accent */}
+          {pendingEvent && (() => {
+            const npcDef = pendingEvent.npcId ? getNPCDefinition(pendingEvent.npcId) : null
+            const npc = pendingEvent.npcId ? (npcs ?? []).find(n => n.id === pendingEvent.npcId) : null
+            const isMoral = pendingEvent.isMoralDilemma === true
+            const accentColor = isMoral ? '#b45309' : 'var(--k-orange)'
+            const accentBg = isMoral ? 'rgba(180,83,9,0.06)' : '#fff'
+            const deadlineWeeksLeft = pendingEvent.decisionDeadlineWeek
+              ? Math.max(0, pendingEvent.decisionDeadlineWeek - currentWeek)
+              : null
+
+            return (
+              <div style={{
+                background: accentBg, color: 'var(--k-ink)',
+                borderRadius: 20, padding: 20,
+                display: 'flex', flexDirection: 'column', gap: 14,
+                border: `1.5px solid ${accentColor}`,
+                borderTop: `3px solid ${accentColor}`,
+              }}>
+                {/* Top row: badges + queue counter */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{
+                      background: accentColor, color: '#fff',
+                      fontSize: 10, fontWeight: 800, letterSpacing: '0.06em',
+                      padding: '4px 10px', borderRadius: 999,
                     }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{opt.text}</div>
-                    <div style={{
-                      fontSize: 18, fontWeight: 800,
-                      color: opt.isContourOption ? 'var(--k-green)' : 'var(--k-ink)',
-                    }} className="k-num">
-                      {opt.consequences?.balanceDelta != null
-                        ? `${opt.consequences.balanceDelta > 0 ? '+' : ''}${opt.consequences.balanceDelta.toLocaleString('ru-RU')} ₽`
-                        : '—'}
-                    </div>
-                    {opt.isContourOption && (
-                      <div style={{
-                        marginTop: 6, fontSize: 9, fontWeight: 800, letterSpacing: '0.06em',
-                        color: 'var(--k-green)',
-                      }}>КОНТУР ✓</div>
+                      {isMoral ? 'ДИЛЕММА · НЕТ ПРАВИЛЬНОГО ОТВЕТА' : 'СОБЫТИЕ · ТРЕБУЕТ РЕШЕНИЯ'}
+                    </span>
+                    {deadlineWeeksLeft !== null && (
+                      <span style={{
+                        background: deadlineWeeksLeft <= 1 ? 'rgba(220,53,69,0.1)' : 'rgba(255,107,0,0.1)',
+                        color: deadlineWeeksLeft <= 1 ? '#dc3545' : accentColor,
+                        fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 999,
+                      }}>
+                        ⏱ {deadlineWeeksLeft === 0 ? 'РЕШИТЬ СЕЙЧАС' : `${deadlineWeeksLeft} нед.`}
+                      </span>
                     )}
                   </div>
-                ))}
+                  <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.45 }}>
+                    1 / {1 + (pendingEventsQueue?.length ?? 0)}
+                  </span>
+                </div>
+
+                {/* NPC context row */}
+                {npcDef && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 14px', borderRadius: 12,
+                    background: 'rgba(14,17,22,0.04)',
+                  }}>
+                    <span style={{ fontSize: 24 }}>{npcDef.portrait}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 800 }}>{npcDef.name}</div>
+                      <div style={{ fontSize: 11, fontWeight: 500, opacity: 0.55 }}>{npcDef.shortRole}</div>
+                    </div>
+                    {npc && npc.isRevealed && (
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.4, marginBottom: 2 }}>ОТНОШЕНИЯ</div>
+                        <div style={{
+                          fontSize: 11, fontWeight: 800,
+                          color: npc.relationshipLevel >= 60 ? '#00b478' : npc.relationshipLevel >= 40 ? '#888' : '#dc3545',
+                        }}>
+                          {npc.relationshipLevel >= 80 ? 'Союзник' :
+                           npc.relationshipLevel >= 60 ? 'Доверяет' :
+                           npc.relationshipLevel >= 40 ? 'Нейтрально' :
+                           npc.relationshipLevel >= 20 ? 'Напряжённо' : 'Враждебно'}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Title */}
+                <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+                  {pendingEvent.title}
+                </div>
+
+                {/* Description */}
+                {pendingEvent.description && (
+                  <div style={{ fontSize: 13, fontWeight: 500, opacity: 0.65, lineHeight: 1.45 }}>
+                    {pendingEvent.description}
+                  </div>
+                )}
+
+                {/* Options */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                  {pendingEvent.options.map((opt: any) => (
+                    <div
+                      key={opt.id}
+                      onClick={() => handleEventOption(opt.id)}
+                      style={{
+                        background: opt.isContourOption ? 'var(--k-green-soft)' : 'var(--k-surface)',
+                        color: 'var(--k-ink)',
+                        border: opt.isContourOption ? '1.5px solid var(--k-green)' : '1.5px solid rgba(14,17,22,0.08)',
+                        borderRadius: 14, padding: 14,
+                        cursor: 'pointer', transition: 'opacity 0.15s',
+                      }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{opt.text}</div>
+                      <div style={{
+                        fontSize: 18, fontWeight: 800,
+                        color: opt.isContourOption ? 'var(--k-green)' : 'var(--k-ink)',
+                      }} className="k-num">
+                        {opt.consequences?.balanceDelta != null
+                          ? `${opt.consequences.balanceDelta > 0 ? '+' : ''}${opt.consequences.balanceDelta.toLocaleString('ru-RU')} ₽`
+                          : '—'}
+                      </div>
+                      {opt.isContourOption && (
+                        <div style={{
+                          marginTop: 6, fontSize: 9, fontWeight: 800, letterSpacing: '0.06em',
+                          color: 'var(--k-green)',
+                        }}>КОНТУР ✓</div>
+                      )}
+                      {opt.npcRelationshipDelta !== undefined && (
+                        <div style={{
+                          marginTop: 4, fontSize: 9, fontWeight: 700,
+                          color: opt.npcRelationshipDelta > 0 ? '#00b478' : '#dc3545',
+                        }}>
+                          {opt.npcRelationshipDelta > 0 ? '+' : ''}{opt.npcRelationshipDelta} к отношениям
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* Indicators */}
           <div style={{
@@ -593,7 +660,9 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
     addSavedBalance, setTemporaryModifiers, advanceDay,
     weekPhase, completeActionsPhase, completeResultsPhase, completeSummaryPhase,
     onboardingStage, onboardingStepIndex, onboardingCompleted,
-    milestoneStatus, businessType,
+    milestoneStatus, businessType, npcs,
+    updateNPCRelationship: storeUpdateNPCRelationship,
+    addChainFollowUp,
   } = useGameStore()
 
   // Track which milestones the player has seen (opened the Вехи tab after they fired)
@@ -633,6 +702,18 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       )
     }
     if (c.serviceId) activateService(c.serviceId)
+
+    // NPC relationship update
+    if (option.npcRelationshipDelta !== undefined && pendingEvent.npcId) {
+      storeUpdateNPCRelationship(pendingEvent.npcId, option.npcRelationshipDelta)
+    }
+
+    // Chain follow-up scheduling
+    if (option.chainFollowUpId) {
+      const delay = CHAIN_FOLLOWUP_DELAY[option.chainFollowUpId] ?? 2
+      addChainFollowUp(option.chainFollowUpId, currentWeek + delay)
+    }
+
     if (option.isContourOption && c.balanceDelta !== undefined) {
       const nonKontour = pendingEvent.options.filter((o) => !o.isContourOption)
       if (nonKontour.length > 0) {

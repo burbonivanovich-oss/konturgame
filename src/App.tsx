@@ -1,11 +1,17 @@
 import { useEffect, useState } from 'react'
 import MainScreen from '@components/MainScreen'
 import BusinessSelector from '@components/BusinessSelector'
+import BackstoryScreen from '@components/BackstoryScreen'
 import { useGameStore, syncOnboardingState } from './stores/gameStore'
+import type { PlayerBackstory } from './types/game'
+
+type AppScreen = 'backstory' | 'business-select' | 'game'
 
 export default function App() {
-  const [showGame, setShowGame] = useState(false)
+  const [screen, setScreen] = useState<AppScreen>('backstory')
+  const [pendingBackstory, setPendingBackstory] = useState<PlayerBackstory | null>(null)
   const loadGame = useGameStore((s) => s.loadGame)
+  const setPlayerBackstory = useGameStore((s) => s.setPlayerBackstory)
 
   // Load game from localStorage on mount
   useEffect(() => {
@@ -14,30 +20,68 @@ export default function App() {
       try {
         const state = JSON.parse(saved)
         loadGame(state)
-        // Ensure unlockedServices syncs with onboardingStage
         syncOnboardingState()
-        setShowGame(true)
+        setScreen('game')
       } catch (error) {
         console.error('Failed to load game', error)
-        setShowGame(false)
+        setScreen('backstory')
       }
     } else {
-      setShowGame(false)
+      setScreen('backstory')
     }
   }, [loadGame])
 
+  const handleBackstoryComplete = (backstory: PlayerBackstory) => {
+    setPendingBackstory(backstory)
+    setScreen('business-select')
+  }
+
   const handleGameStart = () => {
-    setShowGame(true)
+    if (pendingBackstory) {
+      setPlayerBackstory(pendingBackstory)
+
+      // Apply backstory effects to starting state
+      const store = useGameStore.getState()
+      if (pendingBackstory.motivation === 'dream') {
+        // Dream: +5 starting reputation
+        useGameStore.setState({ reputation: store.reputation + 5 })
+      } else if (pendingBackstory.motivation === 'debt') {
+        // Debt: start with a small loan to repay
+        useGameStore.setState({
+          balance: Math.max(0, store.balance - 20000),
+          loans: [
+            ...store.loans,
+            {
+              id: `backstory_loan_${Date.now()}`,
+              amount: 20000,
+              borrowedWeek: 1,
+              dueWeek: 12,
+              weeklyInterest: 0.01,
+              totalInterestPaid: 0,
+              isRepaid: false,
+              type: 'long-term' as const,
+            },
+          ],
+        })
+      }
+      // 'fired' motivation: no change (80k balance is already set)
+    }
+    setScreen('game')
   }
 
   const handleRestartGame = () => {
     localStorage.removeItem('konturgame_state')
-    setShowGame(false)
+    setPendingBackstory(null)
+    setScreen('backstory')
   }
 
-  if (showGame) {
+  if (screen === 'game') {
     return <MainScreen onRestart={handleRestartGame} />
   }
 
-  return <BusinessSelector onGameStart={handleGameStart} />
+  if (screen === 'business-select') {
+    return <BusinessSelector onGameStart={handleGameStart} />
+  }
+
+  return <BackstoryScreen onComplete={handleBackstoryComplete} />
 }
