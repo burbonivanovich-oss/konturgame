@@ -721,16 +721,12 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       {activeView === 'statistics' && <StatisticsView />}
       {activeView === 'campaigns' && (
         <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ padding: '20px 24px', flex: 1 }}>
-            <CampaignROIView />
-          </div>
+          <CampaignROIView />
         </div>
       )}
       {activeView === 'milestones' && (
         <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ padding: '20px 24px', flex: 1 }}>
-            <MilestoneView />
-          </div>
+          <MilestoneView />
         </div>
       )}
 

@@ -16,6 +16,7 @@ import AssortmentModal from './modals/AssortmentModal'
 import PromoCodeModal from './modals/PromoCodeModal'
 import PromoWalletModal from './modals/PromoWalletModal'
 import BundleModal from './modals/BundleModal'
+import OwnerInvestmentsModal from './modals/OwnerInvestmentsModal'
 import { WeekSummaryOverlay } from './WeekSummaryOverlay'
 import { WeekResultsOverlay } from './WeekResultsOverlay'
 import { useGameStore } from '../stores/gameStore'
@@ -34,11 +35,12 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
   const [showAchievementsModal, setShowAchievementsModal] = useState(false)
   const [showCashRegisterModal, setShowCashRegisterModal] = useState(false)
   const [showPromoWalletModal, setShowPromoWalletModal] = useState(false)
+  const [showOwnerInvestmentsModal, setShowOwnerInvestmentsModal] = useState(false)
   const [activeTab, setActiveTab] = useState('day')
 
   const {
     pendingEvent, pendingEventsQueue, isGameOver, isVictory, businessType, achievements, promoCodesRevealed,
-    weekPhase, completeResultsPhase, completeSummaryPhase,
+    weekPhase, completeResultsPhase, completeSummaryPhase, lastDayResult, balance,
   } = useGameStore()
   const [savingsToast, setSavingsToast] = useState<number | null>(null)
 
@@ -203,18 +205,23 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
                 background: 'var(--k-orange)', color: 'var(--k-ink)',
                 borderRadius: 12, padding: 12, display: 'flex', flexDirection: 'column', gap: 4,
               }}>
-                <div style={{ fontSize: 9, fontWeight: 800, opacity: 0.7 }}>ДОХОД</div>
-                <div style={{ fontSize: 18, fontWeight: 800 }} className="k-num">24860</div>
-                <div style={{ fontSize: 9, opacity: 0.7 }}>+18%</div>
+                <div style={{ fontSize: 9, fontWeight: 800, opacity: 0.7 }}>БАЛАНС</div>
+                <div style={{ fontSize: 16, fontWeight: 800 }} className="k-num">
+                  {balance.toLocaleString('ru-RU')} ₽
+                </div>
               </div>
 
               <div style={{
-                background: 'var(--k-green)', color: 'var(--k-ink)',
+                background: (lastDayResult?.netProfit ?? 0) >= 0 ? 'var(--k-green)' : 'var(--k-bad)',
+                color: 'var(--k-ink)',
                 borderRadius: 12, padding: 12, display: 'flex', flexDirection: 'column', gap: 4,
               }}>
-                <div style={{ fontSize: 9, fontWeight: 800, opacity: 0.7 }}>ЧИСТАЯ</div>
-                <div style={{ fontSize: 18, fontWeight: 800 }} className="k-num">+14220</div>
-                <div style={{ fontSize: 9, opacity: 0.7 }}>₽</div>
+                <div style={{ fontSize: 9, fontWeight: 800, opacity: 0.7 }}>ПРИБЫЛЬ</div>
+                <div style={{ fontSize: 16, fontWeight: 800 }} className="k-num">
+                  {lastDayResult
+                    ? `${lastDayResult.netProfit >= 0 ? '+' : ''}${lastDayResult.netProfit.toLocaleString('ru-RU')} ₽`
+                    : '—'}
+                </div>
               </div>
             </div>
 
@@ -244,7 +251,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
             </div>
 
             <div style={{
-              display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8,
+              display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8,
             }}>
               <button
                 onClick={() => setShowCashRegisterModal(true)}
@@ -265,6 +272,16 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
                 }}
               >
                 🔧 Улучш.
+              </button>
+              <button
+                onClick={() => setShowOwnerInvestmentsModal(true)}
+                style={{
+                  padding: 12, borderRadius: 10, border: 'none',
+                  background: 'var(--k-green)', color: 'white',
+                  fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                ⚡ Энергия
               </button>
             </div>
 
@@ -317,6 +334,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
       <CashRegisterModal isOpen={showCashRegisterModal} onClose={() => setShowCashRegisterModal(false)} />
       <PromoCodeModal />
       <PromoWalletModal isOpen={showPromoWalletModal} onClose={() => setShowPromoWalletModal(false)} />
+      <OwnerInvestmentsModal isOpen={showOwnerInvestmentsModal} onClose={() => setShowOwnerInvestmentsModal(false)} />
       <BundleModal />
       <VictoryModal isOpen={isVictory} type="victory" />
       <VictoryModal isOpen={isGameOver && !isVictory} type="defeat" />
