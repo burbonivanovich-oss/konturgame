@@ -19,7 +19,7 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal, o
     businessType, cashRegisters, enabledCategories, services,
     buyCashRegister, toggleCategory, employees, suppliers, qualityLevel,
     fireEmployee, setActiveSupplierId, activeSupplierId, balance,
-    entrepreneurEnergy, setEntrepreneurEnergy, purchasedUpgrades,
+    entrepreneurEnergy, purchasedUpgrades,
   } = useGameStore()
 
   const config = BUSINESS_CONFIGS[businessType]
@@ -60,24 +60,9 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal, o
               transition: 'width 0.3s',
             }} />
           </div>
-          <div style={{ fontSize: 11, opacity: 0.6, lineHeight: 1.4, marginBottom: 12 }}>
-            {entrepreneurEnergy > 70 ? '✅ Полна энергии - можете работать в полную силу' : entrepreneurEnergy > 40 ? '⚠️ Устаёте - скоро потребуется отдых' : '🔴 Выгорание - срочно нужен отдых, производительность снижена'}
+          <div style={{ fontSize: 11, opacity: 0.6, lineHeight: 1.4 }}>
+            {entrepreneurEnergy > 70 ? '✅ Полна энергии - работаете в полную силу' : entrepreneurEnergy > 40 ? '⚠️ Устаёте - энергия восстановится в конце недели' : '🔴 Выгорание - производительность снижена, срочно завершайте неделю'}
           </div>
-          {entrepreneurEnergy < 100 && (
-            <button
-              onClick={() => setEntrepreneurEnergy(Math.min(100, entrepreneurEnergy + 20))}
-              style={{
-                width: '100%', padding: '10px', borderRadius: 10,
-                background: 'var(--k-green)', color: '#fff',
-                border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
-                transition: 'opacity 0.2s',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-            >
-              💤 Отдохнуть (+20%)
-            </button>
-          )}
         </div>
       </div>
 
