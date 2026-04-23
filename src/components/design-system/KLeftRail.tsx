@@ -10,20 +10,21 @@ interface NavItem {
   id: NavId
   label: string
   icon: string
+  unlocksAtWeek?: number  // hidden until this week
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'dashboard',   label: 'Дневной цикл', icon: 'dashboard'  },
-  { id: 'ecosystem',   label: 'Экосистема',   icon: 'eco'        },
-  { id: 'finance',     label: 'Финансы',      icon: 'finance'    },
-  { id: 'marketing',   label: 'Маркетинг',    icon: 'mkt'        },
-  { id: 'operations',  label: 'Управление',   icon: 'ops'        },
-  { id: 'warehouse',   label: 'Склад',        icon: 'warehouse'  },
-  { id: 'reputation',  label: 'Репутация',    icon: 'rep'        },
-  { id: 'milestones',  label: 'Вехи',         icon: 'milestone'  },
-  { id: 'statistics',  label: 'Статистика',   icon: 'stats'      },
-  { id: 'campaigns',   label: 'Кампании ROI', icon: 'roi'        },
-  { id: 'journal',     label: 'Журнал',       icon: 'log'        },
+  { id: 'dashboard',   label: 'Дневной цикл', icon: 'dashboard'               },
+  { id: 'ecosystem',   label: 'Экосистема',   icon: 'eco'                     },
+  { id: 'finance',     label: 'Финансы',      icon: 'finance'                 },
+  { id: 'marketing',   label: 'Маркетинг',    icon: 'mkt'                     },
+  { id: 'warehouse',   label: 'Склад',        icon: 'warehouse', unlocksAtWeek: 3  },
+  { id: 'operations',  label: 'Управление',   icon: 'ops',       unlocksAtWeek: 5  },
+  { id: 'reputation',  label: 'Репутация',    icon: 'rep',       unlocksAtWeek: 5  },
+  { id: 'milestones',  label: 'Вехи',         icon: 'milestone', unlocksAtWeek: 7  },
+  { id: 'statistics',  label: 'Статистика',   icon: 'stats',     unlocksAtWeek: 7  },
+  { id: 'campaigns',   label: 'Кампании ROI', icon: 'roi',       unlocksAtWeek: 10 },
+  { id: 'journal',     label: 'Журнал',       icon: 'log',       unlocksAtWeek: 10 },
 ]
 
 const BIZ_ICON: Record<BusinessType, string> = {
@@ -55,6 +56,7 @@ interface KLeftRailProps {
   pendingEventCount: number
   milestoneBadge?: boolean
   promoCodesCount: number
+  highlightNav?: NavId
   onNav: (id: NavId) => void
   onHelp: () => void
   onSettings: () => void
@@ -65,7 +67,7 @@ interface KLeftRailProps {
 export function KLeftRail({
   active, businessType, currentWeek, activeServiceCount,
   savedBalance, pendingEventCount, milestoneBadge,
-  promoCodesCount, onNav, onHelp, onSettings,
+  promoCodesCount, highlightNav, onNav, onHelp, onSettings,
   onPromoWallet, onAchievements,
 }: KLeftRailProps) {
   const season = getSeason(currentWeek)
@@ -108,7 +110,7 @@ export function KLeftRail({
 
       {/* Navigation */}
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {NAV_ITEMS.map(item => {
+        {NAV_ITEMS.filter(item => !item.unlocksAtWeek || currentWeek >= item.unlocksAtWeek).map(item => {
           const isActive = item.id === active
           const badge =
             item.id === 'dashboard' && pendingEventCount > 0 ? String(pendingEventCount) :
@@ -116,10 +118,12 @@ export function KLeftRail({
             item.id === 'milestones' && milestoneBadge ? 'NEW' :
             undefined
 
+          const isPulsing = item.id === highlightNav && !isActive
           return (
             <button
               key={item.id}
               onClick={() => onNav(item.id)}
+              className={isPulsing ? 'nav-pulse' : undefined}
               style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '8px 10px', borderRadius: 9,
@@ -127,6 +131,7 @@ export function KLeftRail({
                 color: isActive ? K.white : K.ink,
                 fontSize: 13, fontWeight: 500, cursor: 'pointer',
                 border: 'none', fontFamily: 'inherit', width: '100%', textAlign: 'left',
+                outline: isPulsing ? `2px solid ${K.orange}` : 'none',
               }}
             >
               <KIcon name={item.icon} size={16} color={isActive ? K.white : K.ink2} />

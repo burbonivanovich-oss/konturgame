@@ -300,7 +300,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
 
         {activeTab === 'services' && (
           <>
-            <OnboardingPanel />
+            <OnboardingPanel onNavigate={() => setActiveTab('services')} />
             <ServicePanel />
           </>
         )}

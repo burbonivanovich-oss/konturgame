@@ -9,6 +9,7 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     id: 'TAX01',
     title: 'Налоговая проверка — серьёзные нарушения',
     description: 'ФНС выявила грубые нарушения в отчётности за прошлые периоды. Требование об уплате недоимки и штрафа. Без системы отчётности разобраться почти нереально.',
+    npcId: 'petrov',
     trigger: { dayMin: 10, randomChance: 0.04, oneTime: true },
     options: [
       {
@@ -34,6 +35,7 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     id: 'BLOGGER01',
     title: 'Популярный блогер',
     description: 'Местный блогер упомянул ваш бизнес в своём посте. Поток клиентов резко вырос!',
+    npcId: 'gleb',
     trigger: { randomChance: 0.03 },
     options: [
       {
@@ -47,6 +49,7 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     id: 'SUPPLY01',
     title: 'Полный срыв поставки в сезон',
     description: 'Поставщик бесследно исчез вместе с предоплатой. Склад пуст, заказы сорваны, клиенты уходят к конкуренту. Без цифрового учёта найти замену — дни потерь.',
+    npcId: 'mikhail',
     trigger: { randomChance: 0.05 },
     options: [
       {
@@ -80,6 +83,7 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     id: 'STAFF01',
     title: 'Бунт персонала — угроза коллективного ухода',
     description: 'Три ключевых сотрудника выставили ультиматум: повышение зарплаты на 40% или уходят всей командой. Без нормального учёта рабочего времени до этого и дошло.',
+    npcId: 'svetlana',
     trigger: { randomChance: 0.05 },
     options: [
       {
@@ -105,6 +109,7 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     id: 'COMPETITOR01',
     title: 'Новый конкурент',
     description: 'Рядом открылся конкурент. Часть клиентов переключается на него.',
+    npcId: 'anna',
     trigger: { randomChance: 0.04, oneTime: true },
     options: [
       {
@@ -141,6 +146,7 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     id: 'AUDIT01',
     title: 'Поставщик оказался мошенником',
     description: 'Вы работали с поставщиком три месяца — и только сейчас выяснилось, что он в реестре недобросовестных. Крупная предоплата пропала, товар оказался бракованным. Ваша репутация под ударом.',
+    npcId: 'mikhail',
     trigger: { randomChance: 0.03 },
     options: [
       {

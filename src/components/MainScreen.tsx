@@ -348,8 +348,6 @@ function DashboardView({
             )
           })()}
 
-          {/* Onboarding panel */}
-          <OnboardingPanel />
         </div>
 
         {/* ── RIGHT: KPIs + rep + loyalty ── */}
@@ -485,7 +483,10 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const [showOwnerInvestmentsModal, setShowOwnerInvestmentsModal] = useState(false)
   const [dayBlockedMsg, setDayBlockedMsg] = useState<string | null>(null)
   const [savingsToast, setSavingsToast] = useState<number | null>(null)
+  const [unlockToast, setUnlockToast] = useState<string | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const unlockToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const visitedTabsRef = useRef<Set<NavId>>(new Set(['dashboard', 'ecosystem', 'finance', 'marketing']))
 
   const {
     currentWeek, services, pendingEvent, pendingEventsQueue,
@@ -594,9 +595,25 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
     }
   }
 
+  const UNLOCK_TOAST_LABELS: Partial<Record<NavId, string>> = {
+    warehouse:   'Раздел «Склад» разблокирован',
+    operations:  'Раздел «Управление» разблокирован',
+    reputation:  'Раздел «Репутация» разблокирован',
+    milestones:  'Раздел «Вехи» разблокирован',
+    statistics:  'Раздел «Статистика» разблокирован',
+    campaigns:   'Раздел «Кампании ROI» разблокирован',
+    journal:     'Раздел «Журнал» разблокирован',
+  }
+
   const handleNavClick = (id: NavId) => {
     if (id === 'milestones' && milestoneStatus) {
       seenMilestonesRef.current = { ...milestoneStatus }
+    }
+    if (!visitedTabsRef.current.has(id) && UNLOCK_TOAST_LABELS[id]) {
+      visitedTabsRef.current.add(id)
+      if (unlockToastTimer.current) clearTimeout(unlockToastTimer.current)
+      setUnlockToast(UNLOCK_TOAST_LABELS[id]!)
+      unlockToastTimer.current = setTimeout(() => setUnlockToast(null), 3000)
     }
     setActiveView(id)
   }
@@ -620,6 +637,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
         pendingEventCount={pendingEventCount}
         milestoneBadge={milestoneBadge > 0}
         promoCodesCount={promoCodesRevealed?.length ?? 0}
+        highlightNav={highlightNav}
         onNav={handleNavClick}
         onHelp={() => setShowHelpModal(true)}
         onSettings={() => setShowSettingsModal(true)}
@@ -634,6 +652,8 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
           day={useGameStore.getState().dayOfWeek + 1}
           phase={weekPhase}
         />
+
+        <OnboardingPanel onNavigate={setActiveView} />
 
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
@@ -720,6 +740,18 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
           padding: '16px 24px', borderRadius: 16, fontSize: 14, fontWeight: 700,
         }}>
           ✅ Спасено {savingsToast.toLocaleString('ru-RU')} ₽!
+        </div>
+      )}
+
+      {/* Tab unlock toast */}
+      {unlockToast !== null && (
+        <div style={{
+          position: 'fixed', bottom: 24, right: 24,
+          zIndex: 50, background: K.violet, color: K.white,
+          padding: '12px 20px', borderRadius: 12, fontSize: 13, fontWeight: 700,
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          🔓 {unlockToast}
         </div>
       )}
     </div>

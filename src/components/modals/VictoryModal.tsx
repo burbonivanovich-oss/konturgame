@@ -115,10 +115,20 @@ function getNarrativeEnding(
   }
 }
 
+const SERVICE_LABELS: Record<string, string> = {
+  market: 'Контур.Маркет',
+  ofd:    'Контур.ОФД',
+  elba:   'Контур.Эльба',
+  bank:   'Контур.Банк',
+  diadoc: 'Контур.Диадок',
+  fokus:  'Контур.Фокус',
+  extern: 'Контур.Экстерн',
+}
+
 export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
   const {
     startNewGame, currentWeek, balance, reputation, gameOverReason,
-    playerBackstory, npcs, completedChainIds,
+    playerBackstory, npcs, completedChainIds, totalPainLosses,
   } = useGameStore()
 
   const isVictory = type === 'victory'
@@ -208,6 +218,35 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
               Вы успешно управляли бизнесом и освоили экосистему Контура!
             </p>
           )}
+          {!isVictory && totalPainLosses && totalPainLosses.total > 0 && (() => {
+            const top3 = Object.entries(SERVICE_LABELS)
+              .map(([key, label]) => ({ label, loss: (totalPainLosses as any)[key] as number ?? 0 }))
+              .filter(x => x.loss > 0)
+              .sort((a, b) => b.loss - a.loss)
+              .slice(0, 3)
+            return top3.length > 0 ? (
+              <div style={{
+                textAlign: 'left',
+                background: K.orangeSoft,
+                border: `1px solid ${K.orange}`,
+                borderRadius: 12, padding: '14px 18px', marginBottom: 16,
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: K.orange, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
+                  За всю игру потеряно без Контура
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {top3.map(({ label, loss }) => (
+                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                      <span style={{ color: K.ink2 }}>{label}</span>
+                      <span style={{ fontWeight: 700, color: K.bad, fontVariantNumeric: 'tabular-nums' }}>
+                        −{loss.toLocaleString('ru-RU')} ₽
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null
+          })()}
           {!isVictory && (
             <p style={{ fontSize: 14, color: K.muted, marginBottom: 24, lineHeight: 1.6 }}>
               Анализируйте ошибки и попробуйте снова!
