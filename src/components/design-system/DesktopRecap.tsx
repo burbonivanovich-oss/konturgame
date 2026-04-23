@@ -1,5 +1,6 @@
 import { useGameStore } from '../../stores/gameStore'
 import { ECONOMY_CONSTANTS } from '../../constants/business'
+import { K } from './tokens'
 
 interface DesktopRecapProps {
   onContinue?: () => void
@@ -78,8 +79,8 @@ export function DesktopRecap({ onContinue, embedded = false }: DesktopRecapProps
 
         {/* Net profit hero card */}
         <div style={{
-          background: isProfitable ? 'var(--k-green)' : 'var(--k-bad)',
-          color: isProfitable ? 'var(--k-ink)' : '#fff',
+          background: isProfitable ? K.mint : K.bad,
+          color: isProfitable ? K.ink : '#fff',
           borderRadius: 28, padding: 24,
           display: 'flex', flexDirection: 'column', gap: 12,
         }}>
@@ -95,8 +96,8 @@ export function DesktopRecap({ onContinue, embedded = false }: DesktopRecapProps
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <div style={{
               padding: '5px 10px', borderRadius: 999,
-              background: isProfitable ? 'var(--k-ink)' : 'rgba(255,255,255,0.2)',
-              color: isProfitable ? 'var(--k-green)' : '#fff',
+              background: isProfitable ? K.ink : 'rgba(255,255,255,0.2)',
+              color: isProfitable ? K.mint : '#fff',
               fontSize: 11, fontWeight: 800,
             }}>
               {lastDayResult.served}/{lastDayResult.clients} клиентов
@@ -106,7 +107,7 @@ export function DesktopRecap({ onContinue, embedded = false }: DesktopRecapProps
                 padding: '5px 10px', borderRadius: 999,
                 background: 'rgba(14,17,22,0.12)',
                 fontSize: 11, fontWeight: 700,
-                color: isProfitable ? 'var(--k-ink)' : '#fff',
+                color: isProfitable ? K.ink : '#fff',
               }}>
                 −{lastDayResult.missed} потеряно
               </div>
@@ -117,13 +118,13 @@ export function DesktopRecap({ onContinue, embedded = false }: DesktopRecapProps
         {/* Achievement — show if unlocked today */}
         {todayAchievement && (
           <div style={{
-            background: 'var(--k-orange)', color: 'var(--k-ink)',
+            background: K.orange, color: K.ink,
             borderRadius: 20, padding: 18,
             display: 'flex', alignItems: 'center', gap: 14,
           }}>
             <div style={{
               width: 48, height: 48, borderRadius: 12,
-              background: 'var(--k-ink)', color: 'var(--k-orange)',
+              background: K.ink, color: K.orange,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 20, fontWeight: 800, flexShrink: 0,
             }}>★</div>
@@ -151,7 +152,7 @@ export function DesktopRecap({ onContinue, embedded = false }: DesktopRecapProps
           </div>
           <div style={{ background: '#fff', borderRadius: 16, padding: '12px 14px' }}>
             <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.06em', opacity: 0.45 }}>СПАСЕНО СЕГОДНЯ</div>
-            <div style={{ fontSize: 20, fontWeight: 800, marginTop: 4, color: 'var(--k-green)' }} className="k-num">
+            <div style={{ fontSize: 20, fontWeight: 800, marginTop: 4, color: K.mint }} className="k-num">
               +{savedToday.toLocaleString('ru-RU')} ₽
             </div>
           </div>
@@ -183,7 +184,7 @@ export function DesktopRecap({ onContinue, embedded = false }: DesktopRecapProps
             display: 'grid', gridTemplateColumns: '1fr 90px 90px 90px',
             gap: 6, padding: '4px 8px',
             fontSize: 10, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.4,
-            borderBottom: '1.5px solid var(--k-ink-10)',
+            borderBottom: `1.5px solid ${K.line}`,
           }}>
             <span>ПОКАЗАТЕЛЬ</span>
             <span style={{ textAlign: 'right' }}>БЕЗ</span>
@@ -197,7 +198,7 @@ export function DesktopRecap({ onContinue, embedded = false }: DesktopRecapProps
               <div key={i} style={{
                 display: 'grid', gridTemplateColumns: '1fr 90px 90px 90px',
                 gap: 6, padding: '7px 8px',
-                borderBottom: i < receiptRows.length - 1 ? '1px dashed var(--k-ink-10)' : 'none',
+                borderBottom: i < receiptRows.length - 1 ? `1px dashed ${K.line}` : 'none',
                 alignItems: 'center',
               }}>
                 <div>
@@ -206,21 +207,21 @@ export function DesktopRecap({ onContinue, embedded = false }: DesktopRecapProps
                 </div>
                 <div className="k-num" style={{
                   textAlign: 'right', fontWeight: 700, fontSize: 13,
-                  color: row.without < 0 ? 'var(--k-bad)' : 'var(--k-good)',
+                  color: row.without < 0 ? K.bad : K.good,
                   fontFamily: 'JetBrains Mono, monospace',
                 }}>
                   {row.without > 0 ? '+' : ''}{row.without.toLocaleString('ru-RU')}
                 </div>
                 <div className="k-num" style={{
                   textAlign: 'right', fontWeight: 700, fontSize: 13,
-                  color: row.with < 0 ? 'rgba(255,90,90,0.8)' : 'var(--k-good)',
+                  color: row.with < 0 ? 'rgba(255,90,90,0.8)' : K.good,
                   fontFamily: 'JetBrains Mono, monospace',
                 }}>
                   {row.with > 0 ? '+' : ''}{row.with.toLocaleString('ru-RU')}
                 </div>
                 <div className="k-num" style={{
                   textAlign: 'right', fontWeight: 800, fontSize: 13,
-                  color: row.saved > 0 ? 'var(--k-good)' : 'var(--k-ink-30)',
+                  color: row.saved > 0 ? K.good : K.muted2,
                   fontFamily: 'JetBrains Mono, monospace',
                 }}>
                   {row.saved > 0 ? `+${row.saved.toLocaleString('ru-RU')}` : '—'}
@@ -233,26 +234,26 @@ export function DesktopRecap({ onContinue, embedded = false }: DesktopRecapProps
           <div style={{
             display: 'grid', gridTemplateColumns: '1fr 90px 90px 90px',
             gap: 6, padding: '10px 8px 0',
-            borderTop: '2px solid var(--k-ink)',
+            borderTop: `2px solid ${K.ink}`,
             alignItems: 'center',
           }}>
             <div style={{ fontSize: 13, fontWeight: 800 }}>Итого за день</div>
             <div className="k-num" style={{
               textAlign: 'right', fontWeight: 800, fontSize: 14,
-              color: estNetWithout < 0 ? 'var(--k-bad)' : 'var(--k-good)',
+              color: estNetWithout < 0 ? K.bad : K.good,
               fontFamily: 'JetBrains Mono, monospace',
             }}>
               {estNetWithout > 0 ? '+' : ''}{estNetWithout.toLocaleString('ru-RU')}
             </div>
             <div className="k-num" style={{
               textAlign: 'right', fontWeight: 800, fontSize: 14,
-              color: lastDayResult.netProfit < 0 ? 'var(--k-bad)' : 'var(--k-good)',
+              color: lastDayResult.netProfit < 0 ? K.bad : K.good,
               fontFamily: 'JetBrains Mono, monospace',
             }}>
               {lastDayResult.netProfit > 0 ? '+' : ''}{lastDayResult.netProfit.toLocaleString('ru-RU')}
             </div>
             <div className="k-num" style={{
-              textAlign: 'right', fontWeight: 800, fontSize: 18, color: 'var(--k-good)',
+              textAlign: 'right', fontWeight: 800, fontSize: 18, color: K.good,
               fontFamily: 'JetBrains Mono, monospace',
             }}>
               {savedToday > 0 ? `+${savedToday.toLocaleString('ru-RU')}` : '—'}
@@ -264,7 +265,7 @@ export function DesktopRecap({ onContinue, embedded = false }: DesktopRecapProps
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, flexShrink: 0 }}>
           {/* Goal */}
           <div style={{
-            background: '#fff', color: 'var(--k-ink)',
+            background: K.white, color: K.ink,
             borderRadius: 20, padding: 18,
             display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
             minHeight: 100,
@@ -276,15 +277,15 @@ export function DesktopRecap({ onContinue, embedded = false }: DesktopRecapProps
               <div style={{ fontSize: 24, fontWeight: 800 }} className="k-num">
                 {Math.max(0, goalAmount - balance).toLocaleString('ru-RU')} ₽
               </div>
-              <div style={{ height: 5, background: 'var(--k-ink-10)', borderRadius: 999, overflow: 'hidden', marginTop: 8 }}>
-                <div style={{ width: `${toGoalPercent}%`, height: '100%', background: 'var(--k-green)', borderRadius: 999 }} />
+              <div style={{ height: 5, background: K.line, borderRadius: 999, overflow: 'hidden', marginTop: 8 }}>
+                <div style={{ width: `${toGoalPercent}%`, height: '100%', background: K.mint, borderRadius: 999 }} />
               </div>
             </div>
           </div>
 
           {/* Continue */}
           <div style={{
-            background: 'var(--k-orange)', color: 'var(--k-ink)',
+            background: K.orange, color: K.ink,
             borderRadius: 20, padding: 18,
             display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
             minHeight: 100,
@@ -296,7 +297,7 @@ export function DesktopRecap({ onContinue, embedded = false }: DesktopRecapProps
               onClick={onContinue}
               style={{
                 border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                background: 'var(--k-ink)', color: '#fff',
+                background: K.ink, color: K.white,
                 padding: '10px 16px', borderRadius: 999,
                 fontSize: 13, fontWeight: 800, letterSpacing: '-0.01em',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -316,9 +317,9 @@ export function DesktopRecap({ onContinue, embedded = false }: DesktopRecapProps
       <div style={{
         flex: 1, padding: '20px 24px',
         display: 'flex', flexDirection: 'column',
-        background: 'var(--k-surface)',
+        background: K.bone,
         fontFamily: 'Manrope, sans-serif',
-        color: 'var(--k-ink)',
+        color: K.ink,
         letterSpacing: '-0.01em',
       }}>
         {inner}
@@ -328,8 +329,8 @@ export function DesktopRecap({ onContinue, embedded = false }: DesktopRecapProps
 
   return (
     <div style={{
-      width: '100%', minHeight: '100vh', background: 'var(--k-surface)',
-      fontFamily: 'Manrope, sans-serif', color: 'var(--k-ink)',
+      width: '100%', minHeight: '100vh', background: K.bone,
+      fontFamily: 'Manrope, sans-serif', color: K.ink,
       padding: 40, overflow: 'hidden', display: 'flex', gap: 20,
       letterSpacing: '-0.01em',
     }}>

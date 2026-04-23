@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useGameStore } from '../../stores/gameStore'
 import { ECONOMY_CONSTANTS } from '../../constants/business'
 import { ACHIEVEMENTS } from '../../constants/achievements'
+import { K } from '../design-system/tokens'
 
 const HISTORY_KEY = 'konturgame_history'
 
@@ -76,18 +77,18 @@ ${isYearComplete ? '✨ Выжил первый год! ✨' : `Прогресс
     <div style={{ padding: 20, maxWidth: 600 }}>
       {/* Current game */}
       <div style={{ marginBottom: 32 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>Текущая игра</h3>
+        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Текущая игра</div>
 
         <div style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
             <div style={{ fontSize: 12, fontWeight: 700 }}>Неделя {currentWeek} из 52</div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: weekProgress >= 100 ? 'var(--k-green)' : 'inherit' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: weekProgress >= 100 ? K.good : K.ink }}>
               {weekProgress.toFixed(0)}%
             </div>
           </div>
-          <div style={{ width: '100%', height: 8, borderRadius: 4, background: 'var(--k-surface)', overflow: 'hidden' }}>
+          <div style={{ width: '100%', height: 8, borderRadius: 4, background: K.lineSoft, overflow: 'hidden' }}>
             <div style={{
-              height: '100%', background: isYearComplete ? 'var(--k-green)' : 'var(--k-orange)',
+              height: '100%', background: isYearComplete ? K.mint : K.violet,
               width: `${Math.min(weekProgress, 100)}%`, transition: 'width 0.3s',
             }} />
           </div>
@@ -106,9 +107,12 @@ ${isYearComplete ? '✨ Выжил первый год! ✨' : `Прогресс
             { label: 'АЧИВКИ', value: `${achievements.length}/${ACHIEVEMENTS.length}` },
             { label: 'УЛУЧШЕНИЯ', value: String(purchasedUpgrades?.length ?? 0) },
           ].map(item => (
-            <div key={item.label} style={{ padding: 12, borderRadius: 12, background: 'var(--k-surface)' }}>
-              <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.55, marginBottom: 4 }}>{item.label}</div>
-              <div style={{ fontSize: 18, fontWeight: 800 }} className={item.isNum ? 'k-num' : undefined}>
+            <div key={item.label} style={{
+              padding: 12, borderRadius: 12,
+              background: K.white, border: `1px solid ${K.line}`,
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: K.muted, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>{item.label}</div>
+              <div style={{ fontSize: 18, fontWeight: 800, fontVariantNumeric: item.isNum ? 'tabular-nums' : undefined }}>
                 {item.value}
               </div>
             </div>
@@ -119,7 +123,7 @@ ${isYearComplete ? '✨ Выжил первый год! ✨' : `Прогресс
           onClick={handleShare}
           style={{
             width: '100%', padding: '12px 16px', borderRadius: 12,
-            background: 'var(--k-orange)', color: '#fff', border: 'none',
+            background: K.ink, color: K.white, border: 'none',
             fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'opacity 0.2s',
           }}
           onMouseEnter={e => { e.currentTarget.style.opacity = '0.85' }}
@@ -131,12 +135,12 @@ ${isYearComplete ? '✨ Выжил первый год! ✨' : `Прогресс
 
       {/* Cross-game history */}
       <div>
-        <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>Статистика выживаемости</h3>
+        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Статистика выживаемости</div>
 
         {totalGames === 0 ? (
           <div style={{
-            padding: 16, borderRadius: 12, border: '1px dashed var(--k-ink-10)',
-            fontSize: 12, opacity: 0.45, textAlign: 'center',
+            padding: 16, borderRadius: 12, border: `1px dashed ${K.line}`,
+            fontSize: 12, color: K.muted, textAlign: 'center',
           }}>
             Статистика появится после первой завершённой игры
           </div>
@@ -144,13 +148,16 @@ ${isYearComplete ? '✨ Выжил первый год! ✨' : `Прогресс
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {[
               { label: 'Игр сыграно', value: String(totalGames) },
-              { label: 'Выжил год', value: String(gamesCompleted), color: gamesCompleted > 0 ? 'var(--k-green)' : undefined },
+              { label: 'Выжил год', value: String(gamesCompleted), color: gamesCompleted > 0 ? K.good : undefined },
               { label: 'Ср. выживаемость', value: `${averageWeeks} нед.` },
               { label: 'Лучший результат', value: `${bestBalance.toLocaleString('ru-RU')} ₽`, isNum: true },
             ].map(item => (
-              <div key={item.label} style={{ padding: 12, borderRadius: 12, border: '1px solid rgba(14,17,22,0.12)' }}>
-                <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.55, marginBottom: 6 }}>{item.label}</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: item.color }} className={item.isNum ? 'k-num' : undefined}>
+              <div key={item.label} style={{
+                padding: 12, borderRadius: 12,
+                background: K.white, border: `1px solid ${K.line}`,
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: K.muted, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>{item.label}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: item.color, fontVariantNumeric: item.isNum ? 'tabular-nums' : undefined }}>
                   {item.value}
                 </div>
               </div>

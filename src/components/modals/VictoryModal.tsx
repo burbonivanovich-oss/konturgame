@@ -1,6 +1,7 @@
 import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
 import type { PlayerBackstory, NPC } from '../../types/game'
+import { K } from '../design-system/tokens'
 
 interface VictoryModalProps {
   isOpen: boolean
@@ -145,56 +146,70 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
       closeButton={false}
       size="md"
     >
-      <div className="space-y-6 text-center">
-        <div className="text-6xl">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24, textAlign: 'center' }}>
+        <div style={{ fontSize: 56 }}>
           {isVictory ? '🏆' : gameOverMsg.emoji}
         </div>
 
         <div>
-          <h2 className={`text-3xl font-bold mb-2 ${
-            isVictory ? 'text-brand-green' : 'text-red-600'
-          }`}>
+          <h2 style={{
+            fontSize: 28,
+            fontWeight: 700,
+            letterSpacing: '-0.02em',
+            marginBottom: 8,
+            color: isVictory ? K.mint : K.bad,
+          }}>
             {isVictory ? (narrativeEnding?.title ?? 'Вы выиграли!') : gameOverMsg.title}
           </h2>
 
           {isVictory && narrativeEnding && (
-            <p className="text-sm text-gray-700 mb-4 leading-relaxed italic">
+            <p style={{
+              fontSize: 13,
+              color: K.ink2,
+              marginBottom: 16,
+              lineHeight: 1.6,
+              fontStyle: 'italic',
+            }}>
               «{narrativeEnding.text}»
             </p>
           )}
 
           {!isVictory && (
-            <p className="text-sm text-gray-600 mb-4">
+            <p style={{ fontSize: 13, color: K.muted, marginBottom: 16 }}>
               {gameOverMsg.description}
             </p>
           )}
 
-          <div className={`space-y-3 text-sm mb-6 p-5 rounded-lg border ${
-            isVictory ? 'bg-green-50 border-brand-green' : 'bg-red-50 border-red-300'
-          }`}>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Неделя:</span>
-              <span className="font-bold text-gray-800">{currentWeek}</span>
+          <div style={{
+            padding: 20,
+            borderRadius: 12,
+            marginBottom: 24,
+            background: isVictory ? K.mintSoft : 'rgba(180,47,35,0.06)',
+            border: isVictory ? `1px solid ${K.mint}` : `1px solid ${K.bad}`,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 12 }}>
+              <span style={{ color: K.muted }}>Неделя:</span>
+              <span style={{ fontWeight: 700, color: K.ink }}>{currentWeek}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Финальный баланс:</span>
-              <span className={`font-bold ${balance >= 0 ? 'text-gray-800' : 'text-red-600'}`}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 12 }}>
+              <span style={{ color: K.muted }}>Финальный баланс:</span>
+              <span style={{ fontWeight: 700, color: balance >= 0 ? K.ink : K.bad }}>
                 {balance.toLocaleString('ru-RU')} ₽
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Репутация:</span>
-              <span className="font-bold text-gray-800">{reputation}/100</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 12 }}>
+              <span style={{ color: K.muted }}>Репутация:</span>
+              <span style={{ fontWeight: 700, color: K.ink }}>{reputation}/100</span>
             </div>
           </div>
 
           {isVictory && (
-            <p className="text-gray-600 text-base mb-6 leading-relaxed">
+            <p style={{ fontSize: 14, color: K.muted, marginBottom: 24, lineHeight: 1.6 }}>
               Вы успешно управляли бизнесом и освоили экосистему Контура!
             </p>
           )}
           {!isVictory && (
-            <p className="text-gray-600 text-base mb-6 leading-relaxed">
+            <p style={{ fontSize: 14, color: K.muted, marginBottom: 24, lineHeight: 1.6 }}>
               Анализируйте ошибки и попробуйте снова!
             </p>
           )}
@@ -202,11 +217,18 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
 
         <button
           onClick={handleNewGame}
-          className={`w-full py-3 rounded-lg transition font-bold text-white ${
-            isVictory
-              ? 'bg-brand-green hover:opacity-90'
-              : 'bg-brand-orange hover:opacity-90'
-          }`}
+          style={{
+            width: '100%',
+            padding: '14px',
+            borderRadius: 12,
+            fontSize: 14,
+            fontWeight: 700,
+            border: 'none',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            background: isVictory ? K.mint : K.ink,
+            color: K.white,
+          }}
         >
           {isVictory ? '▶️ Новая игра' : '🔄 Попробовать снова'}
         </button>

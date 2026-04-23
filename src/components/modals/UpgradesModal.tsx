@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
 import { getUpgradesForBusiness } from '../../constants/business'
+import { K } from '../design-system/tokens'
 
 interface UpgradesModalProps {
   isOpen: boolean
@@ -23,8 +24,14 @@ export default function UpgradesModal({ isOpen, onClose }: UpgradesModalProps) {
 
   return (
     <Modal isOpen={isOpen} title="🔧 Улучшения" onClose={onClose} size="lg">
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 12,
+          maxHeight: 400,
+          overflowY: 'auto',
+        }}>
           {upgrades.map((upgrade) => {
             const isPurchased = purchasedUpgrades.includes(upgrade.id)
             const canAfford = balance >= upgrade.cost
@@ -32,22 +39,24 @@ export default function UpgradesModal({ isOpen, onClose }: UpgradesModalProps) {
             return (
               <div
                 key={upgrade.id}
-                className={`p-4 rounded-md border-2 transition cursor-pointer ${
-                  isPurchased
-                    ? 'border-brand-green bg-green-50'
-                    : 'border-gray-200 bg-gray-50 hover:border-gray-300'
-                }`}
                 onClick={() => !isPurchased && setSelectedUpgrade(upgrade.id)}
+                style={{
+                  background: isPurchased ? K.mintSoft : K.white,
+                  border: isPurchased ? `1.5px solid ${K.mint}` : `1px solid ${K.line}`,
+                  borderRadius: 12,
+                  padding: 14,
+                  cursor: isPurchased ? 'default' : 'pointer',
+                }}
               >
-                <div className="flex justify-between items-start mb-2">
-                  <span className="font-semibold text-gray-800">{upgrade.name}</span>
-                  {isPurchased && <span className="text-brand-green text-xl">✓</span>}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700 }}>{upgrade.name}</span>
+                  {isPurchased && <span style={{ fontSize: 16, color: K.mint }}>✓</span>}
                 </div>
-                <p className="text-sm font-semibold text-brand-orange mb-2">{upgrade.effect}</p>
+                <p style={{ fontSize: 11, color: K.orange, fontWeight: 600, marginBottom: 4, margin: '0 0 4px 0' }}>
+                  {upgrade.effect}
+                </p>
                 {!isPurchased && (
-                  <p className={`text-sm font-bold ${
-                    canAfford ? 'text-gray-700' : 'text-red-600'
-                  }`}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: canAfford ? K.ink : K.bad, margin: 0 }}>
                     {upgrade.cost.toLocaleString('ru-RU')} ₽
                   </p>
                 )}
@@ -56,10 +65,20 @@ export default function UpgradesModal({ isOpen, onClose }: UpgradesModalProps) {
           })}
         </div>
 
-        <div className="flex gap-3 pt-4">
+        <div style={{ display: 'flex', gap: 12, paddingTop: 16 }}>
           <button
             onClick={onClose}
-            className="flex-1 bg-gray-200 hover:bg-gray-300 py-2 rounded-md transition font-semibold text-gray-700"
+            style={{
+              flex: 1,
+              background: K.bone,
+              color: K.ink,
+              border: `1px solid ${K.line}`,
+              borderRadius: 10,
+              padding: '8px 0',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
           >
             Закрыть
           </button>
@@ -70,7 +89,20 @@ export default function UpgradesModal({ isOpen, onClose }: UpgradesModalProps) {
                 if (upgrade) handlePurchase(upgrade)
               }}
               disabled={!balance || balance < (upgrades.find((u: typeof upgrades[0]) => u.id === selectedUpgrade)?.cost || 0)}
-              className="flex-1 bg-brand-orange hover:opacity-90 disabled:bg-gray-300 py-2 rounded-md transition font-semibold text-white disabled:text-gray-500"
+              style={{
+                flex: 1,
+                background: (!balance || balance < (upgrades.find((u: typeof upgrades[0]) => u.id === selectedUpgrade)?.cost || 0))
+                  ? K.bone : K.ink,
+                color: (!balance || balance < (upgrades.find((u: typeof upgrades[0]) => u.id === selectedUpgrade)?.cost || 0))
+                  ? K.muted : K.white,
+                border: 'none',
+                borderRadius: 10,
+                padding: '8px 0',
+                fontWeight: 600,
+                cursor: (!balance || balance < (upgrades.find((u: typeof upgrades[0]) => u.id === selectedUpgrade)?.cost || 0))
+                  ? 'not-allowed' : 'pointer',
+                fontFamily: 'inherit',
+              }}
             >
               Купить
             </button>

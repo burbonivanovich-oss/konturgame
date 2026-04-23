@@ -1,5 +1,6 @@
 import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
+import { K } from '../design-system/tokens'
 
 interface SupplierModalProps {
   isOpen: boolean
@@ -16,7 +17,7 @@ export default function SupplierModal({ isOpen, onClose }: SupplierModalProps) {
         {suppliers.length === 0 ? (
           <div style={{
             padding: 40, textAlign: 'center', opacity: 0.5,
-            borderRadius: 12, border: '1px dashed rgba(14,17,22,0.12)',
+            borderRadius: 12, border: `1px dashed ${K.line}`,
           }}>
             <div style={{ fontSize: 14, fontWeight: 600 }}>Нет доступных поставщиков</div>
             <div style={{ fontSize: 11, marginTop: 6 }}>Поставщики появятся по мере развития бизнеса</div>
@@ -31,8 +32,8 @@ export default function SupplierModal({ isOpen, onClose }: SupplierModalProps) {
                   onClick={() => setActiveSupplierId(isActive ? null : supplier.id)}
                   style={{
                     padding: 16, borderRadius: 12,
-                    border: isActive ? '2px solid var(--k-green)' : '1px solid rgba(14,17,22,0.12)',
-                    background: isActive ? 'rgba(0,180,120,0.06)' : '#fff',
+                    border: isActive ? `2px solid ${K.mint}` : `1px solid ${K.line}`,
+                    background: isActive ? K.mintSoft : K.white,
                     cursor: 'pointer', transition: 'all 0.2s',
                   }}
                 >
@@ -46,20 +47,20 @@ export default function SupplierModal({ isOpen, onClose }: SupplierModalProps) {
                       </div>
                     </div>
                     {isActive && (
-                      <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--k-green)' }}>✓</div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: K.mint }}>✓</div>
                     )}
                   </div>
 
                   <div style={{
                     display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
                     gap: 10, fontSize: 11, marginTop: 10, paddingTop: 10,
-                    borderTop: '1px solid rgba(14,17,22,0.08)',
+                    borderTop: `1px solid ${K.lineSoft}`,
                   }}>
                     <div>
                       <div style={{ opacity: 0.5, marginBottom: 2 }}>Качество</div>
                       <div style={{
                         fontWeight: 800,
-                        color: supplier.qualityModifier > 0 ? 'var(--k-green)' : supplier.qualityModifier < 0 ? 'var(--k-bad)' : 'inherit',
+                        color: supplier.qualityModifier > 0 ? K.good : supplier.qualityModifier < 0 ? K.bad : 'inherit',
                       }}>
                         {supplier.qualityModifier > 0 ? '+' : ''}{(supplier.qualityModifier * 100).toFixed(0)}%
                       </div>
@@ -68,14 +69,14 @@ export default function SupplierModal({ isOpen, onClose }: SupplierModalProps) {
                       <div style={{ opacity: 0.5, marginBottom: 2 }}>Цена</div>
                       <div style={{
                         fontWeight: 800,
-                        color: supplier.priceModifier < 0 ? 'var(--k-green)' : supplier.priceModifier > 0 ? 'var(--k-bad)' : 'inherit',
+                        color: supplier.priceModifier < 0 ? K.good : supplier.priceModifier > 0 ? K.bad : 'inherit',
                       }}>
                         {supplier.priceModifier > 0 ? '+' : ''}{(supplier.priceModifier * 100).toFixed(0)}%
                       </div>
                     </div>
                     <div>
                       <div style={{ opacity: 0.5, marginBottom: 2 }}>Надёжность</div>
-                      <div style={{ fontWeight: 800, color: supplier.reliability > 0.8 ? 'var(--k-green)' : 'inherit' }}>
+                      <div style={{ fontWeight: 800, color: supplier.reliability > 0.8 ? K.good : 'inherit' }}>
                         {(supplier.reliability * 100).toFixed(0)}%
                       </div>
                     </div>
@@ -84,7 +85,7 @@ export default function SupplierModal({ isOpen, onClose }: SupplierModalProps) {
                   {isActive && (
                     <div style={{
                       marginTop: 10, padding: 8, borderRadius: 8,
-                      background: 'rgba(0,180,120,0.1)', fontSize: 10, color: 'var(--k-green)',
+                      background: K.mintSoft, fontSize: 10, color: K.mint,
                       fontWeight: 700,
                     }}>
                       ✓ Активный поставщик
@@ -98,7 +99,7 @@ export default function SupplierModal({ isOpen, onClose }: SupplierModalProps) {
 
         <div style={{
           marginTop: 20, padding: 12, borderRadius: 10,
-          background: 'rgba(14,17,22,0.04)', fontSize: 10, opacity: 0.6, lineHeight: 1.4,
+          background: K.bone, fontSize: 10, opacity: 0.6, lineHeight: 1.4,
         }}>
           Выбранный поставщик влияет на стоимость закупок и качество товаров. Премиум-поставщики дороже, но дают лучшее качество.
         </div>

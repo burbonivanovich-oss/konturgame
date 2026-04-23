@@ -3,6 +3,7 @@ import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
 import { PROMO_CODE_DATA, BUNDLE_PROMO_CODE, BUNDLE_PROMO_OFFER } from '../../constants/promoCodes'
 import type { ServiceType } from '../../types/game'
+import { K } from '../design-system/tokens'
 
 interface PromoWalletModalProps {
   isOpen: boolean
@@ -28,7 +29,7 @@ export default function PromoWalletModal({ isOpen, onClose }: PromoWalletModalPr
 
         {/* Progress */}
         <div style={{
-          background: 'var(--k-surface)', borderRadius: 14, padding: 14,
+          background: K.bone, borderRadius: 14, padding: 14,
           display: 'flex', alignItems: 'center', gap: 16,
         }}>
           <div style={{ flex: 1 }}>
@@ -36,10 +37,10 @@ export default function PromoWalletModal({ isOpen, onClose }: PromoWalletModalPr
               СОБРАНО ПРОМОКОДОВ
             </div>
             <div style={{
-              height: 6, background: 'var(--k-ink-10)', borderRadius: 3, overflow: 'hidden',
+              height: 6, background: K.lineSoft, borderRadius: 3, overflow: 'hidden',
             }}>
               <div style={{
-                height: '100%', background: 'var(--k-orange)',
+                height: '100%', background: K.violet,
                 width: `${(promoCodesRevealed.length / 7) * 100}%`,
                 borderRadius: 3, transition: 'width 0.4s',
               }} />
@@ -53,7 +54,7 @@ export default function PromoWalletModal({ isOpen, onClose }: PromoWalletModalPr
         {/* Bundle promo */}
         {hasAllServices && (
           <div style={{
-            background: 'linear-gradient(135deg, var(--k-orange), var(--k-blue))',
+            background: `linear-gradient(135deg, ${K.violet}, ${K.blue})`,
             borderRadius: 16, padding: 18, color: '#fff',
           }}>
             <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 6, opacity: 0.85 }}>
@@ -98,11 +99,12 @@ export default function PromoWalletModal({ isOpen, onClose }: PromoWalletModalPr
             if (!data) return null
             return (
               <div key={serviceId} style={{
-                border: '1px solid var(--k-ink-10)', borderRadius: 14, padding: 14,
+                background: K.white,
+                border: `1px solid ${K.line}`, borderRadius: 14, padding: 14,
                 display: 'flex', alignItems: 'center', gap: 12,
               }}>
                 <div style={{
-                  width: 36, height: 36, borderRadius: 10, background: 'var(--k-surface)',
+                  width: 36, height: 36, borderRadius: 10, background: K.bone,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
                   flexShrink: 0,
                 }}>
@@ -117,7 +119,7 @@ export default function PromoWalletModal({ isOpen, onClose }: PromoWalletModalPr
                   </div>
                   <div style={{
                     fontFamily: 'monospace', fontSize: 13, fontWeight: 700,
-                    color: 'var(--k-blue)', marginTop: 4,
+                    color: K.blue, marginTop: 4,
                   }}>
                     {data.code}
                   </div>
@@ -127,8 +129,8 @@ export default function PromoWalletModal({ isOpen, onClose }: PromoWalletModalPr
                   style={{
                     padding: '6px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700,
                     border: 'none', cursor: 'pointer', flexShrink: 0,
-                    background: copiedCode === data.code ? 'var(--k-green)' : 'var(--k-surface)',
-                    color: copiedCode === data.code ? '#fff' : 'var(--k-ink)',
+                    background: copiedCode === data.code ? K.mint : K.bone,
+                    color: copiedCode === data.code ? K.white : K.ink,
                     transition: 'all 0.2s',
                   }}
                 >

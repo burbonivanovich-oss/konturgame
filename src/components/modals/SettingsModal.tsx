@@ -1,5 +1,6 @@
 import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
+import { K } from '../design-system/tokens'
 
 interface SettingsModalProps {
   isOpen: boolean
@@ -39,10 +40,10 @@ export default function SettingsModal({ isOpen, onClose, onRestart }: SettingsMo
     <Modal isOpen={isOpen} title="⚙️ Настройки" onClose={onClose} size="md">
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {/* Game options */}
-        <section>
-          <h3 style={{ fontSize: 13, fontWeight: 800, color: 'var(--k-blue)', marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: K.blue, marginBottom: 12 }}>
             🎮 Опции игры
-          </h3>
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {['Звуковые эффекты', 'Музыка', 'Показывать подсказки'].map((label) => (
               <label key={label} style={{
@@ -55,21 +56,21 @@ export default function SettingsModal({ isOpen, onClose, onRestart }: SettingsMo
               </label>
             ))}
           </div>
-        </section>
+        </div>
 
-        <div style={{ height: 1, background: 'var(--k-ink-10)' }} />
+        <div style={{ height: 1, background: K.line }} />
 
         {/* Data section */}
-        <section>
-          <h3 style={{ fontSize: 13, fontWeight: 800, color: 'var(--k-orange)', marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: K.orange, marginBottom: 12 }}>
             📊 Данные
-          </h3>
+          </div>
           <button
             onClick={handleExportState}
             style={{
               width: '100%', padding: '10px 12px', borderRadius: 10,
-              background: 'var(--k-blue-soft)', border: '1.5px solid var(--k-blue)',
-              color: 'var(--k-blue)', fontSize: 12, fontWeight: 700,
+              background: K.blueSoft, border: `1.5px solid ${K.blue}`,
+              color: K.blue, fontSize: 12, fontWeight: 700,
               cursor: 'pointer', transition: 'opacity 0.2s',
             }}
             onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
@@ -77,22 +78,22 @@ export default function SettingsModal({ isOpen, onClose, onRestart }: SettingsMo
           >
             📋 Показать состояние в консоли
           </button>
-        </section>
+        </div>
 
-        <div style={{ height: 1, background: 'var(--k-ink-10)' }} />
+        <div style={{ height: 1, background: K.line }} />
 
         {/* Dangerous operations */}
-        <section>
-          <h3 style={{ fontSize: 13, fontWeight: 800, color: 'var(--k-bad)', marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: K.bad, marginBottom: 12 }}>
             ⚠️ Опасные операции
-          </h3>
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <button
               onClick={handleNewGame}
               style={{
                 width: '100%', padding: '10px 12px', borderRadius: 10,
-                background: 'rgba(255, 90, 90, 0.12)', border: '1.5px solid var(--k-bad)',
-                color: 'var(--k-bad)', fontSize: 12, fontWeight: 700,
+                background: `${K.bad}18`, border: `1.5px solid ${K.bad}`,
+                color: K.bad, fontSize: 12, fontWeight: 700,
                 cursor: 'pointer', transition: 'opacity 0.2s',
               }}
               onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
@@ -105,8 +106,8 @@ export default function SettingsModal({ isOpen, onClose, onRestart }: SettingsMo
               onClick={handleClearData}
               style={{
                 width: '100%', padding: '10px 12px', borderRadius: 10,
-                background: 'rgba(255, 90, 90, 0.12)', border: '1.5px solid var(--k-bad)',
-                color: 'var(--k-bad)', fontSize: 12, fontWeight: 700,
+                background: `${K.bad}18`, border: `1.5px solid ${K.bad}`,
+                color: K.bad, fontSize: 12, fontWeight: 700,
                 cursor: 'pointer', transition: 'opacity 0.2s',
               }}
               onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
@@ -115,7 +116,7 @@ export default function SettingsModal({ isOpen, onClose, onRestart }: SettingsMo
               🗑️ Очистить сохранения
             </button>
           </div>
-        </section>
+        </div>
       </div>
     </Modal>
   )

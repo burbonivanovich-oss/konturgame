@@ -1,7 +1,8 @@
 import { useGameStore } from '../../stores/gameStore'
+import { K } from '../design-system/tokens'
 
 function StatusDot({ value, thresholds }: { value: number; thresholds: [number, number] }) {
-  const color = value >= thresholds[1] ? 'var(--k-good)' : value >= thresholds[0] ? 'var(--k-warn)' : 'var(--k-bad)'
+  const color = value >= thresholds[1] ? K.good : value >= thresholds[0] ? K.warn : K.bad
   const label = value >= thresholds[1] ? 'Хорошо' : value >= thresholds[0] ? 'Средне' : 'Критично'
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700 }}>
@@ -14,7 +15,7 @@ function StatusDot({ value, thresholds }: { value: number; thresholds: [number, 
 function MetricBar({ value, max = 100, color }: { value: number; max?: number; color: string }) {
   const pct = Math.min((value / max) * 100, 100)
   return (
-    <div style={{ height: 8, background: 'var(--k-ink-10)', borderRadius: 999, overflow: 'hidden' }}>
+    <div style={{ height: 8, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
       <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 999, transition: 'width 0.4s' }} />
     </div>
   )
@@ -38,8 +39,8 @@ const LOYALTY_FACTORS = [
 export function ReputationView() {
   const { reputation, loyalty, lastDayResult, currentWeek } = useGameStore()
 
-  const repColor = reputation >= 60 ? 'var(--k-good)' : reputation >= 30 ? 'var(--k-warn)' : 'var(--k-bad)'
-  const loyColor = loyalty >= 60 ? 'var(--k-good)' : loyalty >= 30 ? 'var(--k-warn)' : 'var(--k-bad)'
+  const repColor = reputation >= 60 ? K.good : reputation >= 30 ? K.warn : K.bad
+  const loyColor = loyalty >= 60 ? K.good : loyalty >= 30 ? K.warn : K.bad
 
   const repChange = lastDayResult?.reputationChange ?? 0
   const loyChange = lastDayResult?.loyaltyChange ?? 0
@@ -48,7 +49,7 @@ export function ReputationView() {
     <div style={{
       flex: 1, padding: '20px 24px', overflow: 'auto',
       display: 'flex', flexDirection: 'column', gap: 12,
-      fontFamily: 'Manrope, sans-serif', color: 'var(--k-ink)', letterSpacing: '-0.01em',
+      fontFamily: 'Manrope, sans-serif', color: K.ink, letterSpacing: '-0.01em',
     }}>
       {/* Header */}
       <div>
@@ -60,7 +61,7 @@ export function ReputationView() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
 
         {/* Reputation */}
-        <div style={{ background: '#fff', borderRadius: 20, padding: 20 }}>
+        <div style={{ background: K.white, borderRadius: 20, padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.4 }}>РЕПУТАЦИЯ</div>
             <StatusDot value={reputation} thresholds={[30, 60]} />
@@ -74,9 +75,9 @@ export function ReputationView() {
           {/* Thresholds */}
           <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
             {[
-              { v: 0, label: '0–29 Критично', bg: 'rgba(255,90,90,0.12)', color: 'var(--k-bad)' },
-              { v: 30, label: '30–59 Средне', bg: 'rgba(255,176,32,0.12)', color: 'var(--k-warn)' },
-              { v: 60, label: '60+ Хорошо', bg: 'var(--k-green-soft)', color: 'var(--k-good)' },
+              { v: 0, label: '0–29 Критично', bg: `${K.bad}1f`, color: K.bad },
+              { v: 30, label: '30–59 Средне', bg: `${K.warn}1f`, color: K.warn },
+              { v: 60, label: '60+ Хорошо', bg: K.mintSoft, color: K.good },
             ].map(t => (
               <span key={t.v} style={{
                 fontSize: 9, fontWeight: 800, padding: '3px 7px', borderRadius: 6,
@@ -89,9 +90,9 @@ export function ReputationView() {
           {repChange !== 0 && (
             <div style={{
               marginTop: 10, padding: '6px 10px', borderRadius: 10,
-              background: repChange > 0 ? 'var(--k-green-soft)' : 'rgba(255,90,90,0.1)',
+              background: repChange > 0 ? K.mintSoft : `${K.bad}1a`,
               fontSize: 12, fontWeight: 700,
-              color: repChange > 0 ? 'var(--k-good)' : 'var(--k-bad)',
+              color: repChange > 0 ? K.good : K.bad,
             }}>
               {repChange > 0 ? '+' : ''}{repChange} вчера (день {currentWeek - 1})
             </div>
@@ -99,7 +100,7 @@ export function ReputationView() {
         </div>
 
         {/* Loyalty */}
-        <div style={{ background: '#fff', borderRadius: 20, padding: 20 }}>
+        <div style={{ background: K.white, borderRadius: 20, padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.4 }}>ЛОЯЛЬНОСТЬ</div>
             <StatusDot value={loyalty} thresholds={[30, 60]} />
@@ -112,9 +113,9 @@ export function ReputationView() {
 
           <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
             {[
-              { v: 0, label: '0–29 Низкая', bg: 'rgba(255,90,90,0.12)', color: 'var(--k-bad)' },
-              { v: 30, label: '30–59 Средняя', bg: 'rgba(255,176,32,0.12)', color: 'var(--k-warn)' },
-              { v: 60, label: '60+ Высокая', bg: 'var(--k-green-soft)', color: 'var(--k-good)' },
+              { v: 0, label: '0–29 Низкая', bg: `${K.bad}1f`, color: K.bad },
+              { v: 30, label: '30–59 Средняя', bg: `${K.warn}1f`, color: K.warn },
+              { v: 60, label: '60+ Высокая', bg: K.mintSoft, color: K.good },
             ].map(t => (
               <span key={t.v} style={{
                 fontSize: 9, fontWeight: 800, padding: '3px 7px', borderRadius: 6,
@@ -127,9 +128,9 @@ export function ReputationView() {
           {loyChange !== 0 && (
             <div style={{
               marginTop: 10, padding: '6px 10px', borderRadius: 10,
-              background: loyChange > 0 ? 'var(--k-green-soft)' : 'rgba(255,90,90,0.1)',
+              background: loyChange > 0 ? K.mintSoft : `${K.bad}1a`,
               fontSize: 12, fontWeight: 700,
-              color: loyChange > 0 ? 'var(--k-good)' : 'var(--k-bad)',
+              color: loyChange > 0 ? K.good : K.bad,
             }}>
               {loyChange > 0 ? '+' : ''}{loyChange} вчера (день {currentWeek - 1})
             </div>
@@ -140,7 +141,7 @@ export function ReputationView() {
       {/* Factors */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
 
-        <div style={{ background: '#fff', borderRadius: 20, padding: 18 }}>
+        <div style={{ background: K.white, borderRadius: 20, padding: 18 }}>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.4, marginBottom: 10 }}>
             ЧТО ВЛИЯЕТ НА РЕПУТАЦИЮ
           </div>
@@ -148,7 +149,7 @@ export function ReputationView() {
             {REPUTATION_FACTORS.map((f, i) => (
               <div key={i} style={{
                 display: 'flex', gap: 10, padding: '8px 10px', borderRadius: 10,
-                background: f.positive ? 'var(--k-green-soft)' : 'rgba(255,90,90,0.07)',
+                background: f.positive ? K.mintSoft : `${K.bad}12`,
               }}>
                 <span style={{ fontSize: 14, flexShrink: 0 }}>{f.positive ? '↑' : '↓'}</span>
                 <div>
@@ -160,7 +161,7 @@ export function ReputationView() {
           </div>
         </div>
 
-        <div style={{ background: '#fff', borderRadius: 20, padding: 18 }}>
+        <div style={{ background: K.white, borderRadius: 20, padding: 18 }}>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.4, marginBottom: 10 }}>
             ЧТО ВЛИЯЕТ НА ЛОЯЛЬНОСТЬ
           </div>
@@ -168,7 +169,7 @@ export function ReputationView() {
             {LOYALTY_FACTORS.map((f, i) => (
               <div key={i} style={{
                 display: 'flex', gap: 10, padding: '8px 10px', borderRadius: 10,
-                background: f.positive ? 'var(--k-green-soft)' : 'rgba(255,90,90,0.07)',
+                background: f.positive ? K.mintSoft : `${K.bad}12`,
               }}>
                 <span style={{ fontSize: 14, flexShrink: 0 }}>{f.positive ? '↑' : '↓'}</span>
                 <div>
@@ -183,9 +184,9 @@ export function ReputationView() {
           {reputation < 30 && (
             <div style={{
               marginTop: 10, padding: 12, borderRadius: 12,
-              background: 'rgba(255,90,90,0.1)',
-              border: '1.5px solid var(--k-bad)',
-              fontSize: 12, fontWeight: 700, color: 'var(--k-bad)',
+              background: `${K.bad}1a`,
+              border: `1.5px solid ${K.bad}`,
+              fontSize: 12, fontWeight: 700, color: K.bad,
             }}>
               ⚠️ Репутация критически низкая! Если она будет 0 три дня подряд — игра закончится.
             </div>

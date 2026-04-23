@@ -1,10 +1,11 @@
 import { useGameStore } from '../../stores/gameStore'
 import type { DecisionLogEntry } from '../../types/game'
+import { K } from '../design-system/tokens'
 
 const IMPACT_STYLES: Record<string, { color: string; label: string; icon: string }> = {
-  positive: { color: '#00b478', label: 'Польза', icon: '↑' },
-  negative: { color: '#dc3545', label: 'Потери', icon: '↓' },
-  neutral:  { color: '#888',    label: 'Нейтрально', icon: '—' },
+  positive: { color: K.good,  label: 'Польза',      icon: '↑' },
+  negative: { color: K.bad,   label: 'Потери',      icon: '↓' },
+  neutral:  { color: K.muted, label: 'Нейтрально',  icon: '—' },
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -22,12 +23,13 @@ function EntryRow({ entry }: { entry: DecisionLogEntry }) {
     <div style={{
       display: 'flex', alignItems: 'flex-start', gap: 14,
       padding: '14px 16px', borderRadius: 14,
-      background: '#fff',
+      background: K.white,
+      border: `1px solid ${K.line}`,
       borderLeft: `3px solid ${s.color}`,
     }}>
       <div style={{
         width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-        background: `${s.color}18`,
+        background: `${s.color}1F`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 16, fontWeight: 800, color: s.color,
       }}>
@@ -37,27 +39,27 @@ function EntryRow({ entry }: { entry: DecisionLogEntry }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
           <span style={{
             fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 999,
-            background: 'var(--k-surface-2)', color: 'var(--k-ink)',
+            background: K.bone, color: K.muted,
             letterSpacing: '0.04em',
           }}>
             НЕДЕЛЯ {entry.week}
           </span>
           <span style={{
             fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
-            background: `${s.color}18`, color: s.color,
+            background: `${s.color}1F`, color: s.color,
           }}>
             {TYPE_LABELS[entry.type] ?? entry.type}
           </span>
           {entry.npcId && (
             <span style={{
               fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
-              background: 'rgba(14,17,22,0.06)', color: 'var(--k-ink)',
+              background: K.bone, color: K.ink,
             }}>
               {entry.npcId}
             </span>
           )}
         </div>
-        <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.4, color: 'var(--k-ink)' }}>
+        <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.4, color: K.ink }}>
           {entry.text}
         </div>
       </div>
@@ -80,22 +82,22 @@ export function DecisionLogView() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <div style={{
-            fontSize: 11, fontWeight: 800, letterSpacing: '0.08em',
-            opacity: 0.4, marginBottom: 6,
+            fontSize: 11, fontWeight: 600, letterSpacing: '0.08em',
+            color: K.muted, textTransform: 'uppercase', marginBottom: 6,
           }}>
             ХРОНИКА РЕШЕНИЙ
           </div>
-          <h1 style={{
-            fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em',
-            margin: 0, color: 'var(--k-ink)',
+          <div style={{
+            fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em',
+            color: K.ink,
           }}>
             Журнал
-          </h1>
+          </div>
         </div>
         <div style={{
           padding: '8px 16px', borderRadius: 12,
-          background: 'var(--k-surface-2)',
-          fontSize: 12, fontWeight: 700, opacity: 0.55,
+          background: K.bone,
+          fontSize: 12, fontWeight: 700, color: K.muted,
         }}>
           Неделя {currentWeek}
         </div>
@@ -124,11 +126,12 @@ export function DecisionLogView() {
               const s = IMPACT_STYLES[impact]
               return (
                 <div key={impact} style={{
-                  padding: '12px 16px', borderRadius: 14, background: '#fff',
+                  padding: '12px 16px', borderRadius: 14,
+                  background: K.white, border: `1px solid ${K.line}`,
                   borderTop: `3px solid ${s.color}`,
                 }}>
                   <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{count}</div>
-                  <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.55, marginTop: 2 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: K.muted, marginTop: 2 }}>
                     {s.label}
                   </div>
                 </div>

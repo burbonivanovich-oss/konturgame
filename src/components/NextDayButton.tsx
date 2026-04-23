@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useGameStore } from '../stores/gameStore'
+import { K } from './design-system/tokens'
 
 export default function NextDayButton() {
   const [isLoading, setIsLoading] = useState(false)
@@ -35,8 +36,8 @@ export default function NextDayButton() {
         style={{
           padding: '18px 32px', borderRadius: 999, fontWeight: 800, fontSize: 16,
           border: 'none', cursor: isDisabled || isLoading ? 'not-allowed' : 'pointer',
-          background: isDisabled ? 'var(--k-ink-10)' : pendingEvent ? 'var(--k-surface-2)' : 'var(--k-orange)',
-          color: isDisabled ? 'var(--k-ink-50)' : 'var(--k-ink)',
+          background: isDisabled ? K.line : pendingEvent ? K.bone : K.orange,
+          color: isDisabled ? K.muted : K.ink,
           transition: 'all 0.2s ease',
           opacity: isLoading ? 0.8 : 1,
           width: '100%',
@@ -53,7 +54,7 @@ export default function NextDayButton() {
           : 'Завершить неделю →'}
       </button>
       {blockedReason && (
-        <p style={{ fontSize: 13, fontWeight: 700, marginTop: 12, color: 'var(--k-orange)' }}>
+        <p style={{ fontSize: 13, fontWeight: 700, marginTop: 12, color: K.orange }}>
           ⚠️ {blockedReason}
         </p>
       )}

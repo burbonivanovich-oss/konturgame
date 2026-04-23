@@ -1,6 +1,7 @@
 import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
 import { PRODUCT_CATEGORIES, isCategoryAllowed } from '../../services/assortmentEngine'
+import { K } from '../design-system/tokens'
 
 const SERVICE_ICONS: Record<string, string> = {
   market: '🛒', bank: '🏦', ofd: '📄',
@@ -37,18 +38,18 @@ export default function AssortmentModal({ isOpen, onClose }: AssortmentModalProp
 
         {/* Summary */}
         <div style={{
-          background: 'var(--k-surface)', borderRadius: 14, padding: 14,
+          background: K.bone, borderRadius: 14, padding: 14,
           display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, textAlign: 'center',
         }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.45 }}>ВЫРУЧКА/ДЕНЬ</div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--k-green)' }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: K.good }}>
               ~{totalDailyRevenue.toLocaleString('ru-RU')} ₽
             </div>
           </div>
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.45 }}>РАСХОДЫ/ДЕНЬ</div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--k-orange)' }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: K.orange }}>
               ~{totalDailyCost.toLocaleString('ru-RU')} ₽
             </div>
           </div>
@@ -71,17 +72,17 @@ export default function AssortmentModal({ isOpen, onClose }: AssortmentModalProp
           return (
             <div key={cat.id} style={{
               border: isEnabled
-                ? `2px solid ${allowed ? 'var(--k-green)' : 'var(--k-orange)'}`
-                : '1px solid var(--k-ink-10)',
+                ? `2px solid ${allowed ? K.mint : K.orange}`
+                : `1px solid ${K.line}`,
               borderRadius: 14, padding: 14,
               background: isEnabled
-                ? (allowed ? 'rgba(0,180,120,0.04)' : 'rgba(255,107,0,0.04)')
-                : '#fff',
+                ? (allowed ? K.mintSoft : K.orangeSoft)
+                : K.white,
               transition: 'all 0.2s',
             }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                 <div style={{
-                  width: 40, height: 40, borderRadius: 10, background: 'var(--k-surface)',
+                  width: 40, height: 40, borderRadius: 10, background: K.bone,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 20, flexShrink: 0,
                 }}>
@@ -94,8 +95,8 @@ export default function AssortmentModal({ isOpen, onClose }: AssortmentModalProp
                     <div style={{
                       fontSize: 10, fontWeight: 800, padding: '2px 8px',
                       borderRadius: 6,
-                      background: `rgba(0,0,0,0.08)`,
-                      color: 'var(--k-ink)',
+                      background: K.bone,
+                      color: K.ink,
                     }}>
                       +{Math.round(cat.margin * 100)}% маржа
                     </div>
@@ -109,13 +110,13 @@ export default function AssortmentModal({ isOpen, onClose }: AssortmentModalProp
                   <div style={{ display: 'flex', gap: 16, fontSize: 11, marginBottom: 8 }}>
                     <div>
                       <span style={{ opacity: 0.45 }}>Выручка: </span>
-                      <span style={{ fontWeight: 700, color: 'var(--k-green)' }}>
+                      <span style={{ fontWeight: 700, color: K.good }}>
                         ~{cat.baseRevenue.toLocaleString('ru-RU')} ₽/день
                       </span>
                     </div>
                     <div>
                       <span style={{ opacity: 0.45 }}>Закупка: </span>
-                      <span style={{ fontWeight: 700, color: 'var(--k-orange)' }}>
+                      <span style={{ fontWeight: 700, color: K.orange }}>
                         {cat.dailyCost.toLocaleString('ru-RU')} ₽/день
                       </span>
                     </div>
@@ -130,8 +131,8 @@ export default function AssortmentModal({ isOpen, onClose }: AssortmentModalProp
                           <div key={sId} style={{
                             fontSize: 10, fontWeight: 700,
                             padding: '3px 8px', borderRadius: 6,
-                            background: active ? 'var(--k-green)' : 'rgba(220,50,50,0.12)',
-                            color: active ? '#fff' : '#c0392b',
+                            background: active ? K.mint : 'rgba(180,47,35,0.12)',
+                            color: active ? K.white : K.bad,
                             display: 'flex', alignItems: 'center', gap: 4,
                           }}>
                             {SERVICE_ICONS[sId]} {SERVICE_NAMES[sId]}
@@ -142,7 +143,7 @@ export default function AssortmentModal({ isOpen, onClose }: AssortmentModalProp
                       {cat.requiresEgais && (
                         <div style={{
                           fontSize: 10, fontWeight: 700, padding: '3px 8px',
-                          borderRadius: 6, background: 'rgba(220,50,50,0.12)', color: '#c0392b',
+                          borderRadius: 6, background: 'rgba(180,47,35,0.12)', color: K.bad,
                         }}>
                           ЕГАИС
                         </div>
@@ -153,8 +154,8 @@ export default function AssortmentModal({ isOpen, onClose }: AssortmentModalProp
                   {/* Warning for enabled but non-compliant */}
                   {isEnabled && !allowed && missingServices.length > 0 && (
                     <div style={{
-                      fontSize: 11, fontWeight: 600, color: 'var(--k-orange)',
-                      background: 'rgba(255,107,0,0.08)', borderRadius: 8, padding: '8px 10px',
+                      fontSize: 11, fontWeight: 600, color: K.orange,
+                      background: K.orangeSoft, borderRadius: 8, padding: '8px 10px',
                     }}>
                       ⚠️ Штраф 10% выручки/день без: {missingServices.map((s) => SERVICE_NAMES[s]).join(', ')}
                     </div>
@@ -168,9 +169,9 @@ export default function AssortmentModal({ isOpen, onClose }: AssortmentModalProp
                     padding: '8px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700,
                     border: 'none', cursor: 'pointer', flexShrink: 0,
                     background: isEnabled
-                      ? (allowed ? 'var(--k-green)' : 'var(--k-orange)')
-                      : 'var(--k-surface)',
-                    color: isEnabled ? '#fff' : 'var(--k-ink)',
+                      ? (allowed ? K.mint : K.orange)
+                      : K.bone,
+                    color: isEnabled ? K.white : K.ink,
                     transition: 'all 0.2s',
                   }}
                 >

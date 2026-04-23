@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
 import type { EmployeePosition } from '../../types/game'
+import { K } from '../design-system/tokens'
 
 const EMPLOYEE_POSITIONS: Array<{ id: EmployeePosition; label: string; baseSalary: number }> = [
   { id: 'cashier', label: '💳 Кассир', baseSalary: 45000 },
@@ -46,8 +47,8 @@ export default function HireEmployeeModal({ isOpen, onClose }: HireEmployeeModal
                 onClick={() => setSelectedPosition(pos.id)}
                 style={{
                   padding: 12, borderRadius: 10,
-                  border: selectedPosition === pos.id ? '2px solid var(--k-orange)' : '1px solid rgba(14,17,22,0.12)',
-                  background: selectedPosition === pos.id ? 'rgba(255,107,0,0.08)' : '#fff',
+                  border: selectedPosition === pos.id ? `2px solid ${K.orange}` : `1px solid ${K.line}`,
+                  background: selectedPosition === pos.id ? K.orangeSoft : K.white,
                   cursor: 'pointer', fontSize: 12, fontWeight: 700,
                   transition: 'all 0.2s',
                 }}
@@ -61,13 +62,13 @@ export default function HireEmployeeModal({ isOpen, onClose }: HireEmployeeModal
         {selectedData && (
           <>
             <div style={{
-              padding: 14, borderRadius: 12, background: 'var(--k-surface)',
+              padding: 14, borderRadius: 12, background: K.bone,
               marginBottom: 20,
             }}>
               <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.55, marginBottom: 8 }}>
                 Зарплата в месяц
               </div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--k-orange)' }} className="k-num">
+              <div style={{ fontSize: 28, fontWeight: 800, color: K.orange, fontVariantNumeric: 'tabular-nums' }}>
                 {selectedData.baseSalary.toLocaleString('ru-RU')} ₽
               </div>
               <div style={{ fontSize: 10, opacity: 0.5, marginTop: 8 }}>
@@ -75,7 +76,7 @@ export default function HireEmployeeModal({ isOpen, onClose }: HireEmployeeModal
               </div>
             </div>
 
-            <div style={{ padding: 12, borderRadius: 10, background: 'rgba(14,17,22,0.04)', marginBottom: 20 }}>
+            <div style={{ padding: 12, borderRadius: 10, background: K.bone, marginBottom: 20 }}>
               <div style={{ fontSize: 11, opacity: 0.6, lineHeight: 1.4 }}>
                 ✓ Повышает эффективность работы<br/>
                 ✓ Влияет на уровень качества<br/>
@@ -89,8 +90,8 @@ export default function HireEmployeeModal({ isOpen, onClose }: HireEmployeeModal
               style={{
                 width: '100%', padding: 14, borderRadius: 10, fontSize: 14, fontWeight: 700,
                 border: 'none', cursor: canAfford ? 'pointer' : 'not-allowed',
-                background: canAfford ? 'var(--k-green)' : 'rgba(14,17,22,0.08)',
-                color: canAfford ? '#fff' : 'var(--k-ink-50)',
+                background: canAfford ? K.ink : K.bone,
+                color: canAfford ? K.white : K.muted,
                 transition: 'all 0.2s',
               }}
               onMouseEnter={(e) => canAfford && (e.currentTarget.style.opacity = '0.9')}

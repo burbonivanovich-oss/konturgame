@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
+import { K } from '../design-system/tokens'
 
 interface CampaignModalProps {
   isOpen: boolean
@@ -61,48 +62,69 @@ export default function CampaignModal({ isOpen, onClose }: CampaignModalProps) {
 
   return (
     <Modal isOpen={isOpen} title="📢 Рекламные кампании" onClose={onClose} size="lg">
-      <div className="space-y-4">
-        <div className="bg-yellow-50 border border-yellow-300 rounded-md p-3 text-xs text-yellow-800">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{
+          background: K.orangeSoft,
+          border: `1px solid ${K.orange}`,
+          borderRadius: 8,
+          padding: '10px 14px',
+          fontSize: 12,
+          color: K.orange,
+          fontWeight: 600,
+        }}>
           ⚠️ Эффект от рекламы приходит через 2-3 недели после запуска
         </div>
 
-        <div className="space-y-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {CAMPAIGNS.map((campaign) => {
             const canAfford = balance >= campaign.cost
+            const isSelected = selectedCampaign === campaign.id
 
             return (
               <div
                 key={campaign.id}
                 onClick={() => setSelectedCampaign(campaign.id)}
-                className={`p-4 rounded-md border-2 transition cursor-pointer ${
-                  selectedCampaign === campaign.id
-                    ? 'border-brand-green bg-green-50'
-                    : 'border-gray-200 bg-gray-50 hover:border-gray-300'
-                }`}
+                style={{
+                  border: isSelected ? `2px solid ${K.mint}` : `1px solid ${K.line}`,
+                  background: isSelected ? K.mintSoft : K.bone,
+                  cursor: 'pointer',
+                  borderRadius: 12,
+                  padding: 16,
+                }}
               >
-                <div className="flex justify-between items-start mb-2">
-                  <span className="font-semibold text-gray-800">{campaign.name}</span>
-                  <span className={`text-sm font-bold ${
-                    canAfford ? 'text-gray-600' : 'text-red-600'
-                  }`}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                  <span style={{ fontSize: 14, fontWeight: 700 }}>{campaign.name}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: canAfford ? K.ink : K.bad }}>
                     {campaign.cost.toLocaleString('ru-RU')} ₽
                   </span>
                 </div>
-                <p className="text-sm text-gray-600 mb-3">{campaign.description}</p>
-                <div className="text-xs space-y-1 text-gray-700">
-                  <p>👥 +{(campaign.clientBonus * 100).toFixed(0)}% клиентов (когда активна)</p>
-                  <p>📅 {campaign.duration} дней активности</p>
-                  <p>⏰ Эффект начнется на неделе {currentWeek + campaign.delay}</p>
+                <p style={{ fontSize: 12, color: K.muted, marginBottom: 10, margin: '0 0 10px 0' }}>
+                  {campaign.description}
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, color: K.muted }}>
+                  <p style={{ margin: 0 }}>👥 +{(campaign.clientBonus * 100).toFixed(0)}% клиентов (когда активна)</p>
+                  <p style={{ margin: 0 }}>📅 {campaign.duration} дней активности</p>
+                  <p style={{ margin: 0 }}>⏰ Эффект начнется на неделе {currentWeek + campaign.delay}</p>
                 </div>
               </div>
             )
           })}
         </div>
 
-        <div className="flex gap-3 pt-4">
+        <div style={{ display: 'flex', gap: 12 }}>
           <button
             onClick={onClose}
-            className="flex-1 bg-gray-200 hover:bg-gray-300 py-2 rounded-md transition font-semibold text-gray-700"
+            style={{
+              flex: 1,
+              background: K.bone,
+              color: K.ink,
+              border: `1px solid ${K.line}`,
+              borderRadius: 10,
+              padding: '8px 0',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
           >
             Отмена
           </button>
@@ -115,7 +137,20 @@ export default function CampaignModal({ isOpen, onClose }: CampaignModalProps) {
                 }
               }}
               disabled={!balance || balance < (CAMPAIGNS.find(c => c.id === selectedCampaign)?.cost || 0)}
-              className="flex-1 bg-brand-purple hover:opacity-90 disabled:bg-gray-300 py-2 rounded-md transition font-semibold text-white disabled:text-gray-500"
+              style={{
+                flex: 1,
+                background: (!balance || balance < (CAMPAIGNS.find(c => c.id === selectedCampaign)?.cost || 0))
+                  ? K.bone : K.ink,
+                color: (!balance || balance < (CAMPAIGNS.find(c => c.id === selectedCampaign)?.cost || 0))
+                  ? K.muted : K.white,
+                border: 'none',
+                borderRadius: 10,
+                padding: '8px 0',
+                fontWeight: 600,
+                cursor: (!balance || balance < (CAMPAIGNS.find(c => c.id === selectedCampaign)?.cost || 0))
+                  ? 'not-allowed' : 'pointer',
+                fontFamily: 'inherit',
+              }}
             >
               Запустить
             </button>

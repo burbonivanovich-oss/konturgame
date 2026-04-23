@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useGameStore } from '../../stores/gameStore'
 import { BUNDLE_PROMO_CODE, BUNDLE_PROMO_OFFER } from '../../constants/promoCodes'
+import { K } from '../design-system/tokens'
 
 export default function BundleModal() {
   const { promoCodesRevealed, bundlePromoShown, markBundlePromoShown } = useGameStore()
@@ -25,7 +26,7 @@ export default function BundleModal() {
       padding: 16,
     }}>
       <div style={{
-        background: '#fff', borderRadius: 28, padding: 32,
+        background: K.white, borderRadius: 28, padding: 32,
         maxWidth: 400, width: '100%',
         boxShadow: '0 32px 100px rgba(0,0,0,0.35)',
         textAlign: 'center',
@@ -34,7 +35,7 @@ export default function BundleModal() {
         <div style={{ fontSize: 56, marginBottom: 16 }}>🏆</div>
 
         <div style={{
-          fontSize: 12, fontWeight: 800, color: 'var(--k-orange)', marginBottom: 8,
+          fontSize: 12, fontWeight: 800, color: K.violet, marginBottom: 8,
           textTransform: 'uppercase', letterSpacing: '0.1em',
         }}>
           Достижение разблокировано!
@@ -51,7 +52,7 @@ export default function BundleModal() {
 
         {/* Bundle offer */}
         <div style={{
-          background: 'linear-gradient(135deg, var(--k-orange), var(--k-blue))',
+          background: `linear-gradient(135deg, ${K.violet}, ${K.blue})`,
           borderRadius: 20, padding: 20, marginBottom: 24, color: '#fff',
         }}>
           <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.85, marginBottom: 6 }}>
@@ -88,7 +89,7 @@ export default function BundleModal() {
           style={{
             padding: '12px', borderRadius: 14, fontSize: 14, fontWeight: 700,
             border: 'none', cursor: 'pointer', width: '100%',
-            background: 'var(--k-orange)', color: '#fff',
+            background: K.ink, color: K.white,
           }}
         >
           Продолжить! 🚀

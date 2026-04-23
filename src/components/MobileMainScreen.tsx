@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { K } from './design-system/tokens'
 import Indicators from './Indicators'
 import NextDayButton from './NextDayButton'
 import ServicePanel from './ServicePanel'
@@ -98,12 +99,12 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
   return (
     <div style={{
       padding: 12, display: 'flex', flexDirection: 'column', gap: 12,
-      height: '100%', background: 'var(--k-surface)',
+      height: '100%', background: K.bone,
     }}>
       {/* Header */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        paddingBottom: 12, borderBottom: '1px solid var(--k-ink-10)',
+        paddingBottom: 12, borderBottom: `1px solid ${K.line}`,
       }}>
         <div style={{ fontSize: 14, fontWeight: 800 }}>Бизнес с Контуром</div>
         <div style={{ display: 'flex', gap: 6 }}>
@@ -111,7 +112,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
             onClick={() => setShowPromoWalletModal(true)}
             style={{
               width: 32, height: 32, borderRadius: 8,
-              background: 'var(--k-orange-soft)', border: 'none', cursor: 'pointer',
+              background: K.orangeSoft, border: 'none', cursor: 'pointer',
               fontSize: 14, position: 'relative',
             }}
             title="Промокоды"
@@ -120,7 +121,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
             {(promoCodesRevealed?.length ?? 0) > 0 && (
               <span style={{
                 position: 'absolute', top: -4, right: -4,
-                background: 'var(--k-orange)', color: 'white',
+                background: K.orange, color: K.white,
                 fontSize: 9, fontWeight: 800, padding: '2px 4px',
                 borderRadius: 4,
               }}>
@@ -132,7 +133,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
             onClick={() => setShowAchievementsModal(true)}
             style={{
               width: 32, height: 32, borderRadius: 8,
-              background: 'var(--k-ink-10)', border: 'none', cursor: 'pointer',
+              background: K.line, border: 'none', cursor: 'pointer',
               fontSize: 14, position: 'relative',
             }}
           >
@@ -140,7 +141,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
             {achievements.length > 0 && (
               <span style={{
                 position: 'absolute', top: -4, right: -4,
-                background: 'var(--k-orange)', color: 'white',
+                background: K.orange, color: K.white,
                 fontSize: 10, fontWeight: 800, padding: '2px 4px',
                 borderRadius: 4,
               }}>
@@ -152,7 +153,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
             onClick={() => setShowHelpModal(true)}
             style={{
               width: 32, height: 32, borderRadius: 8,
-              background: 'var(--k-ink-10)', border: 'none', cursor: 'pointer',
+              background: K.line, border: 'none', cursor: 'pointer',
               fontSize: 14,
             }}
           >
@@ -162,7 +163,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
             onClick={() => setShowSettingsModal(true)}
             style={{
               width: 32, height: 32, borderRadius: 8,
-              background: 'var(--k-ink-10)', border: 'none', cursor: 'pointer',
+              background: K.line, border: 'none', cursor: 'pointer',
               fontSize: 14,
             }}
           >
@@ -173,7 +174,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
 
       {/* Tab navigation */}
       <div style={{
-        display: 'flex', gap: 4, overflow: 'x', borderBottom: '1px solid var(--k-ink-10)',
+        display: 'flex', gap: 4, overflow: 'x', borderBottom: `1px solid ${K.line}`,
         marginBottom: 8,
       }}>
         {[
@@ -186,8 +187,8 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
             onClick={() => setActiveTab(tab.id)}
             style={{
               padding: '8px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700,
-              border: 'none', background: activeTab === tab.id ? 'var(--k-ink)' : 'transparent',
-              color: activeTab === tab.id ? 'white' : 'var(--k-ink)',
+              border: 'none', background: activeTab === tab.id ? K.ink : 'transparent',
+              color: activeTab === tab.id ? K.white : K.ink,
               cursor: 'pointer', transition: 'all 0.2s',
             }}
           >
@@ -202,7 +203,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
           <>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <div style={{
-                background: 'var(--k-orange)', color: 'var(--k-ink)',
+                background: K.orange, color: K.ink,
                 borderRadius: 12, padding: 12, display: 'flex', flexDirection: 'column', gap: 4,
               }}>
                 <div style={{ fontSize: 9, fontWeight: 800, opacity: 0.7 }}>БАЛАНС</div>
@@ -212,8 +213,8 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
               </div>
 
               <div style={{
-                background: (lastDayResult?.netProfit ?? 0) >= 0 ? 'var(--k-green)' : 'var(--k-bad)',
-                color: 'var(--k-ink)',
+                background: (lastDayResult?.netProfit ?? 0) >= 0 ? K.mint : K.bad,
+                color: K.ink,
                 borderRadius: 12, padding: 12, display: 'flex', flexDirection: 'column', gap: 4,
               }}>
                 <div style={{ fontSize: 9, fontWeight: 800, opacity: 0.7 }}>ПРИБЫЛЬ</div>
@@ -232,7 +233,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
                 onClick={() => setShowPurchaseModal(true)}
                 style={{
                   padding: 12, borderRadius: 10, border: 'none',
-                  background: 'var(--k-ink)', color: 'white',
+                  background: K.ink, color: K.white,
                   fontSize: 12, fontWeight: 700, cursor: 'pointer',
                 }}
               >
@@ -242,7 +243,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
                 onClick={() => setShowCampaignModal(true)}
                 style={{
                   padding: 12, borderRadius: 10, border: 'none',
-                  background: 'var(--k-purple)', color: 'white',
+                  background: K.violet, color: K.white,
                   fontSize: 12, fontWeight: 700, cursor: 'pointer',
                 }}
               >
@@ -257,7 +258,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
                 onClick={() => setShowCashRegisterModal(true)}
                 style={{
                   padding: 12, borderRadius: 10, border: 'none',
-                  background: 'var(--k-orange)', color: 'white',
+                  background: K.orange, color: K.white,
                   fontSize: 12, fontWeight: 700, cursor: 'pointer',
                 }}
               >
@@ -267,7 +268,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
                 onClick={() => setShowUpgradesModal(true)}
                 style={{
                   padding: 12, borderRadius: 10, border: 'none',
-                  background: 'var(--k-blue)', color: 'white',
+                  background: K.blue, color: K.white,
                   fontSize: 12, fontWeight: 700, cursor: 'pointer',
                 }}
               >
@@ -277,7 +278,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
                 onClick={() => setShowOwnerInvestmentsModal(true)}
                 style={{
                   padding: 12, borderRadius: 10, border: 'none',
-                  background: 'var(--k-green)', color: 'white',
+                  background: K.mint, color: K.white,
                   fontSize: 12, fontWeight: 700, cursor: 'pointer',
                 }}
               >
@@ -309,7 +310,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
       {savingsToast !== null && (
         <div style={{
           position: 'fixed', bottom: 88, left: 16, right: 16,
-          background: 'var(--k-blue)', color: 'white',
+          background: K.blue, color: K.white,
           padding: '12px 16px', borderRadius: 10,
           fontSize: 12, fontWeight: 700, textAlign: 'center',
           animation: 'slideUp 0.3s ease',

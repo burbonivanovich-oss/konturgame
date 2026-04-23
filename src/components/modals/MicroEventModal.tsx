@@ -1,4 +1,5 @@
 import { useGameStore } from '../../stores/gameStore'
+import { K } from '../design-system/tokens'
 
 export default function MicroEventModal() {
   const { pendingMicroEvent, resolveMicroEvent } = useGameStore()
@@ -12,25 +13,25 @@ export default function MicroEventModal() {
       alignItems: 'center', justifyContent: 'center', zIndex: 1000,
     }}>
       <div style={{
-        background: '#fff', borderRadius: 16, padding: 24,
+        background: K.white, borderRadius: 16, padding: 24,
         maxWidth: 400, width: '90%', maxHeight: '80vh', overflow: 'auto',
         boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
       }}>
         {/* Header with icon */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <div style={{ fontSize: 40 }}>{pendingMicroEvent.icon}</div>
-          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'var(--k-ink)' }}>
+          <div style={{ margin: 0, fontSize: 18, fontWeight: 800, color: K.ink }}>
             {pendingMicroEvent.title}
-          </h2>
+          </div>
         </div>
 
         {/* Description */}
-        <p style={{
+        <div style={{
           margin: '0 0 24px 0', fontSize: 14, lineHeight: 1.5,
-          color: 'var(--k-ink)', opacity: 0.75,
+          color: K.ink2,
         }}>
           {pendingMicroEvent.description}
-        </p>
+        </div>
 
         {/* Options */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -40,18 +41,18 @@ export default function MicroEventModal() {
               onClick={() => resolveMicroEvent(option.id)}
               style={{
                 padding: '12px 16px', borderRadius: 12,
-                border: '2px solid var(--k-orange)', background: 'transparent',
-                color: 'var(--k-ink)', fontSize: 13, fontWeight: 600,
+                border: `2px solid ${K.line}`, background: 'transparent',
+                color: K.ink, fontSize: 13, fontWeight: 600,
                 cursor: 'pointer', transition: 'all 0.2s',
                 textAlign: 'left',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--k-orange)'
-                e.currentTarget.style.color = '#fff'
+                e.currentTarget.style.background = K.ink
+                e.currentTarget.style.color = K.white
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = 'transparent'
-                e.currentTarget.style.color = 'var(--k-ink)'
+                e.currentTarget.style.color = K.ink
               }}
             >
               {option.text}

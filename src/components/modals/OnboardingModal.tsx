@@ -1,5 +1,6 @@
 import { useGameStore } from '../../stores/gameStore'
 import { ONBOARDING_STAGES, ONBOARDING_STAGE_LABELS } from '../../constants/onboarding'
+import { K } from '../design-system/tokens'
 
 export default function OnboardingModal() {
   const {
@@ -64,14 +65,14 @@ export default function OnboardingModal() {
       }),
     }}>
       <div style={{
-        background: '#fff', borderRadius: 24, padding: 28,
+        background: K.white, borderRadius: 24, padding: 28,
         maxWidth: pendingAction ? '100%' : 440, width: '100%',
         maxHeight: pendingAction ? '80vh' : '85vh',
         overflowY: 'auto',
         boxShadow: '0 24px 80px rgba(0,0,0,0.25)',
         pointerEvents: 'auto',
         // Subtle highlight border when floating
-        ...(pendingAction ? { border: '2px solid var(--k-orange)' } : {}),
+        ...(pendingAction ? { border: `2px solid ${K.violet}` } : {}),
       }}>
         {/* Stage indicator */}
         <div style={{
@@ -80,7 +81,7 @@ export default function OnboardingModal() {
           {[0, 1, 2, 3, 4].map((i) => (
             <div key={i} style={{
               height: 4, flex: 1, borderRadius: 2,
-              background: i <= onboardingStage ? 'var(--k-orange)' : 'var(--k-ink-10)',
+              background: i <= onboardingStage ? K.violet : K.lineSoft,
               transition: 'background 0.3s',
             }} />
           ))}
@@ -89,7 +90,7 @@ export default function OnboardingModal() {
         {/* Stage label */}
         <div style={{
           fontSize: 10, fontWeight: 800, letterSpacing: '0.1em',
-          color: 'var(--k-orange)', marginBottom: 8, textTransform: 'uppercase',
+          color: K.violet, marginBottom: 8, textTransform: 'uppercase',
         }}>
           Этап {onboardingStage + 1} · {stageLabel}
         </div>
@@ -98,7 +99,7 @@ export default function OnboardingModal() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
           <div style={{
             width: 48, height: 48, borderRadius: 16,
-            background: 'linear-gradient(135deg, var(--k-orange), var(--k-blue))',
+            background: `linear-gradient(135deg, ${K.violet}, ${K.blue})`,
             flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 24,
           }}>
@@ -114,8 +115,8 @@ export default function OnboardingModal() {
 
         {/* Dialog text */}
         <div style={{
-          fontSize: 13, lineHeight: 1.6, color: 'var(--k-ink)',
-          background: 'var(--k-surface)', borderRadius: 14, padding: 16,
+          fontSize: 13, lineHeight: 1.6, color: K.ink,
+          background: K.bone, borderRadius: 14, padding: 16,
           marginBottom: 20,
         }}>
           {currentStep.text}
@@ -125,8 +126,8 @@ export default function OnboardingModal() {
         {isLastStep && !isLastStage && (
           <div style={{
             fontSize: 12, fontWeight: 600,
-            color: 'var(--k-green)',
-            background: 'rgba(34, 197, 94, 0.08)',
+            color: K.mint,
+            background: K.mintSoft,
             borderRadius: 10, padding: '10px 14px',
             marginBottom: 16,
             display: 'flex', alignItems: 'center', gap: 8,
@@ -140,8 +141,8 @@ export default function OnboardingModal() {
         {currentStep.requiresAction && !actionDone && (
           <div style={{
             fontSize: 12, fontWeight: 600,
-            color: 'var(--k-orange)',
-            background: 'rgba(255, 107, 0, 0.08)',
+            color: K.orange,
+            background: K.orangeSoft,
             borderRadius: 10, padding: '10px 14px',
             marginBottom: 16,
             display: 'flex', alignItems: 'center', gap: 8,
@@ -159,7 +160,7 @@ export default function OnboardingModal() {
             {steps.map((_, i) => (
               <div key={i} style={{
                 width: 6, height: 6, borderRadius: '50%',
-                background: i <= clampedStepIndex ? 'var(--k-orange)' : 'var(--k-ink-10)',
+                background: i <= clampedStepIndex ? K.violet : K.lineSoft,
                 transition: 'background 0.2s',
               }} />
             ))}
@@ -170,8 +171,8 @@ export default function OnboardingModal() {
             disabled={!actionDone}
             style={{
               padding: '10px 24px', borderRadius: 12,
-              background: actionDone ? 'var(--k-orange)' : 'var(--k-ink-10)',
-              color: actionDone ? '#fff' : 'var(--k-ink-50)',
+              background: actionDone ? K.ink : K.bone,
+              color: actionDone ? K.white : K.muted,
               fontSize: 13, fontWeight: 700,
               border: 'none', cursor: actionDone ? 'pointer' : 'not-allowed',
               transition: 'all 0.2s',

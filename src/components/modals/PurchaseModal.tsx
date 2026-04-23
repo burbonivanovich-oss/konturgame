@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
 import { BUSINESS_CONFIGS } from '../../constants/business'
+import { K } from '../design-system/tokens'
 
 interface PurchaseModalProps {
   isOpen: boolean
@@ -35,10 +36,10 @@ export default function PurchaseModal({ isOpen, onClose }: PurchaseModalProps) {
 
   return (
     <Modal isOpen={isOpen} title="📦 Закупка товара" onClose={onClose} size="md">
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-gray-700 block">
-            Количество единиц: <span className="text-brand-orange">{quantity}</span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, color: K.muted, display: 'block' }}>
+            Количество единиц: <span style={{ color: K.orange }}>{quantity}</span>
           </label>
           <input
             type="range"
@@ -46,43 +47,73 @@ export default function PurchaseModal({ isOpen, onClose }: PurchaseModalProps) {
             max="100"
             value={quantity}
             onChange={(e) => setQuantity(Number(e.target.value))}
-            className="w-full"
+            style={{ width: '100%' }}
           />
-          <p className="text-xs text-gray-500">от 1 до 100 единиц</p>
+          <p style={{ fontSize: 11, color: K.muted }}>от 1 до 100 единиц</p>
         </div>
 
-        <div className="bg-blue-50 p-4 rounded-md space-y-2 border border-blue-200">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Стоимость за единицу:</span>
-            <span className="font-semibold text-gray-800">{costPerUnit.toLocaleString('ru-RU')} ₽</span>
+        <div style={{
+          background: K.blueSoft,
+          border: `1px solid ${K.blue}`,
+          borderRadius: 10,
+          padding: 14,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+            <span style={{ color: K.muted }}>Стоимость за единицу:</span>
+            <span style={{ fontWeight: 600, color: K.ink }}>{costPerUnit.toLocaleString('ru-RU')} ₽</span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Общая стоимость:</span>
-            <span className={`font-bold ${totalCost > balance ? 'text-red-600' : 'text-brand-green'}`}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+            <span style={{ color: K.muted }}>Общая стоимость:</span>
+            <span style={{ fontWeight: 700, color: canAfford ? K.good : K.bad }}>
               {totalCost.toLocaleString('ru-RU')} ₽
             </span>
           </div>
-          <div className="border-t border-blue-200 pt-2 flex justify-between text-sm">
-            <span className="text-gray-600">Текущий баланс:</span>
-            <span className="font-semibold text-gray-800">{balance.toLocaleString('ru-RU')} ₽</span>
+          <div style={{
+            borderTop: `1px solid ${K.blue}`,
+            paddingTop: 8,
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontSize: 13,
+          }}>
+            <span style={{ color: K.muted }}>Текущий баланс:</span>
+            <span style={{ fontWeight: 600, color: K.ink }}>{balance.toLocaleString('ru-RU')} ₽</span>
           </div>
         </div>
 
-        <div className="flex gap-3 pt-4">
+        <div style={{ display: 'flex', gap: 12, paddingTop: 16 }}>
           <button
             onClick={onClose}
-            className="flex-1 bg-gray-200 hover:bg-gray-300 py-2 rounded-md font-semibold text-gray-700 transition"
+            style={{
+              flex: 1,
+              background: K.bone,
+              color: K.ink,
+              border: `1px solid ${K.line}`,
+              borderRadius: 10,
+              padding: '8px 0',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
           >
             Отмена
           </button>
           <button
             onClick={handlePurchase}
             disabled={!canAfford}
-            className={`flex-1 py-2 rounded-md transition font-semibold text-white ${
-              canAfford
-                ? 'bg-brand-green hover:opacity-90'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
+            style={{
+              flex: 1,
+              background: canAfford ? K.ink : K.lineSoft,
+              color: canAfford ? K.white : K.muted,
+              border: 'none',
+              borderRadius: 10,
+              padding: '8px 0',
+              fontWeight: 600,
+              cursor: canAfford ? 'pointer' : 'not-allowed',
+              fontFamily: 'inherit',
+            }}
           >
             Купить
           </button>
