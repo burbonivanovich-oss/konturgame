@@ -1,5 +1,5 @@
 import { useGameStore } from '../../stores/gameStore'
-import { BUSINESS_CONFIGS, getUpgradesForBusiness } from '../../constants/business'
+import { BUSINESS_CONFIGS } from '../../constants/business'
 import { PRODUCT_CATEGORIES, isCategoryAllowed } from '../../services/assortmentEngine'
 import { getBusinessStage, STAGE_CONFIG, getNextStage } from '../../constants/businessStages'
 import { OWNER_INVESTMENTS_MAP, type OwnerInvestmentId } from '../../constants/ownerInvestments'
@@ -13,11 +13,10 @@ const SERVICE_NAMES: Record<string, string> = {
 interface OperationsViewProps {
   onShowHireModal?: () => void
   onShowSupplierModal?: () => void
-  onShowUpgradesModal?: () => void
   onOpenOwnerInvestments?: () => void
 }
 
-export default function OperationsView({ onShowHireModal, onShowSupplierModal, onShowUpgradesModal, onOpenOwnerInvestments }: OperationsViewProps) {
+export default function OperationsView({ onShowHireModal, onShowSupplierModal, onOpenOwnerInvestments }: OperationsViewProps) {
   const {
     businessType, cashRegisters, enabledCategories, services,
     buyCashRegister, toggleCategory, employees, suppliers, qualityLevel,
@@ -491,58 +490,6 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal, o
         )}
       </div>
 
-      {/* Upgrades */}
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>УЛУЧШЕНИЯ</div>
-          <button
-            onClick={onShowUpgradesModal}
-            style={{
-              fontSize: 11, fontWeight: 700, padding: '6px 12px',
-              borderRadius: 8, background: K.bone, border: `1px solid ${K.line}`,
-              color: K.ink, cursor: 'pointer', transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-          >
-            Все улучшения
-          </button>
-        </div>
-        {getUpgradesForBusiness(businessType).length > 0 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            {getUpgradesForBusiness(businessType).slice(0, 4).map((upgrade) => {
-              const isPurchased = purchasedUpgrades.includes(upgrade.id)
-              return (
-                <div
-                  key={upgrade.id}
-                  style={{
-                    padding: 12, borderRadius: 12,
-                    border: isPurchased ? `2px solid ${K.mint}` : `1px solid ${K.line}`,
-                    background: isPurchased ? K.mintSoft : K.white,
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700 }}>{upgrade.name}</div>
-                    {isPurchased && <span style={{ fontSize: 12, fontWeight: 800, color: K.mint }}>✓</span>}
-                  </div>
-                  <div style={{ fontSize: 10, color: K.muted, marginBottom: 6, lineHeight: 1.3 }}>
-                    {upgrade.effect}
-                  </div>
-                  {!isPurchased && (
-                    <div style={{ fontSize: 11, fontWeight: 700, color: K.orange }}>
-                      {upgrade.cost.toLocaleString('ru-RU')} ₽
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        ) : (
-          <div style={{ padding: 20, textAlign: 'center', color: K.muted }}>
-            Нет доступных улучшений
-          </div>
-        )}
-      </div>
     </div>
   )
 }

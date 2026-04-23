@@ -4,7 +4,7 @@ import { Row, Col, Card } from './primitives'
 import type { BusinessType } from '../../types/game'
 
 type NavId = 'dashboard' | 'ecosystem' | 'finance' | 'marketing' | 'operations' |
-             'warehouse' | 'reputation' | 'milestones' | 'statistics' | 'campaigns' | 'journal'
+             'warehouse' | 'reputation' | 'milestones' | 'statistics' | 'campaigns' | 'journal' | 'upgrades'
 
 interface NavItem {
   id: NavId
@@ -20,6 +20,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'marketing',   label: 'Маркетинг',    icon: 'mkt'                     },
   { id: 'warehouse',   label: 'Склад',        icon: 'warehouse', unlocksAtWeek: 2  },
   { id: 'operations',  label: 'Управление',   icon: 'ops',       unlocksAtWeek: 2  },
+  { id: 'upgrades',    label: 'Улучшения',    icon: 'upgrade',   unlocksAtWeek: 2  },
   { id: 'reputation',  label: 'Репутация',    icon: 'rep',       unlocksAtWeek: 4  },
   { id: 'milestones',  label: 'Вехи',         icon: 'milestone', unlocksAtWeek: 7  },
   { id: 'statistics',  label: 'Статистика',   icon: 'stats',     unlocksAtWeek: 7  },

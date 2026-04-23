@@ -6,7 +6,6 @@ import MobileMainScreen from './MobileMainScreen'
 import { OnboardingPanel } from './OnboardingPanel'
 import PurchaseModal from './modals/PurchaseModal'
 import CampaignModal from './modals/CampaignModal'
-import UpgradesModal from './modals/UpgradesModal'
 import HelpModal from './modals/HelpModal'
 import SettingsModal from './modals/SettingsModal'
 import VictoryModal from './modals/VictoryModal'
@@ -32,6 +31,7 @@ import StatisticsView from './views/StatisticsView'
 import { CampaignROIView } from './views/CampaignROIView'
 import { MilestoneView } from './views/MilestoneView'
 import { DecisionLogView } from './views/DecisionLogView'
+import UpgradesView from './views/UpgradesView'
 import { useGameStore } from '../stores/gameStore'
 import { ONBOARDING_STAGES } from '../constants/onboarding'
 import { BUSINESS_CONFIGS } from '../constants/business'
@@ -59,7 +59,6 @@ function DashboardView({
   onNextDay, dayBlockedMsg,
   showPurchaseModal, setShowPurchaseModal,
   showCampaignModal, setShowCampaignModal,
-  showUpgradesModal, setShowUpgradesModal,
   showCashRegisterModal, setShowCashRegisterModal,
   handleEventOption, onOpenOwnerInvestments,
 }: {
@@ -69,8 +68,6 @@ function DashboardView({
   setShowPurchaseModal: (v: boolean) => void
   showCampaignModal: boolean
   setShowCampaignModal: (v: boolean) => void
-  showUpgradesModal: boolean
-  setShowUpgradesModal: (v: boolean) => void
   showCashRegisterModal: boolean
   setShowCashRegisterModal: (v: boolean) => void
   handleEventOption: (id: string) => void
@@ -425,16 +422,6 @@ function DashboardView({
         >
           Реклама
         </button>
-        <button
-          onClick={() => setShowUpgradesModal(true)}
-          style={{
-            padding: '9px 18px', borderRadius: 10, border: `1px solid ${K.line}`,
-            background: K.bone, color: K.ink, fontSize: 13, fontWeight: 600,
-            cursor: 'pointer', fontFamily: 'inherit',
-          }}
-        >
-          Улучшения
-        </button>
 
         <div style={{ flex: 1 }} />
 
@@ -465,7 +452,6 @@ function DashboardView({
 
       <PurchaseModal isOpen={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} />
       <CampaignModal isOpen={showCampaignModal} onClose={() => setShowCampaignModal(false)} />
-      <UpgradesModal isOpen={showUpgradesModal} onClose={() => setShowUpgradesModal(false)} />
     </div>
   )
 }
@@ -474,7 +460,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const [activeView, setActiveView] = useState<ActiveView>('dashboard')
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
   const [showCampaignModal, setShowCampaignModal] = useState(false)
-  const [showUpgradesModal, setShowUpgradesModal] = useState(false)
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [showAchievementsModal, setShowAchievementsModal] = useState(false)
@@ -667,8 +652,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
           setShowPurchaseModal={setShowPurchaseModal}
           showCampaignModal={showCampaignModal}
           setShowCampaignModal={setShowCampaignModal}
-          showUpgradesModal={showUpgradesModal}
-          setShowUpgradesModal={setShowUpgradesModal}
           showCashRegisterModal={showCashRegisterModal}
           setShowCashRegisterModal={setShowCashRegisterModal}
           handleEventOption={handleEventOption}
@@ -690,10 +673,10 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
         <OperationsView
           onShowHireModal={() => setShowHireEmployeeModal(true)}
           onShowSupplierModal={() => setShowSupplierModal(true)}
-          onShowUpgradesModal={() => setShowUpgradesModal(true)}
           onOpenOwnerInvestments={() => setShowOwnerInvestmentsModal(true)}
         />
       )}
+      {activeView === 'upgrades' && <UpgradesView />}
       {activeView === 'statistics' && <StatisticsView />}
       {activeView === 'campaigns' && (
         <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>

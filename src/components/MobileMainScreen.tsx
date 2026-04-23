@@ -7,7 +7,6 @@ import { OnboardingPanel } from './OnboardingPanel'
 import PurchaseModal from './modals/PurchaseModal'
 import EventModal from './modals/EventModal'
 import CampaignModal from './modals/CampaignModal'
-import UpgradesModal from './modals/UpgradesModal'
 import HelpModal from './modals/HelpModal'
 import SettingsModal from './modals/SettingsModal'
 import AchievementsModal from './modals/AchievementsModal'
@@ -30,7 +29,6 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
   const [showEventModal, setShowEventModal] = useState(false)
   const [showCampaignModal, setShowCampaignModal] = useState(false)
-  const [showUpgradesModal, setShowUpgradesModal] = useState(false)
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [showAchievementsModal, setShowAchievementsModal] = useState(false)
@@ -265,16 +263,6 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
                 🖥️ Касса
               </button>
               <button
-                onClick={() => setShowUpgradesModal(true)}
-                style={{
-                  padding: 12, borderRadius: 10, border: 'none',
-                  background: K.blue, color: K.white,
-                  fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                }}
-              >
-                🔧 Улучш.
-              </button>
-              <button
                 onClick={() => setShowOwnerInvestmentsModal(true)}
                 style={{
                   padding: 12, borderRadius: 10, border: 'none',
@@ -328,7 +316,6 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
         queueLength={pendingEventsQueue?.length ?? 0}
       />
       <CampaignModal isOpen={showCampaignModal} onClose={() => setShowCampaignModal(false)} />
-      <UpgradesModal isOpen={showUpgradesModal} onClose={() => setShowUpgradesModal(false)} />
       <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
       <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} onRestart={onRestart} />
       <AchievementsModal isOpen={showAchievementsModal} onClose={() => setShowAchievementsModal(false)} />
