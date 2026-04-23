@@ -407,30 +407,40 @@ export function processWeek(state: GameState): DayResult {
     state.consecutiveNoExpiry = 0
   }
 
-  // Decrement ad campaigns by 7 days and track ROI
+  // Decrement ad campaigns and accumulate ROI attribution
   if (state.activeAdCampaigns?.length) {
     if (!state.campaignROI) state.campaignROI = []
+
+    // Accumulate this week's incremental revenue on each campaign object.
+    // incremental ≈ weekRevenue × clientEffect / (1 + clientEffect)
     for (const campaign of state.activeAdCampaigns) {
-      // Incremental revenue: the share of weekly revenue attributable to the campaign's
-      // client boost. If campaign adds +X% clients, incremental ≈ weekRevenue * X / (1 + X).
       const clientEffect = Math.max(0, campaign.clientEffect)
       const incrementalRevenue = clientEffect > 0
         ? Math.round(weekRevenue * clientEffect / (1 + clientEffect))
         : 0
-      const campaignROI = {
-        id: `roi_${campaign.id}_w${state.currentWeek}`,
-        campaignId: campaign.id,
-        launchedWeek: state.currentWeek,
-        costSpent: campaign.cost,
-        revenueGenerated: incrementalRevenue,
-        clientsAcquired: Math.round(incrementalRevenue / Math.max(1, config.avgCheck)),
-        roi: campaign.cost > 0 ? ((incrementalRevenue - campaign.cost) / campaign.cost) * 100 : 0,
-      }
-      state.campaignROI.push(campaignROI)
+      campaign.revenueAttributed = (campaign.revenueAttributed ?? 0) + incrementalRevenue
     }
-    state.activeAdCampaigns = state.activeAdCampaigns
-      .map((c) => ({ ...c, daysRemaining: Math.max(0, c.daysRemaining - 7) }))
-      .filter((c) => c.daysRemaining > 0)
+
+    // Write one final ROI record for campaigns that expire this week, then remove them.
+    const updated = state.activeAdCampaigns.map(c => ({
+      ...c,
+      daysRemaining: Math.max(0, c.daysRemaining - 7),
+    }))
+    for (const campaign of updated) {
+      if (campaign.daysRemaining <= 0) {
+        const totalRevenue = campaign.revenueAttributed ?? 0
+        state.campaignROI.push({
+          id: `roi_${campaign.id}_${campaign.launchedWeek ?? state.currentWeek}`,
+          campaignId: campaign.id,
+          launchedWeek: campaign.launchedWeek ?? state.currentWeek,
+          costSpent: campaign.cost,
+          revenueGenerated: totalRevenue,
+          clientsAcquired: Math.round(totalRevenue / Math.max(1, config.avgCheck)),
+          roi: campaign.cost > 0 ? ((totalRevenue - campaign.cost) / campaign.cost) * 100 : 0,
+        })
+      }
+    }
+    state.activeAdCampaigns = updated.filter(c => c.daysRemaining > 0)
   }
 
   // Gain experience (7 days + profit bonus)

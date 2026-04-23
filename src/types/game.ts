@@ -323,7 +323,9 @@ export interface AdCampaign {
   checkEffect: number
   businessTypes?: BusinessType[]
   daysRemaining: number
-  startWeek?: number  // Week when campaign started (for delayed effects)
+  startWeek?: number         // Week when effects kick in (for delayed campaigns)
+  launchedWeek?: number      // Week when purchased (for ROI history display)
+  revenueAttributed?: number // Accumulated incremental revenue for final ROI record
 }
 
 export interface Upgrade {

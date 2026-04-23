@@ -5,7 +5,6 @@ import ResponsiveLayout from './ResponsiveLayout'
 import MobileMainScreen from './MobileMainScreen'
 import { OnboardingPanel } from './OnboardingPanel'
 import PurchaseModal from './modals/PurchaseModal'
-import CampaignModal from './modals/CampaignModal'
 import HelpModal from './modals/HelpModal'
 import SettingsModal from './modals/SettingsModal'
 import VictoryModal from './modals/VictoryModal'
@@ -58,7 +57,6 @@ type ActiveView = NavId
 function DashboardView({
   onNextDay, dayBlockedMsg,
   showPurchaseModal, setShowPurchaseModal,
-  showCampaignModal, setShowCampaignModal,
   showCashRegisterModal, setShowCashRegisterModal,
   handleEventOption, onOpenOwnerInvestments,
 }: {
@@ -66,8 +64,6 @@ function DashboardView({
   dayBlockedMsg: string | null
   showPurchaseModal: boolean
   setShowPurchaseModal: (v: boolean) => void
-  showCampaignModal: boolean
-  setShowCampaignModal: (v: boolean) => void
   showCashRegisterModal: boolean
   setShowCashRegisterModal: (v: boolean) => void
   handleEventOption: (id: string) => void
@@ -412,16 +408,6 @@ function DashboardView({
             Закупить
           </button>
         )}
-        <button
-          onClick={() => setShowCampaignModal(true)}
-          style={{
-            padding: '9px 18px', borderRadius: 10, border: `1px solid ${K.line}`,
-            background: K.bone, color: K.ink, fontSize: 13, fontWeight: 600,
-            cursor: 'pointer', fontFamily: 'inherit',
-          }}
-        >
-          Реклама
-        </button>
 
         <div style={{ flex: 1 }} />
 
@@ -451,7 +437,6 @@ function DashboardView({
       </div>
 
       <PurchaseModal isOpen={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} />
-      <CampaignModal isOpen={showCampaignModal} onClose={() => setShowCampaignModal(false)} />
     </div>
   )
 }
@@ -459,7 +444,6 @@ function DashboardView({
 function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const [activeView, setActiveView] = useState<ActiveView>('dashboard')
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
-  const [showCampaignModal, setShowCampaignModal] = useState(false)
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [showAchievementsModal, setShowAchievementsModal] = useState(false)
@@ -650,8 +634,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
           dayBlockedMsg={dayBlockedMsg}
           showPurchaseModal={showPurchaseModal}
           setShowPurchaseModal={setShowPurchaseModal}
-          showCampaignModal={showCampaignModal}
-          setShowCampaignModal={setShowCampaignModal}
           showCashRegisterModal={showCashRegisterModal}
           setShowCashRegisterModal={setShowCashRegisterModal}
           handleEventOption={handleEventOption}
