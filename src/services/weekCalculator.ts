@@ -32,7 +32,7 @@ import { calculateCategoryRevenue } from './assortmentEngine'
 import { initializeSuppliers, unlockSuppliersIfNeeded, getQualityModifier, getPriceModifier, calculateStockCost } from './supplierManager'
 import { initializeEmployees, getWeeklySalaryCost, getWeeklyEnergyCost, getEmployeeCapacityBonus, getUpgradeEnergyBonus } from './employeeManager'
 import { initializeQuality, updateQualityWeekly, getQualityReputationBonus, getQualityLoyaltyBonus, getQualityPricePremium } from './qualityManager'
-import { getQualityClientModifier, getQualityPriceModifier, getSeasonalityModifier, getBrandEffect } from './qualityModifier'
+import { getQualityClientModifier, getBrandEffect } from './qualityModifier'
 
 export function checkWeekBlocked(state: GameState): { blocked: boolean; reason?: string } {
   if (state.pendingEvent) {
@@ -116,17 +116,7 @@ export function processWeek(state: GameState): DayResult {
     // 1. Check expiry
     const { loss: expiredLoss } = checkExpiry(state)
 
-    // 2. Competitor event - now cyclic every 5-8 weeks
-    state.weeksSinceCompetitorEvent++
-    const competitorInterval = 5 + Math.floor(state.currentWeek / 10)  // Increases with game progress
-    if (state.weeksSinceCompetitorEvent >= competitorInterval && !state.competitorEventTriggered) {
-      state.competitorEventTriggered = true
-      state.weeksSinceCompetitorEvent = 0
-      if ((state.temporaryModDaysLeft ?? 0) === 0) {
-        state.temporaryClientMod = -ECONOMY_CONSTANTS.COMPETITOR_TRAFFIC_STEAL_PCT
-        state.temporaryModDaysLeft = ECONOMY_CONSTANTS.COMPETITOR_EFFECT_WEEKS * 7
-      }
-    }
+    // 2. Competitor event - now cyclic every 5-8 weeks (moved outside loop)
 
     // 3. Calculate daily metrics
     let totalClients = calculateClients(config.baseClients, modifiers)
@@ -135,9 +125,7 @@ export function processWeek(state: GameState): DayResult {
     const qualityClientMod = getQualityClientModifier(state.qualityLevel)
     totalClients = Math.round(totalClients * (1 + qualityClientMod))
 
-    // Apply seasonality modifier
-    const seasonalityMod = getSeasonalityModifier(state.currentWeek, config.seasonality)
-    totalClients = Math.round(totalClients * (1 + seasonalityMod))
+    // Seasonality already applied in buildModifiers/calculateClients, skip redundant application
 
     // Apply brand effect (reputation + loyalty synergy)
     const brandEffect = getBrandEffect(state.reputation, state.loyalty)
@@ -163,11 +151,8 @@ export function processWeek(state: GameState): DayResult {
     // 5. Average check with quality and brand premiums
     let avgCheck = calculateAverageCheck(config.avgCheck, modifiers)
 
-    // Add quality price modifier (quality > 80% = +15% price)
-    const qualityPriceMod = getQualityPriceModifier(state.qualityLevel)
-
-    // Add brand effect price modifier
-    const totalPriceModifier = qualityPricePremium + qualityPriceMod + brandEffect.priceMod
+    // Add quality price premium + brand effect (skip getQualityPriceModifier to avoid double-counting)
+    const totalPriceModifier = qualityPricePremium + brandEffect.priceMod
 
     avgCheck = Math.round(avgCheck * (1 + totalPriceModifier))
 
@@ -237,11 +222,8 @@ export function processWeek(state: GameState): DayResult {
     const dailyFixedCosts = dailyUtilities + dailyRegisterMaintenance
 
     // 12. Monthly expenses (every week 4, approximate every 28 days)
+    // Note: daysSinceMonthly is checked and updated inside the loop
     let monthlyExpense = 0
-    const daysSinceMonthly = state.daysSinceLastMonthly ?? 0
-    if (daysSinceMonthly >= ECONOMY_CONSTANTS.MONTHLY_CYCLE_WEEKS * 7) {
-      monthlyExpense = calculateMonthlyExpenses(state) + weeklySalaryCost
-    }
 
     // 13. Daily profit
     const dayExpenses = dayTax + subscriptionCost + purchaseCost + monthlyExpense + expiredLoss +
@@ -267,12 +249,15 @@ export function processWeek(state: GameState): DayResult {
     const load = capacity > 0 ? served / capacity : 0
     if (load > ECONOMY_CONSTANTS.OVERLOAD_THRESHOLD) {
       const newOverloadDays = (state.consecutiveOverloadDays ?? 0) + 1
+      state.consecutiveOverloadDays = newOverloadDays
       if (newOverloadDays >= ECONOMY_CONSTANTS.OVERLOAD_DAYS_FOR_LOYALTY_PENALTY) {
         const penalty = elbaActive
           ? -(ECONOMY_CONSTANTS.LOYALTY_PENALTY_PER_DAY * 0.5)
           : -ECONOMY_CONSTANTS.LOYALTY_PENALTY_PER_DAY
         dayLoyaltyChange = Math.round(penalty)
       }
+    } else {
+      state.consecutiveOverloadDays = 0
     }
     const elbaLoyaltyBonus = elbaActive ? (state.services.elba.effects.loyaltyBonus ?? 0) : 0
     const qualityLoyaltyBonus = getQualityLoyaltyBonus(state)
@@ -301,12 +286,26 @@ export function processWeek(state: GameState): DayResult {
     }
 
     // 19. Update monthly counter
-    if (daysSinceMonthly >= ECONOMY_CONSTANTS.MONTHLY_CYCLE_WEEKS * 7) {
+    const currentDaysSinceMonthly = state.daysSinceLastMonthly ?? 0
+    if (currentDaysSinceMonthly >= ECONOMY_CONSTANTS.MONTHLY_CYCLE_WEEKS * 7) {
+      monthlyExpense = calculateMonthlyExpenses(state) + weeklySalaryCost
       state.daysSinceLastMonthly = 0
     } else {
-      state.daysSinceLastMonthly = daysSinceMonthly + 1
+      state.daysSinceLastMonthly = currentDaysSinceMonthly + 1
     }
   } // End of week loop
+
+  // 2. Competitor event check (once per week, not 7 times)
+  state.weeksSinceCompetitorEvent++
+  const competitorInterval = 5 + Math.floor(state.currentWeek / 10)
+  if (state.weeksSinceCompetitorEvent >= competitorInterval && !state.competitorEventTriggered) {
+    state.competitorEventTriggered = true
+    state.weeksSinceCompetitorEvent = 0
+    if ((state.temporaryModDaysLeft ?? 0) === 0) {
+      state.temporaryClientMod = -ECONOMY_CONSTANTS.COMPETITOR_TRAFFIC_STEAL_PCT
+      state.temporaryModDaysLeft = ECONOMY_CONSTANTS.COMPETITOR_EFFECT_WEEKS * 7
+    }
+  }
 
   // Apply week results to state
   const newBalance = state.balance + weekNetProfit
@@ -327,8 +326,7 @@ export function processWeek(state: GameState): DayResult {
     state.gameOverReason = 'burnout'
   }
 
-  // Advance to next week
-  state.currentWeek += 1
+  // Update state (but don't advance week yet — done at end after all checks)
   state.dayOfWeek = 0
   state.weeklyEnergyRestored = false
   state.seenMicroEventIds = []  // Reset seen events for new week
@@ -341,7 +339,7 @@ export function processWeek(state: GameState): DayResult {
   // Create result
   const result: DayResult = {
     dayNumber: state.currentWeek - 1,  // Report previous week
-    clients: Math.round(weekRevenue / (300 * 0.7)), // Estimate from revenue
+    clients: Math.round(weekRevenue / (config.avgCheck * bankPaymentRatio)), // Estimate from revenue
     served: 0,  // Not tracked in week mode
     missed: 0,
     revenue: weekRevenue,
@@ -382,7 +380,7 @@ export function processWeek(state: GameState): DayResult {
     }
   }
 
-  // Update counters
+  // Update counters (note: despite the name, this counts weeks, not days)
   if (state.balance < 0) {
     state.daysBalanceNegative = (state.daysBalanceNegative ?? 0) + 1
   } else {
@@ -528,6 +526,9 @@ export function processWeek(state: GameState): DayResult {
       }
     }
   }
+
+  // Advance week AFTER all checks (events, milestones, etc.) have used current week number
+  state.currentWeek += 1
 
   state.lastDayResult = result
   return result

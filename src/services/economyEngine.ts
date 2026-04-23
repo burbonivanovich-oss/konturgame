@@ -11,7 +11,8 @@ function getPurchasedUpgradeConfigs(state: GameState) {
 export function getSeasonalModifier(businessType: string, dayNumber: number): number {
   const config = BUSINESS_CONFIGS[businessType as keyof typeof BUSINESS_CONFIGS]
   if (!config) return 0
-  const month = ((Math.ceil(dayNumber / 30) - 1) % 12) + 1
+  // Guard against dayNumber = 0; use Math.max(1, ...) to avoid invalid month calculation
+  const month = ((Math.ceil(Math.max(1, dayNumber) / 30) - 1) % 12) + 1
   return config.seasonality[String(month)] ?? 0
 }
 
@@ -131,7 +132,6 @@ export function buildModifiers(state: GameState): Modifiers {
     advertising: adMods.clientMod + serviceClientBonus,
     reputation: getReputationModifier(state.reputation),
     event: state.temporaryClientMod ?? 0,
-    capacityBonus: getCapacityUpgradesBonus(state),
     checkBonus: getCheckUpgradesBonus(state) + serviceCheckBonus + (state.temporaryCheckMod ?? 0),
     advertisingCheckPenalty: adMods.checkMod,
   }

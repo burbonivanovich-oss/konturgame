@@ -16,8 +16,9 @@ export function calculatePainLosses(
   const hasExtern = state.services?.extern?.isActive ?? false
 
   // Bank: 40% клиентов не могут платить без безнала
-  // Учтено в bankPaymentRatio в dayCalculator, здесь записываем для отображения
-  const bank = hasBank ? 0 : Math.round(revenue * 0.4)
+  // Уже учтено в bankPaymentRatio (revenue рассчитана с учётом этого),
+  // поэтому здесь возвращаем 0 (не дублируем потери)
+  const bank = 0
 
   // Market: 8% потери от ошибок ручного учёта
   const market = hasMarket ? 0 : Math.round(totalCategoryRevenue * 0.08)
