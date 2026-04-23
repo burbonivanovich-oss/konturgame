@@ -341,6 +341,21 @@ export interface BusinessConfig {
   usesAssortment: boolean
 }
 
+export interface RegularCustomer {
+  name: string
+  emoji: string
+  habit: string
+  lastVisitWeek: number
+  missedWeeks: number
+  totalVisits: number
+}
+
+export interface MetaPerk {
+  id: string
+  name: string
+  description: string
+}
+
 export interface GameState {
   businessType: BusinessType
   currentWeek: number  // 1-52
@@ -479,4 +494,13 @@ export interface GameState {
   // Narrative systems (v3.1)
   decisionLog: DecisionLogEntry[]
   seenNewspaperWeeks: number[]
+
+  // Cliffhanger teaser for next week (v4.0)
+  upcomingEventTeaser?: string | null
+
+  // Regular customer (v4.0)
+  regularCustomer?: RegularCustomer | null
+
+  // Pending milestone celebration (shown in results overlay, v4.0)
+  pendingMilestoneCelebration?: string | null  // 'week10' | 'week20' | 'week30'
 }

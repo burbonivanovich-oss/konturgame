@@ -531,8 +531,117 @@ export function processWeek(state: GameState): DayResult {
   // Advance week AFTER all checks (events, milestones, etc.) have used current week number
   state.currentWeek += 1
 
+  // Generate next-week cliffhanger teaser
+  state.upcomingEventTeaser = generateNextWeekTeaser(state)
+
+  // Process regular customer visit
+  processRegularCustomer(state, weekNetProfit)
+
+  // Clear milestone celebration after it's been generated (UI reads it once)
+  // Milestone celebration is set based on newly achieved milestones this week
+  state.pendingMilestoneCelebration = null
+  if (state.currentWeek === 11 && state.milestoneStatus?.week10) state.pendingMilestoneCelebration = 'week10'
+  else if (state.currentWeek === 21 && state.milestoneStatus?.week20) state.pendingMilestoneCelebration = 'week20'
+  else if (state.currentWeek === 31 && state.milestoneStatus?.week30) state.pendingMilestoneCelebration = 'week30'
+
   state.lastDayResult = result
   return result
+}
+
+function generateNextWeekTeaser(state: GameState): string | null {
+  const nextDay = state.currentWeek * 7
+
+  // Upcoming loan repayment
+  if (state.loans?.length) {
+    const urgentLoan = state.loans.find(l => !l.isRepaid && l.dueWeek === state.currentWeek + 1)
+    if (urgentLoan) {
+      return `💸 На следующей неделе истекает срок займа — потребуется вернуть ${urgentLoan.amount.toLocaleString('ru-RU')} ₽`
+    }
+    const nearLoan = state.loans.find(l => !l.isRepaid && l.dueWeek === state.currentWeek + 2)
+    if (nearLoan) {
+      return `⏰ Через две недели срок займа. Проверьте запас средств`
+    }
+  }
+
+  // Upcoming fokus penalty (day % 17 == 0)
+  const daysUntilFokus = 17 - (nextDay % 17)
+  if (!state.services?.fokus?.isActive && daysUntilFokus <= 7) {
+    return `⚠️ Без Контур.Фокуса через ${daysUntilFokus} дн. возможна проверка поставщика`
+  }
+
+  // Upcoming extern penalty (day % 31 == 0)
+  const daysUntilExtern = 31 - (nextDay % 31)
+  if (!state.services?.extern?.isActive && daysUntilExtern <= 7) {
+    return `🔒 Без Контур.Экстерна скоро возможна блокировка счёта`
+  }
+
+  // Seasonal hint
+  const nextMonth = Math.ceil(((state.currentWeek + 1) / 52) * 12)
+  const config = state.businessType
+  if (config === 'cafe' && nextMonth === 6) return `☀️ Лето приближается — сезон роста для кафе`
+  if (config === 'cafe' && nextMonth === 12) return `❄️ Зима снизит поток клиентов — подготовьтесь заранее`
+  if (config === 'beauty-salon' && nextMonth === 3) return `🌸 Весна — сезонный рост для салона красоты`
+  if (config === 'shop' && nextMonth === 7) return `🏖️ Летний сезон даёт небольшой рост — пользуйтесь`
+
+  // Regular customer missed
+  if (state.regularCustomer && state.regularCustomer.missedWeeks >= 2) {
+    return `😔 ${state.regularCustomer.name} не приходил уже ${state.regularCustomer.missedWeeks} нед. — возможно, что-то не так`
+  }
+
+  // Crisis week hint
+  if ((state.currentWeek + 1) % 9 === 0) {
+    return `🌩️ Следующая неделя может быть напряжённой — ожидается несколько событий сразу`
+  }
+
+  // Generic encouragement
+  const tips = [
+    `📊 Загляните в Финансы — стоит проверить динамику прибыли`,
+    `🤝 Хороший момент пересмотреть список поставщиков`,
+    `💡 Если репутация выше 70 — это хорошее время для рекламы`,
+    null,
+    null,
+  ]
+  return tips[Math.floor(Math.random() * tips.length)]
+}
+
+const REGULAR_CUSTOMERS: Record<string, { name: string; emoji: string; habit: string }> = {
+  shop: { name: 'Николай Петрович', emoji: '🧔', habit: 'Заходит каждую пятницу за продуктами' },
+  cafe: { name: 'Катя', emoji: '☕', habit: 'Приходит каждое утро за кофе с молоком' },
+  'beauty-salon': { name: 'Мария Ивановна', emoji: '💅', habit: 'Записывается каждые две недели' },
+}
+
+function processRegularCustomer(state: GameState, weekProfit: number): void {
+  if (!state.regularCustomer) {
+    if (state.currentWeek >= 2) {
+      const def = REGULAR_CUSTOMERS[state.businessType]
+      if (def) {
+        state.regularCustomer = {
+          ...def,
+          lastVisitWeek: state.currentWeek,
+          missedWeeks: 0,
+          totalVisits: 1,
+        }
+      }
+    }
+    return
+  }
+
+  const customer = state.regularCustomer
+  const willVisit = state.loyalty >= 40 && Math.random() < 0.8
+
+  if (willVisit) {
+    customer.lastVisitWeek = state.currentWeek
+    customer.totalVisits += 1
+    customer.missedWeeks = 0
+    // Small loyalty bonus for regular visit
+    state.loyalty = Math.min(100, state.loyalty + 1)
+  } else {
+    customer.missedWeeks += 1
+    if (customer.missedWeeks >= 4) {
+      // They've gone for good this run
+      state.loyalty = Math.max(0, state.loyalty - 2)
+    }
+  }
 }
 
 // ── Chain system helpers ─────────────────────────────────────────────────────

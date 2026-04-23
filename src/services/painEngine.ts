@@ -34,9 +34,9 @@ export function calculatePainLosses(
     ? Math.round(revenue * 0.02)
     : 0
 
-  // Fokus: каждые 15 дней плохой поставщик → 5-10% баланса
+  // Fokus: каждые 17 дней плохой поставщик → 5-10% баланса (сдвинуто с 15 чтобы не совпадать с Diadoc)
   let fokus = 0
-  if (!hasFokus && day % 15 === 0) {
+  if (!hasFokus && day % 17 === 0) {
     const riskPct = 0.05 + Math.random() * 0.05
     fokus = Math.round(state.balance * riskPct)
   }
@@ -46,9 +46,9 @@ export function calculatePainLosses(
     ? Math.round(profit * 0.15)
     : 0
 
-  // Extern: каждые 30 дней блокировка счёта → 2 дня выручки
+  // Extern: каждые 31 день блокировка счёта → 2 дня выручки (сдвинуто с 30 чтобы не совпадать)
   const avgDayRevenue = revenue
-  const extern = !hasExtern && day % 30 === 0
+  const extern = !hasExtern && day % 31 === 0
     ? Math.round(avgDayRevenue * 2)
     : 0
 

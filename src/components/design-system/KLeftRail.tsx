@@ -10,20 +10,21 @@ interface NavItem {
   id: NavId
   label: string
   icon: string
+  unlocksAtWeek?: number  // hidden until this week
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'dashboard',   label: 'Дневной цикл', icon: 'dashboard'  },
-  { id: 'ecosystem',   label: 'Экосистема',   icon: 'eco'        },
-  { id: 'finance',     label: 'Финансы',      icon: 'finance'    },
-  { id: 'marketing',   label: 'Маркетинг',    icon: 'mkt'        },
-  { id: 'operations',  label: 'Управление',   icon: 'ops'        },
-  { id: 'warehouse',   label: 'Склад',        icon: 'warehouse'  },
-  { id: 'reputation',  label: 'Репутация',    icon: 'rep'        },
-  { id: 'milestones',  label: 'Вехи',         icon: 'milestone'  },
-  { id: 'statistics',  label: 'Статистика',   icon: 'stats'      },
-  { id: 'campaigns',   label: 'Кампании ROI', icon: 'roi'        },
-  { id: 'journal',     label: 'Журнал',       icon: 'log'        },
+  { id: 'dashboard',   label: 'Дневной цикл', icon: 'dashboard'               },
+  { id: 'ecosystem',   label: 'Экосистема',   icon: 'eco'                     },
+  { id: 'finance',     label: 'Финансы',      icon: 'finance'                 },
+  { id: 'marketing',   label: 'Маркетинг',    icon: 'mkt'                     },
+  { id: 'warehouse',   label: 'Склад',        icon: 'warehouse', unlocksAtWeek: 3  },
+  { id: 'operations',  label: 'Управление',   icon: 'ops',       unlocksAtWeek: 5  },
+  { id: 'reputation',  label: 'Репутация',    icon: 'rep',       unlocksAtWeek: 5  },
+  { id: 'milestones',  label: 'Вехи',         icon: 'milestone', unlocksAtWeek: 7  },
+  { id: 'statistics',  label: 'Статистика',   icon: 'stats',     unlocksAtWeek: 7  },
+  { id: 'campaigns',   label: 'Кампании ROI', icon: 'roi',       unlocksAtWeek: 10 },
+  { id: 'journal',     label: 'Журнал',       icon: 'log',       unlocksAtWeek: 10 },
 ]
 
 const BIZ_ICON: Record<BusinessType, string> = {
@@ -108,7 +109,7 @@ export function KLeftRail({
 
       {/* Navigation */}
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {NAV_ITEMS.map(item => {
+        {NAV_ITEMS.filter(item => !item.unlocksAtWeek || currentWeek >= item.unlocksAtWeek).map(item => {
           const isActive = item.id === active
           const badge =
             item.id === 'dashboard' && pendingEventCount > 0 ? String(pendingEventCount) :

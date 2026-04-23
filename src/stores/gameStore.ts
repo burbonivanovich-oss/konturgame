@@ -161,6 +161,11 @@ const createInitialState = (businessType: BusinessType): GameState => {
     // Narrative systems (v3.1)
     decisionLog: [],
     seenNewspaperWeeks: [],
+
+    // Cliffhanger teaser and regular customer (v4.0)
+    upcomingEventTeaser: null,
+    regularCustomer: null,
+    pendingMilestoneCelebration: null,
   }
 }
 
@@ -1354,6 +1359,10 @@ function extractState(state: any): GameState {
     // v3.1 narrative systems
     decisionLog: decisionLog ?? [],
     seenNewspaperWeeks: seenNewspaperWeeks ?? [],
+    // v4.0 teaser + regular customer
+    upcomingEventTeaser: (state as any).upcomingEventTeaser ?? null,
+    regularCustomer: (state as any).regularCustomer ?? null,
+    pendingMilestoneCelebration: (state as any).pendingMilestoneCelebration ?? null,
   }
 }
 
