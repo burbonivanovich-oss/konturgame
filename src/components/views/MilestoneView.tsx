@@ -1,5 +1,6 @@
 import { useGameStore } from '../../stores/gameStore'
 import { getMilestoneProgress } from '../../services/weekCalculator'
+import { K } from '../design-system/tokens'
 
 const MILESTONES = [
   {
@@ -38,32 +39,33 @@ export function MilestoneView() {
     <div style={{
       flex: 1, padding: '20px 24px', overflow: 'auto',
       display: 'flex', flexDirection: 'column', gap: 12,
-      fontFamily: 'Manrope, sans-serif', color: 'var(--k-ink)', letterSpacing: '-0.01em',
+      fontFamily: 'Manrope, sans-serif', color: K.ink, letterSpacing: '-0.01em',
     }}>
       {/* Header */}
       <div>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.45 }}>ПРОГРЕСС</div>
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>ПРОГРЕСС</div>
         <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.025em' }}>Вехи</div>
       </div>
 
       {/* Current status strip */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-        <div style={{ background: '#fff', borderRadius: 16, padding: 16 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.4 }}>НЕДЕЛЯ</div>
+        <div style={{ background: K.white, border: `1px solid ${K.line}`, borderRadius: 16, padding: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>НЕДЕЛЯ</div>
           <div style={{ fontSize: 26, fontWeight: 800, marginTop: 4 }}>{currentWeek}</div>
         </div>
-        <div style={{ background: '#fff', borderRadius: 16, padding: 16 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.4 }}>БАЛАНС</div>
-          <div style={{ fontSize: 18, fontWeight: 800, marginTop: 4, color: 'var(--k-green)' }} className="k-num">
+        <div style={{ background: K.white, border: `1px solid ${K.line}`, borderRadius: 16, padding: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>БАЛАНС</div>
+          <div style={{ fontSize: 18, fontWeight: 800, marginTop: 4, color: K.good, fontVariantNumeric: 'tabular-nums' }}>
             {balance.toLocaleString('ru-RU')} ₽
           </div>
         </div>
-        <div style={{ background: '#fff', borderRadius: 16, padding: 16 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.4 }}>ПРИБЫЛЬ СЕГОДНЯ</div>
+        <div style={{ background: K.white, border: `1px solid ${K.line}`, borderRadius: 16, padding: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>ПРИБЫЛЬ СЕГОДНЯ</div>
           <div style={{
             fontSize: 18, fontWeight: 800, marginTop: 4,
-            color: weeklyProfit >= 0 ? 'var(--k-green)' : 'var(--k-bad)',
-          }} className="k-num">
+            color: weeklyProfit >= 0 ? K.good : K.bad,
+            fontVariantNumeric: 'tabular-nums',
+          }}>
             {weeklyProfit >= 0 ? '+' : ''}{weeklyProfit.toLocaleString('ru-RU')} ₽
           </div>
         </div>
@@ -79,10 +81,10 @@ export function MilestoneView() {
           const balancePct = Math.min(100, Math.round((balance / m.balanceTarget) * 100))
           const profitPct = Math.min(100, Math.round((weeklyProfit / m.profitTarget) * 100))
 
-          let borderColor = 'var(--k-ink-10)'
-          let bg = '#fff'
-          if (achieved) { borderColor = 'var(--k-green)'; bg = 'rgba(0,180,120,0.04)' }
-          else if (isCurrent) { borderColor = 'var(--k-orange)'; bg = 'rgba(255,107,0,0.04)' }
+          let borderColor = K.line
+          let bg = K.white
+          if (achieved) { borderColor = K.mint; bg = K.mintSoft }
+          else if (isCurrent) { borderColor = K.orange; bg = K.orangeSoft }
 
           return (
             <div key={m.key} style={{
@@ -95,7 +97,7 @@ export function MilestoneView() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{
                   width: 44, height: 44, borderRadius: 14, flexShrink: 0,
-                  background: achieved ? 'var(--k-green)' : isCurrent ? 'var(--k-orange)' : 'var(--k-ink-10)',
+                  background: achieved ? K.mint : isCurrent ? K.orange : K.bone,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 22,
                   filter: (!achieved && !isCurrent) ? 'grayscale(1)' : 'none',
@@ -105,28 +107,28 @@ export function MilestoneView() {
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 15, fontWeight: 800 }}>{m.label}</div>
-                  <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.5, marginTop: 1 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: K.muted, marginTop: 1 }}>
                     Неделя {m.week}
                   </div>
                 </div>
                 {achieved ? (
                   <div style={{
                     fontSize: 11, fontWeight: 800, padding: '4px 10px', borderRadius: 8,
-                    background: 'var(--k-green)', color: '#fff',
+                    background: K.mint, color: K.white,
                   }}>
                     ✓ Выполнено
                   </div>
                 ) : isPast ? (
                   <div style={{
                     fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 8,
-                    background: 'var(--k-ink-10)', color: 'var(--k-ink-50)',
+                    background: K.bone, color: K.muted,
                   }}>
                     Не достигнута
                   </div>
                 ) : (
                   <div style={{
                     fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 8,
-                    background: 'var(--k-orange)', color: '#fff',
+                    background: K.orange, color: K.white,
                     opacity: isCurrent ? 1 : 0.5,
                   }}>
                     {isCurrent ? 'Проверяется' : `Через ${m.week - currentWeek} нед.`}
@@ -136,8 +138,8 @@ export function MilestoneView() {
 
               {/* Targets */}
               <div style={{
-                fontSize: 11, fontWeight: 700, opacity: 0.55,
-                background: 'var(--k-surface)', borderRadius: 10, padding: '8px 12px',
+                fontSize: 11, fontWeight: 700, color: K.muted,
+                background: K.bone, borderRadius: 10, padding: '8px 12px',
               }}>
                 Условие: баланс ≥ {m.balanceTarget.toLocaleString('ru-RU')} ₽ &nbsp;ИЛИ&nbsp; прибыль ≥ {m.profitTarget.toLocaleString('ru-RU')} ₽ за день
               </div>
@@ -147,28 +149,28 @@ export function MilestoneView() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {/* Balance progress */}
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 11, fontWeight: 600, opacity: 0.6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 11, fontWeight: 600, color: K.muted }}>
                       <span>Баланс</span>
-                      <span className="k-num">{balance.toLocaleString('ru-RU')} / {m.balanceTarget.toLocaleString('ru-RU')} ₽ · {balancePct}%</span>
+                      <span style={{ fontVariantNumeric: 'tabular-nums' }}>{balance.toLocaleString('ru-RU')} / {m.balanceTarget.toLocaleString('ru-RU')} ₽ · {balancePct}%</span>
                     </div>
-                    <div style={{ height: 6, background: 'var(--k-ink-10)', borderRadius: 999, overflow: 'hidden' }}>
+                    <div style={{ height: 6, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
                       <div style={{
                         width: `${balancePct}%`, height: '100%', borderRadius: 999,
-                        background: balancePct >= 100 ? 'var(--k-green)' : 'var(--k-blue)',
+                        background: balancePct >= 100 ? K.mint : K.violet,
                         transition: 'width 0.4s',
                       }} />
                     </div>
                   </div>
                   {/* Profit progress */}
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 11, fontWeight: 600, opacity: 0.6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 11, fontWeight: 600, color: K.muted }}>
                       <span>Дневная прибыль</span>
-                      <span className="k-num">{weeklyProfit.toLocaleString('ru-RU')} / {m.profitTarget.toLocaleString('ru-RU')} ₽ · {Math.max(0, profitPct)}%</span>
+                      <span style={{ fontVariantNumeric: 'tabular-nums' }}>{weeklyProfit.toLocaleString('ru-RU')} / {m.profitTarget.toLocaleString('ru-RU')} ₽ · {Math.max(0, profitPct)}%</span>
                     </div>
-                    <div style={{ height: 6, background: 'var(--k-ink-10)', borderRadius: 999, overflow: 'hidden' }}>
+                    <div style={{ height: 6, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
                       <div style={{
                         width: `${Math.max(0, profitPct)}%`, height: '100%', borderRadius: 999,
-                        background: profitPct >= 100 ? 'var(--k-green)' : 'var(--k-orange)',
+                        background: profitPct >= 100 ? K.mint : K.mint,
                         transition: 'width 0.4s',
                       }} />
                     </div>
@@ -180,7 +182,7 @@ export function MilestoneView() {
         })}
       </div>
 
-      <div style={{ fontSize: 11, opacity: 0.4, textAlign: 'center', paddingBottom: 8 }}>
+      <div style={{ fontSize: 11, color: K.muted, textAlign: 'center', paddingBottom: 8 }}>
         Достаточно выполнить одно из двух условий каждой вехи
       </div>
     </div>
