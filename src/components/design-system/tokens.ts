@@ -1,9 +1,9 @@
 // Palette aligned with docs/design/DESIGN_REQUIREMENTS.md v2.1
 export const K = {
   white:       '#FFFFFF',
-  paper:       '#F4F2EE',              // Surface
-  paper2:      '#EBE8E2',              // Surface-2
-  bone:        '#F5F1E6',              // warm highlight (kept)
+  paper:       '#F7F8FA',              // Surface — neutral light
+  paper2:      '#ECEDF1',              // Surface-2 — neutral secondary
+  bone:        '#ECEDF1',              // subtle bg for inactive/soft states
   ink:         '#0E1116',              // Ink 100%
   ink2:        'rgba(14,17,22,0.70)',  // Ink-70 (secondary text)
   muted:       'rgba(14,17,22,0.50)',  // Ink-50 (captions)
