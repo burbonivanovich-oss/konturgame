@@ -132,6 +132,7 @@ export function buildModifiers(state: GameState): Modifiers {
     advertising: adMods.clientMod + serviceClientBonus,
     reputation: getReputationModifier(state.reputation),
     event: state.temporaryClientMod ?? 0,
+    capacityBonus: 0,
     checkBonus: getCheckUpgradesBonus(state) + serviceCheckBonus + (state.temporaryCheckMod ?? 0),
     advertisingCheckPenalty: adMods.checkMod,
   }

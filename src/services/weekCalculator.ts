@@ -337,9 +337,10 @@ export function processWeek(state: GameState): DayResult {
   state.lastUpdated = Date.now()
 
   // Create result
+  const bankPaymentRatioForResult = getBankPaymentRatio(state)
   const result: DayResult = {
     dayNumber: state.currentWeek - 1,  // Report previous week
-    clients: Math.round(weekRevenue / (config.avgCheck * bankPaymentRatio)), // Estimate from revenue
+    clients: Math.round(weekRevenue / (config.avgCheck * bankPaymentRatioForResult)), // Estimate from revenue
     served: 0,  // Not tracked in week mode
     missed: 0,
     revenue: weekRevenue,
