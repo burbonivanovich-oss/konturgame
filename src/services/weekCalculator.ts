@@ -96,6 +96,7 @@ export function processWeek(state: GameState): DayResult {
   let weekRepChange = 0
   let weekLoyaltyChange = 0
   let totalDaysWithoutExpiry = 0
+  const weekPain = { bank: 0, market: 0, ofd: 0, diadoc: 0, fokus: 0, elba: 0, extern: 0, total: 0 }
 
   // Calculate weekly employee costs
   const weeklySalaryCost = getWeeklySalaryCost(state)
@@ -234,6 +235,14 @@ export function processWeek(state: GameState): DayResult {
     const pain = calculatePainLosses(state, dayRevenue, dayNetProfit, dayRevenue)
     const additionalPainLoss = pain.market + pain.ofd + pain.diadoc + pain.fokus + pain.elba + pain.extern
     dayNetProfit -= additionalPainLoss
+    weekPain.bank += pain.bank
+    weekPain.market += pain.market
+    weekPain.ofd += pain.ofd
+    weekPain.diadoc += pain.diadoc
+    weekPain.fokus += pain.fokus
+    weekPain.elba += pain.elba
+    weekPain.extern += pain.extern
+    weekPain.total += pain.total
 
     // 15. Reputation change with quality bonus
     const repFromMissed = -(missed * 0.2)
@@ -530,6 +539,16 @@ export function processWeek(state: GameState): DayResult {
 
   // Advance week AFTER all checks (events, milestones, etc.) have used current week number
   state.currentWeek += 1
+
+  // Store weekly + cumulative pain losses
+  state.lastWeekPainLosses = weekPain
+  if (!state.totalPainLosses) {
+    state.totalPainLosses = { bank: 0, market: 0, ofd: 0, diadoc: 0, fokus: 0, elba: 0, extern: 0, total: 0 }
+  }
+  const tp = state.totalPainLosses
+  tp.bank += weekPain.bank; tp.market += weekPain.market; tp.ofd += weekPain.ofd
+  tp.diadoc += weekPain.diadoc; tp.fokus += weekPain.fokus; tp.elba += weekPain.elba
+  tp.extern += weekPain.extern; tp.total += weekPain.total
 
   // Generate next-week cliffhanger teaser
   state.upcomingEventTeaser = generateNextWeekTeaser(state)

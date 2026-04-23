@@ -56,6 +56,7 @@ interface KLeftRailProps {
   pendingEventCount: number
   milestoneBadge?: boolean
   promoCodesCount: number
+  highlightNav?: NavId
   onNav: (id: NavId) => void
   onHelp: () => void
   onSettings: () => void
@@ -66,7 +67,7 @@ interface KLeftRailProps {
 export function KLeftRail({
   active, businessType, currentWeek, activeServiceCount,
   savedBalance, pendingEventCount, milestoneBadge,
-  promoCodesCount, onNav, onHelp, onSettings,
+  promoCodesCount, highlightNav, onNav, onHelp, onSettings,
   onPromoWallet, onAchievements,
 }: KLeftRailProps) {
   const season = getSeason(currentWeek)
@@ -117,10 +118,12 @@ export function KLeftRail({
             item.id === 'milestones' && milestoneBadge ? 'NEW' :
             undefined
 
+          const isPulsing = item.id === highlightNav && !isActive
           return (
             <button
               key={item.id}
               onClick={() => onNav(item.id)}
+              className={isPulsing ? 'nav-pulse' : undefined}
               style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '8px 10px', borderRadius: 9,
@@ -128,6 +131,7 @@ export function KLeftRail({
                 color: isActive ? K.white : K.ink,
                 fontSize: 13, fontWeight: 500, cursor: 'pointer',
                 border: 'none', fontFamily: 'inherit', width: '100%', textAlign: 'left',
+                outline: isPulsing ? `2px solid ${K.orange}` : 'none',
               }}
             >
               <KIcon name={item.icon} size={16} color={isActive ? K.white : K.ink2} />

@@ -166,6 +166,10 @@ const createInitialState = (businessType: BusinessType): GameState => {
     upcomingEventTeaser: null,
     regularCustomer: null,
     pendingMilestoneCelebration: null,
+    // Pain tracking (v4.1)
+    lastWeekPainLosses: null,
+    totalPainLosses: null,
+    seenUnlockTabs: [],
   }
 }
 
@@ -1363,6 +1367,9 @@ function extractState(state: any): GameState {
     upcomingEventTeaser: (state as any).upcomingEventTeaser ?? null,
     regularCustomer: (state as any).regularCustomer ?? null,
     pendingMilestoneCelebration: (state as any).pendingMilestoneCelebration ?? null,
+    lastWeekPainLosses: (state as any).lastWeekPainLosses ?? null,
+    totalPainLosses: (state as any).totalPainLosses ?? null,
+    seenUnlockTabs: (state as any).seenUnlockTabs ?? [],
   }
 }
 

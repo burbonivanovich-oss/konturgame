@@ -495,6 +495,11 @@ export interface GameState {
   decisionLog: DecisionLogEntry[]
   seenNewspaperWeeks: number[]
 
+  // Pain loss tracking (v4.1)
+  lastWeekPainLosses?: PainLossRecord | null   // accumulated over the last 7 days
+  totalPainLosses?: PainLossRecord | null      // accumulated over entire run (for postmortem)
+  seenUnlockTabs?: string[]                    // nav ids shown the "just unlocked" toast
+
   // Cliffhanger teaser for next week (v4.0)
   upcomingEventTeaser?: string | null
 
