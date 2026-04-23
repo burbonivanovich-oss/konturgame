@@ -179,10 +179,10 @@ function DashboardView({
                 background: K.white, border: `1px solid ${K.line}`,
                 borderRadius: 10, padding: '10px 12px',
               }}>
-                <div style={{ fontSize: 10, color: K.muted, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>
+                <div style={{ fontSize: 10, color: K.muted, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 800 }}>
                   {t.label}
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: t.color, marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: t.color, marginTop: 2, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.01em' }}>
                   {t.value}
                 </div>
               </div>

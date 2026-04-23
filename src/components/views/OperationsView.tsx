@@ -37,19 +37,29 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal, o
   const atHireLimit = employees.length >= stageConfig.maxEmployees
 
   return (
-    <div style={{ flex: 1, padding: '20px 24px', overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{
+      flex: 1, padding: '20px 24px', overflow: 'auto',
+      display: 'flex', flexDirection: 'column', gap: 20,
+      fontFamily: 'Manrope, sans-serif', color: K.ink, letterSpacing: '-0.01em',
+    }}>
+      {/* Page header */}
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>УПРАВЛЕНИЕ</div>
+        <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.025em' }}>Операции</div>
+      </div>
+
       {/* Owner Energy */}
       <div>
-        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Энергия владельца</div>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase', marginBottom: 12 }}>ЭНЕРГИЯ ВЛАДЕЛЬЦА</div>
         <div style={{
           padding: 16, borderRadius: 14,
           background: K.white,
           border: `1px solid ${entrepreneurEnergy > 70 ? K.mint : entrepreneurEnergy > 40 ? K.warn : K.bad}`,
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: K.muted }}>Уровень выгорания</span>
+            <span style={{ fontSize: 11, fontWeight: 800, color: K.muted, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Уровень энергии</span>
             <span style={{
-              fontSize: 20, fontWeight: 800,
+              fontSize: 36, fontWeight: 800, letterSpacing: '-0.03em',
               color: entrepreneurEnergy > 70 ? K.mint : entrepreneurEnergy > 40 ? K.warn : K.bad,
             }}>
               {entrepreneurEnergy}%
@@ -73,7 +83,7 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal, o
       {/* Owner Investments status */}
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <div style={{ fontSize: 15, fontWeight: 700 }}>Инвестиции в себя</div>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>ИНВЕСТИЦИИ В СЕБЯ</div>
           <button
             onClick={onOpenOwnerInvestments}
             style={{
@@ -147,7 +157,7 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal, o
 
       {/* Cash Registers */}
       <div>
-        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Кассовые системы</div>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase', marginBottom: 12 }}>КАССОВЫЕ СИСТЕМЫ</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
           {[
             { type: 'mobile' as const, label: '📱 Mobile POS', price: 5000 },
@@ -156,8 +166,8 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal, o
           ].map(({ type, label, price }) => (
             <div key={type} style={{ padding: 12, borderRadius: 12, background: K.white, border: `1px solid ${K.line}` }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: K.muted, marginBottom: 4 }}>{label}</div>
-              <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>
-                {cashRegisters.filter(r => r.type === type).length} шт
+              <div style={{ fontSize: 36, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 8 }}>
+                {cashRegisters.filter(r => r.type === type).length} <span style={{ fontSize: 14, fontWeight: 600, opacity: 0.6 }}>шт</span>
               </div>
               <button
                 onClick={() => buyCashRegister(type)}
@@ -181,7 +191,7 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal, o
       {config.usesAssortment && categories.length > 0 && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-            <div style={{ fontSize: 15, fontWeight: 700 }}>Ассортимент</div>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>АССОРТИМЕНТ</div>
             <span style={{ fontSize: 11, color: K.muted }}>
               {enabledCategories.length}/{categories.length} активных
             </span>
@@ -313,12 +323,12 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal, o
 
       {/* Quality Level */}
       <div>
-        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Качество услуг</div>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase', marginBottom: 12 }}>КАЧЕСТВО УСЛУГ</div>
         <div style={{ padding: 16, borderRadius: 14, background: K.white, border: `1px solid ${K.line}` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: K.muted }}>Уровень качества</span>
+            <span style={{ fontSize: 11, fontWeight: 800, color: K.muted, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Уровень качества</span>
             <span style={{
-              fontSize: 20, fontWeight: 800,
+              fontSize: 36, fontWeight: 800, letterSpacing: '-0.03em',
               color: qualityLevel > 70 ? K.mint : qualityLevel > 40 ? K.warn : K.bad,
             }}>{qualityLevel}%</span>
           </div>
@@ -358,7 +368,7 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal, o
       {/* Employees */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-          <div style={{ fontSize: 15, fontWeight: 700 }}>Сотрудники</div>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>СОТРУДНИКИ</div>
           <span style={{ fontSize: 11, color: K.muted }}>
             {employees.length} / {stageConfig.maxEmployees} (лимит стадии)
           </span>
@@ -424,7 +434,7 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal, o
       {/* Suppliers */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-          <div style={{ fontSize: 15, fontWeight: 700 }}>Поставщик</div>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>ПОСТАВЩИК</div>
           {suppliers.length > 0 && (
             <button
               onClick={onShowSupplierModal}
@@ -484,7 +494,7 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal, o
       {/* Upgrades */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-          <div style={{ fontSize: 15, fontWeight: 700 }}>🔧 Улучшения</div>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>УЛУЧШЕНИЯ</div>
           <button
             onClick={onShowUpgradesModal}
             style={{
