@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { ONBOARDING_STAGES, ONBOARDING_STAGE_LABELS } from '../constants/onboarding'
+import { isStepActionDone, isWaitStepReady } from '../services/onboardingEngine'
+import type { OnboardingTrigger } from '../types/game'
 import { K } from './design-system/tokens'
 import type { NavId } from './design-system/KLeftRail'
 
@@ -30,14 +32,24 @@ const ACTION_LABEL: Record<string, string> = {
   buy_register:     'Купить кассу',
 }
 
+const WAIT_HINT: Record<OnboardingTrigger, string> = {
+  first_day_completed:  'Нажмите «Следующий день →» внизу экрана',
+  first_event_shown:    'Дождитесь первого события в игре',
+  first_event_resolved: 'Выберите вариант ответа на событие',
+  low_energy:           'Сыграйте несколько дней, пока энергия не упадёт',
+  negative_balance:     'Продолжайте играть, пока не увидите минус',
+  low_stock:            'Продолжайте играть, пока склад не покажет меньше 25%',
+}
+
 const STAGE_COLORS = [K.blue, K.violet, K.orange, K.mint, K.orange]
 
 export function OnboardingPanel({ onNavigate }: OnboardingPanelProps) {
   const [expanded, setExpanded] = useState(true)
+  const gameState = useGameStore()
   const {
     onboardingStage, onboardingStepIndex, onboardingCompleted,
-    nextOnboardingStep, advanceOnboardingStage, completeOnboarding, services, cashRegisters,
-  } = useGameStore()
+    nextOnboardingStep, advanceOnboardingStage, completeOnboarding,
+  } = gameState
 
   if (onboardingCompleted) return null
 
@@ -55,41 +67,49 @@ export function OnboardingPanel({ onNavigate }: OnboardingPanelProps) {
   const isLastStage = onboardingStage >= 4
   const stageColor = STAGE_COLORS[onboardingStage] ?? K.orange
 
-  const isActionDone = (): boolean => {
-    if (!step.requiresAction) return true
-    if (step.requiresAction === 'activate_bank')   return services?.bank?.isActive   ?? false
-    if (step.requiresAction === 'activate_ofd')    return services?.ofd?.isActive    ?? false
-    if (step.requiresAction === 'activate_market') return services?.market?.isActive ?? false
-    if (step.requiresAction === 'activate_diadoc') return services?.diadoc?.isActive ?? false
-    if (step.requiresAction === 'activate_fokus')  return services?.fokus?.isActive  ?? false
-    if (step.requiresAction === 'activate_elba')   return services?.elba?.isActive   ?? false
-    if (step.requiresAction === 'activate_extern') return services?.extern?.isActive ?? false
-    if (step.requiresAction === 'buy_register')    return cashRegisters.length > 0
-    return true
-  }
+  const stepKind: 'intro' | 'action' | 'wait' =
+    step.kind ?? (step.requiresAction ? 'action' : 'intro')
 
-  const actionDone = isActionDone()
-  const needsAction = !!(step.requiresAction && !actionDone)
+  const actionDone = stepKind === 'action' ? isStepActionDone(gameState as any, step) : true
+  const waitReady = stepKind === 'wait' ? isWaitStepReady(gameState as any, step) : true
+  const needsAction = stepKind === 'action' && !actionDone
+  const isWaiting = stepKind === 'wait' && !waitReady
+
   const targetNav = step.requiresAction ? ACTION_TO_NAV[step.requiresAction] : undefined
   const actionLabel = step.requiresAction ? ACTION_LABEL[step.requiresAction] : undefined
+  const waitHint = stepKind === 'wait' && step.waitForTrigger ? WAIT_HINT[step.waitForTrigger] : undefined
+
+  const canProceed = !needsAction && !isWaiting
 
   const handleConfirm = () => {
-    if (!actionDone) return
+    if (!canProceed) return
     if (isLastStep) {
-      isLastStage ? completeOnboarding() : advanceOnboardingStage()
+      if (isLastStage) completeOnboarding()
+      else advanceOnboardingStage()
     } else {
       nextOnboardingStep()
     }
   }
 
+  const nextLabel = (() => {
+    if (isLastStep && isLastStage) return 'Готово!'
+    if (isLastStep) return 'Принято ✓'
+    if (stepKind === 'intro') return 'Понял →'
+    if (stepKind === 'wait') return 'Далее →'
+    return 'Далее →'
+  })()
+
+  const borderColor = needsAction ? K.orange : isWaiting ? K.violet : stageColor
+  const bg = needsAction ? K.orangeSoft : isWaiting ? K.violetSoft : K.bone
+
   return (
     <div style={{
-      borderBottom: `2px solid ${needsAction ? K.orange : stageColor}`,
-      background: needsAction ? K.orangeSoft : K.bone,
+      borderBottom: `2px solid ${borderColor}`,
+      background: bg,
       flexShrink: 0,
       transition: 'background 0.2s',
     }}>
-      {/* Collapsed header — always visible */}
+      {/* Collapsed header */}
       <div
         onClick={() => setExpanded(e => !e)}
         style={{
@@ -114,7 +134,7 @@ export function OnboardingPanel({ onNavigate }: OnboardingPanelProps) {
           fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
           color: stageColor, textTransform: 'uppercase', flexShrink: 0,
         }}>
-          {ONBOARDING_STAGE_LABELS[onboardingStage]}
+          {ONBOARDING_STAGE_LABELS[onboardingStage]} · {clampedIndex + 1}/{steps.length}
         </div>
 
         <div style={{ fontSize: 13, fontWeight: 600, color: K.ink, flex: 1, lineHeight: 1.2 }}>
@@ -135,7 +155,22 @@ export function OnboardingPanel({ onNavigate }: OnboardingPanelProps) {
           </button>
         )}
 
-        {actionDone && (
+        {isWaiting && (
+          <div style={{
+            padding: '5px 12px', borderRadius: 8,
+            background: K.white, color: K.violet,
+            fontSize: 11, fontWeight: 700, flexShrink: 0,
+            display: 'flex', alignItems: 'center', gap: 6,
+          }}>
+            <span style={{
+              width: 6, height: 6, borderRadius: 999, background: K.violet,
+              animation: 'pulse 1.4s ease-in-out infinite',
+            }} />
+            Ждём вас в игре
+          </div>
+        )}
+
+        {canProceed && (
           <button
             onClick={(e) => { e.stopPropagation(); handleConfirm() }}
             style={{
@@ -145,7 +180,7 @@ export function OnboardingPanel({ onNavigate }: OnboardingPanelProps) {
               flexShrink: 0,
             }}
           >
-            {isLastStep && isLastStage ? 'Готово!' : isLastStep ? 'Принято ✓' : 'Далее →'}
+            {nextLabel}
           </button>
         )}
 
@@ -160,7 +195,10 @@ export function OnboardingPanel({ onNavigate }: OnboardingPanelProps) {
           padding: '0 24px 14px',
           display: 'flex', flexDirection: 'column', gap: 10,
         }}>
-          <div style={{ fontSize: 13, color: K.ink2, lineHeight: 1.6, maxWidth: 640 }}>
+          <div style={{
+            fontSize: 13, color: K.ink2, lineHeight: 1.6, maxWidth: 640,
+            whiteSpace: 'pre-line',
+          }}>
             {step.text}
           </div>
 
@@ -172,7 +210,7 @@ export function OnboardingPanel({ onNavigate }: OnboardingPanelProps) {
             }}>
               <span style={{ fontSize: 16 }}>⚠️</span>
               <div style={{ flex: 1, fontSize: 12, color: K.orange, fontWeight: 600 }}>
-                Требуется действие — перейдите в раздел и подключите сервис
+                Требуется действие — перейдите в раздел и выполните его
               </div>
               {targetNav && (
                 <button
@@ -189,13 +227,36 @@ export function OnboardingPanel({ onNavigate }: OnboardingPanelProps) {
             </div>
           )}
 
-          {actionDone && step.requiresAction && (
+          {isWaiting && waitHint && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              background: K.white, border: `1px solid ${K.violet}`,
+              borderRadius: 10, padding: '10px 14px',
+            }}>
+              <span style={{ fontSize: 16 }}>👀</span>
+              <div style={{ flex: 1, fontSize: 12, color: K.violet, fontWeight: 600 }}>
+                {waitHint}
+              </div>
+            </div>
+          )}
+
+          {stepKind === 'action' && actionDone && step.requiresAction && (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 8,
               background: K.mintSoft, borderRadius: 10, padding: '8px 14px',
               fontSize: 12, fontWeight: 600, color: K.mintInk,
             }}>
               ✓ Выполнено — нажмите «Далее»
+            </div>
+          )}
+
+          {stepKind === 'wait' && waitReady && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: K.mintSoft, borderRadius: 10, padding: '8px 14px',
+              fontSize: 12, fontWeight: 600, color: K.mintInk,
+            }}>
+              ✓ Отлично — жмите «Далее»
             </div>
           )}
         </div>

@@ -130,8 +130,8 @@ describe('GameStore', () => {
     })
 
     it('should activate service', () => {
-      const { activateService } = useGameStore.getState()
-      // bank is unlocked at stage 0 by default
+      const { activateService, advanceOnboardingStage } = useGameStore.getState()
+      advanceOnboardingStage() // Stage 1: unlocks bank + ofd
       activateService('bank')
       expect(useGameStore.getState().services.bank.isActive).toBe(true)
     })

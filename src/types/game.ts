@@ -129,12 +129,26 @@ export interface MilestoneStatus {
   week30: boolean  // achieved 500k balance or 10k weekly profit
 }
 
+export type OnboardingTrigger =
+  | 'first_day_completed'
+  | 'first_event_shown'
+  | 'first_event_resolved'
+  | 'low_energy'
+  | 'negative_balance'
+  | 'low_stock'
+
 export interface OnboardingStep {
   id: string
   title: string
   text: string
   highlightTarget?: string
   requiresAction?: string
+  // Kind of step:
+  // - 'intro'  (default): educational, just press "Понял"
+  // - 'action': requires game action (same as legacy requiresAction)
+  // - 'wait':   waits for in-game trigger before "Далее" becomes active
+  kind?: 'intro' | 'action' | 'wait'
+  waitForTrigger?: OnboardingTrigger
 }
 
 export interface OnboardingStageConfig {
