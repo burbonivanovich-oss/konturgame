@@ -1,8 +1,60 @@
+import { useState } from 'react'
 import { useGameStore } from '../../stores/gameStore'
-import { AD_CAMPAIGNS_CONFIG, MAX_ACTIVE_CAMPAIGNS, CAMPAIGN_DIMINISHING_FACTORS } from '../../constants/business'
+import {
+  AD_CAMPAIGNS_CONFIG, MAX_ACTIVE_CAMPAIGNS, CAMPAIGN_DIMINISHING_FACTORS,
+  getUpgradesForBusiness,
+} from '../../constants/business'
+import { getCampaignStats } from '../../services/weekCalculator'
 import { K } from '../design-system/tokens'
 
-export function MarketingView() {
+type DevTab = 'marketing' | 'upgrades' | 'roi'
+
+export function DevelopmentView() {
+  const [tab, setTab] = useState<DevTab>('marketing')
+
+  return (
+    <div style={{
+      flex: 1, padding: '20px 24px', overflow: 'auto',
+      display: 'flex', flexDirection: 'column', gap: 16,
+      fontFamily: 'Manrope, sans-serif', color: K.ink, letterSpacing: '-0.01em',
+    }}>
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>РОСТ</div>
+        <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.025em' }}>Развитие</div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 6, borderBottom: `1px solid ${K.line}` }}>
+        {([
+          { id: 'marketing', label: 'Реклама' },
+          { id: 'upgrades',  label: 'Улучшения' },
+          { id: 'roi',       label: 'ROI кампаний' },
+        ] as { id: DevTab; label: string }[]).map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            style={{
+              padding: '10px 14px', border: 'none', cursor: 'pointer',
+              background: 'transparent', fontFamily: 'inherit',
+              fontSize: 13, fontWeight: 700,
+              color: tab === t.id ? K.ink : K.muted,
+              borderBottom: tab === t.id ? `2px solid ${K.ink}` : '2px solid transparent',
+              marginBottom: -1,
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'marketing' && <MarketingSection />}
+      {tab === 'upgrades'  && <UpgradesSection />}
+      {tab === 'roi'       && <RoiSection />}
+    </div>
+  )
+}
+
+function MarketingSection() {
   const { activeAdCampaigns, balance, businessType, addAdCampaign, removeAdCampaign, campaignROI } = useGameStore()
 
   const recentROI = [...(campaignROI ?? [])].reverse().slice(0, 5)
@@ -16,14 +68,12 @@ export function MarketingView() {
   const slotsUsed = activeAdCampaigns.length
   const slotsFull = slotsUsed >= MAX_ACTIVE_CAMPAIGNS
 
-  // Which diminishing factor would a new campaign get?
   const nextFactor = CAMPAIGN_DIMINISHING_FACTORS[slotsUsed] ?? 0.2
   const nextSlotPct = Math.round(nextFactor * 100)
 
   const handleLaunch = (cfg: typeof AD_CAMPAIGNS_CONFIG[number]) => {
     if (slotsFull) return
     if (balance < cfg.cost) return
-    // Balance deduction is handled atomically inside addAdCampaign (store)
     addAdCampaign({
       id: cfg.id,
       name: cfg.name,
@@ -36,17 +86,7 @@ export function MarketingView() {
   }
 
   return (
-    <div style={{
-      flex: 1, padding: '20px 24px', overflow: 'auto',
-      display: 'flex', flexDirection: 'column', gap: 12,
-      fontFamily: 'Manrope, sans-serif', color: K.ink, letterSpacing: '-0.01em',
-    }}>
-      {/* Header */}
-      <div>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>УПРАВЛЕНИЕ</div>
-        <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.025em' }}>Маркетинг</div>
-      </div>
-
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {/* Slot indicator */}
       <div style={{
         background: slotsFull ? K.orangeSoft : K.bone,
@@ -210,7 +250,7 @@ export function MarketingView() {
         </div>
       </div>
 
-      {/* Campaign ROI history */}
+      {/* Recent ROI history */}
       {recentROI.length > 0 && (
         <div style={{ background: K.white, borderRadius: 20, padding: 18, display: 'flex', flexDirection: 'column', gap: 10, border: `1px solid ${K.line}` }}>
           <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>
@@ -260,6 +300,196 @@ export function MarketingView() {
         <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.5 }}>
           Одновременно можно вести до {MAX_ACTIVE_CAMPAIGNS} кампаний. Каждая следующая работает слабее (100% → 60% → 30%) — выгоднее дождаться завершения и запустить новую.
         </div>
+      </div>
+    </div>
+  )
+}
+
+function UpgradesSection() {
+  const { balance, businessType, purchasedUpgrades, purchaseUpgrade, setBalance } = useGameStore()
+  const [selectedUpgrade, setSelectedUpgrade] = useState<string | null>(null)
+  const upgrades = getUpgradesForBusiness(businessType)
+
+  const handlePurchase = (upgrade: typeof upgrades[0]) => {
+    if (balance >= upgrade.cost && !purchasedUpgrades.includes(upgrade.id)) {
+      purchaseUpgrade(upgrade.id)
+      setBalance(balance - upgrade.cost)
+      setSelectedUpgrade(null)
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <p style={{ fontSize: 13, color: K.ink2, lineHeight: 1.6, margin: 0 }}>
+        Покупайте улучшения, чтобы расширить возможности вашего {businessType === 'shop' ? 'магазина' : businessType === 'cafe' ? 'кафе' : 'салона'}.
+        Каждое улучшение добавляет постоянные бонусы к производительности и комфорту работы.
+      </p>
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+        gap: 12,
+      }}>
+        {upgrades.map((upgrade) => {
+          const isPurchased = purchasedUpgrades.includes(upgrade.id)
+          const canAfford = balance >= upgrade.cost
+          const isSelected = selectedUpgrade === upgrade.id
+
+          return (
+            <div
+              key={upgrade.id}
+              onClick={() => !isPurchased && setSelectedUpgrade(upgrade.id)}
+              style={{
+                background: isPurchased ? K.mintSoft : isSelected ? K.violetSoft : K.white,
+                border: isPurchased
+                  ? `1.5px solid ${K.mint}`
+                  : isSelected
+                  ? `1.5px solid ${K.violet}`
+                  : `1px solid ${K.line}`,
+                borderRadius: 12,
+                padding: 16,
+                cursor: isPurchased ? 'default' : 'pointer',
+                transition: 'all 0.2s',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: 15, fontWeight: 700 }}>{upgrade.name}</span>
+                {isPurchased && <span style={{ fontSize: 18, color: K.mint }}>✓</span>}
+              </div>
+
+              <p style={{ fontSize: 12, color: K.ink2, margin: 0, lineHeight: 1.4 }}>
+                {upgrade.effect}
+              </p>
+
+              {!isPurchased && (
+                <div style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: canAfford ? K.orange : K.bad,
+                  marginTop: 'auto',
+                }}>
+                  {upgrade.cost.toLocaleString('ru-RU')} ₽
+                </div>
+              )}
+
+              {isSelected && !isPurchased && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handlePurchase(upgrade)
+                  }}
+                  disabled={!canAfford}
+                  style={{
+                    background: canAfford ? K.ink : K.bone,
+                    color: canAfford ? K.white : K.muted,
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '8px 14px',
+                    fontWeight: 600,
+                    cursor: canAfford ? 'pointer' : 'not-allowed',
+                    fontFamily: 'inherit',
+                    fontSize: 12,
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  Купить сейчас
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {upgrades.length === 0 && (
+        <div style={{ padding: 40, textAlign: 'center', color: K.muted }}>
+          Нет доступных улучшений для этого типа бизнеса
+        </div>
+      )}
+    </div>
+  )
+}
+
+function RoiSection() {
+  const state = useGameStore()
+  const stats = getCampaignStats(state)
+
+  if (stats.totalCampaigns === 0) {
+    return (
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 0' }}>
+        <div style={{ textAlign: 'center', color: K.muted }}>
+          <div style={{ fontSize: 32, marginBottom: 10 }}>📈</div>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>Нет данных</div>
+          <div style={{ fontSize: 12, marginTop: 4 }}>Запустите рекламную кампанию во вкладке «Реклама»</div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* Summary KPIs */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 10 }}>
+        {[
+          { label: 'КАМПАНИЙ', value: String(stats.totalCampaigns) },
+          { label: 'ПОТРАЧЕНО', value: `${stats.totalSpent.toLocaleString('ru-RU')} ₽` },
+          { label: 'ВЫРУЧКА', value: `${stats.totalRevenue.toLocaleString('ru-RU')} ₽` },
+          {
+            label: 'СРЕДНИЙ ROI',
+            value: `${stats.averageROI >= 0 ? '+' : ''}${stats.averageROI.toFixed(1)}%`,
+            color: stats.averageROI >= 0 ? K.good : K.bad,
+          },
+        ].map(kpi => (
+          <div key={kpi.label} style={{ background: K.white, borderRadius: 12, padding: 16, border: `1px solid ${K.line}` }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>{kpi.label}</div>
+            <div style={{
+              fontSize: 18, fontWeight: 800, marginTop: 4,
+              color: kpi.color ?? K.ink,
+            }} className="k-num">{kpi.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Campaign list */}
+      <div style={{ background: K.white, borderRadius: 14, padding: 18, display: 'flex', flexDirection: 'column', gap: 8, border: `1px solid ${K.line}` }}>
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>
+          ВСЕ КАМПАНИИ
+        </div>
+        {[...stats.campaigns].reverse().map(entry => {
+          const cfg = AD_CAMPAIGNS_CONFIG.find(c => c.id === entry.campaignId)
+          const name = cfg?.name ?? entry.campaignId
+          const positive = entry.roi >= 0
+          const roiAbs = Math.abs(entry.roi)
+
+          return (
+            <div key={entry.id} style={{
+              display: 'flex', alignItems: 'center', gap: 14,
+              padding: '10px 12px', borderRadius: 12,
+              background: K.bone,
+              borderLeft: `3px solid ${positive ? K.mint : K.bad}`,
+            }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>{name}</div>
+                <div style={{ display: 'flex', gap: 12, marginTop: 3, fontSize: 10, fontWeight: 600, color: K.muted }}>
+                  <span>Неделя {entry.launchedWeek}</span>
+                  <span className="k-num">потрачено {entry.costSpent.toLocaleString('ru-RU')} ₽</span>
+                  <span className="k-num">выручка {entry.revenueGenerated.toLocaleString('ru-RU')} ₽</span>
+                </div>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{
+                  fontSize: 15, fontWeight: 800,
+                  color: positive ? K.good : K.bad,
+                }}>
+                  {positive ? '+' : '−'}{roiAbs.toFixed(1)}%
+                </div>
+                <div style={{ fontSize: 10, color: K.muted }}>ROI</div>
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

@@ -3,8 +3,8 @@ import { KIcon } from './KIcon'
 import { Row, Col, Card } from './primitives'
 import type { BusinessType } from '../../types/game'
 
-type NavId = 'dashboard' | 'ecosystem' | 'finance' | 'marketing' | 'operations' |
-             'warehouse' | 'reputation' | 'milestones' | 'statistics' | 'campaigns' | 'journal' | 'upgrades'
+type NavId = 'dashboard' | 'ecosystem' | 'finance' | 'development' | 'operations' |
+             'warehouse' | 'statistics' | 'journal'
 
 interface NavItem {
   id: NavId
@@ -17,14 +17,10 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'dashboard',   label: 'Дневной цикл', icon: 'dashboard'               },
   { id: 'ecosystem',   label: 'Экосистема',   icon: 'eco'                     },
   { id: 'finance',     label: 'Финансы',      icon: 'finance'                 },
-  { id: 'marketing',   label: 'Маркетинг',    icon: 'mkt'                     },
   { id: 'warehouse',   label: 'Склад',        icon: 'warehouse', unlocksAtWeek: 2  },
   { id: 'operations',  label: 'Управление',   icon: 'ops',       unlocksAtWeek: 2  },
-  { id: 'upgrades',    label: 'Улучшения',    icon: 'upgrade',   unlocksAtWeek: 2  },
-  { id: 'reputation',  label: 'Репутация',    icon: 'rep',       unlocksAtWeek: 4  },
-  { id: 'milestones',  label: 'Вехи',         icon: 'milestone', unlocksAtWeek: 7  },
+  { id: 'development', label: 'Развитие',     icon: 'upgrade',   unlocksAtWeek: 2  },
   { id: 'statistics',  label: 'Статистика',   icon: 'stats',     unlocksAtWeek: 7  },
-  { id: 'campaigns',   label: 'Кампании ROI', icon: 'roi',       unlocksAtWeek: 10 },
   { id: 'journal',     label: 'Журнал',       icon: 'log',       unlocksAtWeek: 10 },
 ]
 
@@ -55,7 +51,6 @@ interface KLeftRailProps {
   activeServiceCount: number
   savedBalance: number
   pendingEventCount: number
-  milestoneBadge?: boolean
   promoCodesCount: number
   highlightNav?: NavId
   onNav: (id: NavId) => void
@@ -67,7 +62,7 @@ interface KLeftRailProps {
 
 export function KLeftRail({
   active, businessType, currentWeek, activeServiceCount,
-  savedBalance, pendingEventCount, milestoneBadge,
+  savedBalance, pendingEventCount,
   promoCodesCount, highlightNav, onNav, onHelp, onSettings,
   onPromoWallet, onAchievements,
 }: KLeftRailProps) {
@@ -116,7 +111,6 @@ export function KLeftRail({
           const badge =
             item.id === 'dashboard' && pendingEventCount > 0 ? String(pendingEventCount) :
             item.id === 'ecosystem' ? `${activeServiceCount}/7` :
-            item.id === 'milestones' && milestoneBadge ? 'NEW' :
             undefined
 
           const isPulsing = item.id === highlightNav && !isActive
