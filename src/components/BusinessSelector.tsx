@@ -1,45 +1,26 @@
 import type { BusinessType } from '../types/game'
-import { BUSINESS_CONFIGS } from '../constants/business'
+import { BUSINESS_CONFIGS, MONTHLY_EXPENSES } from '../constants/business'
 import { useGameStore } from '../stores/gameStore'
+import { K } from './design-system/tokens'
 
-const BUSINESS_INFO = {
+const BUSINESS_INFO: Record<BusinessType, { icon: string; title: string; description: string; season?: string }> = {
   shop: {
     icon: '🏪',
     title: 'Магазин',
-    description: 'Розничная торговля. Стабильный доход, много клиентов.',
-    details: [
-      'Начальный капитал: 50,000 ₽',
-      'Среднее количество клиентов: 80 в день',
-      'Средний чек: 300 ₽',
-      'Вместимость: 60 человек',
-      'Товар портится: каждые 10 дней',
-    ],
+    description: 'Розничная торговля. Стабильный поток клиентов, низкий средний чек.',
+    season: 'Летом +5% клиентов',
   },
   cafe: {
     icon: '☕',
     title: 'Кафе',
     description: 'Общественное питание. Сезонный бизнес, зависит от погоды.',
-    details: [
-      'Начальный капитал: 40,000 ₽',
-      'Среднее количество клиентов: 100 в день',
-      'Средний чек: 180 ₽',
-      'Вместимость: 70 человек',
-      'Товар портится: каждые 7 дней',
-      'Летом +22% клиентов, зимой -15%',
-    ],
+    season: 'Летом +22% клиентов, зимой −15%',
   },
   'beauty-salon': {
     icon: '💅',
     title: 'Салон красоты',
-    description: 'Услуги красоты. Высокий чек, меньше клиентов.',
-    details: [
-      'Начальный капитал: 60,000 ₽',
-      'Среднее количество клиентов: 40 в день',
-      'Средний чек: 800 ₽',
-      'Вместимость: 30 человек',
-      'Товар не требуется',
-      'Весной +12% клиентов',
-    ],
+    description: 'Услуги красоты. Высокий чек, меньше клиентов, без склада.',
+    season: 'Весной +12% клиентов',
   },
 }
 
@@ -56,183 +37,182 @@ export default function BusinessSelector({ onGameStart }: BusinessSelectorProps)
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        padding: '20px',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-      }}
-    >
-      <div
-        style={{
-          maxWidth: '1000px',
-          width: '100%',
-          textAlign: 'center',
-        }}
-      >
-        {/* Logo */}
-        <div style={{ marginBottom: '40px' }}>
-          <div
-            style={{
-              fontSize: '48px',
-              fontWeight: '800',
-              color: '#fff',
-              marginBottom: '10px',
-            }}
-          >
-            Бизнес с Контуром
+    <div style={{
+      minHeight: '100vh',
+      background: K.paper,
+      color: K.ink,
+      fontFamily: 'Manrope, -apple-system, BlinkMacSystemFont, sans-serif',
+      letterSpacing: '-0.01em',
+      padding: '48px 24px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      WebkitFontSmoothing: 'antialiased',
+      MozOsxFontSmoothing: 'grayscale',
+    }}>
+      <div style={{ maxWidth: 1120, width: '100%' }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            fontSize: 11, fontWeight: 600, letterSpacing: '0.08em',
+            color: K.muted, textTransform: 'uppercase', marginBottom: 12,
+          }}>
+            <span style={{
+              width: 10, height: 10, borderRadius: 3, background: K.ink, display: 'inline-block',
+            }} />
+            БИЗНЕС С КОНТУРОМ
           </div>
-          <div
-            style={{
-              fontSize: '18px',
-              color: 'rgba(255,255,255,0.85)',
-              fontWeight: '500',
-            }}
-          >
-            Выберите тип своего бизнеса, чтобы начать
-          </div>
+          <h1 style={{
+            fontSize: 40, fontWeight: 800, letterSpacing: '-0.03em',
+            lineHeight: 1.02, margin: 0, marginBottom: 12,
+          }}>
+            Выберите свой бизнес
+          </h1>
+          <p style={{
+            fontSize: 15, fontWeight: 500, color: K.ink2,
+            lineHeight: 1.4, margin: 0, maxWidth: 560, marginInline: 'auto',
+          }}>
+            От магазина до салона — управляйте бизнесом, используя сервисы Контура.
+            Стартовый капитал 80 000 ₽, цель — дожить до окупаемости.
+          </p>
         </div>
 
         {/* Business cards */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '24px',
-            marginBottom: '40px',
-          }}
-        >
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: 16,
+          marginBottom: 32,
+        }}>
           {(Object.keys(BUSINESS_INFO) as BusinessType[]).map((type) => {
             const info = BUSINESS_INFO[type]
             const config = BUSINESS_CONFIGS[type]
+            const monthly = MONTHLY_EXPENSES[type]
+
+            const details: { label: string; value: string }[] = [
+              { label: 'Клиенты/день', value: `~${config.baseClients}` },
+              { label: 'Средний чек', value: `${config.avgCheck} ₽` },
+              { label: 'Вместимость', value: `${config.capacity} чел.` },
+              { label: 'Аренда/мес', value: `${monthly.rent.toLocaleString('ru-RU')} ₽` },
+              { label: 'Зарплата/мес', value: `${monthly.baseSalary.toLocaleString('ru-RU')} ₽` },
+              { label: config.hasStock ? 'Срок хранения' : 'Склад', value: config.hasStock ? `${config.stockExpiry} дней` : 'не нужен' },
+            ]
 
             return (
               <button
                 key={type}
                 onClick={() => handleSelectBusiness(type)}
                 style={{
-                  background: '#fff',
-                  border: 'none',
-                  borderRadius: '16px',
-                  padding: '32px 24px',
+                  background: K.white,
+                  border: `1px solid ${K.line}`,
+                  borderRadius: 24,
+                  padding: 24,
                   cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                   textAlign: 'left',
-                  position: 'relative',
-                  overflow: 'hidden',
+                  fontFamily: 'inherit',
+                  color: K.ink,
+                  letterSpacing: '-0.01em',
+                  transition: 'transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 16,
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-4px)'
-                  e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.15)'
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                  e.currentTarget.style.borderColor = K.ink
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+                  e.currentTarget.style.borderColor = K.line
                 }}
               >
-                {/* Icon */}
-                <div
-                  style={{
-                    fontSize: '56px',
-                    marginBottom: '16px',
-                  }}
-                >
-                  {info.icon}
+                {/* Icon + Title */}
+                <div>
+                  <div style={{
+                    width: 56, height: 56, borderRadius: 16,
+                    background: K.paper,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 32, marginBottom: 14,
+                  }}>
+                    {info.icon}
+                  </div>
+                  <div style={{
+                    fontSize: 24, fontWeight: 700,
+                    letterSpacing: '-0.02em', lineHeight: 1.05,
+                    marginBottom: 8,
+                  }}>
+                    {info.title}
+                  </div>
+                  <div style={{
+                    fontSize: 13, fontWeight: 500, color: K.ink2,
+                    lineHeight: 1.4,
+                  }}>
+                    {info.description}
+                  </div>
                 </div>
 
-                {/* Title */}
-                <h2
-                  style={{
-                    fontSize: '24px',
-                    fontWeight: '700',
-                    margin: '0 0 12px 0',
-                    color: '#0e1116',
-                  }}
-                >
-                  {info.title}
-                </h2>
-
-                {/* Description */}
-                <p
-                  style={{
-                    fontSize: '14px',
-                    color: '#666',
-                    margin: '0 0 20px 0',
-                    lineHeight: '1.5',
-                  }}
-                >
-                  {info.description}
-                </p>
-
-                {/* Details */}
-                <ul
-                  style={{
-                    listStyle: 'none',
-                    padding: '0',
-                    margin: '0',
-                    fontSize: '13px',
-                    color: '#555',
-                    textAlign: 'left',
-                  }}
-                >
-                  {info.details.map((detail, i) => (
-                    <li
-                      key={i}
-                      style={{
-                        padding: '6px 0',
-                        borderBottom:
-                          i < info.details.length - 1
-                            ? '1px solid rgba(0,0,0,0.08)'
-                            : 'none',
-                      }}
-                    >
-                      • {detail}
-                    </li>
+                {/* Details grid */}
+                <div style={{
+                  display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1,
+                  background: K.lineSoft, borderRadius: 12, overflow: 'hidden',
+                  border: `1px solid ${K.lineSoft}`,
+                }}>
+                  {details.map((d, i) => (
+                    <div key={i} style={{
+                      background: K.white,
+                      padding: '10px 12px',
+                    }}>
+                      <div style={{
+                        fontSize: 10, fontWeight: 600, letterSpacing: '0.08em',
+                        color: K.muted, textTransform: 'uppercase',
+                      }}>
+                        {d.label}
+                      </div>
+                      <div style={{
+                        fontSize: 14, fontWeight: 700, marginTop: 2,
+                        fontVariantNumeric: 'tabular-nums',
+                      }}>
+                        {d.value}
+                      </div>
+                    </div>
                   ))}
-                </ul>
+                </div>
 
-                {/* Button overlay */}
-                <div
-                  style={{
-                    marginTop: '20px',
-                    padding: '12px 16px',
-                    background: '#667eea',
-                    color: '#fff',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    textAlign: 'center',
-                    transition: 'background 0.2s',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#764ba2'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#667eea'
-                  }}
-                >
-                  Выбрать
+                {/* Season note */}
+                {info.season && (
+                  <div style={{
+                    fontSize: 11, fontWeight: 600, color: K.muted,
+                    display: 'flex', alignItems: 'center', gap: 6,
+                  }}>
+                    <span>📈</span>
+                    {info.season}
+                  </div>
+                )}
+
+                {/* CTA */}
+                <div style={{
+                  marginTop: 'auto',
+                  background: K.ink, color: K.white,
+                  borderRadius: 999, padding: '14px 20px',
+                  fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em',
+                  textAlign: 'center',
+                }}>
+                  Начать с этого
                 </div>
               </button>
             )
           })}
         </div>
 
-        {/* Info footer */}
-        <div
-          style={{
-            color: 'rgba(255,255,255,0.7)',
-            fontSize: '13px',
-            fontWeight: '500',
-          }}
-        >
-          💡 Вы сможете менять решение в любой момент через Настройки
+        {/* Footer */}
+        <div style={{
+          textAlign: 'center', color: K.muted,
+          fontSize: 12, fontWeight: 500,
+          display: 'flex', justifyContent: 'center', gap: 6, alignItems: 'center',
+        }}>
+          <span>💡</span>
+          Можно начать заново в любой момент через «Настройки»
         </div>
       </div>
     </div>
