@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Business Selector — Бизнес с Контуром</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; padding: 0; background: #ECE7DC; font-family: 'Manrope', system-ui, sans-serif; 
+           color: #1A1A22; font-feature-settings: 'ss01','cv11'; -webkit-font-smoothing: antialiased; 
+           letter-spacing: -0.01em; }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; letter-spacing: 0; }
+    .caps { text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+    .tnum { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<div id="root"></div>
+
+<script type="text/babel">
+// ──────────────── TOKENS ────────────────
+const K = {
+  white: '#FFFFFF',
+  paper: '#ECE7DC',
+  paper2:'#E4DED0',
+  bone:  '#F5F1E6',
+  line:  '#D9D3C3',
+  lineSoft: '#E6E0D0',
+  ink:   '#1A1A22',
+  ink2:  '#2E2E38',
+  muted: '#6B6B74',
+  muted2:'#9A9AA0',
+  mint:   '#00C896',
+  mintSoft: '#D5F0E4',
+  mintInk: '#004F3E',
+  blue:   '#2B5BFF',
+  blueSoft:'#DDE4FF',
+  blueInk:'#0D1E6B',
+  violet: '#6B3FD4',
+  violetSoft: '#E6DDF8',
+  violetInk: '#2A0F6B',
+  orange: '#FF6F1A',
+  orangeSoft: '#FFE0CC',
+  good:  '#007A5C',
+  warn:  '#B36A00',
+  bad:   '#B42F23',
+};
+
+// ──────────────── PRIMITIVES ────────────────
+const Row = ({ children, gap = 12, align = 'center', justify = 'flex-start', wrap = false, style, ...p }) => (
+  <div style={{ display:'flex', gap, alignItems:align, justifyContent:justify, flexWrap: wrap?'wrap':'nowrap', ...style }} {...p}>{children}</div>
+);
+
+const Col = ({ children, gap = 12, align = 'stretch', style, ...p }) => (
+  <div style={{ display:'flex', flexDirection:'column', gap, alignItems:align, ...style }} {...p}>{children}</div>
+);
+
+const Label = ({ children, color = K.muted, size = 11, style }) => (
+  <div className="caps" style={{ fontSize:size, color, ...style }}>{children}</div>
+);
+
+const Btn = ({ children, kind = 'primary', size = 'md', disabled, style, sub, ...p }) => {
+  const sizes = {
+    sm: { padding: '6px 12px', fontSize: 12, height: 30 },
+    md: { padding: '9px 16px', fontSize: 13, height: 38 },
+    lg: { padding: '12px 20px', fontSize: 14, height: 46 },
+  };
+  const kinds = {
+    primary: { background: K.ink, color: K.white, border: `1px solid ${K.ink}` },
+    violet:  { background: K.violet, color: K.white, border: `1px solid ${K.violet}` },
+    ghost:   { background: 'transparent', color: K.ink, border: `1px solid ${K.line}` },
+  };
+  const st = { ...sizes[size], ...kinds[kind],
+    borderRadius: 10, fontWeight: 600, fontFamily:'inherit',
+    display: 'inline-flex', alignItems:'center', justifyContent:'center', gap: 8,
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    opacity: disabled ? 0.4 : 1, letterSpacing:'-0.01em',
+    transition: 'transform .08s, filter .1s',
+    ...style };
+  return (
+    <div style={{ display:'inline-flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+      <button style={st} disabled={disabled} {...p}>{children}</button>
+      {sub && <div style={{ fontSize: 10, color: K.muted }}>{sub}</div>}
+    </div>
+  );
+};
+
+// ──────────────── ICONS (simple SVG) ────────────────
+const Icon = ({ name, size = 16, color = 'currentColor', strokeWidth = 1.6 }) => {
+  const s = { width: size, height: size, display: 'inline-block', verticalAlign: 'middle' };
+  const P = { fill: 'none', stroke: color, strokeWidth, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  const icons = {
+    check: <svg style={s} viewBox="0 0 24 24"><path d="M5 12l4 4 10-10" {...P}/></svg>,
+    arrow: <svg style={s} viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" {...P}/></svg>,
+    shop: <svg style={s} viewBox="0 0 24 24"><path d="M3 7h18l-1.5 12a2 2 0 01-2 1.8H6.5a2 2 0 01-2-1.8z" {...P}/><path d="M8 7V5a4 4 0 018 0v2" {...P}/></svg>,
+    cafe: <svg style={s} viewBox="0 0 24 24"><path d="M3 10h14v7a4 4 0 01-4 4H7a4 4 0 01-4-4z" {...P}/><path d="M17 12h2a2 2 0 010 4h-2" {...P}/><path d="M7 3v3M11 3v3M15 3v3" {...P}/></svg>,
+    salon: <svg style={s} viewBox="0 0 24 24"><circle cx="6" cy="6" r="3" {...P}/><circle cx="6" cy="18" r="3" {...P}/><path d="M20 4L8.5 15.5M20 20L14 14" {...P}/></svg>,
+  };
+  return icons[name] || <svg style={s} viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" {...P}/></svg>;
+};
+
+const Logo = ({ size = 28, color = K.ink }) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" style={{ display:'block' }}>
+    <circle cx="16" cy="16" r="15" fill="none" stroke={color} strokeWidth="1.6"/>
+    <path d="M22 10 L12 16 L22 22" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+// ──────────────── BUSINESS SELECTOR ────────────────
+const BusinessCard = ({ icon, title, desc, balance, clients, avg, rent, feature, selected }) => (
+  <div style={{
+    flex:1, background: selected ? K.white : K.white,
+    border: `1.5px solid ${selected ? K.violet : K.line}`,
+    borderRadius:18, padding:22, cursor:'pointer',
+    boxShadow: selected ? '0 10px 40px -12px rgba(107,63,212,0.35), 0 0 0 4px rgba(107,63,212,0.10)' : '0 2px 8px -4px rgba(0,0,0,0.06)',
+    position:'relative', transition:'box-shadow .2s',
+  }}>
+    {selected && (
+      <div style={{ position:'absolute', top:14, right:14, width:24, height:24, borderRadius:999, background:K.violet, color:K.white, display:'grid', placeItems:'center' }}>
+        <Icon name="check" size={14} color={K.white}/>
+      </div>
+    )}
+    <div style={{ width:60, height:60, borderRadius:16, background: selected ? K.violetSoft : K.bone, display:'grid', placeItems:'center', marginBottom:16 }}>
+      <Icon name={icon} size={30} color={selected ? K.violet : K.ink}/>
+    </div>
+    <div style={{ fontSize:24, fontWeight:800, letterSpacing:'-0.02em' }}>{title}</div>
+    <div style={{ fontSize:13, color:K.muted, marginTop:4, marginBottom:18 }}>{desc}</div>
+    <div style={{ borderTop:`1px solid ${K.lineSoft}`, paddingTop:14, display:'flex', flexDirection:'column', gap:9 }}>
+      {[['Баланс', balance], ['Клиентов/день', clients], ['Средний чек', avg], ['Аренда/мес', rent], ['Особенность', feature]].map(([l, v]) => (
+        <div key={l} style={{ display:'flex', justifyContent:'space-between', fontSize:12 }}>
+          <span style={{ color:K.muted }}>{l}</span>
+          <span className="tnum" style={{ fontWeight:600 }}>{v}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const App = () => (
+  <div style={{ width:'100vw', height:'100vh', background:`linear-gradient(180deg, ${K.paper} 0%, ${K.paper2} 100%)`, display:'flex', flexDirection:'column', alignItems:'center', padding:'54px 64px', overflow:'auto' }}>
+    <Row gap={12} style={{ marginBottom:6 }}>
+      <Logo size={32}/>
+      <div style={{ fontSize:18, fontWeight:700 }}>Бизнес <span style={{ color:K.muted, fontWeight:500 }}>с Контуром</span></div>
+    </Row>
+    <div style={{ fontSize:48, fontWeight:800, letterSpacing:'-0.03em', marginTop:28, textAlign:'center' }}>Выберите тип бизнеса</div>
+    <div style={{ fontSize:15, color:K.muted, marginTop:8, textAlign:'center', maxWidth:520 }}>
+      С каждым вариантом идёт своя механика, клиенты и сезон. Сменить бизнес потом можно только через новую игру.
+    </div>
+    <Row gap={20} align="stretch" style={{ marginTop:40, width:'100%', maxWidth:1080 }}>
+      <BusinessCard icon="shop"  title="Магазин"       desc="Товары на полках, клиенты каждый день." balance="80 000 ₽" clients="15" avg="100 ₽" rent="50 000 ₽" feature="Склад, FIFO" selected />
+      <BusinessCard icon="cafe"  title="Кафе"          desc="Готовая еда, напитки, утренний поток."  balance="80 000 ₽" clients="18" avg="70 ₽"  rent="60 000 ₽" feature="Сезонность" />
+      <BusinessCard icon="salon" title="Салон красоты" desc="Услуги по записи, средний чек выше."    balance="80 000 ₽" clients="6"  avg="400 ₽" rent="55 000 ₽" feature="Нет склада" />
+    </Row>
+    <div style={{ marginTop:36, display:'flex', gap:16, alignItems:'center' }}>
+      <div style={{ fontSize:13, color:K.muted }}>Выбрано: <b style={{ color:K.ink }}>Магазин</b></div>
+      <Btn kind="violet" size="lg">Начать <Icon name="arrow" size={16} color={K.white}/></Btn>
+    </div>
+  </div>
+);
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

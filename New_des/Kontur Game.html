@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"/>
+  <title>Бизнес с Контуром — экраны</title>
+  <meta name="viewport" content="width=1680"/>
+  <style>html,body{margin:0;padding:0;background:#f0eee9;font-family:'Manrope',system-ui,sans-serif;}</style>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" src="shared.jsx"></script>
+  <script type="text/babel" src="screen-selector.jsx"></script>
+  <script type="text/babel" src="screen-dashboard.jsx"></script>
+  <script type="text/babel" src="screen-eco-fin-mkt.jsx"></script>
+  <script type="text/babel" src="screen-ops-ware-rep.jsx"></script>
+  <script type="text/babel" src="screen-milestones-stats-log.jsx"></script>
+  <script type="text/babel" src="screen-overlays.jsx"></script>
+  <script type="text/babel" src="design-canvas.jsx"></script>
+
+  <script type="text/babel">
+    const { DesignCanvas, DCSection, DCArtboard, DCPostIt } = window;
+
+    const App = () => (
+      <DesignCanvas>
+        <DCSection id="onboarding" title="Онбординг" subtitle="До игрового цикла · без Left Rail">
+          <DCArtboard id="selector" label="0 · Business Selector" width={1280} height={820}>
+            <BusinessSelector/>
+          </DCArtboard>
+          <DCArtboard id="backstory" label="0b · Backstory — шаг 1" width={1280} height={820}>
+            <Backstory/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="main" title="Игровой цикл" subtitle="Основные экраны с Left Rail">
+          <DCArtboard id="dashboard" label="1 · Dashboard — дневной цикл" width={1440} height={900}>
+            <Dashboard/>
+          </DCArtboard>
+          <DCArtboard id="eco" label="2 · Ecosystem" width={1440} height={900}>
+            <Ecosystem/>
+          </DCArtboard>
+          <DCArtboard id="finance" label="3 · Finance" width={1440} height={900}>
+            <Finance/>
+          </DCArtboard>
+          <DCArtboard id="marketing" label="4 · Marketing" width={1440} height={900}>
+            <Marketing/>
+          </DCArtboard>
+          <DCArtboard id="operations" label="5 · Operations" width={1440} height={900}>
+            <Operations/>
+          </DCArtboard>
+          <DCArtboard id="warehouse" label="6 · Warehouse · FIFO" width={1440} height={900}>
+            <Warehouse/>
+          </DCArtboard>
+          <DCArtboard id="reputation" label="7 · Reputation" width={1440} height={900}>
+            <Reputation/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="meta" title="Мета и журналы" subtitle="Прогресс, история, аналитика">
+          <DCArtboard id="milestones" label="8 · Milestones" width={1440} height={900}>
+            <Milestones/>
+          </DCArtboard>
+          <DCArtboard id="stats" label="9 · Statistics" width={1440} height={900}>
+            <Statistics/>
+          </DCArtboard>
+          <DCArtboard id="roi" label="10 · Campaign ROI" width={1440} height={900}>
+            <CampaignROI/>
+          </DCArtboard>
+          <DCArtboard id="log" label="11 · Decision Log" width={1440} height={900}>
+            <DecisionLog/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="overlays" title="Оверлеи" subtitle="Модальные состояния поверх игры">
+          <DCArtboard id="week-start" label="WeekSummary — начало недели" width={1440} height={900}>
+            <WeekSummaryOverlay/>
+          </DCArtboard>
+          <DCArtboard id="week-end" label="WeekResults — итоги недели" width={1440} height={900}>
+            <WeekResultsOverlay/>
+          </DCArtboard>
+          <DCArtboard id="event" label="Event — требует решения" width={1440} height={900}>
+            <EventModal/>
+          </DCArtboard>
+          <DCArtboard id="victory" label="Victory — победа" width={1440} height={900}>
+            <VictoryModal/>
+          </DCArtboard>
+          <DCArtboard id="gameover" label="Game Over — банкротство" width={1440} height={900}>
+            <GameOverModal/>
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+    );
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+  </script>
+</body>
+</html>
