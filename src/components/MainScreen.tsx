@@ -34,256 +34,14 @@ import { MilestoneView } from './views/MilestoneView'
 import { DecisionLogView } from './views/DecisionLogView'
 import { useGameStore } from '../stores/gameStore'
 import { ONBOARDING_STAGES } from '../constants/onboarding'
-import { ECONOMY_CONSTANTS } from '../constants/business'
 import type { BusinessType } from '../types/game'
+import { KLeftRail } from './design-system/KLeftRail'
+import { KHeaderBar } from './design-system/KHeaderBar'
+import { K } from './design-system/tokens'
+import type { NavId } from './design-system/KLeftRail'
 
-type ActiveView = 'dashboard' | 'ecosystem' | 'warehouse' | 'marketing' | 'finance' | 'reputation' | 'operations' | 'statistics' | 'campaigns' | 'milestones' | 'journal'
+type ActiveView = NavId
 
-// Maps onboarding required actions to the nav item name that should be highlighted
-const ONBOARDING_ACTION_TO_NAV: Record<string, string> = {
-  activate_bank: 'Экосистема',
-  activate_ofd: 'Экосистема',
-  activate_market: 'Экосистема',
-  activate_diadoc: 'Экосистема',
-  activate_elba: 'Экосистема',
-  activate_fokus: 'Экосистема',
-  activate_extern: 'Экосистема',
-}
-
-function Spark({ data, color = 'currentColor', fill = false }: { data: number[]; color?: string; fill?: boolean }) {
-  const w = 100, h = 32
-  const max = Math.max(...data), min = Math.min(...data)
-  const rng = max - min || 1
-  const pts = data.map((v, i) => {
-    const x = (i / (data.length - 1)) * w
-    const y = h - ((v - min) / rng) * (h - 4) - 2
-    return [x, y]
-  })
-  const path = pts.map((p, i) => `${i ? 'L' : 'M'} ${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ')
-  return (
-    <svg style={{ width: '100%', height: '32px', display: 'block' }} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
-      {fill && <path d={`${path} L ${w} ${h} L 0 ${h} Z`} fill={color} opacity="0.15" />}
-      <path d={path} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-const SERVICE_MAP = [
-  { id: 'market', name: 'Маркет' },
-  { id: 'bank', name: 'Банк' },
-  { id: 'extern', name: 'Экстерн' },
-  { id: 'ofd', name: 'ОФД' },
-  { id: 'fokus', name: 'Фокус' },
-  { id: 'diadoc', name: 'Диадок' },
-  { id: 'elba', name: 'Эльба' },
-]
-
-const NAV_ITEMS: Array<{ n: string; g: string; view: ActiveView | null }> = [
-  { n: 'Дневной цикл', g: '◎', view: 'dashboard' },
-  { n: 'Управление', g: '⚙', view: 'operations' },
-  { n: 'Маркетинг', g: '◆', view: 'marketing' },
-  { n: 'Экосистема', g: '□', view: 'ecosystem' },
-  { n: 'Финансы', g: '₽', view: 'finance' },
-  { n: 'Статистика', g: '📊', view: 'statistics' },
-  { n: 'ROI Кампаний', g: '📈', view: 'campaigns' },
-  { n: 'Вехи', g: '🏆', view: 'milestones' },
-  { n: 'Журнал', g: '📓', view: 'journal' },
-  { n: 'Достижения', g: '◈', view: null },
-]
-
-const BUSINESS_NAMES: Record<BusinessType, string> = {
-  shop: 'Магазин',
-  cafe: 'Кафе',
-  'beauty-salon': 'Салон красоты',
-}
-
-function getSeason(week: number): string {
-  const month = Math.ceil((week / 52) * 12)
-  if (month <= 2 || month === 12) return 'Зима'
-  if (month <= 5) return 'Весна'
-  if (month <= 8) return 'Лето'
-  return 'Осень'
-}
-
-function LeftRail({
-  currentDay, savedBalance, activeNav, activeCount,
-  pendingEventCount, onNavClick, onHelp, onSettings,
-  onPromoWallet, promoCodesCount, highlightNav, milestoneBadge,
-  businessType, currentWeek,
-}: {
-  currentDay: number
-  savedBalance: number
-  activeNav: string
-  activeCount: number
-  pendingEventCount: number
-  onNavClick: (name: string) => void
-  onHelp: () => void
-  onSettings: () => void
-  onPromoWallet: () => void
-  promoCodesCount: number
-  highlightNav?: string
-  milestoneBadge?: number
-  businessType: BusinessType
-  currentWeek: number
-}) {
-  return (
-    <aside style={{
-      width: 240, background: '#fff', color: 'var(--k-ink)',
-      padding: '24px 20px', display: 'flex', flexDirection: 'column',
-      flexShrink: 0, borderRight: '1px solid rgba(14,17,22,0.08)',
-    }}>
-      {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--k-orange)', flexShrink: 0 }} />
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 800 }}>Бизнес</div>
-          <div style={{ fontSize: 10, opacity: 0.45, fontWeight: 600 }}>с Контуром</div>
-        </div>
-      </div>
-
-      {/* Day info */}
-      <div style={{ padding: 12, borderRadius: 12, background: 'var(--k-surface)', marginBottom: 20 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', opacity: 0.45 }}>{BUSINESS_NAMES[businessType]}</div>
-        <div style={{ fontSize: 18, fontWeight: 800, marginTop: 2 }}>Неделя {currentDay}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 11, fontWeight: 600, opacity: 0.55 }}>
-          <div style={{ width: 14, height: 14, borderRadius: 4, background: 'var(--k-green)' }} />
-          {getSeason(currentWeek)}
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {NAV_ITEMS.map(item => {
-          const isActive = activeNav === item.n
-          const isHighlighted = !isActive && highlightNav === item.n
-          const badge =
-            item.n === 'Дневной цикл' && pendingEventCount > 0 ? String(pendingEventCount) :
-            item.n === 'Экосистема' ? `${activeCount}/7` :
-            item.n === 'Вехи' && milestoneBadge && milestoneBadge > 0 ? '🏆 NEW' : undefined
-          return (
-            <div
-              key={item.n}
-              onClick={() => onNavClick(item.n)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '10px 12px', borderRadius: 10,
-                background: isActive ? 'var(--k-orange)' : isHighlighted ? 'rgba(255,107,0,0.08)' : 'transparent',
-                color: isActive ? '#fff' : 'var(--k-ink)',
-                fontSize: 13, fontWeight: 600,
-                cursor: 'pointer', transition: 'background 0.15s',
-                userSelect: 'none',
-                outline: isHighlighted ? '2px solid var(--k-orange)' : 'none',
-                animation: isHighlighted ? 'navPulse 1.8s ease-in-out infinite' : 'none',
-                position: 'relative',
-              }}>
-              <span style={{
-                width: 22, height: 22, borderRadius: 6,
-                background: isActive ? 'rgba(255,255,255,0.22)' : isHighlighted ? 'var(--k-orange)' : 'var(--k-surface)',
-                color: isActive || isHighlighted ? '#fff' : 'var(--k-ink)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 12, fontWeight: 800,
-              }}>{item.g}</span>
-              <span style={{ flex: 1 }}>{item.n}</span>
-              {isHighlighted && (
-                <span style={{
-                  fontSize: 9, fontWeight: 800,
-                  padding: '2px 5px', borderRadius: 999,
-                  background: 'var(--k-orange)', color: '#fff',
-                  letterSpacing: '0.04em',
-                }}>→ СЮДА</span>
-              )}
-              {!isHighlighted && badge && (
-                <span style={{
-                  fontSize: 10, fontWeight: 800,
-                  padding: '2px 6px', borderRadius: 999,
-                  background: isActive ? 'rgba(255,255,255,0.22)' : 'var(--k-surface-2)',
-                  color: isActive ? '#fff' : 'var(--k-ink)',
-                }}>{badge}</span>
-              )}
-            </div>
-          )
-        })}
-      </div>
-
-      <div style={{ flex: 1 }} />
-
-      {/* Saved balance badge */}
-      <div style={{ padding: 14, borderRadius: 16, background: 'var(--k-green-soft)', color: 'var(--k-ink)' }}>
-        <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.55, letterSpacing: '0.08em' }}>СПАСЕНО С КОНТУРОМ</div>
-        <div style={{ fontSize: 24, fontWeight: 800, marginTop: 4 }} className="k-num">
-          {(savedBalance ?? 0).toLocaleString('ru-RU')} ₽
-        </div>
-        <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.55, marginTop: 4 }}>
-          за {currentDay} {currentDay === 1 ? 'день' : 'дней'}
-        </div>
-      </div>
-
-      {/* Promo Wallet */}
-      <LeftRailPromoWallet onPromoWalletClick={onPromoWallet} promoCodesCount={promoCodesCount} />
-
-      {/* Help & Settings */}
-      <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-        <button
-          onClick={onHelp}
-          style={{
-            flex: 1, border: '1px solid rgba(14,17,22,0.1)', cursor: 'pointer',
-            background: 'transparent', color: 'var(--k-ink)',
-            padding: '8px 0', borderRadius: 10,
-            fontFamily: 'inherit', fontSize: 11, fontWeight: 700,
-          }}>
-          ? Справка
-        </button>
-        <button
-          onClick={onSettings}
-          style={{
-            flex: 1, border: '1px solid rgba(14,17,22,0.1)', cursor: 'pointer',
-            background: 'transparent', color: 'var(--k-ink)',
-            padding: '8px 0', borderRadius: 10,
-            fontFamily: 'inherit', fontSize: 11, fontWeight: 700,
-          }}>
-          ⚙ Настройки
-        </button>
-      </div>
-    </aside>
-  )
-}
-
-interface LeftRailPromoWalletProps {
-  onPromoWalletClick: () => void
-  promoCodesCount: number
-}
-
-function LeftRailPromoWallet({ onPromoWalletClick, promoCodesCount }: LeftRailPromoWalletProps) {
-  return (
-    <button
-      onClick={onPromoWalletClick}
-      style={{
-        width: '100%', padding: '10px 12px', marginBottom: 10,
-        background: 'var(--k-orange-soft)', color: 'var(--k-orange)',
-        border: '1px solid var(--k-orange)',
-        borderRadius: 10, fontSize: 13, fontWeight: 700,
-        cursor: 'pointer', transition: 'opacity 0.2s',
-        position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-        fontFamily: 'inherit',
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
-      onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-    >
-      🎟️ Промокоды
-      {promoCodesCount > 0 && (
-        <span style={{
-          position: 'absolute', right: 8,
-          width: 20, height: 20, borderRadius: '50%',
-          background: 'var(--k-orange)', color: '#fff',
-          fontSize: 10, fontWeight: 800,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          {Math.min(promoCodesCount, 9)}
-        </span>
-      )}
-    </button>
-  )
-}
 
 function DashboardView({
   onNextDay, dayBlockedMsg,
@@ -308,338 +66,402 @@ function DashboardView({
 }) {
   const {
     currentWeek, balance, reputation, loyalty, services,
-    pendingEvent, pendingEventsQueue, lastDayResult, savedBalance,
-    entrepreneurEnergy, npcs,
+    pendingEvent, pendingEventsQueue, lastDayResult,
+    entrepreneurEnergy, npcs, stockBatches, capacity,
   } = useGameStore()
 
-  const incomeSparkData = Array.from({ length: 10 }, (_, i) => Math.sin(i * 0.8) * 20 + 30)
   const activeServiceIds = Object.values(services).filter(s => s.isActive).map(s => s.id)
-  const activeCount = activeServiceIds.length
-  const dailyIncome = lastDayResult?.revenue ?? 0
-  const monthlyExpenses = Object.values(services).filter(s => s.isActive).reduce((sum, s) => sum + ((s.annualPrice ?? 0) / 12), 0)
-  const goalAmount = ECONOMY_CONSTANTS.GOAL_AMOUNT
-  const toGoalPercent = Math.min((balance / goalAmount) * 100, 100)
+  const dailyRevenue = lastDayResult?.revenue ?? 0
+  const dailyExpenses = lastDayResult?.expenses ?? 0
+  const dailyProfit = lastDayResult?.netProfit ?? 0
+  const dailyClients = lastDayResult?.clients ?? 0
   const isDayBlocked = !!pendingEvent
 
+  const totalStock = (stockBatches ?? []).reduce((s: number, b: { quantity: number }) => s + b.quantity, 0)
+  const stockPct = capacity > 0 ? Math.round((totalStock / capacity) * 100) : 0
+  const stockLow = stockPct < 25
+
   return (
-    <main style={{ flex: 1, padding: '20px 24px', overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: K.paper }}>
 
-      {/* KPI row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr 1fr', gap: 10, height: 146 }}>
+      {/* Three-column body */}
+      <div style={{
+        flex: 1, display: 'grid',
+        gridTemplateColumns: '280px 1fr 240px',
+        gap: 0, overflow: 'hidden',
+      }}>
+
+        {/* ── LEFT: Balance hero + energy + health ── */}
         <div style={{
-          background: 'var(--k-orange)', color: '#fff',
-          borderRadius: 20, padding: 20,
-          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+          borderRight: `1px solid ${K.line}`,
+          padding: 20, display: 'flex', flexDirection: 'column', gap: 12,
+          overflowY: 'auto',
         }}>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.75 }}>ДОХОД ЗА ДЕНЬ</div>
-            <div style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.03em', marginTop: 2 }} className="k-num">
-              {dailyIncome.toLocaleString('ru-RU')} ₽
+          {/* Ink balance card */}
+          <div style={{
+            background: K.ink, borderRadius: 16, padding: 20,
+            position: 'relative', overflow: 'hidden',
+          }}>
+            <div style={{
+              position: 'absolute', top: -30, right: -30,
+              width: 120, height: 120, borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(0,200,150,0.18) 0%, transparent 70%)',
+              pointerEvents: 'none',
+            }} />
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Баланс
+            </div>
+            <div style={{
+              fontSize: 28, fontWeight: 700, color: K.white,
+              marginTop: 4, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums',
+            }}>
+              {balance.toLocaleString('ru-RU')} ₽
+            </div>
+            <div style={{ marginTop: 8, fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>
+              Неделя {currentWeek}
             </div>
           </div>
-          <Spark data={incomeSparkData} color="#fff" fill />
-        </div>
 
-        <div style={{
-          background: 'var(--k-green)', color: '#fff',
-          borderRadius: 20, padding: 18,
-          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-        }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.75 }}>ЧИСТАЯ</div>
-          <div>
-            <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }} className="k-num">
-              +{balance.toLocaleString('ru-RU')} ₽
+          {/* Energy */}
+          <div
+            onClick={onOpenOwnerInvestments}
+            style={{
+              background: K.white, borderRadius: 12, padding: 14,
+              border: `1px solid ${entrepreneurEnergy < 40 ? K.orange : K.line}`,
+              cursor: 'pointer',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 11, color: K.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Энергия
+              </span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: entrepreneurEnergy < 40 ? K.orange : K.ink }}>
+                {entrepreneurEnergy}/100
+              </span>
             </div>
-            <div style={{ fontSize: 10, fontWeight: 600, opacity: 0.75, marginTop: 4 }}>после налогов и закупок</div>
+            <div style={{ height: 6, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
+              <div style={{
+                height: '100%',
+                width: `${entrepreneurEnergy}%`,
+                background: entrepreneurEnergy < 40 ? K.orange : K.mint,
+                borderRadius: 999,
+              }} />
+            </div>
+            {entrepreneurEnergy < 40 && (
+              <div style={{ marginTop: 6, fontSize: 11, color: K.orange, fontWeight: 600 }}>
+                Восстановить →
+              </div>
+            )}
+          </div>
+
+          {/* Financial health tiles */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            {[
+              { label: 'Доход', value: `${dailyRevenue.toLocaleString('ru-RU')} ₽`, color: K.mint },
+              { label: 'Расходы', value: `${dailyExpenses.toLocaleString('ru-RU')} ₽`, color: K.orange },
+              { label: 'Прибыль', value: `${dailyProfit > 0 ? '+' : ''}${dailyProfit.toLocaleString('ru-RU')} ₽`, color: dailyProfit >= 0 ? K.good : K.bad },
+              { label: 'Клиенты', value: String(dailyClients), color: K.violet },
+            ].map(t => (
+              <div key={t.label} style={{
+                background: K.white, border: `1px solid ${K.line}`,
+                borderRadius: 10, padding: '10px 12px',
+              }}>
+                <div style={{ fontSize: 10, color: K.muted, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>
+                  {t.label}
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: t.color, marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>
+                  {t.value}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div style={{
-          background: '#fff', color: 'var(--k-ink)',
-          borderRadius: 20, padding: 18,
-          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-        }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.4 }}>РАСХОДЫ/МЕС</div>
-          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }} className="k-num">
-            {monthlyExpenses.toLocaleString('ru-RU')} ₽
-          </div>
-        </div>
+        {/* ── CENTER: Tasks + Event ── */}
+        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
 
-        <div style={{
-          background: '#fff', color: 'var(--k-ink)',
-          borderRadius: 20, padding: 18,
-          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-        }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.4 }}>К ЦЕЛИ</div>
-          <div>
-            <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }} className="k-num">
-              {Math.round(toGoalPercent)}%
+          {/* Daily tasks checklist */}
+          <div style={{ background: K.white, border: `1px solid ${K.line}`, borderRadius: 14, padding: 16 }}>
+            <div style={{ fontSize: 11, color: K.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+              Задачи дня
             </div>
-            <div style={{ marginTop: 6, height: 5, background: 'rgba(14,17,22,0.08)', borderRadius: 999, overflow: 'hidden' }}>
-              <div style={{ width: `${toGoalPercent}%`, height: '100%', background: 'var(--k-green)', borderRadius: 999 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {[
+                { label: 'Пополнить склад', done: !stockLow, urgent: stockLow },
+                { label: 'Разрешить событие', done: !pendingEvent, urgent: !!pendingEvent },
+                { label: 'Нажать «Следующий день»', done: false, urgent: false },
+              ].map(task => (
+                <div key={task.label} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '7px 10px', borderRadius: 8,
+                  background: task.urgent ? K.orangeSoft : 'transparent',
+                }}>
+                  <div style={{
+                    width: 18, height: 18, borderRadius: 999, flexShrink: 0,
+                    border: `2px solid ${task.done ? K.mint : task.urgent ? K.orange : K.line}`,
+                    background: task.done ? K.mint : 'transparent',
+                    display: 'grid', placeItems: 'center',
+                  }}>
+                    {task.done && (
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                        <path d="M2 5l2 2 4-4" stroke={K.white} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </div>
+                  <span style={{
+                    fontSize: 13, fontWeight: 500,
+                    color: task.urgent ? K.orange : task.done ? K.muted : K.ink,
+                    textDecoration: task.done ? 'line-through' : 'none',
+                  }}>
+                    {task.label}
+                  </span>
+                  {task.urgent && (
+                    <span style={{
+                      marginLeft: 'auto', fontSize: 10, fontWeight: 700, color: K.orange,
+                      background: 'rgba(255,111,26,0.12)', padding: '2px 7px', borderRadius: 999,
+                    }}>
+                      СРОЧНО
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Main row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 12, flex: 1, minHeight: 0 }}>
-
-        {/* LEFT column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-
-          {/* Pending event — inline white card with orange/amber accent */}
+          {/* Pending event card */}
           {pendingEvent && (() => {
             const npcDef = pendingEvent.npcId ? getNPCDefinition(pendingEvent.npcId) : null
             const npc = pendingEvent.npcId ? (npcs ?? []).find(n => n.id === pendingEvent.npcId) : null
             const isMoral = pendingEvent.isMoralDilemma === true
-            const accentColor = isMoral ? '#b45309' : 'var(--k-orange)'
-            const accentBg = isMoral ? 'rgba(180,83,9,0.06)' : '#fff'
+            const accentColor = isMoral ? K.warn : K.violet
+            const accentBg = isMoral ? K.orangeSoft : K.violetSoft
             const deadlineWeeksLeft = pendingEvent.decisionDeadlineWeek
               ? Math.max(0, pendingEvent.decisionDeadlineWeek - currentWeek)
               : null
 
             return (
               <div style={{
-                background: accentBg, color: 'var(--k-ink)',
-                borderRadius: 20, padding: 20,
-                display: 'flex', flexDirection: 'column', gap: 14,
+                background: K.white, borderRadius: 14, padding: 20,
                 border: `1.5px solid ${accentColor}`,
-                borderTop: `3px solid ${accentColor}`,
+                display: 'flex', flexDirection: 'column', gap: 14,
               }}>
-                {/* Top row: badges + queue counter */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{
-                      background: accentColor, color: '#fff',
-                      fontSize: 10, fontWeight: 800, letterSpacing: '0.06em',
-                      padding: '4px 10px', borderRadius: 999,
+                      background: accentBg, color: accentColor,
+                      fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
+                      padding: '3px 10px', borderRadius: 999, textTransform: 'uppercase',
                     }}>
-                      {isMoral ? 'ДИЛЕММА · НЕТ ПРАВИЛЬНОГО ОТВЕТА' : 'СОБЫТИЕ · ТРЕБУЕТ РЕШЕНИЯ'}
+                      {isMoral ? 'Дилемма' : 'Событие'}
                     </span>
                     {deadlineWeeksLeft !== null && (
                       <span style={{
-                        background: deadlineWeeksLeft <= 1 ? 'rgba(220,53,69,0.1)' : 'rgba(255,107,0,0.1)',
-                        color: deadlineWeeksLeft <= 1 ? '#dc3545' : accentColor,
-                        fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 999,
+                        background: K.orangeSoft, color: K.orange,
+                        fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
                       }}>
-                        ⏱ {deadlineWeeksLeft === 0 ? 'РЕШИТЬ СЕЙЧАС' : `${deadlineWeeksLeft} нед.`}
+                        {deadlineWeeksLeft === 0 ? 'Решить сейчас' : `${deadlineWeeksLeft} нед.`}
                       </span>
                     )}
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.45 }}>
+                  <span style={{ fontSize: 11, color: K.muted }}>
                     1 / {1 + (pendingEventsQueue?.length ?? 0)}
                   </span>
                 </div>
 
-                {/* NPC context row */}
                 {npcDef && (
                   <div style={{
                     display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '10px 14px', borderRadius: 12,
-                    background: 'rgba(14,17,22,0.04)',
+                    padding: '10px 14px', borderRadius: 10,
+                    background: K.bone,
                   }}>
-                    <span style={{ fontSize: 24 }}>{npcDef.portrait}</span>
+                    <span style={{ fontSize: 22 }}>{npcDef.portrait}</span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 800 }}>{npcDef.name}</div>
-                      <div style={{ fontSize: 11, fontWeight: 500, opacity: 0.55 }}>{npcDef.shortRole}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700 }}>{npcDef.name}</div>
+                      <div style={{ fontSize: 11, color: K.muted }}>{npcDef.shortRole}</div>
                     </div>
                     {npc && npc.isRevealed && (
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.4, marginBottom: 2 }}>ОТНОШЕНИЯ</div>
-                        <div style={{
-                          fontSize: 11, fontWeight: 800,
-                          color: npc.relationshipLevel >= 60 ? '#00b478' : npc.relationshipLevel >= 40 ? '#888' : '#dc3545',
-                        }}>
-                          {npc.relationshipLevel >= 80 ? 'Союзник' :
-                           npc.relationshipLevel >= 60 ? 'Доверяет' :
-                           npc.relationshipLevel >= 40 ? 'Нейтрально' :
-                           npc.relationshipLevel >= 20 ? 'Напряжённо' : 'Враждебно'}
-                        </div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: npc.relationshipLevel >= 60 ? K.good : K.muted }}>
+                        {npc.relationshipLevel >= 80 ? 'Союзник' :
+                         npc.relationshipLevel >= 60 ? 'Доверяет' :
+                         npc.relationshipLevel >= 40 ? 'Нейтрально' : 'Напряжённо'}
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* Title */}
-                <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+                <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.15 }}>
                   {pendingEvent.title}
                 </div>
 
-                {/* Description */}
                 {pendingEvent.description && (
-                  <div style={{ fontSize: 13, fontWeight: 500, opacity: 0.65, lineHeight: 1.45 }}>
+                  <div style={{ fontSize: 13, color: K.ink2, lineHeight: 1.5 }}>
                     {pendingEvent.description}
                   </div>
                 )}
 
-                {/* Options */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {pendingEvent.options.map((opt: any) => (
-                    <div
+                    <button
                       key={opt.id}
                       onClick={() => handleEventOption(opt.id)}
                       style={{
-                        background: opt.isContourOption ? 'var(--k-green-soft)' : 'var(--k-surface)',
-                        color: 'var(--k-ink)',
-                        border: opt.isContourOption ? '1.5px solid var(--k-green)' : '1.5px solid rgba(14,17,22,0.08)',
-                        borderRadius: 14, padding: 14,
-                        cursor: 'pointer', transition: 'opacity 0.15s',
-                      }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{opt.text}</div>
-                      <div style={{
-                        fontSize: 18, fontWeight: 800,
-                        color: opt.isContourOption ? 'var(--k-green)' : 'var(--k-ink)',
-                      }} className="k-num">
-                        {opt.consequences?.balanceDelta != null
-                          ? `${opt.consequences.balanceDelta > 0 ? '+' : ''}${opt.consequences.balanceDelta.toLocaleString('ru-RU')} ₽`
-                          : '—'}
+                        background: opt.isContourOption ? K.mintSoft : K.bone,
+                        color: K.ink,
+                        border: `1.5px solid ${opt.isContourOption ? K.mint : K.line}`,
+                        borderRadius: 10, padding: '12px 14px',
+                        cursor: 'pointer', fontFamily: 'inherit',
+                        display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left',
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>{opt.text}</div>
+                        {opt.isContourOption && (
+                          <div style={{ fontSize: 10, color: K.mint, fontWeight: 700, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                            Контур ✓
+                          </div>
+                        )}
                       </div>
-                      {opt.isContourOption && (
-                        <div style={{
-                          marginTop: 6, fontSize: 9, fontWeight: 800, letterSpacing: '0.06em',
-                          color: 'var(--k-green)',
-                        }}>КОНТУР ✓</div>
-                      )}
-                      {opt.npcRelationshipDelta !== undefined && (
-                        <div style={{
-                          marginTop: 4, fontSize: 9, fontWeight: 700,
-                          color: opt.npcRelationshipDelta > 0 ? '#00b478' : '#dc3545',
+                      {opt.consequences?.balanceDelta != null && (
+                        <span style={{
+                          fontSize: 13, fontWeight: 700,
+                          color: opt.consequences.balanceDelta >= 0 ? K.good : K.bad,
+                          fontVariantNumeric: 'tabular-nums', flexShrink: 0,
                         }}>
-                          {opt.npcRelationshipDelta > 0 ? '+' : ''}{opt.npcRelationshipDelta} к отношениям
-                        </div>
+                          {opt.consequences.balanceDelta > 0 ? '+' : ''}
+                          {opt.consequences.balanceDelta.toLocaleString('ru-RU')} ₽
+                        </span>
                       )}
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>
             )
           })()}
 
-          {/* Indicators */}
-          <div style={{
-            background: '#fff', borderRadius: 20, padding: 14,
-            display: 'flex', flexDirection: 'column', gap: 8,
-          }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-              {[
-                { l: 'Репутация', v: String(reputation), bg: 'var(--k-green-soft)' },
-                { l: 'Лояльность', v: `${loyalty}%`, bg: 'var(--k-surface-2)' },
-                { l: 'Неделя', v: String(currentWeek), bg: 'var(--k-surface-2)' },
-              ].map(i => (
-                <div key={i.l} style={{ padding: 10, borderRadius: 12, background: i.bg }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.55 }}>{i.l}</div>
-                  <div style={{ fontSize: 15, fontWeight: 800 }}>{i.v}</div>
-                </div>
-              ))}
-            </div>
-            {/* Energy bar with restore button */}
-            <div
-              onClick={onOpenOwnerInvestments}
-              style={{
-                padding: '10px 12px', borderRadius: 12,
-                background: entrepreneurEnergy < 40 ? 'rgba(220,53,69,0.06)' : 'var(--k-surface-2)',
-                cursor: 'pointer', userSelect: 'none',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 10, fontWeight: 700, opacity: 0.55 }}>
-                <span>ЭНЕРГИЯ</span>
-                <span style={{ color: entrepreneurEnergy < 40 ? 'var(--k-bad)' : 'inherit' }}>
-                  {entrepreneurEnergy}/100 {entrepreneurEnergy < 40 ? '⚠ Восстановить →' : '⚡'}
-                </span>
-              </div>
-              <div style={{ height: 6, background: 'rgba(0,0,0,0.08)', borderRadius: 3, overflow: 'hidden' }}>
-                <div style={{
-                  height: '100%',
-                  width: `${entrepreneurEnergy}%`,
-                  background: entrepreneurEnergy < 40 ? 'var(--k-bad)' : 'var(--k-orange)',
-                  borderRadius: 3,
-                  transition: 'width 0.3s',
-                }} />
-              </div>
-            </div>
-          </div>
-
+          {/* Onboarding panel */}
+          <OnboardingPanel />
         </div>
 
-        {/* RIGHT column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0 }}>
+        {/* ── RIGHT: KPIs + rep + loyalty ── */}
+        <div style={{
+          borderLeft: `1px solid ${K.line}`,
+          padding: 20, display: 'flex', flexDirection: 'column', gap: 12,
+          overflowY: 'auto',
+        }}>
+          <div style={{ fontSize: 11, color: K.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Показатели
+          </div>
 
-          {/* Services */}
-          <div style={{
-            background: '#fff', borderRadius: 20, padding: 14,
-            flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0,
-          }}>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.5 }}>
-              ЭКОСИСТЕМА · {activeCount}/7
+          {/* Reputation */}
+          <div style={{ background: K.white, border: `1px solid ${K.line}`, borderRadius: 12, padding: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 12, color: K.muted, fontWeight: 600 }}>Репутация</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: K.violet }}>{reputation}</span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-              {SERVICE_MAP.map(svc => {
-                const isActive = activeServiceIds.some(id => id === svc.id)
-                return (
-                  <div key={svc.id} style={{
-                    background: isActive ? 'var(--k-surface-2)' : 'var(--k-surface)',
-                    color: 'var(--k-ink)',
-                    opacity: isActive ? 1 : 0.45,
-                    borderRadius: 10, padding: '8px 10px',
-                    fontSize: 10, fontWeight: 700,
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    minHeight: 32,
-                  }}>
-                    <span>{svc.name}</span>
-                    {isActive && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--k-green)', flexShrink: 0 }} />}
-                  </div>
-                )
-              })}
+            <div style={{ height: 5, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${Math.min(reputation, 100)}%`, background: K.violet, borderRadius: 999 }} />
             </div>
           </div>
 
-          {/* Onboarding Panel */}
-          <OnboardingPanel />
+          {/* Loyalty */}
+          <div style={{ background: K.white, border: `1px solid ${K.line}`, borderRadius: 12, padding: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 12, color: K.muted, fontWeight: 600 }}>Лояльность</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: K.mint }}>{loyalty}%</span>
+            </div>
+            <div style={{ height: 5, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${Math.min(loyalty, 100)}%`, background: K.mint, borderRadius: 999 }} />
+            </div>
+          </div>
 
-          {/* Next Day */}
-          <div>
-            {dayBlockedMsg && (
-              <div style={{
-                marginBottom: 8, padding: '8px 14px',
-                background: 'var(--k-orange-soft)', color: 'var(--k-orange)',
-                borderRadius: 12, fontSize: 12, fontWeight: 700, textAlign: 'center',
-              }}>
-                {dayBlockedMsg}
-              </div>
+          {/* Склад */}
+          <div style={{ background: K.white, border: `1px solid ${stockLow ? K.orange : K.line}`, borderRadius: 12, padding: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 12, color: K.muted, fontWeight: 600 }}>Склад</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: stockLow ? K.orange : K.ink }}>{stockPct}%</span>
+            </div>
+            <div style={{ height: 5, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${stockPct}%`, background: stockLow ? K.orange : K.mint, borderRadius: 999 }} />
+            </div>
+            {stockLow && (
+              <div style={{ marginTop: 6, fontSize: 11, color: K.orange, fontWeight: 600 }}>Пополнить →</div>
             )}
-            <button
-              onClick={onNextDay}
-              disabled={isDayBlocked}
-              style={{
-                width: '100%', border: 'none',
-                cursor: isDayBlocked ? 'not-allowed' : 'pointer',
-                fontFamily: 'inherit',
-                background: isDayBlocked ? 'var(--k-surface-2)' : 'var(--k-orange)',
-                color: isDayBlocked ? 'rgba(14,17,22,0.35)' : 'var(--k-ink)',
-                padding: '20px 24px', borderRadius: 999,
-                fontSize: 17, fontWeight: 800, letterSpacing: '-0.01em',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                opacity: isDayBlocked ? 0.6 : 1,
-                transition: 'transform 0.12s ease, opacity 0.2s',
-              }}>
-              {isDayBlocked ? '⏸ Разрешите событие' : 'Следующий день →'}
-            </button>
           </div>
         </div>
       </div>
 
-      {/* Purchase modal rendered inside DashboardView for scoping */}
+      {/* ── Action bar ── */}
+      <div style={{
+        borderTop: `1px solid ${K.line}`, background: K.white,
+        padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 10,
+      }}>
+        <button
+          onClick={() => setShowPurchaseModal(true)}
+          style={{
+            padding: '9px 18px', borderRadius: 10, border: `1px solid ${K.line}`,
+            background: K.bone, color: K.ink, fontSize: 13, fontWeight: 600,
+            cursor: 'pointer', fontFamily: 'inherit',
+          }}
+        >
+          Закупить
+        </button>
+        <button
+          onClick={() => setShowCampaignModal(true)}
+          style={{
+            padding: '9px 18px', borderRadius: 10, border: `1px solid ${K.line}`,
+            background: K.bone, color: K.ink, fontSize: 13, fontWeight: 600,
+            cursor: 'pointer', fontFamily: 'inherit',
+          }}
+        >
+          Реклама
+        </button>
+        <button
+          onClick={() => setShowUpgradesModal(true)}
+          style={{
+            padding: '9px 18px', borderRadius: 10, border: `1px solid ${K.line}`,
+            background: K.bone, color: K.ink, fontSize: 13, fontWeight: 600,
+            cursor: 'pointer', fontFamily: 'inherit',
+          }}
+        >
+          Улучшения
+        </button>
+
+        <div style={{ flex: 1 }} />
+
+        {dayBlockedMsg && (
+          <div style={{
+            fontSize: 12, fontWeight: 600, color: K.orange,
+            background: K.orangeSoft, padding: '6px 14px', borderRadius: 8,
+          }}>
+            {dayBlockedMsg}
+          </div>
+        )}
+
+        <button
+          onClick={onNextDay}
+          disabled={isDayBlocked}
+          style={{
+            padding: '10px 28px', borderRadius: 10, border: 'none',
+            background: isDayBlocked ? K.lineSoft : K.ink,
+            color: isDayBlocked ? K.muted : K.white,
+            fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em',
+            cursor: isDayBlocked ? 'not-allowed' : 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          {isDayBlocked ? 'Разрешите событие' : 'Следующий день →'}
+        </button>
+      </div>
+
       <PurchaseModal isOpen={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} />
       <CampaignModal isOpen={showCampaignModal} onClose={() => setShowCampaignModal(false)} />
       <UpgradesModal isOpen={showUpgradesModal} onClose={() => setShowUpgradesModal(false)} />
-    </main>
+    </div>
   )
 }
 
 function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const [activeView, setActiveView] = useState<ActiveView>('dashboard')
-  const [activeNav, setActiveNav] = useState('Дневной цикл')
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
   const [showCampaignModal, setShowCampaignModal] = useState(false)
   const [showUpgradesModal, setShowUpgradesModal] = useState(false)
@@ -762,45 +584,48 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
     }
   }
 
-  const handleNavClick = (name: string) => {
-    setActiveNav(name)
-    if (name === 'Достижения') {
-      setShowAchievementsModal(true)
-      return
-    }
-    if (name === 'Вехи' && milestoneStatus) {
+  const handleNavClick = (id: NavId) => {
+    if (id === 'milestones' && milestoneStatus) {
       seenMilestonesRef.current = { ...milestoneStatus }
     }
-    const item = NAV_ITEMS.find(i => i.n === name)
-    if (item?.view) setActiveView(item.view)
+    setActiveView(id)
   }
 
   return (
     <div style={{
       width: '100%', minHeight: '100vh',
-      background: 'var(--k-surface)',
+      background: K.paper,
       fontFamily: 'Manrope, sans-serif',
-      color: 'var(--k-ink)',
+      color: K.ink,
       display: 'flex',
       overflow: 'hidden',
       letterSpacing: '-0.01em',
     }}>
-      <LeftRail
-        currentDay={currentWeek}
+      <KLeftRail
+        active={activeView}
+        businessType={businessType}
+        currentWeek={currentWeek}
+        activeServiceCount={activeCount}
         savedBalance={savedBalance ?? 0}
-        activeNav={activeNav}
-        activeCount={activeCount}
         pendingEventCount={pendingEventCount}
-        onNavClick={handleNavClick}
+        milestoneBadge={milestoneBadge > 0}
+        promoCodesCount={promoCodesRevealed?.length ?? 0}
+        onNav={handleNavClick}
         onHelp={() => setShowHelpModal(true)}
         onSettings={() => setShowSettingsModal(true)}
         onPromoWallet={() => setShowPromoWalletModal(true)}
-        promoCodesCount={promoCodesRevealed?.length ?? 0}
-        highlightNav={highlightNav}
-        milestoneBadge={milestoneBadge}
-        businessType={businessType}
-        currentWeek={currentWeek}
+        onAchievements={() => setShowAchievementsModal(true)}
       />
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+        <KHeaderBar
+          businessType={businessType}
+          week={currentWeek}
+          day={useGameStore.getState().dayOfWeek + 1}
+          phase={weekPhase}
+        />
+
+        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
       {activeView === 'dashboard' && (
         <DashboardView
@@ -849,6 +674,9 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
         </div>
       )}
       {activeView === 'journal' && <DecisionLogView />}
+
+        </div>{/* end content area */}
+      </div>{/* end right column */}
 
       {/* Global modals */}
       <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
