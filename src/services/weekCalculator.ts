@@ -1,5 +1,5 @@
 import type { GameState, DayResult } from '../types/game'
-import { BUSINESS_CONFIGS, ECONOMY_CONSTANTS } from '../constants/business'
+import { BUSINESS_CONFIGS, ECONOMY_CONSTANTS, CAMPAIGN_DIMINISHING_FACTORS } from '../constants/business'
 import { ensureNPCsInitialized, applyNPCPassiveEffects, getInspectorChain2EventId } from './npcManager'
 import { getChainEvent, getChainStartEvent, CHAIN_TRIGGER_WEEKS, type ChainId } from '../constants/eventChains'
 import { getNewspaperForWeek } from '../constants/cityNewspaper'
@@ -411,14 +411,37 @@ export function processWeek(state: GameState): DayResult {
   if (state.activeAdCampaigns?.length) {
     if (!state.campaignROI) state.campaignROI = []
 
-    // Accumulate this week's incremental revenue on each campaign object.
-    // incremental ≈ weekRevenue × clientEffect / (1 + clientEffect)
-    for (const campaign of state.activeAdCampaigns) {
-      const clientEffect = Math.max(0, campaign.clientEffect)
-      const incrementalRevenue = clientEffect > 0
-        ? Math.round(weekRevenue * clientEffect / (1 + clientEffect))
-        : 0
-      campaign.revenueAttributed = (campaign.revenueAttributed ?? 0) + incrementalRevenue
+    // Only campaigns past their delay contributed to this week's revenue.
+    // Same filter/sort as economyEngine.calculateActiveAdModifiers — keeps slot
+    // ordering consistent so diminishing factors match what the player saw.
+    const contributing = state.activeAdCampaigns.filter(c =>
+      c.daysRemaining > 0 && state.currentWeek >= (c.startWeek ?? state.currentWeek)
+    )
+    const sorted = [...contributing].sort((a, b) => b.clientEffect - a.clientEffect)
+
+    // Per-campaign net revenue impact: (1 + X·f)(1 + Y·f) − 1
+    // Captures both client boost and check penalty/bonus.
+    const impactById = new Map<string, number>()
+    let totalImpact = 0
+    sorted.forEach((c, i) => {
+      const factor = CAMPAIGN_DIMINISHING_FACTORS[i] ?? 0.2
+      const impact = (1 + c.clientEffect * factor) * (1 + c.checkEffect * factor) - 1
+      impactById.set(c.id, impact)
+      totalImpact += impact
+    })
+
+    // Total revenue attributable to all advertising this week.
+    // Approximation: treats ads as the sole multiplier on a hidden baseline.
+    // Ignores contribution from reputation/season/events — acceptable for UI.
+    if (totalImpact !== 0 && totalImpact > -1) {
+      const totalAdRevenue = weekRevenue * totalImpact / (1 + totalImpact)
+      for (const campaign of state.activeAdCampaigns) {
+        const impact = impactById.get(campaign.id) ?? 0
+        if (impact === 0) continue
+        const share = impact / totalImpact  // same sign → positive contribution, opposite sign → negative
+        const incrementalRevenue = Math.round(totalAdRevenue * share)
+        campaign.revenueAttributed = (campaign.revenueAttributed ?? 0) + incrementalRevenue
+      }
     }
 
     // Write one final ROI record for campaigns that expire this week, then remove them.
