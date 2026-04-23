@@ -239,14 +239,14 @@ describe('getStockPercentage', () => {
 })
 
 describe('predictedDemand', () => {
-  it('shop: 80 clients * 2 days = 160', () => {
+  it('shop: baseClients(15) * 2 days = 30', () => {
     const state = makeState()
-    expect(predictedDemand(state)).toBe(160)
+    expect(predictedDemand(state)).toBe(30)
   })
 
-  it('cafe: 100 clients * 2 days = 200', () => {
+  it('cafe: baseClients(18) * 2 days = 36', () => {
     const state = makeState({ businessType: 'cafe' })
-    expect(predictedDemand(state)).toBe(200)
+    expect(predictedDemand(state)).toBe(36)
   })
 
   it('beauty-salon: 0 (no stock)', () => {
@@ -256,15 +256,15 @@ describe('predictedDemand', () => {
 })
 
 describe('needsRestock', () => {
-  it('returns true when stock below predicted demand', () => {
+  it('returns true when stock below predicted demand (2 days = 30 units for shop)', () => {
     const state = makeState()
-    addStock(state, 50, 5) // 50 < 160 (predicted)
+    addStock(state, 20, 5) // 20 < 30 (predicted 2-day demand)
     expect(needsRestock(state)).toBe(true)
   })
 
-  it('returns false when stock is sufficient', () => {
+  it('returns false when stock covers 2+ days demand', () => {
     const state = makeState()
-    addStock(state, 200, 5)
+    addStock(state, 50, 5) // 50 > 30 (sufficient)
     expect(needsRestock(state)).toBe(false)
   })
 

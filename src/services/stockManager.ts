@@ -85,8 +85,9 @@ export function getStockPercentage(state: GameState, maxCapacity = 200): number 
 }
 
 export function predictedDemand(state: GameState, days = 2): number {
-  const baseClients: Record<string, number> = { shop: 80, cafe: 100, 'beauty-salon': 0 }
-  return (baseClients[state.businessType] ?? 0) * days
+  const config = BUSINESS_CONFIGS[state.businessType]
+  if (!config.hasStock) return 0
+  return config.baseClients * days
 }
 
 export function needsRestock(state: GameState): boolean {

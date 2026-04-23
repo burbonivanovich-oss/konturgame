@@ -96,6 +96,7 @@ export function processWeek(state: GameState): DayResult {
   let weekRepChange = 0
   let weekLoyaltyChange = 0
   let totalDaysWithoutExpiry = 0
+  let weekExpiredLoss = 0
   const weekPain = { bank: 0, market: 0, ofd: 0, diadoc: 0, fokus: 0, elba: 0, extern: 0, total: 0 }
 
   // Calculate weekly employee costs
@@ -114,8 +115,9 @@ export function processWeek(state: GameState): DayResult {
     // Quality price premium
     const qualityPricePremium = getQualityPricePremium(state)
 
-    // 1. Check expiry
-    const { loss: expiredLoss } = checkExpiry(state)
+    // 1. Check expiry — skipped for assortment businesses (FIFO stock is never consumed there,
+    //    so expiry would silently drain money with no offsetting revenue benefit).
+    const { loss: expiredLoss } = config.usesAssortment ? { loss: 0 } : checkExpiry(state)
 
     // 2. Competitor event - now cyclic every 5-8 weeks (moved outside loop)
 
@@ -278,6 +280,7 @@ export function processWeek(state: GameState): DayResult {
     weekNetProfit += dayNetProfit
     weekRepChange += dayRepChange
     weekLoyaltyChange += dayLoyaltyChange
+    weekExpiredLoss += expiredLoss
 
     if (expiredLoss === 0) {
       totalDaysWithoutExpiry += 1
@@ -358,7 +361,7 @@ export function processWeek(state: GameState): DayResult {
     subscriptionCost: 0,
     purchaseCost: 0,
     monthlyExpense: 0,
-    expiredLoss: 0,
+    expiredLoss: weekExpiredLoss,
     netProfit: weekNetProfit,
     balance: newBalance,
     reputationChange: weekRepChange,

@@ -79,7 +79,7 @@ function DashboardView({
   const {
     currentWeek, balance, reputation, loyalty, services,
     pendingEvent, pendingEventsQueue, lastDayResult,
-    entrepreneurEnergy, npcs, stockBatches, capacity, businessType,
+    entrepreneurEnergy, npcs, stockBatches, businessType,
   } = useGameStore()
 
   const bizConfig = BUSINESS_CONFIGS[businessType]
@@ -91,8 +91,9 @@ function DashboardView({
   const isDayBlocked = !!pendingEvent
 
   const totalStock = (stockBatches ?? []).reduce((s: number, b: { quantity: number }) => s + b.quantity, 0)
-  const stockPct = capacity > 0 ? Math.round((totalStock / capacity) * 100) : 0
-  const stockLow = bizConfig.hasStock && stockPct < 25
+  const stockMaxUnits = bizConfig.baseClients * 7  // 1 week of demand as 100% reference
+  const stockPct = stockMaxUnits > 0 ? Math.min(100, Math.round((totalStock / stockMaxUnits) * 100)) : 0
+  const stockLow = bizConfig.hasStock && !bizConfig.usesAssortment && totalStock < bizConfig.baseClients * 2
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: K.paper }}>
@@ -201,7 +202,7 @@ function DashboardView({
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {[
-                ...(bizConfig.hasStock ? [{ label: 'Пополнить склад', done: !stockLow, urgent: stockLow }] : []),
+                ...(bizConfig.hasStock && !bizConfig.usesAssortment ? [{ label: 'Пополнить склад', done: !stockLow, urgent: stockLow }] : []),
                 { label: 'Разрешить событие', done: !pendingEvent, urgent: !!pendingEvent },
                 { label: 'Нажать «Следующий день»', done: false, urgent: false },
               ].map(task => (
@@ -382,8 +383,8 @@ function DashboardView({
             </div>
           </div>
 
-          {/* Склад — только для hasStock бизнесов */}
-          {bizConfig.hasStock && (
+          {/* Склад — только для бизнесов с ручным FIFO-управлением (не assortment) */}
+          {bizConfig.hasStock && !bizConfig.usesAssortment && (
             <div style={{ background: K.white, border: `1px solid ${stockLow ? K.orange : K.line}`, borderRadius: 14, padding: '14px 16px' }}>
               <div style={{ fontSize: 10, color: K.muted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Склад</div>
               <div style={{ fontSize: 32, fontWeight: 800, color: stockLow ? K.orange : K.ink, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{stockPct}%</div>
@@ -403,7 +404,7 @@ function DashboardView({
         borderTop: `1px solid ${K.line}`, background: K.white,
         padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 10,
       }}>
-        {bizConfig.hasStock && (
+        {bizConfig.hasStock && !bizConfig.usesAssortment && (
           <button
             onClick={() => setShowPurchaseModal(true)}
             style={{
