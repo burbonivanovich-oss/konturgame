@@ -3,6 +3,7 @@ import { useGameStore } from '../../stores/gameStore'
 import { OWNER_INVESTMENTS } from '../../constants/ownerInvestments'
 import type { OwnerInvestmentId } from '../../constants/ownerInvestments'
 import { ECONOMY_CONSTANTS } from '../../constants/business'
+import { K } from '../design-system/tokens'
 
 interface OwnerInvestmentsModalProps {
   isOpen: boolean
@@ -28,13 +29,13 @@ export default function OwnerInvestmentsModal({ isOpen, onClose }: OwnerInvestme
 
         {/* Energy status */}
         <div style={{
-          background: isLow ? 'rgba(220,53,69,0.08)' : 'var(--k-surface-2)',
-          border: isLow ? '1.5px solid var(--k-bad)' : '1px solid transparent',
+          background: isLow ? `rgba(${parseInt(K.bad.slice(1,3),16)},${parseInt(K.bad.slice(3,5),16)},${parseInt(K.bad.slice(5,7),16)},0.08)` : K.bone,
+          border: isLow ? `1.5px solid ${K.bad}` : '1px solid transparent',
           borderRadius: 12, padding: '14px 16px',
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 13, fontWeight: 700 }}>
             <span>Энергия предпринимателя</span>
-            <span style={{ color: isLow ? 'var(--k-bad)' : 'var(--k-green)' }}>
+            <span style={{ color: isLow ? K.bad : K.mint }}>
               {entrepreneurEnergy} / {maxEnergy}
             </span>
           </div>
@@ -42,13 +43,13 @@ export default function OwnerInvestmentsModal({ isOpen, onClose }: OwnerInvestme
             <div style={{
               height: '100%',
               width: `${energyPct}%`,
-              background: isLow ? 'var(--k-bad)' : 'var(--k-orange)',
+              background: isLow ? K.bad : K.mint,
               borderRadius: 4,
               transition: 'width 0.3s',
             }} />
           </div>
           {isLow && (
-            <div style={{ fontSize: 11, color: 'var(--k-bad)', marginTop: 6, fontWeight: 600 }}>
+            <div style={{ fontSize: 11, color: K.bad, marginTop: 6, fontWeight: 600 }}>
               Низкая энергия снижает эффективность бизнеса на 10–20%
             </div>
           )}
@@ -68,7 +69,7 @@ export default function OwnerInvestmentsModal({ isOpen, onClose }: OwnerInvestme
 
             return (
               <div key={item.id} style={{
-                background: 'var(--k-surface-2)',
+                background: K.bone,
                 borderRadius: 12,
                 padding: '12px 14px',
                 display: 'flex',
@@ -81,7 +82,7 @@ export default function OwnerInvestmentsModal({ isOpen, onClose }: OwnerInvestme
                   <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>
                     {item.name}
                     {statusLabel && (
-                      <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 700, color: 'var(--k-green)', opacity: 0.8 }}>
+                      <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 700, color: K.good, opacity: 0.8 }}>
                         {statusLabel}
                       </span>
                     )}
@@ -102,8 +103,8 @@ export default function OwnerInvestmentsModal({ isOpen, onClose }: OwnerInvestme
                       cursor: disabled ? 'not-allowed' : 'pointer',
                       fontFamily: 'inherit',
                       fontSize: 12, fontWeight: 700,
-                      background: isPermanentBought ? 'var(--k-surface)' : canAfford ? 'var(--k-orange)' : 'var(--k-surface)',
-                      color: isPermanentBought ? 'var(--k-ink)' : canAfford ? 'var(--k-ink)' : 'rgba(14,17,22,0.35)',
+                      background: isPermanentBought ? K.bone : canAfford ? K.ink : K.bone,
+                      color: isPermanentBought ? K.muted : canAfford ? K.white : K.muted,
                       opacity: disabled ? 0.7 : 1,
                     }}
                   >

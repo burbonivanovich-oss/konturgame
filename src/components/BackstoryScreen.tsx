@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { BackstoryMotivation, BackstoryPersonal, PlayerBackstory } from '../types/game'
+import { K } from './design-system/tokens'
 
 interface BackstoryScreenProps {
   onComplete: (backstory: PlayerBackstory) => void
@@ -70,12 +71,12 @@ export default function BackstoryScreen({ onComplete }: BackstoryScreenProps) {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'var(--k-bg, #f5f5f0)',
+      background: K.paper,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       padding: 24,
-      fontFamily: 'var(--k-font, system-ui)',
+      fontFamily: 'Manrope, sans-serif',
     }}>
       <div style={{ maxWidth: 680, width: '100%' }}>
 
@@ -83,8 +84,8 @@ export default function BackstoryScreen({ onComplete }: BackstoryScreenProps) {
         <div style={{ marginBottom: 40, textAlign: 'center' }}>
           <div style={{
             display: 'inline-block',
-            background: 'var(--k-orange, #ff6b00)',
-            color: '#fff',
+            background: K.orange,
+            color: K.white,
             fontSize: 11,
             fontWeight: 800,
             letterSpacing: '0.08em',
@@ -99,7 +100,7 @@ export default function BackstoryScreen({ onComplete }: BackstoryScreenProps) {
             fontWeight: 900,
             letterSpacing: '-0.03em',
             margin: '0 0 10px',
-            color: 'var(--k-ink, #0e1116)',
+            color: K.ink,
             lineHeight: 1.1,
           }}>
             С чего всё началось?
@@ -135,7 +136,7 @@ export default function BackstoryScreen({ onComplete }: BackstoryScreenProps) {
                 style={{
                   padding: '16px 20px',
                   borderRadius: 16,
-                  border: `2px solid ${motivation === m.id ? 'var(--k-orange, #ff6b00)' : 'rgba(14,17,22,0.08)'}`,
+                  border: `2px solid ${motivation === m.id ? K.orange : K.line}`,
                   background: motivation === m.id ? 'rgba(255,107,0,0.04)' : '#fff',
                   cursor: 'pointer',
                   transition: 'all 0.15s',
@@ -150,16 +151,16 @@ export default function BackstoryScreen({ onComplete }: BackstoryScreenProps) {
                   <div style={{ fontSize: 13, fontWeight: 500, opacity: 0.6, lineHeight: 1.4, marginBottom: 6 }}>
                     {m.description}
                   </div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--k-orange, #ff6b00)', opacity: 0.9 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: K.orange, opacity: 0.9 }}>
                     {m.hint}
                   </div>
                 </div>
                 {motivation === m.id && (
                   <div style={{
                     width: 22, height: 22, borderRadius: '50%',
-                    background: 'var(--k-orange, #ff6b00)',
+                    background: K.orange,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0, fontSize: 12, color: '#fff', fontWeight: 800,
+                    flexShrink: 0, fontSize: 12, color: K.white, fontWeight: 800,
                   }}>✓</div>
                 )}
               </div>
@@ -186,7 +187,7 @@ export default function BackstoryScreen({ onComplete }: BackstoryScreenProps) {
                 style={{
                   padding: '16px 14px',
                   borderRadius: 16,
-                  border: `2px solid ${personal === p.id ? 'var(--k-orange, #ff6b00)' : 'rgba(14,17,22,0.08)'}`,
+                  border: `2px solid ${personal === p.id ? K.orange : K.line}`,
                   background: personal === p.id ? 'rgba(255,107,0,0.04)' : '#fff',
                   cursor: 'pointer',
                   transition: 'all 0.15s',
@@ -212,8 +213,8 @@ export default function BackstoryScreen({ onComplete }: BackstoryScreenProps) {
             padding: '18px 32px',
             borderRadius: 16,
             border: 'none',
-            background: canProceed ? 'var(--k-orange, #ff6b00)' : 'rgba(14,17,22,0.08)',
-            color: canProceed ? '#fff' : 'rgba(14,17,22,0.3)',
+            background: canProceed ? K.ink : K.line,
+            color: canProceed ? K.white : K.muted,
             fontSize: 16,
             fontWeight: 800,
             cursor: canProceed ? 'pointer' : 'default',

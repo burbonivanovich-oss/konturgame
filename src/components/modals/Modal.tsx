@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { K } from '../design-system/tokens'
 
 interface ModalProps {
   isOpen: boolean
@@ -54,7 +55,7 @@ export default function Modal({
       {/* Modal content */}
       <div style={{
         position: 'relative', zIndex: 10,
-        background: 'var(--k-white)', color: 'var(--k-ink)',
+        background: K.white, color: K.ink,
         borderRadius: 20, padding: 24,
         boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
         ...sizeMap[size],
@@ -63,24 +64,24 @@ export default function Modal({
         {/* Header */}
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid var(--k-ink-10)',
+          marginBottom: 20, paddingBottom: 16, borderBottom: `1px solid ${K.line}`,
         }}>
-          <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em', margin: 0 }}>
             {title}
-          </h2>
+          </div>
           {closeButton && (
             <button
               onClick={onClose}
               style={{
                 width: 32, height: 32, borderRadius: 8,
-                background: 'var(--k-ink-10)', border: 'none',
-                cursor: 'pointer', fontSize: 18, color: 'var(--k-ink-50)',
+                background: K.bone, border: 'none',
+                cursor: 'pointer', fontSize: 18, color: K.muted,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'background 0.2s',
                 padding: 0,
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--k-ink-20)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--k-ink-10)')}
+              onMouseEnter={(e) => (e.currentTarget.style.background = K.paper)}
+              onMouseLeave={(e) => (e.currentTarget.style.background = K.bone)}
             >
               ✕
             </button>

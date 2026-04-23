@@ -1,6 +1,7 @@
 import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
 import type { Event, ServiceType } from '../../types/game'
+import { K } from '../design-system/tokens'
 
 interface EventModalProps {
   isOpen: boolean
@@ -56,16 +57,26 @@ export default function EventModal({ isOpen, event, onOptionSelect, queueLength 
       size="lg"
       closeButton={false}
     >
-      <div className="space-y-4">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {queueLength > 0 && (
-          <div className="bg-orange-50 border border-orange-300 rounded-md px-4 py-3 text-sm text-orange-700 font-semibold">
+          <div style={{
+            background: K.orangeSoft,
+            border: `1px solid ${K.line}`,
+            borderRadius: 8,
+            padding: '10px 14px',
+            fontSize: 12,
+            fontWeight: 600,
+            color: K.orange,
+          }}>
             ⚠️ Кризисный день — ещё {queueLength} {queueLength === 1 ? 'событие' : 'события'} после этого
           </div>
         )}
 
-        <p className="text-gray-700 text-base leading-relaxed">{event.description}</p>
+        <p style={{ fontSize: 14, lineHeight: 1.6, color: K.ink2, marginBottom: 16 }}>
+          {event.description}
+        </p>
 
-        <div className="grid grid-cols-1 gap-3 pt-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {event.options.map((option) => {
             const available = isOptionAvailable(option)
             const isContour = option.isContourOption
@@ -75,46 +86,77 @@ export default function EventModal({ isOpen, event, onOptionSelect, queueLength 
                 key={option.id}
                 onClick={() => available && onOptionSelect(option.id)}
                 disabled={!available}
-                className={`w-full text-left p-4 rounded-md border-2 transition ${
-                  !available
-                    ? 'border-gray-300 bg-gray-100 opacity-50 cursor-not-allowed'
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '12px 14px',
+                  borderRadius: 12,
+                  cursor: available ? 'pointer' : 'not-allowed',
+                  fontFamily: 'inherit',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 12,
+                  opacity: !available ? 0.5 : 1,
+                  background: !available
+                    ? K.bone
                     : isContour
-                    ? 'border-brand-green bg-green-50 hover:bg-green-100 hover:border-brand-green'
-                    : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
-                }`}
+                    ? K.mintSoft
+                    : K.bone,
+                  border: !available
+                    ? `1px solid ${K.line}`
+                    : isContour
+                    ? `1.5px solid ${K.mint}`
+                    : `1px solid ${K.line}`,
+                }}
               >
-                <div className="flex items-start gap-3">
-                  <span className="text-2xl mt-0.5">{getOptionIcon(option)}</span>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className={`font-semibold text-sm ${isContour ? 'text-brand-green' : 'text-gray-800'}`}>
-                        {option.text}
+                <span style={{ fontSize: 20 }}>{getOptionIcon(option)}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <p style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: isContour ? K.mintInk : K.ink,
+                      margin: 0,
+                    }}>
+                      {option.text}
+                    </p>
+                    {isContour && (
+                      <span style={{
+                        fontSize: 10,
+                        padding: '2px 8px',
+                        borderRadius: 999,
+                        background: K.mint,
+                        color: K.white,
+                        fontWeight: 700,
+                      }}>
+                        Контур ✓
+                      </span>
+                    )}
+                    {!available && option.requiredService && (
+                      <span style={{ fontSize: 11, color: K.bad, fontWeight: 600 }}>
+                        🔒 {SERVICE_NAMES[option.requiredService as ServiceType]}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: 16, marginTop: 6, fontSize: 12, fontWeight: 700 }}>
+                    {option.consequences.balanceDelta !== undefined && (
+                      <p style={{
+                        margin: 0,
+                        color: option.consequences.balanceDelta >= 0 ? K.good : K.bad,
+                      }}>
+                        {option.consequences.balanceDelta >= 0 ? '+' : ''}
+                        {option.consequences.balanceDelta.toLocaleString('ru-RU')} ₽
                       </p>
-                      {isContour && (
-                        <span className="text-xs px-2 py-1 rounded-full bg-brand-green text-white font-bold">
-                          Контур ✓
-                        </span>
-                      )}
-                      {!available && option.requiredService && (
-                        <span className="text-xs text-red-600 font-semibold">
-                          🔒 {SERVICE_NAMES[option.requiredService as ServiceType]}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex gap-4 mt-2 text-xs font-semibold">
-                      {option.consequences.balanceDelta !== undefined && (
-                        <p className={option.consequences.balanceDelta >= 0 ? 'text-brand-green' : 'text-red-600'}>
-                          {option.consequences.balanceDelta >= 0 ? '+' : ''}
-                          {option.consequences.balanceDelta.toLocaleString('ru-RU')} ₽
-                        </p>
-                      )}
-                      {option.consequences.reputationDelta !== undefined && (
-                        <p className={option.consequences.reputationDelta >= 0 ? 'text-brand-green' : 'text-red-600'}>
-                          Репутация: {option.consequences.reputationDelta >= 0 ? '+' : ''}
-                          {option.consequences.reputationDelta}
-                        </p>
-                      )}
-                    </div>
+                    )}
+                    {option.consequences.reputationDelta !== undefined && (
+                      <p style={{
+                        margin: 0,
+                        color: option.consequences.reputationDelta >= 0 ? K.good : K.bad,
+                      }}>
+                        Репутация: {option.consequences.reputationDelta >= 0 ? '+' : ''}
+                        {option.consequences.reputationDelta}
+                      </p>
+                    )}
                   </div>
                 </div>
               </button>

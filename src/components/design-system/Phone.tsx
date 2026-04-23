@@ -1,6 +1,7 @@
 import { ReactNode } from 'react'
 import { KStatusBar } from './KStatusBar'
 import { KHome } from './KHome'
+import { K } from './tokens'
 
 interface PhoneProps {
   children: ReactNode
@@ -8,7 +9,7 @@ interface PhoneProps {
   dark?: boolean
 }
 
-export function Phone({ children, bg = 'var(--k-surface)', dark = false }: PhoneProps) {
+export function Phone({ children, bg = K.bone, dark = false }: PhoneProps) {
   return (
     <div className="kg-phone" style={{ background: bg }}>
       <KStatusBar dark={dark}/>

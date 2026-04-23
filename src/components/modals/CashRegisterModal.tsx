@@ -3,6 +3,7 @@ import { useGameStore } from '../../stores/gameStore'
 import { CASH_REGISTER_CONFIGS } from '../../constants/cashRegisters'
 import { getTotalThroughput, getRegisterSummary } from '../../services/cashRegisterEngine'
 import type { CashRegisterType } from '../../types/game'
+import { K } from '../design-system/tokens'
 
 interface CashRegisterModalProps {
   isOpen: boolean
@@ -41,7 +42,7 @@ export default function CashRegisterModal({ isOpen, onClose }: CashRegisterModal
         {/* Current status */}
         {cashRegisters.length > 0 && (
           <div style={{
-            background: 'var(--k-surface)', borderRadius: 14, padding: 16,
+            background: K.bone, borderRadius: 14, padding: 16,
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           }}>
             <div>
@@ -54,7 +55,7 @@ export default function CashRegisterModal({ isOpen, onClose }: CashRegisterModal
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 11, opacity: 0.45 }}>Пропускная</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--k-green)' }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: K.mint }}>
                 {totalThroughput}/день
               </div>
             </div>
@@ -64,8 +65,8 @@ export default function CashRegisterModal({ isOpen, onClose }: CashRegisterModal
         {/* Combo discount notice */}
         {totalCount > 0 && (
           <div style={{
-            background: 'rgba(255,107,0,0.08)', borderRadius: 10, padding: '10px 14px',
-            fontSize: 12, fontWeight: 600, color: 'var(--k-orange)',
+            background: K.orangeSoft, borderRadius: 10, padding: '10px 14px',
+            fontSize: 12, fontWeight: 600, color: K.orange,
           }}>
             🎁 Скидка на следующую кассу: {totalCount >= 2 ? '15%' : '10%'}
           </div>
@@ -82,12 +83,13 @@ export default function CashRegisterModal({ isOpen, onClose }: CashRegisterModal
 
             return (
               <div key={type} style={{
-                border: '1px solid var(--k-ink-10)', borderRadius: 14, padding: 16,
+                border: `1px solid ${K.line}`, borderRadius: 14, padding: 16,
                 display: 'flex', alignItems: 'center', gap: 14,
+                background: K.white,
               }}>
                 <div style={{
                   width: 48, height: 48, borderRadius: 12,
-                  background: 'var(--k-surface)',
+                  background: K.bone,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 24, flexShrink: 0,
                 }}>
@@ -100,7 +102,7 @@ export default function CashRegisterModal({ isOpen, onClose }: CashRegisterModal
                     {existing && (
                       <div style={{
                         fontSize: 10, fontWeight: 800, padding: '2px 8px',
-                        borderRadius: 6, background: 'var(--k-green)', color: '#fff',
+                        borderRadius: 6, background: K.mint, color: K.white,
                       }}>
                         ×{existing.count}
                       </div>
@@ -123,7 +125,7 @@ export default function CashRegisterModal({ isOpen, onClose }: CashRegisterModal
 
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   {discount > 0 && (
-                    <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--k-green)', marginBottom: 2 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: K.mint, marginBottom: 2 }}>
                       −{discount}%
                     </div>
                   )}
@@ -136,8 +138,8 @@ export default function CashRegisterModal({ isOpen, onClose }: CashRegisterModal
                     style={{
                       padding: '8px 16px', borderRadius: 10, fontSize: 12, fontWeight: 700,
                       border: 'none', cursor: canAfford ? 'pointer' : 'not-allowed',
-                      background: canAfford ? 'var(--k-orange)' : 'var(--k-ink-10)',
-                      color: canAfford ? '#fff' : 'var(--k-ink-50)',
+                      background: canAfford ? K.ink : K.bone,
+                      color: canAfford ? K.white : K.muted,
                       whiteSpace: 'nowrap',
                     }}
                   >

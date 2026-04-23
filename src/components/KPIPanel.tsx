@@ -1,6 +1,7 @@
 import { useGameStore } from '../stores/gameStore'
 import { useMemo } from 'react'
 import { ECONOMY_CONSTANTS } from '../constants/business'
+import { K } from './design-system/tokens'
 
 export default function KPIPanel() {
   const state = useGameStore()
@@ -36,7 +37,7 @@ export default function KPIPanel() {
     }}>
       {/* Income */}
       <div style={{
-        background: 'var(--k-orange)', color: 'var(--k-ink)',
+        background: K.orange, color: K.ink,
         borderRadius: 20, padding: 20,
         display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
       }}>
@@ -52,7 +53,7 @@ export default function KPIPanel() {
 
       {/* Net Profit */}
       <div style={{
-        background: 'var(--k-green)', color: 'var(--k-ink)',
+        background: K.mint, color: K.ink,
         borderRadius: 20, padding: 18,
         display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
       }}>
@@ -71,7 +72,7 @@ export default function KPIPanel() {
 
       {/* Monthly Expenses */}
       <div style={{
-        background: 'var(--k-blue)', color: '#fff',
+        background: K.blue, color: '#fff',
         borderRadius: 20, padding: 18,
         display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
       }}>
@@ -90,7 +91,7 @@ export default function KPIPanel() {
 
       {/* Quality Level */}
       <div style={{
-        background: qualityLevel > 70 ? 'var(--k-green)' : qualityLevel > 40 ? 'var(--k-orange)' : 'var(--k-bad)',
+        background: qualityLevel > 70 ? K.mint : qualityLevel > 40 ? K.orange : K.bad,
         color: '#fff',
         borderRadius: 20, padding: 18,
         display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
@@ -113,7 +114,7 @@ export default function KPIPanel() {
 
       {/* Entrepreneur Energy */}
       <div style={{
-        background: entrepreneurEnergy > 70 ? '#3498db' : entrepreneurEnergy > 40 ? 'var(--k-orange)' : 'var(--k-bad)',
+        background: entrepreneurEnergy > 70 ? '#3498db' : entrepreneurEnergy > 40 ? K.orange : K.bad,
         color: '#fff',
         borderRadius: 20, padding: 18,
         display: 'flex', flexDirection: 'column', justifyContent: 'space-between',

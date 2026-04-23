@@ -1,15 +1,16 @@
 import React, { useMemo } from 'react'
 import { useGameStore } from '../../stores/gameStore'
 import { SYNERGIES_CONFIG } from '../../constants/business'
+import { K } from './tokens'
 
 const SERVICE_COLORS: Record<string, string> = {
-  market: 'var(--k-orange)',
-  bank: 'var(--k-blue)',
-  ofd: 'var(--k-purple)',
-  diadoc: 'var(--k-green)',
-  fokus: 'var(--k-orange)',
-  elba: 'var(--k-blue)',
-  extern: 'var(--k-green)',
+  market: K.orange,
+  bank: K.blue,
+  ofd: K.violet,
+  diadoc: K.mint,
+  fokus: K.orange,
+  elba: K.blue,
+  extern: K.mint,
 }
 
 export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
@@ -25,7 +26,7 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
     return Object.entries(services)
       .map(([_, service]: [string, any]) => ({
         ...service,
-        color: SERVICE_COLORS[service.id] ?? 'var(--k-ink)',
+        color: SERVICE_COLORS[service.id] ?? K.ink,
       }))
       .sort((a: any, b: any) => (b.isActive ? 1 : -1))
   }, [services])
@@ -38,13 +39,13 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
 
   const wrapperStyle: React.CSSProperties = embedded ? {
     flex: 1, padding: '20px 24px',
-    background: 'var(--k-surface)',
-    fontFamily: 'Manrope, sans-serif', color: 'var(--k-ink)',
+    background: K.bone,
+    fontFamily: 'Manrope, sans-serif', color: K.ink,
     display: 'flex', gap: 20, letterSpacing: '-0.01em',
     overflow: 'auto',
   } : {
-    width: '100%', minHeight: '100vh', background: 'var(--k-surface)',
-    fontFamily: 'Manrope, sans-serif', color: 'var(--k-ink)',
+    width: '100%', minHeight: '100vh', background: K.bone,
+    fontFamily: 'Manrope, sans-serif', color: K.ink,
     padding: 40, overflow: 'hidden', display: 'flex', gap: 20,
     letterSpacing: '-0.01em',
   }
@@ -54,7 +55,7 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
       {/* Left — hero savings */}
       <div style={{ width: 440, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--k-ink)' }}/>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: K.ink }}/>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', opacity: 0.5 }}>
             ЭКОСИСТЕМА
           </div>
@@ -62,13 +63,13 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
         <div style={{ fontSize: 56, fontWeight: 800, letterSpacing: '-0.035em', lineHeight: 0.98 }}>
           Контур<br/>
           <span style={{
-            background: 'var(--k-green)', padding: '0 14px',
+            background: K.mint, padding: '0 14px',
             borderRadius: 18, display: 'inline-block',
           }}>бережёт.</span>
         </div>
 
         <div style={{
-          background: 'var(--k-ink)', color: '#fff',
+          background: K.ink, color: '#fff',
           borderRadius: 24, padding: 24, marginTop: 12,
           display: 'flex', flexDirection: 'column', gap: 12,
         }}>
@@ -84,7 +85,7 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
             {roi > 0 && (
               <div style={{
                 padding: '6px 10px', borderRadius: 999,
-                background: 'var(--k-green)', color: 'var(--k-ink)',
+                background: K.mint, color: K.ink,
                 fontSize: 12, fontWeight: 800,
               }}>×{roi} ROI</div>
             )}
@@ -121,11 +122,11 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
             <div key={s.id} style={{
               padding: '10px 12px', borderRadius: 12,
               background: activeSynergies.some((syn: any) => syn.id === s.id)
-                ? 'var(--k-green-soft)'
-                : 'var(--k-surface)',
+                ? K.mintSoft
+                : K.bone,
               border: activeSynergies.some((syn: any) => syn.id === s.id)
                 ? 'none'
-                : '1.5px dashed var(--k-ink-10)',
+                : `1.5px dashed ${K.line}`,
               display: 'flex', alignItems: 'center', gap: 10,
               opacity: activeSynergies.some((syn: any) => syn.id === s.id) ? 1 : 0.6,
             }}>
@@ -133,28 +134,28 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
                 <span style={{
                   padding: '2px 6px', borderRadius: 4,
                   background: activeSynergies.some((syn: any) => syn.id === s.id)
-                    ? 'var(--k-ink)'
-                    : 'var(--k-ink-10)',
+                    ? K.ink
+                    : K.line,
                   color: activeSynergies.some((syn: any) => syn.id === s.id)
                     ? '#fff'
-                    : 'var(--k-ink-50)',
+                    : K.muted,
                   fontSize: 9, fontWeight: 800,
                 }}>{s.requiredServices[0]}</span>
                 <span style={{ fontSize: 10, opacity: 0.5, alignSelf: 'center' }}>+</span>
                 <span style={{
                   padding: '2px 6px', borderRadius: 4,
                   background: activeSynergies.some((syn: any) => syn.id === s.id)
-                    ? 'var(--k-ink)'
-                    : 'var(--k-ink-10)',
+                    ? K.ink
+                    : K.line,
                   color: activeSynergies.some((syn: any) => syn.id === s.id)
                     ? '#fff'
-                    : 'var(--k-ink-50)',
+                    : K.muted,
                   fontSize: 9, fontWeight: 800,
                 }}>{s.requiredServices[1]}</span>
               </div>
               <div style={{ flex: 1, fontSize: 11, fontWeight: 700 }}>{s.name}</div>
               {activeSynergies.some((syn: any) => syn.id === s.id) && (
-                <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--k-good)' }}>✓</span>
+                <span style={{ fontSize: 10, fontWeight: 800, color: K.good }}>✓</span>
               )}
             </div>
           ))}
@@ -172,7 +173,7 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
           </div>
           <div style={{
             padding: '8px 14px', borderRadius: 999,
-            background: 'var(--k-ink)', color: '#fff',
+            background: K.ink, color: '#fff',
             fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap', flexShrink: 0,
           }}>Подключено {servicesList.filter(s => s.isActive).length} · {totalCost.toLocaleString('ru-RU')} ₽/год</div>
         </div>
@@ -188,8 +189,8 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
               key={s.id}
               style={{
                 background: s.isActive ? s.color : '#fff',
-                color: s.isActive ? (s.color === 'var(--k-orange)' || s.color === 'var(--k-green)' ? 'var(--k-ink)' : '#fff') : 'var(--k-ink)',
-                border: s.isActive ? 'none' : '1.5px solid var(--k-ink-10)',
+                color: s.isActive ? (s.color === K.orange || s.color === K.mint ? K.ink : '#fff') : K.ink,
+                border: s.isActive ? 'none' : `1.5px solid ${K.line}`,
                 borderRadius: 18, padding: 18,
                 display: 'flex', flexDirection: 'column', gap: 10,
                 position: 'relative',
@@ -209,14 +210,14 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
                 {s.isActive ? (
                   <div style={{
                     padding: '3px 7px', borderRadius: 4,
-                    background: s.color === 'var(--k-orange)' || s.color === 'var(--k-green)' ? 'var(--k-ink)' : '#fff',
-                    color: s.color === 'var(--k-orange)' || s.color === 'var(--k-green)' ? s.color : 'var(--k-ink)',
+                    background: s.color === K.orange || s.color === K.mint ? K.ink : '#fff',
+                    color: s.color === K.orange || s.color === K.mint ? s.color : K.ink,
                     fontSize: 9, fontWeight: 800, letterSpacing: '0.05em',
                   }}>ON</div>
                 ) : (
                   <div style={{
                     width: 14, height: 14, borderRadius: 4,
-                    border: '1.5px solid var(--k-ink-30)',
+                    border: `1.5px solid ${K.muted2}`,
                   }}/>
                 )}
               </div>
@@ -238,13 +239,13 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
                     background: s.isActive
                       ? 'rgba(0,0,0,0.2)'
                       : balance >= s.annualPrice
-                      ? 'var(--k-ink)'
+                      ? K.ink
                       : 'rgba(0,0,0,0.1)',
                     color: s.isActive
                       ? 'currentColor'
                       : balance >= s.annualPrice
                       ? '#fff'
-                      : 'var(--k-ink-50)',
+                      : K.muted,
                     fontSize: 11, fontWeight: 700,
                     opacity: s.isActive || balance >= s.annualPrice ? 1 : 0.6,
                     transition: 'opacity 0.2s',

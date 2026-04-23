@@ -1,11 +1,12 @@
 import { useGameStore } from '../stores/gameStore'
 import { useMemo } from 'react'
 import { ECONOMY_CONSTANTS } from '../constants/business'
+import { K } from './design-system/tokens'
 
 function getStatusColor(value: number): { color: string; icon: string } {
-  if (value >= 70) return { color: 'var(--k-green)', icon: '✓' }
-  if (value >= 40) return { color: 'var(--k-orange)', icon: '!' }
-  return { color: 'var(--k-bad)', icon: '⚠' }
+  if (value >= 70) return { color: K.mint, icon: '✓' }
+  if (value >= 40) return { color: K.orange, icon: '!' }
+  return { color: K.bad, icon: '⚠' }
 }
 
 export default function Indicators() {
@@ -42,7 +43,7 @@ export default function Indicators() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {/* Репутация */}
       <div style={{
-        background: 'var(--k-white)', borderRadius: 16, padding: 16,
+        background: K.white, borderRadius: 16, padding: 16,
         display: 'flex', flexDirection: 'column', gap: 8,
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -52,7 +53,7 @@ export default function Indicators() {
           </div>
         </div>
         <div style={{
-          height: 6, background: 'var(--k-ink-10)', borderRadius: 999, overflow: 'hidden',
+          height: 6, background: K.line, borderRadius: 999, overflow: 'hidden',
         }}>
           <div style={{
             height: '100%', background: repColor.color, width: `${reputation}%`,
@@ -63,7 +64,7 @@ export default function Indicators() {
 
       {/* Лояльность */}
       <div style={{
-        background: 'var(--k-white)', borderRadius: 16, padding: 16,
+        background: K.white, borderRadius: 16, padding: 16,
         display: 'flex', flexDirection: 'column', gap: 8,
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -73,7 +74,7 @@ export default function Indicators() {
           </div>
         </div>
         <div style={{
-          height: 6, background: 'var(--k-ink-10)', borderRadius: 999, overflow: 'hidden',
+          height: 6, background: K.line, borderRadius: 999, overflow: 'hidden',
         }}>
           <div style={{
             height: '100%', background: loyaltyColor.color, width: `${loyalty}%`,
@@ -87,8 +88,8 @@ export default function Indicators() {
             style={{
               marginTop: 8, width: '100%', padding: '8px 12px', borderRadius: 10,
               fontSize: 11, fontWeight: 700, border: 'none', cursor: balance >= premiumCost ? 'pointer' : 'not-allowed',
-              background: balance >= premiumCost ? 'var(--k-orange)' : 'var(--k-ink-10)',
-              color: balance >= premiumCost ? 'var(--k-ink)' : 'var(--k-ink-50)',
+              background: balance >= premiumCost ? K.orange : K.line,
+              color: balance >= premiumCost ? K.ink : K.muted,
               transition: 'opacity 0.2s',
             }}
           >
@@ -99,7 +100,7 @@ export default function Indicators() {
 
       {/* Энергия владельца */}
       <div style={{
-        background: 'var(--k-white)', borderRadius: 16, padding: 16,
+        background: K.white, borderRadius: 16, padding: 16,
         display: 'flex', flexDirection: 'column', gap: 8,
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -109,7 +110,7 @@ export default function Indicators() {
           </div>
         </div>
         <div style={{
-          height: 6, background: 'var(--k-ink-10)', borderRadius: 999, overflow: 'hidden',
+          height: 6, background: K.line, borderRadius: 999, overflow: 'hidden',
         }}>
           <div style={{
             height: '100%', background: energyColor.color, width: `${entrepreneurEnergy}%`,
@@ -123,7 +124,7 @@ export default function Indicators() {
 
       {/* Склад */}
       <div style={{
-        background: 'var(--k-white)', borderRadius: 16, padding: 16,
+        background: K.white, borderRadius: 16, padding: 16,
         display: 'flex', flexDirection: 'column', gap: 8,
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -133,7 +134,7 @@ export default function Indicators() {
           </div>
         </div>
         <div style={{
-          height: 6, background: 'var(--k-ink-10)', borderRadius: 999, overflow: 'hidden',
+          height: 6, background: K.line, borderRadius: 999, overflow: 'hidden',
         }}>
           <div style={{
             height: '100%', background: stockColor.color, width: `${stockLevel}%`,
@@ -145,13 +146,13 @@ export default function Indicators() {
       {/* Обслуженность */}
       {lastDayResult && lastDayResult.clients > 0 && (
         <div style={{
-          background: 'var(--k-white)', borderRadius: 16, padding: 16,
+          background: K.white, borderRadius: 16, padding: 16,
           display: 'flex', flexDirection: 'column', gap: 8,
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em' }}>👥 ОБСЛУЖЕННОСТЬ</div>
             {lastDayResult.missed > 0 && (
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--k-bad)' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: K.bad }}>
                 −{lastDayResult.missed} ушли
               </div>
             )}
@@ -159,13 +160,13 @@ export default function Indicators() {
           <div style={{ display: 'flex', gap: 4, height: 6, borderRadius: 999, overflow: 'hidden' }}>
             <div style={{
               flex: `${servedPct || 0} 0 0`,
-              background: 'var(--k-green)',
+              background: K.mint,
               transition: 'flex 0.3s ease',
             }} title={`Обслужено: ${lastDayResult.served}`}/>
             {lastDayResult.missed > 0 && (
               <div style={{
                 flex: `${100 - (servedPct ?? 100)} 0 0`,
-                background: 'var(--k-bad)',
+                background: K.bad,
                 transition: 'flex 0.3s ease',
               }} title={`Ушли: ${lastDayResult.missed}`}/>
             )}

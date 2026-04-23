@@ -1,5 +1,6 @@
 import { useGameStore } from '../../stores/gameStore'
 import { Event } from '../../types/game'
+import { K } from './tokens'
 
 interface DesktopEventProps {
   event?: Event | null
@@ -23,7 +24,7 @@ export function DesktopEvent({ event, onOptionSelect, queueLength = 0 }: Desktop
       {/* Blurred dashboard behind */}
       <div style={{
         position: 'absolute', inset: 0,
-        background: 'var(--k-surface)',
+        background: K.bone,
         filter: 'blur(24px) brightness(0.75)',
         opacity: 0.8,
       }}/>
@@ -31,19 +32,19 @@ export function DesktopEvent({ event, onOptionSelect, queueLength = 0 }: Desktop
       {/* Decorative blobs */}
       <div style={{
         position: 'absolute', top: 60, left: 60, width: 320, height: 120,
-        background: 'var(--k-orange)', opacity: 0.3, borderRadius: 24,
+        background: K.orange, opacity: 0.3, borderRadius: 24,
         filter: 'blur(8px)',
       }}/>
       <div style={{
         position: 'absolute', bottom: 80, right: 80, width: 420, height: 180,
-        background: 'var(--k-purple)', opacity: 0.25, borderRadius: 24,
+        background: K.violet, opacity: 0.25, borderRadius: 24,
         filter: 'blur(8px)',
       }}/>
 
       {/* Modal */}
       <div style={{
         position: 'relative', width: '90%', maxWidth: 900,
-        background: 'var(--k-ink)', color: '#fff',
+        background: K.ink, color: '#fff',
         borderRadius: 32, padding: 36,
         boxShadow: '0 30px 80px rgba(0,0,0,0.4)',
         display: 'flex', flexDirection: 'column', gap: 24,
@@ -52,7 +53,7 @@ export function DesktopEvent({ event, onOptionSelect, queueLength = 0 }: Desktop
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{
               padding: '6px 12px', borderRadius: 999,
-              background: 'var(--k-orange)', color: 'var(--k-ink)',
+              background: K.orange, color: K.ink,
               fontSize: 11, fontWeight: 800, letterSpacing: '0.1em',
             }}>СОБЫТИЕ · ДЕНЬ {event.day}</div>
             <div style={{ fontSize: 12, opacity: 0.5, fontWeight: 700 }}>
@@ -84,7 +85,7 @@ export function DesktopEvent({ event, onOptionSelect, queueLength = 0 }: Desktop
           }}>
             <div style={{
               gridRow: 'span 2',
-              background: 'var(--k-purple)', borderRadius: 20,
+              background: K.violet, borderRadius: 20,
               padding: 20, position: 'relative', overflow: 'hidden',
             }}>
               <div style={{
@@ -97,16 +98,16 @@ export function DesktopEvent({ event, onOptionSelect, queueLength = 0 }: Desktop
               </div>
             </div>
             <div style={{
-              background: 'var(--k-orange)', borderRadius: 16,
-              padding: 14, color: 'var(--k-ink)',
+              background: K.orange, borderRadius: 16,
+              padding: 14, color: K.ink,
               display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
             }}>
               <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.7 }}>БЕЗ КОНТУРА</div>
               <div style={{ fontSize: 24, fontWeight: 800 }}>−30к</div>
             </div>
             <div style={{
-              background: 'var(--k-green)', borderRadius: 16,
-              padding: 14, color: 'var(--k-ink)',
+              background: K.mint, borderRadius: 16,
+              padding: 14, color: K.ink,
               display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
             }}>
               <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.7 }}>С КОНТУРОМ</div>
@@ -122,9 +123,9 @@ export function DesktopEvent({ event, onOptionSelect, queueLength = 0 }: Desktop
               key={option.id}
               onClick={() => onOptionSelect?.(option.id)}
               style={{
-                background: option.isContourOption ? 'var(--k-green)' : 'rgba(255,255,255,0.06)',
+                background: option.isContourOption ? K.mint : 'rgba(255,255,255,0.06)',
                 border: option.isContourOption ? 'none' : '1.5px solid rgba(255,255,255,0.12)',
-                color: option.isContourOption ? 'var(--k-ink)' : '#fff',
+                color: option.isContourOption ? K.ink : '#fff',
                 borderRadius: 20, padding: 18,
                 display: 'flex', flexDirection: 'column', gap: 10,
                 cursor: 'pointer', transition: 'opacity 0.2s',
@@ -146,7 +147,7 @@ export function DesktopEvent({ event, onOptionSelect, queueLength = 0 }: Desktop
               {option.isContourOption && (
                 <div style={{
                   padding: '3px 8px', borderRadius: 4, fontSize: 9, fontWeight: 800,
-                  background: 'var(--k-ink)', color: 'var(--k-green)',
+                  background: K.ink, color: K.mint,
                   alignSelf: 'flex-start',
                 }}>КОНТУР</div>
               )}
@@ -162,7 +163,7 @@ export function DesktopEvent({ event, onOptionSelect, queueLength = 0 }: Desktop
         }}>
           <span style={{
             padding: '3px 7px', borderRadius: 4, fontSize: 9, fontWeight: 800,
-            background: 'var(--k-green)', color: 'var(--k-ink)',
+            background: K.mint, color: K.ink,
             whiteSpace: 'nowrap',
           }}>ПОДСКАЗКА</span>
           Выбирайте опции с меткой КОНТУР для максимальной экономии.

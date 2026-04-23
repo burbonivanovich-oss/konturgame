@@ -1,6 +1,7 @@
 import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
 import { ACHIEVEMENTS, WAVE_UNLOCK_WEEKS } from '../../constants/achievements'
+import { K } from '../design-system/tokens'
 
 interface AchievementsModalProps {
   isOpen: boolean
@@ -22,10 +23,10 @@ const CATEGORY_LABELS: Record<string, string> = {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  progress: 'var(--k-blue)',
-  business: 'var(--k-good)',
-  services: 'var(--k-orange)',
-  special: '#9b59b6',
+  progress: K.blue,
+  business: K.good,
+  services: K.orange,
+  special: K.violet,
 }
 
 const WAVES = [1, 2, 3, 4] as const
@@ -42,18 +43,20 @@ export default function AchievementsModal({ isOpen, onClose }: AchievementsModal
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {/* Progress card */}
         <div style={{
-          background: 'var(--k-blue-soft)', borderRadius: 12, padding: 16,
-          border: '1.5px solid var(--k-blue)',
+          background: K.blueSoft,
+          borderRadius: 12,
+          padding: 16,
+          border: `1.5px solid ${K.blue}`,
         }}>
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             marginBottom: 12, fontSize: 13, fontWeight: 700,
           }}>
             <span>Уровень {level} · {experience} опыта · неделя {currentWeek}</span>
-            <span style={{ color: 'var(--k-orange)' }}>{unlockedCount}/{totalCount}</span>
+            <span style={{ color: K.violet }}>{unlockedCount}/{totalCount}</span>
           </div>
-          <div style={{ height: 8, background: 'var(--k-ink-10)', borderRadius: 999, overflow: 'hidden', marginBottom: 8 }}>
-            <div style={{ width: `${progress}%`, height: '100%', background: 'var(--k-orange)', transition: 'width 0.3s ease' }} />
+          <div style={{ height: 8, background: K.line, borderRadius: 999, overflow: 'hidden', marginBottom: 8 }}>
+            <div style={{ width: `${progress}%`, height: '100%', background: K.violet, transition: 'width 0.3s ease' }} />
           </div>
           <div style={{ fontSize: 11, opacity: 0.6, textAlign: 'right' }}>{progress}% завершено</div>
         </div>
@@ -73,13 +76,13 @@ export default function AchievementsModal({ isOpen, onClose }: AchievementsModal
                   marginBottom: 10,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <h3 style={{ fontSize: 13, fontWeight: 800, opacity: isWaveUnlocked ? 1 : 0.45 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, opacity: isWaveUnlocked ? 1 : 0.45 }}>
                       {WAVE_LABELS[wave]}
-                    </h3>
+                    </div>
                     {!isWaveUnlocked && (
                       <span style={{
                         fontSize: 10, fontWeight: 700, padding: '2px 8px',
-                        background: 'var(--k-surface-2)', borderRadius: 999, opacity: 0.6,
+                        background: K.bone, borderRadius: 999, opacity: 0.6,
                       }}>
                         🔒 с недели {unlockWeek}
                       </span>
@@ -87,7 +90,7 @@ export default function AchievementsModal({ isOpen, onClose }: AchievementsModal
                   </div>
                   <span style={{
                     fontSize: 11, fontWeight: 700, padding: '4px 8px',
-                    background: 'var(--k-ink-10)', borderRadius: 999,
+                    background: K.bone, borderRadius: 999,
                     opacity: isWaveUnlocked ? 1 : 0.4,
                   }}>
                     {unlockedInWave}/{waveAchs.length}
@@ -103,8 +106,9 @@ export default function AchievementsModal({ isOpen, onClose }: AchievementsModal
                           key={ach.id}
                           style={{
                             display: 'flex', alignItems: 'center', gap: 10, padding: 12,
-                            borderRadius: 10, border: `1.5px solid ${isUnlocked ? 'var(--k-orange)' : 'var(--k-ink-10)'}`,
-                            background: isUnlocked ? 'var(--k-orange-soft)' : 'var(--k-surface)',
+                            borderRadius: 10,
+                            border: `1.5px solid ${isUnlocked ? K.violet : K.line}`,
+                            background: isUnlocked ? K.violetSoft : K.bone,
                             opacity: isUnlocked ? 1 : 0.6, transition: 'all 0.2s',
                           }}
                         >
@@ -115,7 +119,7 @@ export default function AchievementsModal({ isOpen, onClose }: AchievementsModal
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                               <p style={{
                                 fontSize: 12, fontWeight: 800,
-                                color: isUnlocked ? 'var(--k-ink)' : 'var(--k-ink-50)',
+                                color: isUnlocked ? K.ink : K.muted,
                                 margin: 0, flex: 1,
                               }}>
                                 {ach.name}
@@ -133,7 +137,7 @@ export default function AchievementsModal({ isOpen, onClose }: AchievementsModal
                               {isUnlocked && (
                                 <span style={{
                                   fontSize: 10, fontWeight: 800,
-                                  background: 'var(--k-good)', color: 'white',
+                                  background: K.good, color: K.white,
                                   padding: '2px 6px', borderRadius: 4, flexShrink: 0,
                                 }}>✓</span>
                               )}
@@ -153,7 +157,7 @@ export default function AchievementsModal({ isOpen, onClose }: AchievementsModal
                 ) : (
                   <div style={{
                     padding: '14px 16px', borderRadius: 10,
-                    border: '1.5px dashed var(--k-ink-10)',
+                    border: `1.5px dashed ${K.line}`,
                     fontSize: 12, opacity: 0.45, textAlign: 'center',
                   }}>
                     Откроется на неделе {unlockWeek} · {waveAchs.length} достижений ждут вас

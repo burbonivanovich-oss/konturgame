@@ -3,15 +3,16 @@ import { useGameStore } from '../stores/gameStore'
 import { SYNERGIES_CONFIG } from '../constants/business'
 import { ONBOARDING_STAGE_LABELS } from '../constants/onboarding'
 import type { OnboardingStage } from '../types/game'
+import { K } from './design-system/tokens'
 
 const SERVICE_COLORS: Record<string, string> = {
-  market: 'var(--k-orange)',
-  bank: 'var(--k-blue)',
-  ofd: 'var(--k-purple)',
-  diadoc: 'var(--k-green)',
-  fokus: 'var(--k-orange)',
-  elba: 'var(--k-blue)',
-  extern: 'var(--k-green)',
+  market: K.orange,
+  bank: K.blue,
+  ofd: K.violet,
+  diadoc: K.mint,
+  fokus: K.orange,
+  elba: K.blue,
+  extern: K.mint,
 }
 
 const SERVICE_ICONS: Record<string, string> = {
@@ -48,7 +49,7 @@ export default function ServicePanel() {
   const allServicesList = Object.entries(services).map(([_, service]) => ({
     ...service,
     icon: SERVICE_ICONS[service.id] ?? '📌',
-    color: SERVICE_COLORS[service.id] ?? 'var(--k-ink)',
+    color: SERVICE_COLORS[service.id] ?? K.ink,
   }))
 
   const visibleServices = allServicesList.filter((s) =>
@@ -61,14 +62,14 @@ export default function ServicePanel() {
   if (!isExpanded) {
     return (
       <div style={{
-        background: 'var(--k-white)', borderRadius: 16, padding: 16,
+        background: K.white, borderRadius: 16, padding: 16,
         display: 'flex', flexDirection: 'column', gap: 12,
       }}>
         <button
           onClick={() => setIsExpanded(true)}
           style={{
             width: '100%', padding: '12px', textAlign: 'center',
-            fontSize: 13, fontWeight: 700, color: 'var(--k-blue)',
+            fontSize: 13, fontWeight: 700, color: K.blue,
             background: 'transparent', border: 'none', cursor: 'pointer',
             transition: 'opacity 0.2s',
           }}
@@ -94,7 +95,7 @@ export default function ServicePanel() {
                 <div style={{
                   position: 'absolute', top: 0, right: 0,
                   width: 10, height: 10, borderRadius: '50%',
-                  background: 'var(--k-green)', border: '2px solid white',
+                  background: K.mint, border: '2px solid white',
                 }}/>
               )}
             </button>
@@ -102,10 +103,10 @@ export default function ServicePanel() {
         </div>
         {activeSynergies.length > 0 && (
           <div style={{
-            borderTop: '1px solid var(--k-ink-10)', paddingTop: 8,
+            borderTop: `1px solid ${K.line}`, paddingTop: 8,
             display: 'flex', flexDirection: 'column', gap: 4,
           }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--k-purple)' }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: K.violet }}>
               ⚡ {activeSynergies.length} синергия
             </div>
             {activeSynergies.slice(0, 2).map((syn) => (
@@ -121,7 +122,7 @@ export default function ServicePanel() {
 
   return (
     <div style={{
-      background: 'var(--k-white)', borderRadius: 16, padding: 16,
+      background: K.white, borderRadius: 16, padding: 16,
       display: 'flex', flexDirection: 'column', gap: 12,
       maxHeight: '40rem', overflow: 'hidden', overflowY: 'auto',
     }}>
@@ -130,7 +131,7 @@ export default function ServicePanel() {
         <button
           onClick={() => setIsExpanded(false)}
           style={{
-            fontSize: 18, color: 'var(--k-ink-50)', background: 'transparent',
+            fontSize: 18, color: K.muted, background: 'transparent',
             border: 'none', cursor: 'pointer', padding: 4,
           }}
         >
@@ -140,7 +141,7 @@ export default function ServicePanel() {
 
       {/* Unlocked services */}
       {visibleServices.length > 0 && (
-        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--k-green)', marginBottom: 8, opacity: 0.7 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: K.mint, marginBottom: 8, opacity: 0.7 }}>
           ✓ Доступные сервисы на этом этапе
         </div>
       )}
@@ -151,9 +152,9 @@ export default function ServicePanel() {
           <div
             key={service.id}
             style={{
-              background: service.isActive ? service.color : 'var(--k-white)',
-              color: service.isActive ? (service.color === 'var(--k-orange)' || service.color === 'var(--k-green)' ? 'var(--k-ink)' : '#fff') : 'var(--k-ink)',
-              borderRadius: 12, padding: 12, border: service.isActive ? 'none' : '1px solid var(--k-ink-10)',
+              background: service.isActive ? service.color : K.white,
+              color: service.isActive ? (service.color === K.orange || service.color === K.mint ? K.ink : '#fff') : K.ink,
+              borderRadius: 12, padding: 12, border: service.isActive ? 'none' : `1px solid ${K.line}`,
               display: 'flex', flexDirection: 'column', gap: 8,
               opacity: isUnlocked ? 1 : 0.5,
             }}
@@ -204,7 +205,7 @@ export default function ServicePanel() {
               const stageLabel = ONBOARDING_STAGE_LABELS[nextStage] ?? ''
               return (
                 <div key={service.id} style={{
-                  borderRadius: 12, padding: 12, border: '1px dashed var(--k-ink-10)',
+                  borderRadius: 12, padding: 12, border: `1px dashed ${K.line}`,
                   display: 'flex', flexDirection: 'column', gap: 6,
                   opacity: 0.5,
                   filter: 'grayscale(0.6)',
@@ -228,7 +229,7 @@ export default function ServicePanel() {
             {furtherCount > 0 && (
               <div style={{
                 borderRadius: 10, padding: '10px 14px',
-                border: '1px dashed var(--k-ink-10)',
+                border: `1px dashed ${K.line}`,
                 fontSize: 11, fontWeight: 600, opacity: 0.4,
                 textAlign: 'center',
               }}>
@@ -241,18 +242,18 @@ export default function ServicePanel() {
 
       {activeSynergies.length > 0 && (
         <div style={{
-          borderTop: '1px solid var(--k-ink-10)', paddingTop: 12,
+          borderTop: `1px solid ${K.line}`, paddingTop: 12,
           display: 'flex', flexDirection: 'column', gap: 8,
         }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--k-purple)', letterSpacing: '0.05em' }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: K.violet, letterSpacing: '0.05em' }}>
             ⚡ АКТИВНЫЕ СИНЕРГИИ ({activeSynergies.length})
           </div>
           {activeSynergies.map((syn) => (
             <div key={syn.id} style={{
-              background: 'var(--k-purple-soft)', borderRadius: 10, padding: 10,
+              background: K.violetSoft, borderRadius: 10, padding: 10,
               display: 'flex', flexDirection: 'column', gap: 4,
             }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--k-purple)' }}>{syn.name}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: K.violet }}>{syn.name}</div>
               <div style={{ fontSize: 10, opacity: 0.7, lineHeight: 1.3 }}>{syn.description}</div>
             </div>
           ))}

@@ -1,5 +1,6 @@
 import { useGameStore } from '../stores/gameStore'
 import { ONBOARDING_STAGES, ONBOARDING_STAGE_LABELS } from '../constants/onboarding'
+import { K } from './design-system/tokens'
 
 export function OnboardingPanel() {
   const {
@@ -49,10 +50,16 @@ export function OnboardingPanel() {
   const stageLabel = ONBOARDING_STAGE_LABELS[onboardingStage]
   const pendingAction = !!(currentStep.requiresAction && !actionDone)
 
+  const stageColor = onboardingStage === 0 ? K.blue
+    : onboardingStage === 1 ? K.violet
+    : onboardingStage === 2 ? K.orange
+    : onboardingStage === 3 ? K.mint
+    : K.orange
+
   return (
     <div style={{
-      background: '#fff', borderRadius: 16, padding: 20,
-      border: pendingAction ? '2px solid var(--k-orange)' : '1px solid var(--k-ink-10)',
+      background: K.white, borderRadius: 16, padding: 20,
+      border: pendingAction ? `2px solid ${K.orange}` : `1px solid ${K.line}`,
       display: 'flex', flexDirection: 'column', gap: 16,
     }}>
       {/* Stage progress */}
@@ -62,7 +69,7 @@ export function OnboardingPanel() {
         {[0, 1, 2, 3, 4].map((i) => (
           <div key={i} style={{
             height: 3, flex: 1, borderRadius: 2,
-            background: i <= onboardingStage ? 'var(--k-orange)' : 'var(--k-ink-10)',
+            background: i <= onboardingStage ? K.orange : K.line,
             transition: 'background 0.3s',
           }} />
         ))}
@@ -71,7 +78,7 @@ export function OnboardingPanel() {
       {/* Stage label */}
       <div style={{
         fontSize: 10, fontWeight: 800, letterSpacing: '0.1em',
-        color: 'var(--k-orange)', textTransform: 'uppercase',
+        color: K.orange, textTransform: 'uppercase',
       }}>
         Этап {onboardingStage + 1} · {stageLabel}
       </div>
@@ -80,14 +87,10 @@ export function OnboardingPanel() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
         <div style={{
           width: 40, height: 40, borderRadius: 12,
-          background: onboardingStage === 0 ? 'var(--k-blue)' :
-                      onboardingStage === 1 ? 'var(--k-purple)' :
-                      onboardingStage === 2 ? 'var(--k-orange)' :
-                      onboardingStage === 3 ? 'var(--k-green)' :
-                      'var(--k-orange)',
+          background: stageColor,
           flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 20,
-          color: '#fff',
+          color: K.white,
         }}>
           {onboardingStage === 0 ? '🏦' :
            onboardingStage === 1 ? '📋' :
@@ -100,7 +103,7 @@ export function OnboardingPanel() {
 
       {/* Dialog text */}
       <div style={{
-        fontSize: 12, lineHeight: 1.6, color: 'var(--k-ink)',
+        fontSize: 12, lineHeight: 1.6, color: K.ink,
         opacity: 0.8,
       }}>
         {currentStep.text}
@@ -110,8 +113,8 @@ export function OnboardingPanel() {
       {isLastStep && !isLastStage && (
         <div style={{
           fontSize: 11, fontWeight: 600,
-          color: 'var(--k-green)',
-          background: 'rgba(34, 197, 94, 0.08)',
+          color: K.mint,
+          background: K.mintSoft,
           borderRadius: 10, padding: '10px 12px',
           display: 'flex', alignItems: 'center', gap: 8,
         }}>
@@ -124,8 +127,8 @@ export function OnboardingPanel() {
       {currentStep.requiresAction && !actionDone && (
         <div style={{
           fontSize: 11, fontWeight: 600,
-          color: 'var(--k-orange)',
-          background: 'rgba(255, 107, 0, 0.08)',
+          color: K.orange,
+          background: K.orangeSoft,
           borderRadius: 10, padding: '10px 12px',
           display: 'flex', alignItems: 'center', gap: 8,
         }}>
@@ -147,7 +150,7 @@ export function OnboardingPanel() {
           {steps.map((_, i) => (
             <div key={i} style={{
               width: 5, height: 5, borderRadius: '50%',
-              background: i <= clampedStepIndex ? 'var(--k-orange)' : 'var(--k-ink-10)',
+              background: i <= clampedStepIndex ? K.orange : K.line,
               transition: 'background 0.2s',
             }} />
           ))}
@@ -158,8 +161,8 @@ export function OnboardingPanel() {
           disabled={!actionDone}
           style={{
             padding: '8px 16px', borderRadius: 10,
-            background: actionDone ? 'var(--k-orange)' : 'var(--k-ink-10)',
-            color: actionDone ? '#fff' : 'var(--k-ink-50)',
+            background: actionDone ? K.ink : K.line,
+            color: actionDone ? K.white : K.muted,
             fontSize: 12, fontWeight: 700,
             border: 'none', cursor: actionDone ? 'pointer' : 'not-allowed',
             transition: 'all 0.2s',

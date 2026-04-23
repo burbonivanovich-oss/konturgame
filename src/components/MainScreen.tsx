@@ -706,7 +706,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       {savingsToast !== null && (
         <div style={{
           position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-          zIndex: 50, background: 'var(--k-green)', color: '#fff',
+          zIndex: 50, background: K.mint, color: K.white,
           padding: '16px 24px', borderRadius: 16, fontSize: 14, fontWeight: 700,
         }}>
           ✅ Спасено {savingsToast.toLocaleString('ru-RU')} ₽!

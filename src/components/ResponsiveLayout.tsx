@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Phone } from './design-system'
+import { K } from './design-system/tokens'
 
 interface ResponsiveLayoutProps {
   desktopView: React.ReactNode
@@ -24,7 +25,7 @@ export function ResponsiveLayout({ desktopView, mobileView }: ResponsiveLayoutPr
       <div style={{
         width: '100%', height: '100vh',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'var(--k-surface)', padding: 16,
+        background: K.bone, padding: 16,
       }}>
         <Phone>
           {mobileView}
