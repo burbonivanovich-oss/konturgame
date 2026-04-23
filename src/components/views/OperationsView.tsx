@@ -3,6 +3,7 @@ import { BUSINESS_CONFIGS, getUpgradesForBusiness } from '../../constants/busine
 import { PRODUCT_CATEGORIES, isCategoryAllowed } from '../../services/assortmentEngine'
 import { getBusinessStage, STAGE_CONFIG, getNextStage } from '../../constants/businessStages'
 import { OWNER_INVESTMENTS_MAP, type OwnerInvestmentId } from '../../constants/ownerInvestments'
+import { CASH_REGISTER_CONFIGS } from '../../constants/cashRegisters'
 import { K } from '../design-system/tokens'
 
 const SERVICE_NAMES: Record<string, string> = {
@@ -159,28 +160,32 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal, o
       <div>
         <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase', marginBottom: 12 }}>КАССОВЫЕ СИСТЕМЫ</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-          {[
-            { type: 'mobile' as const, label: '📱 Mobile POS', price: 5000 },
-            { type: 'reliable' as const, label: '🖥️ Надёжная касса', price: 15000 },
-            { type: 'fast' as const, label: '⚡ Быстрая касса', price: 25000 },
-          ].map(({ type, label, price }) => (
+          {(['mobile', 'reliable', 'fast'] as const).map((type) => {
+            const cfg = CASH_REGISTER_CONFIGS[type]
+            const canAfford = balance >= cfg.cost
+            const count = cashRegisters.filter(r => r.type === type).length
+            return (
             <div key={type} style={{ padding: 12, borderRadius: 12, background: K.white, border: `1px solid ${K.line}` }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: K.muted, marginBottom: 4 }}>{label}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: K.muted, marginBottom: 4 }}>{cfg.icon} {cfg.name}</div>
               <div style={{ fontSize: 36, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 8 }}>
-                {cashRegisters.filter(r => r.type === type).length} <span style={{ fontSize: 14, fontWeight: 600, opacity: 0.6 }}>шт</span>
+                {count} <span style={{ fontSize: 14, fontWeight: 600, opacity: 0.6 }}>шт</span>
               </div>
               <button
-                onClick={() => buyCashRegister(type)}
+                onClick={() => canAfford && buyCashRegister(type)}
+                disabled={!canAfford}
                 style={{
                   padding: '8px 12px', borderRadius: 8, width: '100%',
-                  background: K.ink, color: K.white,
-                  border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                  background: canAfford ? K.ink : K.lineSoft,
+                  color: canAfford ? K.white : K.muted,
+                  border: 'none', cursor: canAfford ? 'pointer' : 'not-allowed',
+                  fontSize: 12, fontWeight: 700,
                 }}
               >
-                +1 ({price.toLocaleString('ru-RU')} ₽)
+                +1 ({cfg.cost.toLocaleString('ru-RU')} ₽)
               </button>
             </div>
-          ))}
+            )
+          })}
         </div>
         <div style={{ fontSize: 11, color: K.muted, marginTop: 10, fontStyle: 'italic' }}>
           Каждая касса добавляет +15 клиентов в день. Без ОФД — штраф за каждый чек.

@@ -19,7 +19,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'finance',     label: 'Финансы',      icon: 'finance'                 },
   { id: 'marketing',   label: 'Маркетинг',    icon: 'mkt'                     },
   { id: 'warehouse',   label: 'Склад',        icon: 'warehouse', unlocksAtWeek: 2  },
-  { id: 'operations',  label: 'Управление',   icon: 'ops',       unlocksAtWeek: 2  },
+  { id: 'operations',  label: 'Управление',   icon: 'ops'                          },
   { id: 'reputation',  label: 'Репутация',    icon: 'rep',       unlocksAtWeek: 4  },
   { id: 'milestones',  label: 'Вехи',         icon: 'milestone', unlocksAtWeek: 7  },
   { id: 'statistics',  label: 'Статистика',   icon: 'stats',     unlocksAtWeek: 7  },
