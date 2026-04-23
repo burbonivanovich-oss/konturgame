@@ -17,6 +17,9 @@ export function WarehouseView() {
   const totalDailyRevenue = activeCategories.reduce((s, c) => s + c.baseRevenue, 0)
   const totalDailyCost = activeCategories.reduce((s, c) => s + c.dailyCost, 0)
 
+  const sectionTitle = hasStock ? 'Склад' : 'Расходники'
+  const manageButtonLabel = hasStock ? '🛍️ Управлять ассортиментом' : '✂️ Управлять услугами'
+
   return (
     <div style={{
       flex: 1, padding: '20px 24px', overflow: 'auto',
@@ -27,34 +30,21 @@ export function WarehouseView() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>УПРАВЛЕНИЕ</div>
-          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.025em' }}>Склад</div>
+          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.025em' }}>{sectionTitle}</div>
         </div>
-        {hasStock && (
-          <button
-            onClick={() => setShowAssortmentModal(true)}
-            style={{
-              border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-              background: K.ink, color: K.white,
-              padding: '12px 20px', borderRadius: 10,
-              fontSize: 13, fontWeight: 800, letterSpacing: '-0.01em',
-            }}>
-            🛍️ Управлять ассортиментом
-          </button>
-        )}
+        <button
+          onClick={() => setShowAssortmentModal(true)}
+          style={{
+            border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+            background: K.ink, color: K.white,
+            padding: '12px 20px', borderRadius: 10,
+            fontSize: 13, fontWeight: 800, letterSpacing: '-0.01em',
+          }}>
+          {manageButtonLabel}
+        </button>
       </div>
 
-      {!hasStock ? (
-        <div style={{
-          background: K.white, borderRadius: 20, padding: 24,
-          border: `1px solid ${K.line}`,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
-          textAlign: 'center',
-        }}>
-          <div style={{ fontSize: 32 }}>✂️</div>
-          <div style={{ fontSize: 16, fontWeight: 800 }}>Склад не нужен</div>
-          <div style={{ fontSize: 13, color: K.muted }}>Для салона красоты склад не используется — расходники списываются автоматически.</div>
-        </div>
-      ) : (
+      {(
         <>
           {/* Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
@@ -82,15 +72,17 @@ export function WarehouseView() {
           {/* Active categories list */}
           <div style={{ background: K.white, borderRadius: 14, padding: 18, display: 'flex', flexDirection: 'column', gap: 8, border: `1px solid ${K.line}` }}>
             <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase', marginBottom: 4 }}>
-              АКТИВНЫЕ КАТЕГОРИИ
+              {hasStock ? 'АКТИВНЫЕ КАТЕГОРИИ' : 'АКТИВНЫЕ УСЛУГИ'}
             </div>
 
             {activeCategories.length === 0 ? (
               <div style={{ padding: '24px 0', textAlign: 'center' }}>
-                <div style={{ fontSize: 24, marginBottom: 8 }}>📦</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: K.muted }}>Нет активных категорий</div>
+                <div style={{ fontSize: 24, marginBottom: 8 }}>{hasStock ? '📦' : '✂️'}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: K.muted }}>
+                  {hasStock ? 'Нет активных категорий' : 'Нет активных услуг'}
+                </div>
                 <div style={{ fontSize: 12, marginTop: 4, color: K.muted }}>
-                  Нажмите «Управлять ассортиментом», чтобы включить товары
+                  Нажмите «{manageButtonLabel}», чтобы включить
                 </div>
               </div>
             ) : (
@@ -110,7 +102,9 @@ export function WarehouseView() {
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: K.good }}>+{cat.baseRevenue.toLocaleString('ru-RU')} ₽/д</div>
-                    <div style={{ fontSize: 11, color: K.muted }}>{cat.dailyCost.toLocaleString('ru-RU')} ₽ закупка</div>
+                    <div style={{ fontSize: 11, color: K.muted }}>
+                      {cat.dailyCost.toLocaleString('ru-RU')} ₽ {hasStock ? 'закупка' : 'расходники'}
+                    </div>
                   </div>
                 </div>
               ))
@@ -121,8 +115,10 @@ export function WarehouseView() {
           <div style={{ background: K.mintSoft, borderRadius: 16, padding: 14, display: 'flex', gap: 10 }}>
             <span style={{ fontSize: 16, flexShrink: 0 }}>💡</span>
             <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.5 }}>
-              <strong>Как работает склад:</strong> закупки происходят автоматически каждый день по активным категориям.
-              Включайте категории через «Управлять ассортиментом». Чем больше категорий — тем выше выручка.
+              {hasStock
+                ? <><strong>Как работает склад:</strong> закупки происходят автоматически каждый день по активным категориям. Чем больше категорий — тем выше выручка.</>
+                : <><strong>Как работают расходники:</strong> стоимость материалов списывается автоматически каждый день. Включайте больше услуг через «Управлять услугами».</>
+              }
             </div>
           </div>
         </>

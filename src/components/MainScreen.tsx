@@ -34,6 +34,7 @@ import { MilestoneView } from './views/MilestoneView'
 import { DecisionLogView } from './views/DecisionLogView'
 import { useGameStore } from '../stores/gameStore'
 import { ONBOARDING_STAGES } from '../constants/onboarding'
+import { BUSINESS_CONFIGS } from '../constants/business'
 import type { BusinessType } from '../types/game'
 import { KLeftRail } from './design-system/KLeftRail'
 import { KHeaderBar } from './design-system/KHeaderBar'
@@ -48,6 +49,7 @@ const ONBOARDING_ACTION_TO_NAV: Record<string, NavId> = {
   activate_fokus:   'ecosystem',
   activate_elba:    'ecosystem',
   activate_extern:  'ecosystem',
+  buy_register:     'operations',
 }
 
 type ActiveView = NavId
@@ -77,9 +79,10 @@ function DashboardView({
   const {
     currentWeek, balance, reputation, loyalty, services,
     pendingEvent, pendingEventsQueue, lastDayResult,
-    entrepreneurEnergy, npcs, stockBatches, capacity,
+    entrepreneurEnergy, npcs, stockBatches, capacity, businessType,
   } = useGameStore()
 
+  const bizConfig = BUSINESS_CONFIGS[businessType]
   const activeServiceIds = Object.values(services).filter(s => s.isActive).map(s => s.id)
   const dailyRevenue = lastDayResult?.revenue ?? 0
   const dailyExpenses = lastDayResult?.expenses ?? 0
@@ -89,7 +92,7 @@ function DashboardView({
 
   const totalStock = (stockBatches ?? []).reduce((s: number, b: { quantity: number }) => s + b.quantity, 0)
   const stockPct = capacity > 0 ? Math.round((totalStock / capacity) * 100) : 0
-  const stockLow = stockPct < 25
+  const stockLow = bizConfig.hasStock && stockPct < 25
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: K.paper }}>
@@ -197,7 +200,7 @@ function DashboardView({
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {[
-                { label: 'Пополнить склад', done: !stockLow, urgent: stockLow },
+                ...(bizConfig.hasStock ? [{ label: 'Пополнить склад', done: !stockLow, urgent: stockLow }] : []),
                 { label: 'Разрешить событие', done: !pendingEvent, urgent: !!pendingEvent },
                 { label: 'Нажать «Следующий день»', done: false, urgent: false },
               ].map(task => (
@@ -382,19 +385,21 @@ function DashboardView({
             </div>
           </div>
 
-          {/* Склад */}
-          <div style={{ background: K.white, border: `1px solid ${stockLow ? K.orange : K.line}`, borderRadius: 12, padding: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 12, color: K.muted, fontWeight: 600 }}>Склад</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: stockLow ? K.orange : K.ink }}>{stockPct}%</span>
+          {/* Склад — только для hasStock бизнесов */}
+          {bizConfig.hasStock && (
+            <div style={{ background: K.white, border: `1px solid ${stockLow ? K.orange : K.line}`, borderRadius: 12, padding: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ fontSize: 12, color: K.muted, fontWeight: 600 }}>Склад</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: stockLow ? K.orange : K.ink }}>{stockPct}%</span>
+              </div>
+              <div style={{ height: 5, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${stockPct}%`, background: stockLow ? K.orange : K.mint, borderRadius: 999 }} />
+              </div>
+              {stockLow && (
+                <div style={{ marginTop: 6, fontSize: 11, color: K.orange, fontWeight: 600 }}>Пополнить →</div>
+              )}
             </div>
-            <div style={{ height: 5, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${stockPct}%`, background: stockLow ? K.orange : K.mint, borderRadius: 999 }} />
-            </div>
-            {stockLow && (
-              <div style={{ marginTop: 6, fontSize: 11, color: K.orange, fontWeight: 600 }}>Пополнить →</div>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
@@ -403,16 +408,18 @@ function DashboardView({
         borderTop: `1px solid ${K.line}`, background: K.white,
         padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 10,
       }}>
-        <button
-          onClick={() => setShowPurchaseModal(true)}
-          style={{
-            padding: '9px 18px', borderRadius: 10, border: `1px solid ${K.line}`,
-            background: K.bone, color: K.ink, fontSize: 13, fontWeight: 600,
-            cursor: 'pointer', fontFamily: 'inherit',
-          }}
-        >
-          Закупить
-        </button>
+        {bizConfig.hasStock && (
+          <button
+            onClick={() => setShowPurchaseModal(true)}
+            style={{
+              padding: '9px 18px', borderRadius: 10, border: `1px solid ${K.line}`,
+              background: K.bone, color: K.ink, fontSize: 13, fontWeight: 600,
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            Закупить
+          </button>
+        )}
         <button
           onClick={() => setShowCampaignModal(true)}
           style={{
@@ -620,7 +627,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
 
   return (
     <div style={{
-      width: '100%', minHeight: '100vh',
+      width: '100%', height: '100vh',
       background: K.paper,
       fontFamily: 'Manrope, sans-serif',
       color: K.ink,
@@ -716,7 +723,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       <HireEmployeeModal isOpen={showHireEmployeeModal} onClose={() => setShowHireEmployeeModal(false)} />
       <SupplierModal isOpen={showSupplierModal} onClose={() => setShowSupplierModal(false)} />
       <OwnerInvestmentsModal isOpen={showOwnerInvestmentsModal} onClose={() => setShowOwnerInvestmentsModal(false)} />
-      <AssortmentModal isOpen={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} />
       <PromoCodeModal />
       <PromoWalletModal isOpen={showPromoWalletModal} onClose={() => setShowPromoWalletModal(false)} />
       <BundleModal />
