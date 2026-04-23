@@ -1,5 +1,5 @@
 import type { GameState, Modifiers } from '../types/game'
-import { BUSINESS_CONFIGS, MONTHLY_EXPENSES, UPGRADES_CONFIG } from '../constants/business'
+import { BUSINESS_CONFIGS, MONTHLY_EXPENSES, UPGRADES_CONFIG, CAMPAIGN_DIMINISHING_FACTORS } from '../constants/business'
 import { calculateSynergyModifiers } from './synergyEngine'
 
 function getPurchasedUpgradeConfigs(state: GameState) {
@@ -72,18 +72,22 @@ export function calculateRevenue(served: number, avgCheck: number): number {
 export function calculateActiveAdModifiers(state: GameState): { clientMod: number; checkMod: number } {
   if (!state.activeAdCampaigns?.length) return { clientMod: 0, checkMod: 0 }
 
+  // Only campaigns that are active and past their delay
+  const active = state.activeAdCampaigns.filter(c =>
+    c.daysRemaining > 0 && state.currentWeek >= (c.startWeek ?? state.currentWeek)
+  )
+  if (!active.length) return { clientMod: 0, checkMod: 0 }
+
+  // Sort best client-effect first so diminishing returns penalise weaker campaigns
+  const sorted = [...active].sort((a, b) => b.clientEffect - a.clientEffect)
+
   let clientMod = 0
   let checkMod = 0
-  for (const campaign of state.activeAdCampaigns) {
-    // Campaign only has effect if:
-    // 1. It has days remaining
-    // 2. Current week >= start week (delay period has passed)
-    const startWeek = campaign.startWeek ?? state.currentWeek  // Default to current week if not set
-    if (campaign.daysRemaining > 0 && state.currentWeek >= startWeek) {
-      clientMod += campaign.clientEffect
-      checkMod += campaign.checkEffect
-    }
-  }
+  sorted.forEach((campaign, i) => {
+    const factor = CAMPAIGN_DIMINISHING_FACTORS[i] ?? 0.2
+    clientMod += campaign.clientEffect * factor
+    checkMod += campaign.checkEffect * factor
+  })
   return { clientMod, checkMod }
 }
 

@@ -332,6 +332,13 @@ export const AD_CAMPAIGNS_CONFIG = [
   { id: 'coworking', name: 'Кооперация с коворкингом', duration: 20, cost: 25000, clientEffect: 0.08, checkEffect: 0, businessTypes: ['cafe'] as const },
 ] as const
 
+// Max simultaneous active campaigns. Beyond this cap, addAdCampaign is a no-op.
+export const MAX_ACTIVE_CAMPAIGNS = 3
+
+// Effectiveness multiplier for each concurrent slot (1st, 2nd, 3rd).
+// Discourages stacking: running 3 campaigns is better than 1, but not 3×.
+export const CAMPAIGN_DIMINISHING_FACTORS = [1.0, 0.6, 0.3] as const
+
 export const UPGRADES_CONFIG: Record<BusinessType, Array<{
   id: string
   name: string

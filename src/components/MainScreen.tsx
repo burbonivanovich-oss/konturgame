@@ -5,8 +5,6 @@ import ResponsiveLayout from './ResponsiveLayout'
 import MobileMainScreen from './MobileMainScreen'
 import { OnboardingPanel } from './OnboardingPanel'
 import PurchaseModal from './modals/PurchaseModal'
-import CampaignModal from './modals/CampaignModal'
-import UpgradesModal from './modals/UpgradesModal'
 import HelpModal from './modals/HelpModal'
 import SettingsModal from './modals/SettingsModal'
 import VictoryModal from './modals/VictoryModal'
@@ -18,23 +16,20 @@ import PromoWalletModal from './modals/PromoWalletModal'
 import BundleModal from './modals/BundleModal'
 import MicroEventModal from './modals/MicroEventModal'
 import HireEmployeeModal from './modals/HireEmployeeModal'
-import SupplierModal from './modals/SupplierModal'
 import OwnerInvestmentsModal from './modals/OwnerInvestmentsModal'
 import { WeekSummaryOverlay } from './WeekSummaryOverlay'
 import { WeekResultsOverlay } from './WeekResultsOverlay'
 import { DesktopKontur } from './design-system/DesktopKontur'
 import { WarehouseView } from './views/WarehouseView'
-import { MarketingView } from './views/MarketingView'
 import { FinanceView } from './views/FinanceView'
-import { ReputationView } from './views/ReputationView'
 import OperationsView from './views/OperationsView'
 import StatisticsView from './views/StatisticsView'
-import { CampaignROIView } from './views/CampaignROIView'
-import { MilestoneView } from './views/MilestoneView'
 import { DecisionLogView } from './views/DecisionLogView'
+import { DevelopmentView } from './views/DevelopmentView'
 import { useGameStore } from '../stores/gameStore'
 import { ONBOARDING_STAGES } from '../constants/onboarding'
 import { BUSINESS_CONFIGS } from '../constants/business'
+import { getBusinessStage, STAGE_CONFIG, getNextStage } from '../constants/businessStages'
 import type { BusinessType } from '../types/game'
 import { KLeftRail } from './design-system/KLeftRail'
 import { KHeaderBar } from './design-system/KHeaderBar'
@@ -58,8 +53,6 @@ type ActiveView = NavId
 function DashboardView({
   onNextDay, dayBlockedMsg,
   showPurchaseModal, setShowPurchaseModal,
-  showCampaignModal, setShowCampaignModal,
-  showUpgradesModal, setShowUpgradesModal,
   showCashRegisterModal, setShowCashRegisterModal,
   handleEventOption, onOpenOwnerInvestments,
 }: {
@@ -67,10 +60,6 @@ function DashboardView({
   dayBlockedMsg: string | null
   showPurchaseModal: boolean
   setShowPurchaseModal: (v: boolean) => void
-  showCampaignModal: boolean
-  setShowCampaignModal: (v: boolean) => void
-  showUpgradesModal: boolean
-  setShowUpgradesModal: (v: boolean) => void
   showCashRegisterModal: boolean
   setShowCashRegisterModal: (v: boolean) => void
   handleEventOption: (id: string) => void
@@ -80,6 +69,7 @@ function DashboardView({
     currentWeek, balance, reputation, loyalty, services,
     pendingEvent, pendingEventsQueue, lastDayResult,
     entrepreneurEnergy, npcs, stockBatches, capacity, businessType,
+    qualityLevel, level,
   } = useGameStore()
 
   const bizConfig = BUSINESS_CONFIGS[businessType]
@@ -189,6 +179,48 @@ function DashboardView({
               </div>
             ))}
           </div>
+
+          {/* Quality */}
+          {(() => {
+            const qualColor = qualityLevel > 70 ? K.mint : qualityLevel > 40 ? K.warn : K.bad
+            return (
+              <div style={{ background: K.white, border: `1px solid ${K.line}`, borderRadius: 12, padding: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontSize: 10, color: K.muted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    Качество
+                  </span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: qualColor }}>{qualityLevel}%</span>
+                </div>
+                <div style={{ height: 6, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%', width: `${qualityLevel}%`,
+                    background: qualColor, borderRadius: 999,
+                  }} />
+                </div>
+              </div>
+            )
+          })()}
+
+          {/* Stage */}
+          {(() => {
+            const stage = getBusinessStage(currentWeek, level)
+            const stageCfg = STAGE_CONFIG[stage]
+            const nextStage = getNextStage(stage)
+            const nextCfg = nextStage ? STAGE_CONFIG[nextStage] : null
+            return (
+              <div style={{ background: K.bone, border: `1px solid ${K.lineSoft}`, borderRadius: 12, padding: 14 }}>
+                <div style={{ fontSize: 10, color: K.muted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+                  Стадия
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 800 }}>{stageCfg.label}</div>
+                {nextCfg && (
+                  <div style={{ fontSize: 10, color: K.muted, marginTop: 4 }}>
+                    Далее: {nextCfg.label} · нед. {nextCfg.weeksMin} · ур. {nextCfg.levelMin}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </div>
 
         {/* ── CENTER: Tasks + Event ── */}
@@ -415,26 +447,6 @@ function DashboardView({
             Закупить
           </button>
         )}
-        <button
-          onClick={() => setShowCampaignModal(true)}
-          style={{
-            padding: '9px 18px', borderRadius: 10, border: `1px solid ${K.line}`,
-            background: K.bone, color: K.ink, fontSize: 13, fontWeight: 600,
-            cursor: 'pointer', fontFamily: 'inherit',
-          }}
-        >
-          Реклама
-        </button>
-        <button
-          onClick={() => setShowUpgradesModal(true)}
-          style={{
-            padding: '9px 18px', borderRadius: 10, border: `1px solid ${K.line}`,
-            background: K.bone, color: K.ink, fontSize: 13, fontWeight: 600,
-            cursor: 'pointer', fontFamily: 'inherit',
-          }}
-        >
-          Улучшения
-        </button>
 
         <div style={{ flex: 1 }} />
 
@@ -464,8 +476,6 @@ function DashboardView({
       </div>
 
       <PurchaseModal isOpen={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} />
-      <CampaignModal isOpen={showCampaignModal} onClose={() => setShowCampaignModal(false)} />
-      <UpgradesModal isOpen={showUpgradesModal} onClose={() => setShowUpgradesModal(false)} />
     </div>
   )
 }
@@ -473,22 +483,19 @@ function DashboardView({
 function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const [activeView, setActiveView] = useState<ActiveView>('dashboard')
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
-  const [showCampaignModal, setShowCampaignModal] = useState(false)
-  const [showUpgradesModal, setShowUpgradesModal] = useState(false)
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [showAchievementsModal, setShowAchievementsModal] = useState(false)
   const [showCashRegisterModal, setShowCashRegisterModal] = useState(false)
   const [showPromoWalletModal, setShowPromoWalletModal] = useState(false)
   const [showHireEmployeeModal, setShowHireEmployeeModal] = useState(false)
-  const [showSupplierModal, setShowSupplierModal] = useState(false)
   const [showOwnerInvestmentsModal, setShowOwnerInvestmentsModal] = useState(false)
   const [dayBlockedMsg, setDayBlockedMsg] = useState<string | null>(null)
   const [savingsToast, setSavingsToast] = useState<number | null>(null)
   const [unlockToast, setUnlockToast] = useState<string | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const unlockToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const visitedTabsRef = useRef<Set<NavId>>(new Set(['dashboard', 'ecosystem', 'finance', 'marketing']))
+  const visitedTabsRef = useRef<Set<NavId>>(new Set(['dashboard', 'ecosystem', 'finance', 'development']))
 
   const {
     currentWeek, services, pendingEvent, pendingEventsQueue,
@@ -497,17 +504,11 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
     addSavedBalance, setTemporaryModifiers, advanceDay,
     weekPhase, completeActionsPhase, completeResultsPhase, completeSummaryPhase,
     onboardingStage, onboardingStepIndex, onboardingCompleted,
-    milestoneStatus, businessType, npcs,
+    businessType, npcs,
     updateNPCRelationship: storeUpdateNPCRelationship,
     addChainFollowUp,
     addDecisionLogEntry,
   } = useGameStore()
-
-  // Track which milestones the player has seen (opened the Вехи tab after they fired)
-  const seenMilestonesRef = useRef({ week10: false, week20: false, week30: false })
-  const achievedCount = [milestoneStatus?.week10, milestoneStatus?.week20, milestoneStatus?.week30].filter(Boolean).length
-  const seenCount = [seenMilestonesRef.current.week10, seenMilestonesRef.current.week20, seenMilestonesRef.current.week30].filter(Boolean).length
-  const milestoneBadge = achievedCount - seenCount
 
   const activeServiceIds = Object.values(services).filter(s => s.isActive).map(s => s.id)
   const activeCount = activeServiceIds.length
@@ -600,17 +601,12 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const UNLOCK_TOAST_LABELS: Partial<Record<NavId, string>> = {
     warehouse:   'Раздел «Склад» разблокирован',
     operations:  'Раздел «Управление» разблокирован',
-    reputation:  'Раздел «Репутация» разблокирован',
-    milestones:  'Раздел «Вехи» разблокирован',
+    development: 'Раздел «Развитие» разблокирован',
     statistics:  'Раздел «Статистика» разблокирован',
-    campaigns:   'Раздел «Кампании ROI» разблокирован',
     journal:     'Раздел «Журнал» разблокирован',
   }
 
   const handleNavClick = (id: NavId) => {
-    if (id === 'milestones' && milestoneStatus) {
-      seenMilestonesRef.current = { ...milestoneStatus }
-    }
     if (!visitedTabsRef.current.has(id) && UNLOCK_TOAST_LABELS[id]) {
       visitedTabsRef.current.add(id)
       if (unlockToastTimer.current) clearTimeout(unlockToastTimer.current)
@@ -637,7 +633,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
         activeServiceCount={activeCount}
         savedBalance={savedBalance ?? 0}
         pendingEventCount={pendingEventCount}
-        milestoneBadge={milestoneBadge > 0}
         promoCodesCount={promoCodesRevealed?.length ?? 0}
         highlightNav={highlightNav}
         onNav={handleNavClick}
@@ -665,10 +660,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
           dayBlockedMsg={dayBlockedMsg}
           showPurchaseModal={showPurchaseModal}
           setShowPurchaseModal={setShowPurchaseModal}
-          showCampaignModal={showCampaignModal}
-          setShowCampaignModal={setShowCampaignModal}
-          showUpgradesModal={showUpgradesModal}
-          setShowUpgradesModal={setShowUpgradesModal}
           showCashRegisterModal={showCashRegisterModal}
           setShowCashRegisterModal={setShowCashRegisterModal}
           handleEventOption={handleEventOption}
@@ -683,28 +674,14 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       )}
 
       {activeView === 'warehouse' && <WarehouseView />}
-      {activeView === 'marketing' && <MarketingView />}
       {activeView === 'finance' && <FinanceView />}
-      {activeView === 'reputation' && <ReputationView />}
       {activeView === 'operations' && (
         <OperationsView
           onShowHireModal={() => setShowHireEmployeeModal(true)}
-          onShowSupplierModal={() => setShowSupplierModal(true)}
-          onShowUpgradesModal={() => setShowUpgradesModal(true)}
-          onOpenOwnerInvestments={() => setShowOwnerInvestmentsModal(true)}
         />
       )}
+      {activeView === 'development' && <DevelopmentView />}
       {activeView === 'statistics' && <StatisticsView />}
-      {activeView === 'campaigns' && (
-        <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-          <CampaignROIView />
-        </div>
-      )}
-      {activeView === 'milestones' && (
-        <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-          <MilestoneView />
-        </div>
-      )}
       {activeView === 'journal' && <DecisionLogView />}
 
         </div>{/* end content area */}
@@ -716,7 +693,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       <AchievementsModal isOpen={showAchievementsModal} onClose={() => setShowAchievementsModal(false)} />
       <CashRegisterModal isOpen={showCashRegisterModal} onClose={() => setShowCashRegisterModal(false)} />
       <HireEmployeeModal isOpen={showHireEmployeeModal} onClose={() => setShowHireEmployeeModal(false)} />
-      <SupplierModal isOpen={showSupplierModal} onClose={() => setShowSupplierModal(false)} />
       <OwnerInvestmentsModal isOpen={showOwnerInvestmentsModal} onClose={() => setShowOwnerInvestmentsModal(false)} />
       <PromoCodeModal />
       <PromoWalletModal isOpen={showPromoWalletModal} onClose={() => setShowPromoWalletModal(false)} />

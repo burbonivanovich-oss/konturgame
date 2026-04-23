@@ -23,10 +23,11 @@ describe('MainScreen Integration', () => {
 
   it('should update services', () => {
     const state = useGameStore.getState()
-    // Bank is unlocked at onboarding stage 0 (default)
-    const initialBankActive = state.services.bank.isActive
+    state.advanceOnboardingStage() // Stage 1 unlocks bank
+    const unlockedState = useGameStore.getState()
+    const initialBankActive = unlockedState.services.bank.isActive
 
-    state.toggleService('bank')
+    unlockedState.toggleService('bank')
     const newState = useGameStore.getState()
     expect(newState.services.bank.isActive).not.toBe(initialBankActive)
   })
