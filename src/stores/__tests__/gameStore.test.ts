@@ -147,50 +147,6 @@ describe('GameStore', () => {
     })
   })
 
-  describe('Stock Management', () => {
-    it('should add stock batch', () => {
-      const { addStockBatch } = useGameStore.getState()
-      const batch = {
-        id: 'batch1',
-        quantity: 100,
-        costPerUnit: 5,
-        dayReceived: 1,
-        expirationDays: 10,
-      }
-      addStockBatch(batch)
-      expect(useGameStore.getState().stockBatches).toHaveLength(1)
-      expect(useGameStore.getState().stockBatches[0]).toEqual(batch)
-    })
-
-    it('should remove stock batch', () => {
-      const { addStockBatch, removeStockBatch } = useGameStore.getState()
-      const batch = {
-        id: 'batch1',
-        quantity: 100,
-        costPerUnit: 5,
-        dayReceived: 1,
-        expirationDays: 10,
-      }
-      addStockBatch(batch)
-      removeStockBatch('batch1')
-      expect(useGameStore.getState().stockBatches).toHaveLength(0)
-    })
-
-    it('should update stock batch quantity', () => {
-      const { addStockBatch, updateStockBatch } = useGameStore.getState()
-      const batch = {
-        id: 'batch1',
-        quantity: 100,
-        costPerUnit: 5,
-        dayReceived: 1,
-        expirationDays: 10,
-      }
-      addStockBatch(batch)
-      updateStockBatch('batch1', 50)
-      expect(useGameStore.getState().stockBatches[0].quantity).toBe(50)
-    })
-  })
-
   describe('Ad Campaigns', () => {
     it('should add ad campaign', () => {
       const { addAdCampaign } = useGameStore.getState()

@@ -14,7 +14,7 @@ import {
   calculateMonthlyExpenses,
   getLoyaltyUpgradesBonus,
 } from './economyEngine'
-import { consumeStock, checkExpiry, getTotalStock } from './stockManager'
+import { getTotalStock } from './stockManager'
 import { generateEvent } from './eventGenerator'
 import {
   checkBankruptcy,
@@ -29,7 +29,6 @@ import { checkOnboardingBlocked, advanceOnboardingIfNeeded } from './onboardingE
 import { calculatePainLosses, getBankPaymentRatio } from './painEngine'
 import { getTotalThroughput, calculateRegisterPenalty, checkRegisterBreakdown } from './cashRegisterEngine'
 import { calculateCategoryRevenue } from './assortmentEngine'
-import { initializeSuppliers, unlockSuppliersIfNeeded, getQualityModifier, getPriceModifier, calculateStockCost } from './supplierManager'
 import { initializeEmployees, getWeeklySalaryCost, getWeeklyEnergyCost, getEmployeeCapacityBonus, getUpgradeEnergyBonus } from './employeeManager'
 import { initializeQuality, updateQualityWeekly, getQualityReputationBonus, getQualityLoyaltyBonus, getQualityPricePremium } from './qualityManager'
 import { getQualityClientModifier, getBrandEffect } from './qualityModifier'
@@ -45,12 +44,6 @@ export function checkWeekBlocked(state: GameState): { blocked: boolean; reason?:
     return { blocked: true, reason: onboardingCheck.reason }
   }
 
-  const config = BUSINESS_CONFIGS[state.businessType]
-  // Only block for empty stock if not using assortment system
-  if (config.hasStock && !config.usesAssortment && getTotalStock(state) === 0) {
-    return { blocked: true, reason: 'Склад пуст. Сделайте закупку.' }
-  }
-
   return { blocked: false }
 }
 
@@ -63,10 +56,6 @@ export function processWeek(state: GameState): DayResult {
   const config = BUSINESS_CONFIGS[state.businessType]
 
   // Initialize new systems if not present (for save compatibility)
-  if (!state.suppliers || state.suppliers.length === 0) {
-    state.suppliers = initializeSuppliers()
-    state.activeSupplierId = state.suppliers.find(s => s.isActive)?.id || null
-  }
   if (!state.employees) {
     state.employees = initializeEmployees()
   }
@@ -85,9 +74,6 @@ export function processWeek(state: GameState): DayResult {
 
   // Initialize NPC system
   ensureNPCsInitialized(state)
-
-  // Unlock suppliers based on progression
-  unlockSuppliersIfNeeded(state)
 
   // Accumulate results for the week
   let weekRevenue = 0
@@ -115,9 +101,7 @@ export function processWeek(state: GameState): DayResult {
     // Quality price premium
     const qualityPricePremium = getQualityPricePremium(state)
 
-    // 1. Check expiry — skipped for assortment businesses (FIFO stock is never consumed there,
-    //    so expiry would silently drain money with no offsetting revenue benefit).
-    const { loss: expiredLoss } = config.usesAssortment ? { loss: 0 } : checkExpiry(state)
+    const expiredLoss = 0
 
     // 2. Competitor event - now cyclic every 5-8 weeks (moved outside loop)
 
@@ -140,11 +124,7 @@ export function processWeek(state: GameState): DayResult {
       capacity = Math.round(capacity * (1 + employeeCapacityBonus * 0.1))
     }
     
-    let served = Math.min(totalClients, capacity)
-    if (config.hasStock && !config.usesAssortment) {
-      const availableStock = getTotalStock(state)
-      served = Math.min(served, availableStock)
-    }
+    const served = Math.min(totalClients, capacity)
     const missed = totalClients - served
 
     // 4. Bank payment ratio
@@ -198,13 +178,8 @@ export function processWeek(state: GameState): DayResult {
 
     const dayRevenue = Math.max(0, Math.round((dailyRevenue - registerPenalty - breakdownPenalty) * energyModifier))
 
-    // 8. Stock and costs with supplier modifier
-    let purchaseCost = 0
-    if (config.hasStock && !config.usesAssortment && served > 0) {
-      const result = consumeStock(state, served)
-      purchaseCost = calculateStockCost(result.cost, state)
-    }
-    purchaseCost += totalDailyCategoryCost
+    // 8. Purchase costs (via assortment daily costs)
+    const purchaseCost = totalDailyCategoryCost
 
     const totalCategoryFines = Object.values(categoryFines).reduce((s, v) => s + v, 0)
 

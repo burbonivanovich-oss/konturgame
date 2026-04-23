@@ -4,7 +4,6 @@ import { getNPCDefinition } from '../constants/npcs'
 import ResponsiveLayout from './ResponsiveLayout'
 import MobileMainScreen from './MobileMainScreen'
 import { OnboardingPanel } from './OnboardingPanel'
-import PurchaseModal from './modals/PurchaseModal'
 import CampaignModal from './modals/CampaignModal'
 import UpgradesModal from './modals/UpgradesModal'
 import HelpModal from './modals/HelpModal'
@@ -18,7 +17,6 @@ import PromoWalletModal from './modals/PromoWalletModal'
 import BundleModal from './modals/BundleModal'
 import MicroEventModal from './modals/MicroEventModal'
 import HireEmployeeModal from './modals/HireEmployeeModal'
-import SupplierModal from './modals/SupplierModal'
 import OwnerInvestmentsModal from './modals/OwnerInvestmentsModal'
 import { WeekSummaryOverlay } from './WeekSummaryOverlay'
 import { WeekResultsOverlay } from './WeekResultsOverlay'
@@ -57,7 +55,6 @@ type ActiveView = NavId
 
 function DashboardView({
   onNextDay, dayBlockedMsg,
-  showPurchaseModal, setShowPurchaseModal,
   showCampaignModal, setShowCampaignModal,
   showUpgradesModal, setShowUpgradesModal,
   showCashRegisterModal, setShowCashRegisterModal,
@@ -65,8 +62,6 @@ function DashboardView({
 }: {
   onNextDay: () => void
   dayBlockedMsg: string | null
-  showPurchaseModal: boolean
-  setShowPurchaseModal: (v: boolean) => void
   showCampaignModal: boolean
   setShowCampaignModal: (v: boolean) => void
   showUpgradesModal: boolean
@@ -79,7 +74,7 @@ function DashboardView({
   const {
     currentWeek, balance, reputation, loyalty, services,
     pendingEvent, pendingEventsQueue, lastDayResult,
-    entrepreneurEnergy, npcs, stockBatches, businessType,
+    entrepreneurEnergy, npcs, businessType,
   } = useGameStore()
 
   const bizConfig = BUSINESS_CONFIGS[businessType]
@@ -89,11 +84,6 @@ function DashboardView({
   const dailyProfit = lastDayResult?.netProfit ?? 0
   const dailyClients = lastDayResult?.clients ?? 0
   const isDayBlocked = !!pendingEvent
-
-  const totalStock = (stockBatches ?? []).reduce((s: number, b: { quantity: number }) => s + b.quantity, 0)
-  const stockMaxUnits = bizConfig.baseClients * 7  // 1 week of demand as 100% reference
-  const stockPct = stockMaxUnits > 0 ? Math.min(100, Math.round((totalStock / stockMaxUnits) * 100)) : 0
-  const stockLow = bizConfig.hasStock && !bizConfig.usesAssortment && totalStock < bizConfig.baseClients * 2
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: K.paper }}>
@@ -202,7 +192,6 @@ function DashboardView({
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {[
-                ...(bizConfig.hasStock && !bizConfig.usesAssortment ? [{ label: 'Пополнить склад', done: !stockLow, urgent: stockLow }] : []),
                 { label: 'Разрешить событие', done: !pendingEvent, urgent: !!pendingEvent },
                 { label: 'Нажать «Следующий день»', done: false, urgent: false },
               ].map(task => (
@@ -383,19 +372,6 @@ function DashboardView({
             </div>
           </div>
 
-          {/* Склад — только для бизнесов с ручным FIFO-управлением (не assortment) */}
-          {bizConfig.hasStock && !bizConfig.usesAssortment && (
-            <div style={{ background: K.white, border: `1px solid ${stockLow ? K.orange : K.line}`, borderRadius: 14, padding: '14px 16px' }}>
-              <div style={{ fontSize: 10, color: K.muted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Склад</div>
-              <div style={{ fontSize: 32, fontWeight: 800, color: stockLow ? K.orange : K.ink, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{stockPct}%</div>
-              <div style={{ marginTop: 8, height: 4, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${stockPct}%`, background: stockLow ? K.orange : K.mint, borderRadius: 999 }} />
-              </div>
-              {stockLow && (
-                <div style={{ marginTop: 6, fontSize: 11, color: K.orange, fontWeight: 700 }}>Пополнить →</div>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
@@ -404,18 +380,6 @@ function DashboardView({
         borderTop: `1px solid ${K.line}`, background: K.white,
         padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 10,
       }}>
-        {bizConfig.hasStock && !bizConfig.usesAssortment && (
-          <button
-            onClick={() => setShowPurchaseModal(true)}
-            style={{
-              padding: '9px 18px', borderRadius: 10, border: `1px solid ${K.line}`,
-              background: K.bone, color: K.ink, fontSize: 13, fontWeight: 600,
-              cursor: 'pointer', fontFamily: 'inherit',
-            }}
-          >
-            Закупить
-          </button>
-        )}
         <button
           onClick={() => setShowCampaignModal(true)}
           style={{
@@ -464,7 +428,6 @@ function DashboardView({
         </button>
       </div>
 
-      <PurchaseModal isOpen={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} />
       <CampaignModal isOpen={showCampaignModal} onClose={() => setShowCampaignModal(false)} />
       <UpgradesModal isOpen={showUpgradesModal} onClose={() => setShowUpgradesModal(false)} />
     </div>
@@ -473,7 +436,6 @@ function DashboardView({
 
 function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const [activeView, setActiveView] = useState<ActiveView>('dashboard')
-  const [showPurchaseModal, setShowPurchaseModal] = useState(false)
   const [showCampaignModal, setShowCampaignModal] = useState(false)
   const [showUpgradesModal, setShowUpgradesModal] = useState(false)
   const [showHelpModal, setShowHelpModal] = useState(false)
@@ -482,7 +444,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const [showCashRegisterModal, setShowCashRegisterModal] = useState(false)
   const [showPromoWalletModal, setShowPromoWalletModal] = useState(false)
   const [showHireEmployeeModal, setShowHireEmployeeModal] = useState(false)
-  const [showSupplierModal, setShowSupplierModal] = useState(false)
   const [showOwnerInvestmentsModal, setShowOwnerInvestmentsModal] = useState(false)
   const [dayBlockedMsg, setDayBlockedMsg] = useState<string | null>(null)
   const [savingsToast, setSavingsToast] = useState<number | null>(null)
@@ -664,8 +625,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
         <DashboardView
           onNextDay={handleNextDay}
           dayBlockedMsg={dayBlockedMsg}
-          showPurchaseModal={showPurchaseModal}
-          setShowPurchaseModal={setShowPurchaseModal}
           showCampaignModal={showCampaignModal}
           setShowCampaignModal={setShowCampaignModal}
           showUpgradesModal={showUpgradesModal}
@@ -690,7 +649,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       {activeView === 'operations' && (
         <OperationsView
           onShowHireModal={() => setShowHireEmployeeModal(true)}
-          onShowSupplierModal={() => setShowSupplierModal(true)}
           onShowUpgradesModal={() => setShowUpgradesModal(true)}
           onOpenOwnerInvestments={() => setShowOwnerInvestmentsModal(true)}
         />
@@ -717,7 +675,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       <AchievementsModal isOpen={showAchievementsModal} onClose={() => setShowAchievementsModal(false)} />
       <CashRegisterModal isOpen={showCashRegisterModal} onClose={() => setShowCashRegisterModal(false)} />
       <HireEmployeeModal isOpen={showHireEmployeeModal} onClose={() => setShowHireEmployeeModal(false)} />
-      <SupplierModal isOpen={showSupplierModal} onClose={() => setShowSupplierModal(false)} />
       <OwnerInvestmentsModal isOpen={showOwnerInvestmentsModal} onClose={() => setShowOwnerInvestmentsModal(false)} />
       <PromoCodeModal />
       <PromoWalletModal isOpen={showPromoWalletModal} onClose={() => setShowPromoWalletModal(false)} />

@@ -13,16 +13,15 @@ const SERVICE_NAMES: Record<string, string> = {
 
 interface OperationsViewProps {
   onShowHireModal?: () => void
-  onShowSupplierModal?: () => void
   onShowUpgradesModal?: () => void
   onOpenOwnerInvestments?: () => void
 }
 
-export default function OperationsView({ onShowHireModal, onShowSupplierModal, onShowUpgradesModal, onOpenOwnerInvestments }: OperationsViewProps) {
+export default function OperationsView({ onShowHireModal, onShowUpgradesModal, onOpenOwnerInvestments }: OperationsViewProps) {
   const {
     businessType, cashRegisters, enabledCategories, services,
-    buyCashRegister, toggleCategory, employees, suppliers, qualityLevel,
-    fireEmployee, setActiveSupplierId, activeSupplierId, balance,
+    buyCashRegister, toggleCategory, employees, qualityLevel,
+    fireEmployee, balance,
     entrepreneurEnergy, purchasedUpgrades, purchasedOwnerItems, ownerSubscriptions,
   } = useGameStore()
 
@@ -436,65 +435,6 @@ export default function OperationsView({ onShowHireModal, onShowSupplierModal, o
         </div>
       </div>
 
-      {/* Suppliers */}
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>ПОСТАВЩИК</div>
-          {suppliers.length > 0 && (
-            <button
-              onClick={onShowSupplierModal}
-              style={{
-                fontSize: 11, fontWeight: 700, padding: '6px 12px',
-                borderRadius: 8, background: K.bone, border: `1px solid ${K.line}`,
-                color: K.ink, cursor: 'pointer', transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-            >
-              Изменить
-            </button>
-          )}
-        </div>
-        {suppliers.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {suppliers.map((supplier) => (
-              <div
-                key={supplier.id}
-                onClick={() => setActiveSupplierId(activeSupplierId === supplier.id ? null : supplier.id)}
-                style={{
-                  borderRadius: 12, padding: 14,
-                  border: activeSupplierId === supplier.id ? `2px solid ${K.mint}` : `1px solid ${K.line}`,
-                  background: activeSupplierId === supplier.id ? K.mintSoft : K.white,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{supplier.name}</div>
-                    <div style={{ display: 'flex', gap: 14, fontSize: 10, color: K.muted }}>
-                      <span>Качество: <span style={{ fontWeight: 700, color: supplier.qualityModifier > 0 ? K.good : K.warn }}>
-                        {supplier.qualityModifier > 0 ? '+' : ''}{(supplier.qualityModifier * 100).toFixed(0)}%
-                      </span></span>
-                      <span>Цена: <span style={{ fontWeight: 700, color: supplier.priceModifier < 0 ? K.good : K.warn }}>
-                        {supplier.priceModifier > 0 ? '+' : ''}{(supplier.priceModifier * 100).toFixed(0)}%
-                      </span></span>
-                      <span>Надёжность: <span style={{ fontWeight: 700 }}>{(supplier.reliability * 100).toFixed(0)}%</span></span>
-                    </div>
-                  </div>
-                  {activeSupplierId === supplier.id && (
-                    <span style={{ fontSize: 12, fontWeight: 800, color: K.mint, marginLeft: 12 }}>✓</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div style={{ padding: 20, textAlign: 'center', color: K.muted }}>
-            Нет доступных поставщиков
-          </div>
-        )}
-      </div>
 
       {/* Upgrades */}
       <div>

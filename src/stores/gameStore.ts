@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type {
   GameState, BusinessType, ServiceType, Service, DayResult, Event,
-  AdCampaign, StockBatch, CashRegisterType, CashRegister, OnboardingStage,
+  AdCampaign, CashRegisterType, CashRegister, OnboardingStage,
   CampaignROI, MilestoneStatus, WeekPhase, NPC, PlayerBackstory, NpcMemoryEntry,
   DecisionLogEntry,
 } from '../types/game'
@@ -206,11 +206,6 @@ interface GameStoreActions {
   activateService: (serviceId: ServiceType) => void
   deactivateService: (serviceId: ServiceType) => void
 
-  // Stock management
-  addStockBatch: (batch: StockBatch) => void
-  removeStockBatch: (batchId: string) => void
-  updateStockBatch: (batchId: string, quantity: number) => void
-
   // Campaigns
   addAdCampaign: (campaign: AdCampaign) => void
   removeAdCampaign: (campaignId: string) => void
@@ -261,8 +256,6 @@ interface GameStoreActions {
   hasAchievement: (achievementId: string) => boolean
   getActiveAdCampaign: (campaignId: string) => AdCampaign | undefined
   getTotalAdCampaignsCost: () => number
-  getTotalStockValue: () => number
-  getTotalStockQuantity: () => number
 
   // Rollback system
   saveSnapshot: () => void
@@ -293,9 +286,6 @@ interface GameStoreActions {
   // Employees
   hireEmployee: (position: any, name: string, salary: number) => void
   fireEmployee: (employeeId: string) => void
-
-  // Suppliers
-  setActiveSupplierId: (supplierId: string | null) => void
 
   // Quality level
   adjustQualityLevel: (delta: number) => void
@@ -586,30 +576,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }))
     },
 
-    // Stock management
-    addStockBatch: (batch) => {
-      set((state) => ({
-        stockBatches: [...state.stockBatches, batch],
-        lastUpdated: Date.now(),
-      }))
-    },
-
-    removeStockBatch: (batchId) => {
-      set((state) => ({
-        stockBatches: state.stockBatches.filter((b) => b.id !== batchId),
-        lastUpdated: Date.now(),
-      }))
-    },
-
-    updateStockBatch: (batchId, quantity) => {
-      set((state) => ({
-        stockBatches: state.stockBatches.map((b) =>
-          b.id === batchId ? { ...b, quantity } : b
-        ),
-        lastUpdated: Date.now(),
-      }))
-    },
-
     // Campaigns
     addAdCampaign: (campaign) => {
       set((state) => ({
@@ -855,16 +821,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return state.activeAdCampaigns.reduce((sum: number, campaign: AdCampaign) => sum + campaign.cost, 0)
     },
 
-    getTotalStockValue: () => {
-      const state = get()
-      return state.stockBatches.reduce((sum: number, batch: StockBatch) => sum + batch.quantity * batch.costPerUnit, 0)
-    },
-
-    getTotalStockQuantity: () => {
-      const state = get()
-      return state.stockBatches.reduce((sum: number, batch: StockBatch) => sum + batch.quantity, 0)
-    },
-
     // Rollback system
     saveSnapshot: () => {
       const currentState = get()
@@ -1055,14 +1011,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
         employees: state.employees.filter(e => e.id !== employeeId),
         lastUpdated: Date.now(),
       }))
-    },
-
-    // Suppliers
-    setActiveSupplierId: (supplierId: string | null) => {
-      set({
-        activeSupplierId: supplierId,
-        lastUpdated: Date.now(),
-      })
     },
 
     // Quality level
