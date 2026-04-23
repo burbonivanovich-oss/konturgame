@@ -1,7 +1,28 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState, useRef } from 'react'
 import { useGameStore } from '../../stores/gameStore'
 import { SYNERGIES_CONFIG } from '../../constants/business'
+import { ONBOARDING_STAGES } from '../../constants/onboarding'
 import { K } from './tokens'
+
+const ACTIVATION_TOAST: Record<string, { headline: string; detail: string }> = {
+  market:  { headline: 'Контур.Маркет подключён!',  detail: '+20% клиентов · +15% к среднему чеку · списания -20%' },
+  bank:    { headline: 'Контур.Банк подключён!',    detail: 'Кредиты по 5% · операционная нагрузка -30%' },
+  ofd:     { headline: 'Контур.ОФД подключён!',     detail: 'Онлайн-касса в порядке — штрафы ФНС не страшны' },
+  diadoc:  { headline: 'Контур.Диадок подключён!',  detail: '+2% клиентов · защита от штрафов до −30 000 ₽' },
+  fokus:   { headline: 'Контур.Фокус подключён!',   detail: '+1 репутация/день · защита от мошенников до −55 000 ₽' },
+  elba:    { headline: 'Контур.Эльба подключена!',  detail: '+1 лояльность/день · бухгалтерия автоматически' },
+  extern:  { headline: 'Контур.Экстерн подключён!', detail: 'Налоговая нагрузка -2% — отчёты сдаются онлайн' },
+}
+
+const ONBOARDING_ACTION_SERVICE: Record<string, string> = {
+  activate_bank:    'bank',
+  activate_ofd:     'ofd',
+  activate_market:  'market',
+  activate_diadoc:  'diadoc',
+  activate_fokus:   'fokus',
+  activate_elba:    'elba',
+  activate_extern:  'extern',
+}
 
 const SERVICE_COLORS: Record<string, string> = {
   market: K.orange,
@@ -14,7 +35,40 @@ const SERVICE_COLORS: Record<string, string> = {
 }
 
 export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
-  const { services, savedBalance, toggleService, balance } = useGameStore()
+  const {
+    services, savedBalance, toggleService, balance,
+    onboardingStage, onboardingStepIndex, onboardingCompleted,
+  } = useGameStore()
+
+  const [toast, setToast] = useState<{ headline: string; detail: string } | null>(null)
+  const [justActivated, setJustActivated] = useState<string | null>(null)
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Which service does the current onboarding step want activated?
+  const onboardingTargetService = (() => {
+    if (onboardingCompleted) return null
+    const stage = ONBOARDING_STAGES[onboardingStage as 0 | 1 | 2 | 3 | 4]
+    if (!stage) return null
+    const step = stage.steps[onboardingStepIndex ?? 0]
+    if (!step?.requiresAction) return null
+    return ONBOARDING_ACTION_SERVICE[step.requiresAction] ?? null
+  })()
+
+  const handleToggle = (serviceId: string, currentlyActive: boolean) => {
+    toggleService(serviceId as any)
+    if (!currentlyActive) {
+      const msg = ACTIVATION_TOAST[serviceId]
+      if (msg) {
+        if (toastTimer.current) clearTimeout(toastTimer.current)
+        setToast(msg)
+        setJustActivated(serviceId)
+        toastTimer.current = setTimeout(() => {
+          setToast(null)
+          setJustActivated(null)
+        }, 4000)
+      }
+    }
+  }
 
   const activeSynergies = useMemo(() => {
     return SYNERGIES_CONFIG.filter((syn: any) =>
@@ -184,23 +238,46 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
           gridAutoRows: '1fr',
           gap: 10,
         }}>
-          {servicesList.map(s => (
+          {servicesList.map(s => {
+            const isOnboardingTarget = !s.isActive && s.id === onboardingTargetService
+            const wasJustActivated = s.id === justActivated
+            return (
             <div
               key={s.id}
               style={{
                 background: s.isActive ? s.color : '#fff',
                 color: s.isActive ? (s.color === K.orange || s.color === K.mint ? K.ink : '#fff') : K.ink,
-                border: s.isActive ? 'none' : `1.5px solid ${K.line}`,
+                border: isOnboardingTarget
+                  ? `2px solid ${K.orange}`
+                  : wasJustActivated
+                  ? `2px solid ${K.mint}`
+                  : s.isActive ? 'none' : `1.5px solid ${K.line}`,
+                boxShadow: isOnboardingTarget
+                  ? `0 0 0 4px rgba(255,107,44,0.18)`
+                  : wasJustActivated
+                  ? `0 0 0 4px rgba(0,200,150,0.2)`
+                  : 'none',
                 borderRadius: 18, padding: 18,
                 display: 'flex', flexDirection: 'column', gap: 10,
                 position: 'relative',
                 cursor: 'pointer',
-                transition: 'opacity 0.2s',
+                transition: 'opacity 0.2s, box-shadow 0.3s',
               }}
               onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
               onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              {isOnboardingTarget && (
+                <div style={{
+                  position: 'absolute', top: -1, left: 16,
+                  background: K.orange, color: K.white,
+                  fontSize: 9, fontWeight: 800, letterSpacing: '0.06em',
+                  padding: '3px 8px', borderRadius: '0 0 8px 8px',
+                  textTransform: 'uppercase',
+                }}>
+                  → Следующий шаг
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: isOnboardingTarget ? 12 : 0 }}>
                 <div>
                   <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.02em' }}>{s.name}</div>
                   <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.75, marginTop: 2, lineHeight: 1.3 }}>
@@ -230,7 +307,7 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
                   </div>
                 </div>
                 <button
-                  onClick={() => toggleService(s.id)}
+                  onClick={() => handleToggle(s.id, s.isActive)}
                   disabled={!s.isActive && balance < s.annualPrice}
                   style={{
                     border: 'none', cursor: !s.isActive && balance < s.annualPrice ? 'not-allowed' : 'pointer',
@@ -255,9 +332,30 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
                 </button>
               </div>
             </div>
-          ))}
+          )})}
         </div>
       </div>
+
+      {/* Activation toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 300,
+          background: K.ink, color: K.white,
+          padding: '16px 24px', borderRadius: 16,
+          display: 'flex', flexDirection: 'column', gap: 4,
+          boxShadow: `0 8px 32px rgba(0,0,0,0.18)`,
+          minWidth: 280, maxWidth: 420,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 16 }}>✅</span>
+            <span style={{ fontSize: 14, fontWeight: 700 }}>{toast.headline}</span>
+          </div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', paddingLeft: 24 }}>
+            {toast.detail}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
