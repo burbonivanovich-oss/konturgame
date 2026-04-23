@@ -168,21 +168,22 @@ function DashboardView({
           </div>
 
           {/* Financial health tiles */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {[
-              { label: 'Доход', value: `${dailyRevenue.toLocaleString('ru-RU')} ₽`, color: K.mint },
+              { label: 'Доход', value: `${dailyRevenue.toLocaleString('ru-RU')} ₽`, color: K.good },
               { label: 'Расходы', value: `${dailyExpenses.toLocaleString('ru-RU')} ₽`, color: K.orange },
               { label: 'Прибыль', value: `${dailyProfit > 0 ? '+' : ''}${dailyProfit.toLocaleString('ru-RU')} ₽`, color: dailyProfit >= 0 ? K.good : K.bad },
               { label: 'Клиенты', value: String(dailyClients), color: K.violet },
             ].map(t => (
               <div key={t.label} style={{
                 background: K.white, border: `1px solid ${K.line}`,
-                borderRadius: 10, padding: '10px 12px',
+                borderRadius: 12, padding: '12px 16px',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               }}>
                 <div style={{ fontSize: 10, color: K.muted, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 800 }}>
                   {t.label}
                 </div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: t.color, marginTop: 2, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.01em' }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: t.color, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
                   {t.value}
                 </div>
               </div>
@@ -359,44 +360,38 @@ function DashboardView({
           padding: 20, display: 'flex', flexDirection: 'column', gap: 12,
           overflowY: 'auto',
         }}>
-          <div style={{ fontSize: 11, color: K.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            Показатели
+          <div style={{ fontSize: 11, color: K.muted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            ПОКАЗАТЕЛИ
           </div>
 
           {/* Reputation */}
-          <div style={{ background: K.white, border: `1px solid ${K.line}`, borderRadius: 12, padding: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 12, color: K.muted, fontWeight: 600 }}>Репутация</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: K.violet }}>{reputation}</span>
-            </div>
-            <div style={{ height: 5, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
+          <div style={{ background: K.white, border: `1px solid ${K.line}`, borderRadius: 14, padding: '14px 16px' }}>
+            <div style={{ fontSize: 10, color: K.muted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Репутация</div>
+            <div style={{ fontSize: 32, fontWeight: 800, color: K.violet, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{reputation}</div>
+            <div style={{ marginTop: 8, height: 4, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
               <div style={{ height: '100%', width: `${Math.min(reputation, 100)}%`, background: K.violet, borderRadius: 999 }} />
             </div>
           </div>
 
           {/* Loyalty */}
-          <div style={{ background: K.white, border: `1px solid ${K.line}`, borderRadius: 12, padding: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 12, color: K.muted, fontWeight: 600 }}>Лояльность</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: K.mint }}>{loyalty}%</span>
-            </div>
-            <div style={{ height: 5, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
+          <div style={{ background: K.white, border: `1px solid ${K.line}`, borderRadius: 14, padding: '14px 16px' }}>
+            <div style={{ fontSize: 10, color: K.muted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Лояльность</div>
+            <div style={{ fontSize: 32, fontWeight: 800, color: K.mint, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{loyalty}%</div>
+            <div style={{ marginTop: 8, height: 4, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
               <div style={{ height: '100%', width: `${Math.min(loyalty, 100)}%`, background: K.mint, borderRadius: 999 }} />
             </div>
           </div>
 
           {/* Склад — только для hasStock бизнесов */}
           {bizConfig.hasStock && (
-            <div style={{ background: K.white, border: `1px solid ${stockLow ? K.orange : K.line}`, borderRadius: 12, padding: 14 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ fontSize: 12, color: K.muted, fontWeight: 600 }}>Склад</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: stockLow ? K.orange : K.ink }}>{stockPct}%</span>
-              </div>
-              <div style={{ height: 5, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
+            <div style={{ background: K.white, border: `1px solid ${stockLow ? K.orange : K.line}`, borderRadius: 14, padding: '14px 16px' }}>
+              <div style={{ fontSize: 10, color: K.muted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Склад</div>
+              <div style={{ fontSize: 32, fontWeight: 800, color: stockLow ? K.orange : K.ink, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{stockPct}%</div>
+              <div style={{ marginTop: 8, height: 4, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: `${stockPct}%`, background: stockLow ? K.orange : K.mint, borderRadius: 999 }} />
               </div>
               {stockLow && (
-                <div style={{ marginTop: 6, fontSize: 11, color: K.orange, fontWeight: 600 }}>Пополнить →</div>
+                <div style={{ marginTop: 6, fontSize: 11, color: K.orange, fontWeight: 700 }}>Пополнить →</div>
               )}
             </div>
           )}
