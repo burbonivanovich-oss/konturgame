@@ -47,6 +47,33 @@ export const NPC_DEFINITIONS: NPCDefinition[] = [
     personality: 'Открыла бизнес рядом специально. Умная и агрессивная, но умеет договариваться.',
     startRelationship: 20,
   },
+  {
+    id: 'marina',
+    name: 'Марина Воронова',
+    role: 'consultant',
+    portrait: '👩‍💻',
+    shortRole: 'Маркетолог-консультант',
+    personality: 'Фрилансер с 6-летним опытом в digital-рекламе. Обаятельная, говорит убедительно. Результаты бывают разными — зависит от того, насколько глубоко она поймёт ваш бизнес.',
+    startRelationship: 45,
+  },
+  {
+    id: 'viktor',
+    name: 'Виктор Семёнов',
+    role: 'banker',
+    portrait: '🏦',
+    shortRole: 'Менеджер банка',
+    personality: 'Менеджер местного отделения банка. Вежливый и обстоятельный. Умеет находить решения — но всегда в интересах банка прежде всего.',
+    startRelationship: 50,
+  },
+  {
+    id: 'gleb',
+    name: 'Глеб Котов',
+    role: 'blogger',
+    portrait: '📱',
+    shortRole: 'Блогер',
+    personality: '23 года, 18 тысяч подписчиков в соцсетях. Пишет про жизнь района. Ищет контент — честный или скандальный, ему всё равно.',
+    startRelationship: 30,
+  },
 ]
 
 export function createInitialNPCs(): NPC[] {

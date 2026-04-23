@@ -337,9 +337,251 @@ export const CHAIN_EVENTS: EventTemplate[] = [
       },
     ],
   },
+
+  // ── CHAIN 6: Марина и рекламная кампания (marina_promo) ────────────────────
+  // Trigger: week 5–8. Маркетолог предлагает продвижение.
+  {
+    id: 'marina_promo_1',
+    title: 'Марина Воронова с предложением',
+    description: 'Женщина лет тридцати, с ноутбуком и уверенной улыбкой, представляется: "Марина Воронова, маркетинг и digital. Я изучила ваш бизнес — есть потенциал. За 20 000 ₽ в месяц я запущу рекламу в соцсетях, сделаю контент и приведу новых клиентов. Два месяца — и вы увидите результат."',
+    trigger: { dayMin: 35, dayMax: 56, randomChance: 1.0, oneTime: true, chainId: 'marina_promo', chainStep: 1 },
+    npcId: 'marina',
+    decisionDeadlineWeeks: 1,
+    options: [
+      {
+        id: 'hire',
+        text: 'Нанять Марину (−20 000 ₽)',
+        consequences: { balanceDelta: -20000 },
+        npcRelationshipDelta: 20,
+        chainFollowUpId: 'marina_promo_2a',
+      },
+      {
+        id: 'hire_with_market',
+        text: 'Нанять + дать доступ к аналитике Контур.Маркета',
+        consequences: { balanceDelta: -20000 },
+        npcRelationshipDelta: 25,
+        chainFollowUpId: 'marina_promo_2b',
+        requiredService: 'market',
+        isContourOption: true,
+      },
+      {
+        id: 'refuse',
+        text: 'Отказать — обойдёмся своими силами',
+        consequences: {},
+        npcRelationshipDelta: -5,
+      },
+    ],
+  },
+
+  {
+    id: 'marina_promo_2a',
+    title: 'Кампания Марины — результаты',
+    description: 'Марина прислала отчёт: охваты выросли, несколько новых клиентов пришли по рекламе. "Без глубокой аналитики по вашей аудитории сложно было целиться точно, но в целом — плюс." Она права: эффект есть, но мог быть больше.',
+    trigger: { dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true, chainId: 'marina_promo', chainStep: 2 },
+    npcId: 'marina',
+    options: [
+      {
+        id: 'accept',
+        text: 'Принять результаты и продолжить работу',
+        consequences: { clientModifier: 0.08, clientModifierDays: 30, reputationDelta: 2 },
+        npcRelationshipDelta: 5,
+      },
+    ],
+  },
+
+  {
+    id: 'marina_promo_2b',
+    title: 'Кампания Марины — отличные результаты',
+    description: 'Марина сияет: "С данными по аудитории из Контур.Маркета я смогла точно настроить таргетинг. Конверсия в три раза выше, чем обычно." Новые лица в очереди, несколько отзывов в соцсетях — люди говорят, что нашли вас через рекламу.',
+    trigger: { dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true, chainId: 'marina_promo', chainStep: 2 },
+    npcId: 'marina',
+    options: [
+      {
+        id: 'celebrate',
+        text: 'Поблагодарить и обсудить следующий этап',
+        consequences: { clientModifier: 0.15, clientModifierDays: 45, reputationDelta: 5, loyaltyDelta: 4 },
+        npcRelationshipDelta: 12,
+      },
+    ],
+  },
+
+  // ── CHAIN 7: Виктор и кредитная линия (viktor_loan) ────────────────────────
+  // Trigger: week 12–16. Банк предлагает кредит на развитие.
+  {
+    id: 'viktor_loan_1',
+    title: 'Виктор Семёнов из банка',
+    description: 'Звонит вежливый голос: "Виктор Семёнов, местное отделение банка. Мы видим ваш бизнес — стабильный, перспективный. Хочу лично познакомиться и предложить кредитную линию до 200 000 ₽ на развитие. Встретимся?" На встрече он раскладывает по-деловому: стандартная ставка 18% годовых.',
+    trigger: { dayMin: 84, dayMax: 112, randomChance: 1.0, oneTime: true, chainId: 'viktor_loan', chainStep: 1 },
+    npcId: 'viktor',
+    decisionDeadlineWeeks: 2,
+    options: [
+      {
+        id: 'take_loan',
+        text: 'Взять кредит 100 000 ₽ под 18% годовых',
+        consequences: { balanceDelta: 100000 },
+        npcRelationshipDelta: 10,
+        chainFollowUpId: 'viktor_loan_2a',
+      },
+      {
+        id: 'kontour_bank',
+        text: 'Оформить через Контур.Банк — ставка 5%',
+        consequences: { balanceDelta: 100000 },
+        npcRelationshipDelta: 15,
+        chainFollowUpId: 'viktor_loan_2b',
+        requiredService: 'bank',
+        isContourOption: true,
+      },
+      {
+        id: 'refuse',
+        text: 'Отказаться — не хочу кредитов',
+        consequences: {},
+        npcRelationshipDelta: -5,
+        chainFollowUpId: 'viktor_loan_2c',
+      },
+    ],
+  },
+
+  {
+    id: 'viktor_loan_2a',
+    title: 'Кредит работает — но давит',
+    description: 'Деньги пошли в дело: закупки, реклама, небольшой ремонт. Бизнес чуть подрос. Но каждый месяц — выплата с процентами. Виктор звонит: "Как дела? Если нужна реструктуризация — обращайтесь." В его голосе звучит профессиональная забота.',
+    trigger: { dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true, chainId: 'viktor_loan', chainStep: 2 },
+    npcId: 'viktor',
+    options: [
+      {
+        id: 'manage',
+        text: 'Платить по графику — справляемся',
+        consequences: { balanceDelta: -18000, clientModifier: 0.06, clientModifierDays: 28 },
+        npcRelationshipDelta: 5,
+      },
+    ],
+  },
+
+  {
+    id: 'viktor_loan_2b',
+    title: 'Кредит через Контур.Банк — выгодно',
+    description: 'Пять процентов годовых — это почти вдвое меньше, чем предлагал Виктор напрямую. Деньги пошли на расширение: новый стеллаж, запас, небольшая акция. Виктор при встрече говорит с уважением: "Грамотно выбрали инструмент. Такие клиенты нам нравятся."',
+    trigger: { dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true, chainId: 'viktor_loan', chainStep: 2 },
+    npcId: 'viktor',
+    options: [
+      {
+        id: 'great',
+        text: 'Спокойно развиваться с выгодными условиями',
+        consequences: { balanceDelta: -5000, clientModifier: 0.1, clientModifierDays: 35, reputationDelta: 3 },
+        npcRelationshipDelta: 10,
+      },
+    ],
+  },
+
+  {
+    id: 'viktor_loan_2c',
+    title: 'Без кредита — своим ходом',
+    description: 'Через месяц Виктор пишет: "Предложение остаётся в силе — если понадобится." Вы обошлись без займа. Это потребовало осторожности: пришлось отложить несколько закупок и урезать рекламный бюджет. Зато никаких долгов.',
+    trigger: { dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true, chainId: 'viktor_loan', chainStep: 2 },
+    npcId: 'viktor',
+    options: [
+      {
+        id: 'accept',
+        text: 'Продолжать работать без кредита',
+        consequences: { clientModifier: -0.05, clientModifierDays: 14 },
+        npcRelationshipDelta: 3,
+      },
+    ],
+  },
+
+  // ── CHAIN 8: Глеб и обзор (gleb_review) ────────────────────────────────────
+  // Trigger: week 4–10. Блогер хочет написать про ваш бизнес.
+  {
+    id: 'gleb_review_1',
+    title: 'Блогер Глеб хочет сделать обзор',
+    description: 'Молодой парень с телефоном на подставке снимает что-то у входа. Потом подходит: "Я Глеб Котов, пишу про районный бизнес. 18 тысяч подписчиков. Хочу снять честный обзор вашего места. Можете угостить кофе и дать товар на пробу — или я куплю сам и напишу как есть."',
+    trigger: { dayMin: 28, dayMax: 70, randomChance: 1.0, oneTime: true, chainId: 'gleb_review', chainStep: 1 },
+    npcId: 'gleb',
+    decisionDeadlineWeeks: 1,
+    options: [
+      {
+        id: 'gift',
+        text: 'Угостить и дать товар бесплатно (−2 000 ₽)',
+        consequences: { balanceDelta: -2000 },
+        npcRelationshipDelta: 20,
+        chainFollowUpId: 'gleb_review_2a',
+      },
+      {
+        id: 'discount',
+        text: 'Предложить скидку 30% (−700 ₽)',
+        consequences: { balanceDelta: -700 },
+        npcRelationshipDelta: 8,
+        chainFollowUpId: 'gleb_review_2b',
+      },
+      {
+        id: 'refuse',
+        text: 'Отказать — пусть платит как все',
+        consequences: {},
+        npcRelationshipDelta: -15,
+        chainFollowUpId: 'gleb_review_2c',
+      },
+    ],
+  },
+
+  {
+    id: 'gleb_review_2a',
+    title: 'Глеб опубликовал отличный обзор',
+    description: 'Пост вышел вчера — и уже 340 лайков. Глеб написал тепло и подробно: про атмосферу, про ассортимент, про то, как с ним поговорили как с человеком. В комментариях: "Надо зайти!", "Знаю это место, подтверждаю". Несколько новых лиц уже у вас.',
+    trigger: { dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true, chainId: 'gleb_review', chainStep: 2 },
+    npcId: 'gleb',
+    options: [
+      {
+        id: 'share',
+        text: 'Сделать репост и поблагодарить Глеба',
+        consequences: { clientModifier: 0.2, clientModifierDays: 14, reputationDelta: 6, loyaltyDelta: 3 },
+        npcRelationshipDelta: 8,
+      },
+    ],
+  },
+
+  {
+    id: 'gleb_review_2b',
+    title: 'Глеб написал нейтральный обзор',
+    description: 'Пост вышел. Без восторга, но и без критики: "Обычное место, нормальные цены, можно зайти." 87 лайков, несколько вопросов в комментариях. Глеб в личке: "Если дадите что-то интересное для контента — приду ещё."',
+    trigger: { dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true, chainId: 'gleb_review', chainStep: 2 },
+    npcId: 'gleb',
+    options: [
+      {
+        id: 'accept',
+        text: 'Принять результат — хоть какое-то упоминание',
+        consequences: { clientModifier: 0.06, clientModifierDays: 7, reputationDelta: 1 },
+        npcRelationshipDelta: 2,
+      },
+    ],
+  },
+
+  {
+    id: 'gleb_review_2c',
+    title: 'Глеб написал критичный обзор',
+    description: 'Пост вышел. Заголовок: "Зашёл в магазин — меня послали." Тон обиженный, но аудитория реагирует активно: 210 лайков, масса комментариев. "Типичное хамство", "поддерживаю малый бизнес, но не такой". Несколько клиентов пишут, что не придут.',
+    trigger: { dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true, chainId: 'gleb_review', chainStep: 2 },
+    npcId: 'gleb',
+    options: [
+      {
+        id: 'apologize_public',
+        text: 'Написать публичный ответ и пригласить Глеба снова (−1 000 ₽)',
+        consequences: { balanceDelta: -1000, reputationDelta: -2, loyaltyDelta: -3 },
+        npcRelationshipDelta: 10,
+      },
+      {
+        id: 'ignore',
+        text: 'Игнорировать — само утихнет',
+        consequences: { clientModifier: -0.15, clientModifierDays: 14, reputationDelta: -5 },
+        npcRelationshipDelta: -5,
+      },
+    ],
+  },
 ]
 
-export const CHAIN_IDS = ['mikhail_crisis', 'svetlana_growth', 'inspector_chain', 'anna_war', 'legacy'] as const
+export const CHAIN_IDS = [
+  'mikhail_crisis', 'svetlana_growth', 'inspector_chain', 'anna_war', 'legacy',
+  'marina_promo', 'viktor_loan', 'gleb_review',
+] as const
 export type ChainId = typeof CHAIN_IDS[number]
 
 // Which week each chain's first event can trigger
@@ -349,6 +591,9 @@ export const CHAIN_TRIGGER_WEEKS: Record<ChainId, number> = {
   inspector_chain: 8,
   anna_war: 10,
   legacy: 15,
+  marina_promo: 5,
+  viktor_loan: 12,
+  gleb_review: 4,
 }
 
 // Delay in weeks before the follow-up fires after the triggering choice
@@ -364,6 +609,14 @@ export const CHAIN_FOLLOWUP_DELAY: Record<string, number> = {
   anna_war_2b: 5,
   legacy_2a: 5,
   legacy_2b: 8,
+  marina_promo_2a: 8,
+  marina_promo_2b: 8,
+  viktor_loan_2a: 4,
+  viktor_loan_2b: 4,
+  viktor_loan_2c: 4,
+  gleb_review_2a: 1,
+  gleb_review_2b: 1,
+  gleb_review_2c: 1,
 }
 
 export function getChainEvent(id: string): EventTemplate | undefined {

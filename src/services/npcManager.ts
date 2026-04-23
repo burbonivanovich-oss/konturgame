@@ -61,6 +61,22 @@ export function applyNPCPassiveEffects(state: GameState): void {
       state.loyalty = Math.min(100, state.loyalty + 1)
     }
   }
+
+  const marina = npcs.find(n => n.id === 'marina')
+  if (marina && marina.isRevealed && marina.relationshipLevel >= 65) {
+    // Good relationship with marketer: small ongoing reputation boost
+    if (state.reputation < 100) {
+      state.reputation = Math.min(100, state.reputation + 1)
+    }
+  }
+
+  const viktor = npcs.find(n => n.id === 'viktor')
+  if (viktor && viktor.isRevealed && viktor.relationshipLevel >= 70) {
+    // Banker ally: slightly better cash flow awareness (minor check boost)
+    if (state.temporaryCheckMod === 0) {
+      state.temporaryCheckMod = 0.02
+    }
+  }
 }
 
 // Returns relationship label for UI

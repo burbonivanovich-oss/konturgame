@@ -2,6 +2,7 @@ import type { GameState, Event, EventTemplate } from '../types/game'
 import { MORAL_DILEMMA_EVENTS } from '../constants/moralDilemmas'
 import { getChainEvent, CHAIN_FOLLOWUP_DELAY } from '../constants/eventChains'
 import { RECURRING_CUSTOMER_EVENTS } from '../constants/recurringCustomers'
+import { NPC_EVENTS } from '../constants/npcEvents'
 
 export const EVENTS_DATABASE: EventTemplate[] = [
   {
@@ -678,7 +679,7 @@ export function generateEvent(day: number, state: GameState): Event | null {
   const triggered = state.triggeredEventIds ?? []
   const candidates: EventTemplate[] = []
 
-  const allTemplates = [...EVENTS_DATABASE, ...MORAL_DILEMMA_EVENTS, ...RECURRING_CUSTOMER_EVENTS]
+  const allTemplates = [...EVENTS_DATABASE, ...MORAL_DILEMMA_EVENTS, ...RECURRING_CUSTOMER_EVENTS, ...NPC_EVENTS]
 
   for (const template of allTemplates) {
     if (template.trigger.oneTime && triggered.includes(template.id)) continue
