@@ -97,6 +97,8 @@ export function processWeek(state: GameState): DayResult {
   let weekLoyaltyChange = 0
   let totalDaysWithoutExpiry = 0
   const weekPain = { bank: 0, market: 0, ofd: 0, diadoc: 0, fokus: 0, elba: 0, extern: 0, total: 0 }
+  let weeklySeasonalSum = 0
+  let weeklyEventSum = 0
 
   // Calculate weekly employee costs
   const weeklySalaryCost = getWeeklySalaryCost(state)
@@ -109,6 +111,8 @@ export function processWeek(state: GameState): DayResult {
     // Track actual day-of-week so pain triggers fire at most once per N-day cycle
     state.dayOfWeek = dayNum
     const modifiers = buildModifiers(state)
+    weeklySeasonalSum += modifiers.seasonal
+    weeklyEventSum += modifiers.event
     const synergyMods = calculateSynergyModifiers(state)
 
     // Quality price premium
@@ -431,10 +435,13 @@ export function processWeek(state: GameState): DayResult {
     })
 
     // Total revenue attributable to all advertising this week.
-    // Approximation: treats ads as the sole multiplier on a hidden baseline.
-    // Ignores contribution from reputation/season/events — acceptable for UI.
+    // Uses the weekly-average seasonal and event modifiers in the denominator so that
+    // ads don't claim credit that belongs to reputation/seasonality/events.
     if (totalImpact !== 0 && totalImpact > -1) {
-      const totalAdRevenue = weekRevenue * totalImpact / (1 + totalImpact)
+      const avgSeasonal = weeklySeasonalSum / 7
+      const avgEvent = weeklyEventSum / 7
+      const totalClientDivisor = Math.max(0.01, 1 + avgSeasonal + totalImpact + avgEvent)
+      const totalAdRevenue = weekRevenue * totalImpact / totalClientDivisor
       for (const campaign of state.activeAdCampaigns) {
         const impact = impactById.get(campaign.id) ?? 0
         if (impact === 0) continue
