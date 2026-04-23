@@ -406,7 +406,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const currentEnergy = get().entrepreneurEnergy
       const restoredEnergy = Math.min(
         currentEnergy + 40 + weeklyBonus,
-        ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY + 30  // absolute cap
+        ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY
       )
 
       set({
@@ -977,7 +977,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     setPendingMicroEvent: (event) => {
       set({
         pendingMicroEvent: event,
-        seenMicroEventIds: [...get().seenMicroEventIds, event.id],
+        seenMicroEventIds: event ? [...get().seenMicroEventIds, event.id] : get().seenMicroEventIds,
         lastUpdated: Date.now(),
       })
     },
@@ -1006,8 +1006,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
 
       if (effects.clientModifierPercent && effects.clientModifierDays) {
-        updates.temporaryClientMod = effects.clientModifierPercent
-        updates.temporaryModDaysLeft = effects.clientModifierDays
+        updates.temporaryClientMod = (state.temporaryClientMod ?? 0) + effects.clientModifierPercent
+        updates.temporaryModDaysLeft = Math.max(
+          state.temporaryModDaysLeft ?? 0,
+          effects.clientModifierDays
+        )
       }
 
       set(updates)

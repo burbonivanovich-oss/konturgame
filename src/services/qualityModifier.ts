@@ -27,7 +27,7 @@ export function getQualityPriceModifier(qualityLevel: number): number {
  * Uses the seasonality config for the business
  */
 export function getSeasonalityModifier(currentWeek: number, seasonality: Record<string, number>): number {
-  const monthOfYear = ((currentWeek % 52) / 4.33) // ~4.33 weeks per month, convert week to month
+  const monthOfYear = (((currentWeek - 1) % 52) / 4.33) // ~4.33 weeks per month, convert week to month
   const month = Math.floor(monthOfYear) + 1 // 1-12
   const monthKey = month.toString()
 
