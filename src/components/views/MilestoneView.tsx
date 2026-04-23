@@ -81,8 +81,8 @@ export function MilestoneView() {
           const balancePct = Math.min(100, Math.round((balance / m.balanceTarget) * 100))
           const profitPct = Math.min(100, Math.round((weeklyProfit / m.profitTarget) * 100))
 
-          let borderColor = K.line
-          let bg = K.white
+          let borderColor: string = K.line
+          let bg: string = K.white
           if (achieved) { borderColor = K.mint; bg = K.mintSoft }
           else if (isCurrent) { borderColor = K.orange; bg = K.orangeSoft }
 

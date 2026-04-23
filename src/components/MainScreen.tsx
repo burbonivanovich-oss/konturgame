@@ -40,6 +40,16 @@ import { KHeaderBar } from './design-system/KHeaderBar'
 import { K } from './design-system/tokens'
 import type { NavId } from './design-system/KLeftRail'
 
+const ONBOARDING_ACTION_TO_NAV: Record<string, NavId> = {
+  activate_bank:    'ecosystem',
+  activate_ofd:     'ecosystem',
+  activate_market:  'ecosystem',
+  activate_diadoc:  'ecosystem',
+  activate_fokus:   'ecosystem',
+  activate_elba:    'ecosystem',
+  activate_extern:  'ecosystem',
+}
+
 type ActiveView = NavId
 
 
