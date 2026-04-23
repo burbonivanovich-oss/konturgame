@@ -22,11 +22,12 @@ export default function PurchaseModal({ isOpen, onClose }: PurchaseModalProps) {
   const handlePurchase = () => {
     if (!canAfford) return
 
+    const s = useGameStore.getState()
     addStockBatch({
       id: `batch-${Date.now()}`,
       quantity,
       costPerUnit,
-      dayReceived: useGameStore.getState().currentWeek,
+      dayReceived: s.currentWeek * 7 + s.dayOfWeek,
       expirationDays: config.stockExpiry,
     })
 
