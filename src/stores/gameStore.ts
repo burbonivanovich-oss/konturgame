@@ -5,7 +5,7 @@ import type {
   CampaignROI, MilestoneStatus, WeekPhase, NPC, PlayerBackstory, NpcMemoryEntry,
   DecisionLogEntry,
 } from '../types/game'
-import { SERVICES_CONFIG, BUSINESS_CONFIGS, ECONOMY_CONSTANTS } from '../constants/business'
+import { SERVICES_CONFIG, BUSINESS_CONFIGS, ECONOMY_CONSTANTS, MAX_ACTIVE_CAMPAIGNS } from '../constants/business'
 import { SERVICE_UNLOCK_MAP } from '../constants/onboarding'
 import { CASH_REGISTER_CONFIGS, REGISTER_COMBO_DISCOUNTS } from '../constants/cashRegisters'
 import { getDefaultCategories } from '../services/assortmentEngine'
@@ -578,8 +578,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // Campaigns
     addAdCampaign: (campaign) => {
-      set((state) => ({
-        activeAdCampaigns: [...state.activeAdCampaigns, campaign],
+      const state = get()
+      if (state.activeAdCampaigns.length >= MAX_ACTIVE_CAMPAIGNS) return
+      if (state.balance < campaign.cost) return
+      set((s) => ({
+        activeAdCampaigns: [
+          ...s.activeAdCampaigns,
+          { ...campaign, launchedWeek: s.currentWeek, revenueAttributed: 0 },
+        ],
+        balance: s.balance - campaign.cost,
         lastUpdated: Date.now(),
       }))
     },

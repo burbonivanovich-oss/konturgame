@@ -1,6 +1,7 @@
 import { useGameStore } from '../stores/gameStore'
 import { useMemo } from 'react'
 import { ECONOMY_CONSTANTS } from '../constants/business'
+import { getBusinessStage, STAGE_CONFIG, getNextStage } from '../constants/businessStages'
 import { K } from './design-system/tokens'
 
 function getStatusColor(value: number): { color: string; icon: string } {
@@ -10,7 +11,7 @@ function getStatusColor(value: number): { color: string; icon: string } {
 }
 
 export default function Indicators() {
-  const { reputation, loyalty, stockBatches, capacity, lastDayResult, balance, entrepreneurEnergy, restoreEnergyAtWeekStart } = useGameStore()
+  const { reputation, loyalty, stockBatches, capacity, lastDayResult, balance, entrepreneurEnergy, restoreEnergyAtWeekStart, qualityLevel, currentWeek, level } = useGameStore()
   const { addBalance, addLoyalty } = useGameStore()
 
   const stockLevel = useMemo(() => {
@@ -34,6 +35,11 @@ export default function Indicators() {
   const loyaltyColor = getStatusColor(loyalty)
   const stockColor = getStatusColor(stockLevel)
   const energyColor = getStatusColor(entrepreneurEnergy)
+  const qualityColor = getStatusColor(qualityLevel)
+  const stage = getBusinessStage(currentWeek, level)
+  const stageConfig = STAGE_CONFIG[stage]
+  const nextStage = getNextStage(stage)
+  const nextStageConfig = nextStage ? STAGE_CONFIG[nextStage] : null
 
   const servedPct = lastDayResult && lastDayResult.clients > 0
     ? Math.round((lastDayResult.served / lastDayResult.clients) * 100)
@@ -141,6 +147,45 @@ export default function Indicators() {
             transition: 'width 0.3s ease',
           }}/>
         </div>
+      </div>
+
+      {/* Качество услуг */}
+      <div style={{
+        background: K.white, borderRadius: 16, padding: 16,
+        display: 'flex', flexDirection: 'column', gap: 8,
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em' }}>✨ КАЧЕСТВО</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: qualityColor.color }} className="k-num">
+            {qualityLevel}/100
+          </div>
+        </div>
+        <div style={{
+          height: 6, background: K.line, borderRadius: 999, overflow: 'hidden',
+        }}>
+          <div style={{
+            height: '100%', background: qualityColor.color, width: `${qualityLevel}%`,
+            transition: 'width 0.3s ease',
+          }}/>
+        </div>
+        <div style={{ fontSize: 10, opacity: 0.6, lineHeight: 1.3 }}>
+          Зависит от поставщика и уровня сотрудников. Влияет на репутацию, лояльность и чек.
+        </div>
+      </div>
+
+      {/* Стадия бизнеса */}
+      <div style={{
+        background: K.white, borderRadius: 16, padding: 16,
+        display: 'flex', flexDirection: 'column', gap: 4,
+      }}>
+        <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em' }}>🏢 СТАДИЯ</div>
+        <div style={{ fontSize: 14, fontWeight: 800 }}>{stageConfig.label}</div>
+        <div style={{ fontSize: 11, opacity: 0.7, lineHeight: 1.3 }}>{stageConfig.description}</div>
+        {nextStageConfig && (
+          <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2 }}>
+            Далее: {nextStageConfig.label} · нед. {nextStageConfig.weeksMin} · ур. {nextStageConfig.levelMin}
+          </div>
+        )}
       </div>
 
       {/* Обслуженность */}

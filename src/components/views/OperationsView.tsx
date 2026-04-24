@@ -1,9 +1,7 @@
 import { useGameStore } from '../../stores/gameStore'
-import { BUSINESS_CONFIGS, getUpgradesForBusiness } from '../../constants/business'
+import { BUSINESS_CONFIGS } from '../../constants/business'
 import { PRODUCT_CATEGORIES, isCategoryAllowed } from '../../services/assortmentEngine'
 import { getBusinessStage, STAGE_CONFIG, getNextStage } from '../../constants/businessStages'
-import { OWNER_INVESTMENTS_MAP, type OwnerInvestmentId } from '../../constants/ownerInvestments'
-import { CASH_REGISTER_CONFIGS } from '../../constants/cashRegisters'
 import { K } from '../design-system/tokens'
 
 const SERVICE_NAMES: Record<string, string> = {
@@ -11,25 +9,31 @@ const SERVICE_NAMES: Record<string, string> = {
   diadoc: 'Диадок', fokus: 'Фокус', elba: 'Эльба', extern: 'Экстерн',
 }
 
-interface OperationsViewProps {
-  onShowHireModal?: () => void
-  onShowUpgradesModal?: () => void
-  onOpenOwnerInvestments?: () => void
+const POSITION_LABELS: Record<string, string> = {
+  cashier: 'Кассир',
+  assistant: 'Помощник',
+  manager: 'Управляющий',
+  specialist: 'Специалист',
+  supervisor: 'Супервайзер',
+  trainer: 'Тренер',
 }
 
-export default function OperationsView({ onShowHireModal, onShowUpgradesModal, onOpenOwnerInvestments }: OperationsViewProps) {
+interface OperationsViewProps {
+  onShowHireModal?: () => void
+}
+
+export default function OperationsView({ onShowHireModal }: OperationsViewProps) {
   const {
-    businessType, cashRegisters, enabledCategories, services,
-    buyCashRegister, toggleCategory, employees, qualityLevel,
-    fireEmployee, balance,
-    entrepreneurEnergy, purchasedUpgrades, purchasedOwnerItems, ownerSubscriptions,
+    businessType, enabledCategories, services,
+    toggleCategory, employees,
+    fireEmployee,
+    currentWeek, level,
   } = useGameStore()
 
   const config = BUSINESS_CONFIGS[businessType]
   const categories = PRODUCT_CATEGORIES[businessType] ?? []
   const state = useGameStore.getState()
 
-  const { currentWeek, level } = useGameStore()
   const stage = getBusinessStage(currentWeek, level)
   const stageConfig = STAGE_CONFIG[stage]
   const nextStage = getNextStage(stage)
@@ -46,149 +50,6 @@ export default function OperationsView({ onShowHireModal, onShowUpgradesModal, o
       <div>
         <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>УПРАВЛЕНИЕ</div>
         <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.025em' }}>Операции</div>
-      </div>
-
-      {/* Owner Energy */}
-      <div>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase', marginBottom: 12 }}>ЭНЕРГИЯ ВЛАДЕЛЬЦА</div>
-        <div style={{
-          padding: 16, borderRadius: 14,
-          background: K.white,
-          border: `1px solid ${entrepreneurEnergy > 70 ? K.mint : entrepreneurEnergy > 40 ? K.warn : K.bad}`,
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: K.muted, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Уровень энергии</span>
-            <span style={{
-              fontSize: 36, fontWeight: 800, letterSpacing: '-0.03em',
-              color: entrepreneurEnergy > 70 ? K.mint : entrepreneurEnergy > 40 ? K.warn : K.bad,
-            }}>
-              {entrepreneurEnergy}%
-            </span>
-          </div>
-          <div style={{ height: 8, background: K.lineSoft, borderRadius: 999, overflow: 'hidden', marginBottom: 12 }}>
-            <div style={{
-              width: `${entrepreneurEnergy}%`,
-              height: '100%',
-              background: entrepreneurEnergy > 70 ? K.mint : entrepreneurEnergy > 40 ? K.warn : K.bad,
-              borderRadius: 999,
-              transition: 'width 0.3s',
-            }} />
-          </div>
-          <div style={{ fontSize: 11, color: K.muted, lineHeight: 1.4 }}>
-            {entrepreneurEnergy > 70 ? '✅ Полна энергии - работаете в полную силу' : entrepreneurEnergy > 40 ? '⚠️ Устаёте - энергия восстановится в конце недели' : '🔴 Выгорание - производительность снижена, срочно завершайте неделю'}
-          </div>
-        </div>
-      </div>
-
-      {/* Owner Investments status */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>ИНВЕСТИЦИИ В СЕБЯ</div>
-          <button
-            onClick={onOpenOwnerInvestments}
-            style={{
-              padding: '6px 14px', borderRadius: 8, fontSize: 11, fontWeight: 700,
-              background: K.violet, color: K.white, border: 'none', cursor: 'pointer',
-            }}
-          >
-            + Купить
-          </button>
-        </div>
-
-        {(() => {
-          const permanentItems = (purchasedOwnerItems ?? [])
-            .map(id => OWNER_INVESTMENTS_MAP[id as OwnerInvestmentId])
-            .filter(Boolean)
-          const activeSubs = (ownerSubscriptions ?? [])
-            .map(sub => ({ config: OWNER_INVESTMENTS_MAP[sub.id as keyof typeof OWNER_INVESTMENTS_MAP], weeksLeft: sub.weeksLeft }))
-            .filter(s => s.config)
-
-          if (permanentItems.length === 0 && activeSubs.length === 0) {
-            return (
-              <div style={{
-                padding: 14, borderRadius: 12, border: `1px dashed ${K.line}`,
-                fontSize: 12, color: K.muted, textAlign: 'center',
-              }}>
-                Нет активных инвестиций · покупки помогают восстанавливать энергию быстрее
-              </div>
-            )
-          }
-
-          return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {permanentItems.map(item => (
-                <div key={item.id} style={{
-                  padding: '10px 14px', borderRadius: 12,
-                  background: K.mintSoft, border: `1px solid ${K.mint}`,
-                  display: 'flex', alignItems: 'center', gap: 10,
-                }}>
-                  <span style={{ fontSize: 20 }}>{item.icon}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700 }}>{item.name}</div>
-                    <div style={{ fontSize: 10, color: K.muted }}>{item.description}</div>
-                  </div>
-                  <span style={{
-                    fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 6,
-                    background: K.mint, color: K.white,
-                  }}>ПОСТОЯННО</span>
-                </div>
-              ))}
-              {activeSubs.map(({ config: item, weeksLeft }) => (
-                <div key={item.id} style={{
-                  padding: '10px 14px', borderRadius: 12,
-                  background: K.orangeSoft, border: `1px solid ${K.orange}`,
-                  display: 'flex', alignItems: 'center', gap: 10,
-                }}>
-                  <span style={{ fontSize: 20 }}>{item.icon}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700 }}>{item.name}</div>
-                    <div style={{ fontSize: 10, color: K.muted }}>{item.description}</div>
-                  </div>
-                  <span style={{
-                    fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 6,
-                    background: K.orange, color: K.white,
-                  }}>ещё {weeksLeft} нед.</span>
-                </div>
-              ))}
-            </div>
-          )
-        })()}
-      </div>
-
-      {/* Cash Registers */}
-      <div>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase', marginBottom: 12 }}>КАССОВЫЕ СИСТЕМЫ</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-          {(['mobile', 'reliable', 'fast'] as const).map((type) => {
-            const cfg = CASH_REGISTER_CONFIGS[type]
-            const canAfford = balance >= cfg.cost
-            const count = cashRegisters.filter(r => r.type === type).length
-            return (
-            <div key={type} style={{ padding: 12, borderRadius: 12, background: K.white, border: `1px solid ${K.line}` }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: K.muted, marginBottom: 4 }}>{cfg.icon} {cfg.name}</div>
-              <div style={{ fontSize: 36, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 8 }}>
-                {count} <span style={{ fontSize: 14, fontWeight: 600, opacity: 0.6 }}>шт</span>
-              </div>
-              <button
-                onClick={() => canAfford && buyCashRegister(type)}
-                disabled={!canAfford}
-                style={{
-                  padding: '8px 12px', borderRadius: 8, width: '100%',
-                  background: canAfford ? K.ink : K.lineSoft,
-                  color: canAfford ? K.white : K.muted,
-                  border: 'none', cursor: canAfford ? 'pointer' : 'not-allowed',
-                  fontSize: 12, fontWeight: 700,
-                }}
-              >
-                +1 ({cfg.cost.toLocaleString('ru-RU')} ₽)
-              </button>
-            </div>
-            )
-          })}
-        </div>
-        <div style={{ fontSize: 11, color: K.muted, marginTop: 10, fontStyle: 'italic' }}>
-          Каждая касса добавляет +15 клиентов в день. Без ОФД — штраф за каждый чек.
-        </div>
       </div>
 
       {/* Assortment Categories */}
@@ -325,50 +186,6 @@ export default function OperationsView({ onShowHireModal, onShowUpgradesModal, o
         </div>
       )}
 
-      {/* Quality Level */}
-      <div>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase', marginBottom: 12 }}>КАЧЕСТВО УСЛУГ</div>
-        <div style={{ padding: 16, borderRadius: 14, background: K.white, border: `1px solid ${K.line}` }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: K.muted, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Уровень качества</span>
-            <span style={{
-              fontSize: 36, fontWeight: 800, letterSpacing: '-0.03em',
-              color: qualityLevel > 70 ? K.mint : qualityLevel > 40 ? K.warn : K.bad,
-            }}>{qualityLevel}%</span>
-          </div>
-          <div style={{ height: 8, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
-            <div style={{
-              width: `${qualityLevel}%`,
-              height: '100%',
-              background: qualityLevel > 70 ? K.mint : qualityLevel > 40 ? K.warn : K.bad,
-              borderRadius: 999,
-              transition: 'width 0.3s',
-            }} />
-          </div>
-          <div style={{ fontSize: 10, color: K.muted, marginTop: 8, lineHeight: 1.4 }}>
-            ✓ Повышает репутацию и лояльность клиентов<br/>
-            ✓ Зависит от уровня сотрудников и поставщика
-          </div>
-        </div>
-      </div>
-
-      {/* Business Stage */}
-      <div style={{ padding: '14px 16px', background: K.bone, borderRadius: 12, border: `1px solid ${K.lineSoft}` }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', color: K.muted, marginBottom: 4, textTransform: 'uppercase' }}>СТАДИЯ БИЗНЕСА</div>
-            <div style={{ fontSize: 16, fontWeight: 800 }}>{stageConfig.label}</div>
-            <div style={{ fontSize: 11, color: K.muted, marginTop: 2 }}>{stageConfig.description}</div>
-          </div>
-          {nextStageConfig && (
-            <div style={{ textAlign: 'right', fontSize: 11, color: K.muted }}>
-              <div>Следующая: {nextStageConfig.label}</div>
-              <div>нед. {nextStageConfig.weeksMin} · ур. {nextStageConfig.levelMin}</div>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Employees */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
@@ -392,7 +209,7 @@ export default function OperationsView({ onShowHireModal, onShowUpgradesModal, o
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{emp.name}</div>
                   <div style={{ fontSize: 10, color: K.muted }}>
-                    {emp.position} · {emp.salary.toLocaleString('ru-RU')} ₽/мес · эффективность {(emp.efficiency * 100).toFixed(0)}%
+                    {POSITION_LABELS[emp.position] ?? emp.position} · {emp.salary.toLocaleString('ru-RU')} ₽/мес · эффективность {(emp.efficiency * 100).toFixed(0)}%
                   </div>
                 </div>
                 <button
@@ -422,11 +239,10 @@ export default function OperationsView({ onShowHireModal, onShowUpgradesModal, o
           style={{
             width: '100%', padding: '12px', borderRadius: 10,
             background: K.ink, color: K.white,
-            border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
-            transition: 'opacity 0.2s',
+            border: 'none', cursor: atHireLimit ? 'not-allowed' : 'pointer',
+            fontSize: 12, fontWeight: 700,
+            opacity: atHireLimit ? 0.5 : 1,
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
         >
           + Нанять сотрудника
         </button>
@@ -436,58 +252,6 @@ export default function OperationsView({ onShowHireModal, onShowUpgradesModal, o
       </div>
 
 
-      {/* Upgrades */}
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>УЛУЧШЕНИЯ</div>
-          <button
-            onClick={onShowUpgradesModal}
-            style={{
-              fontSize: 11, fontWeight: 700, padding: '6px 12px',
-              borderRadius: 8, background: K.bone, border: `1px solid ${K.line}`,
-              color: K.ink, cursor: 'pointer', transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-          >
-            Все улучшения
-          </button>
-        </div>
-        {getUpgradesForBusiness(businessType).length > 0 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            {getUpgradesForBusiness(businessType).slice(0, 4).map((upgrade) => {
-              const isPurchased = purchasedUpgrades.includes(upgrade.id)
-              return (
-                <div
-                  key={upgrade.id}
-                  style={{
-                    padding: 12, borderRadius: 12,
-                    border: isPurchased ? `2px solid ${K.mint}` : `1px solid ${K.line}`,
-                    background: isPurchased ? K.mintSoft : K.white,
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700 }}>{upgrade.name}</div>
-                    {isPurchased && <span style={{ fontSize: 12, fontWeight: 800, color: K.mint }}>✓</span>}
-                  </div>
-                  <div style={{ fontSize: 10, color: K.muted, marginBottom: 6, lineHeight: 1.3 }}>
-                    {upgrade.effect}
-                  </div>
-                  {!isPurchased && (
-                    <div style={{ fontSize: 11, fontWeight: 700, color: K.orange }}>
-                      {upgrade.cost.toLocaleString('ru-RU')} ₽
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        ) : (
-          <div style={{ padding: 20, textAlign: 'center', color: K.muted }}>
-            Нет доступных улучшений
-          </div>
-        )}
-      </div>
     </div>
   )
 }
