@@ -26,7 +26,7 @@ const MILESTONE_LABELS: Record<string, { title: string; text: string; emoji: str
 export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
   const {
     currentWeek, balance, lastDayResult, services, achievements,
-    upcomingEventTeaser, regularCustomer, pendingMilestoneCelebration,
+    upcomingEventTeaser, pendingMilestoneCelebration,
     lastWeekPainLosses,
   } = useGameStore()
 
@@ -243,37 +243,6 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
                   </div>
                 ))
               }
-            </div>
-          </div>
-        )}
-
-        {/* Regular customer status */}
-        {regularCustomer && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            background: regularCustomer.missedWeeks >= 2 ? K.orangeSoft : K.mintSoft,
-            border: `1px solid ${regularCustomer.missedWeeks >= 2 ? K.orange : K.mint}`,
-            borderRadius: 12, padding: '12px 16px',
-          }}>
-            <span style={{ fontSize: 22 }}>{regularCustomer.emoji}</span>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: K.ink }}>
-                {regularCustomer.name}
-              </div>
-              <div style={{ fontSize: 11, color: K.ink2, marginTop: 1 }}>
-                {regularCustomer.missedWeeks >= 2
-                  ? `Не приходил ${regularCustomer.missedWeeks} нед. — ${regularCustomer.habit.toLowerCase()}`
-                  : regularCustomer.missedWeeks === 1
-                    ? 'На этой неделе не зашёл'
-                    : `${regularCustomer.habit} · ${regularCustomer.totalVisits} визит${regularCustomer.totalVisits >= 5 ? 'ов' : regularCustomer.totalVisits >= 2 ? 'а' : ''}`
-                }
-              </div>
-            </div>
-            <div style={{
-              fontSize: 11, fontWeight: 700,
-              color: regularCustomer.missedWeeks >= 2 ? K.orange : K.mintInk,
-            }}>
-              {regularCustomer.missedWeeks >= 2 ? 'Пропал' : '✓ Был'}
             </div>
           </div>
         )}

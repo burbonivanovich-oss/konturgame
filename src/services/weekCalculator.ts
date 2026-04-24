@@ -571,9 +571,6 @@ export function processWeek(state: GameState): DayResult {
   // Generate next-week cliffhanger teaser
   state.upcomingEventTeaser = generateNextWeekTeaser(state)
 
-  // Process regular customer visit
-  processRegularCustomer(state, weekNetProfit)
-
   // Clear milestone celebration after it's been generated (UI reads it once)
   // Milestone celebration is set based on newly achieved milestones this week
   state.pendingMilestoneCelebration = null
@@ -620,11 +617,6 @@ function generateNextWeekTeaser(state: GameState): string | null {
   if (config === 'beauty-salon' && nextMonth === 3) return `🌸 Весна — сезонный рост для салона красоты`
   if (config === 'shop' && nextMonth === 7) return `🏖️ Летний сезон даёт небольшой рост — пользуйтесь`
 
-  // Regular customer missed
-  if (state.regularCustomer && state.regularCustomer.missedWeeks >= 2) {
-    return `😔 ${state.regularCustomer.name} не приходил уже ${state.regularCustomer.missedWeeks} нед. — возможно, что-то не так`
-  }
-
   // Crisis week hint
   if ((state.currentWeek + 1) % 9 === 0) {
     return `🌩️ Следующая неделя может быть напряжённой — ожидается несколько событий сразу`
@@ -639,46 +631,6 @@ function generateNextWeekTeaser(state: GameState): string | null {
     null,
   ]
   return tips[Math.floor(Math.random() * tips.length)]
-}
-
-const REGULAR_CUSTOMERS: Record<string, { name: string; emoji: string; habit: string }> = {
-  shop: { name: 'Николай Петрович', emoji: '🧔', habit: 'Заходит каждую пятницу за продуктами' },
-  cafe: { name: 'Катя', emoji: '☕', habit: 'Приходит каждое утро за кофе с молоком' },
-  'beauty-salon': { name: 'Мария Ивановна', emoji: '💅', habit: 'Записывается каждые две недели' },
-}
-
-function processRegularCustomer(state: GameState, weekProfit: number): void {
-  if (!state.regularCustomer) {
-    if (state.currentWeek >= 2) {
-      const def = REGULAR_CUSTOMERS[state.businessType]
-      if (def) {
-        state.regularCustomer = {
-          ...def,
-          lastVisitWeek: state.currentWeek,
-          missedWeeks: 0,
-          totalVisits: 1,
-        }
-      }
-    }
-    return
-  }
-
-  const customer = state.regularCustomer
-  const willVisit = state.loyalty >= 40 && Math.random() < 0.8
-
-  if (willVisit) {
-    customer.lastVisitWeek = state.currentWeek
-    customer.totalVisits += 1
-    customer.missedWeeks = 0
-    // Small loyalty bonus for regular visit
-    state.loyalty = Math.min(100, state.loyalty + 1)
-  } else {
-    customer.missedWeeks += 1
-    if (customer.missedWeeks >= 4) {
-      // They've gone for good this run
-      state.loyalty = Math.max(0, state.loyalty - 2)
-    }
-  }
 }
 
 // ── Chain system helpers ─────────────────────────────────────────────────────
