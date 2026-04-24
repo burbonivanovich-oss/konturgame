@@ -90,7 +90,7 @@ function DashboardView({
   const clientsToday = lastDayResult?.clients ?? 0
   const throughput = cashRegisters && cashRegisters.length > 0
     ? getTotalThroughput(cashRegisters, store)
-    : bizConfig.baseClientsPerDay * 2
+    : bizConfig.capacity
 
   // Active synergies (for right panel)
   const synergies = getActiveSynergies(store)
