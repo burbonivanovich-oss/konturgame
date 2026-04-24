@@ -121,15 +121,18 @@ export function buildModifiers(state: GameState): Modifiers {
   const adMods = calculateActiveAdModifiers(state)
   const synergyMods = calculateSynergyModifiers(state)
 
-  // Service client bonuses (diadoc) + synergy client bonuses + upgrade client bonuses
+  // Service client bonuses (diadoc + fokus) + synergy client bonuses + upgrade client bonuses
   const serviceClientBonus =
     (state.services?.diadoc?.isActive ? (state.services.diadoc.effects.clientBonus ?? 0) : 0) +
+    (state.services?.fokus?.isActive ? (state.services.fokus.effects.clientBonus ?? 0) : 0) +
     synergyMods.clientBonus +
     getClientUpgradesBonus(state)
 
-  // Check bonus includes temporary event modifier (bug fix: was missing)
+  // Check bonus: market + fokus + synergy
   const serviceCheckBonus =
-    (state.services?.market?.isActive ? 0.15 : 0) + synergyMods.checkBonus
+    (state.services?.market?.isActive ? 0.15 : 0) +
+    (state.services?.fokus?.isActive ? (state.services.fokus.effects.checkBonus ?? 0) : 0) +
+    synergyMods.checkBonus
 
   return {
     seasonal: getSeasonalModifier(state.businessType, (state.currentWeek * 7 + state.dayOfWeek)),

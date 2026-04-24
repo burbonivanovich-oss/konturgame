@@ -199,6 +199,7 @@ export interface DayResult {
   clients: number
   served: number
   missed: number
+  lostToBank: number   // clients who left without payment due to no cashless
   revenue: number
   expenses: number
   tax: number
@@ -428,6 +429,9 @@ export interface GameState {
 
   // Service visibility (unlocked by onboarding)
   unlockedServices: ServiceType[]
+
+  // Cooldown: week when each service was last deactivated (can't re-enable for 2 weeks)
+  serviceDeactivatedWeeks: Partial<Record<ServiceType, number>>
 
   // Cash registers
   cashRegisters: CashRegister[]

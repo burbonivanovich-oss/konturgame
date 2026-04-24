@@ -164,6 +164,12 @@ export function processWeek(state: GameState): DayResult {
       dailyRevenue = Math.round(baseRevenue * (1 + totalRevenueBonus))
     }
 
+    // 6b. Bank acquiring fee (1.5% of revenue — cost of cashless payments)
+    if (state.services?.bank?.isActive) {
+      const acquiringRate = state.services.bank.effects.acquiringRate ?? 0.015
+      dailyRevenue = Math.round(dailyRevenue * (1 - acquiringRate))
+    }
+
     // 7. Register penalty
     const registerThroughput = getTotalThroughput(state.cashRegisters, state)
     const registerPenalty = registerThroughput > 0
@@ -334,6 +340,9 @@ export function processWeek(state: GameState): DayResult {
     clients: Math.round(weekRevenue / (config.avgCheck * bankPaymentRatioForResult)), // Estimate from revenue
     served: 0,  // Not tracked in week mode
     missed: 0,
+    lostToBank: bankPaymentRatioForResult < 1
+      ? Math.round(weekRevenue / config.avgCheck * (1 - bankPaymentRatioForResult) / bankPaymentRatioForResult)
+      : 0,
     revenue: weekRevenue,
     expenses: weekExpenses,
     tax: 0,  // Accumulated in week
@@ -571,6 +580,9 @@ export function processWeek(state: GameState): DayResult {
   tp.diadoc += weekPain.diadoc; tp.fokus += weekPain.fokus; tp.elba += weekPain.elba
   tp.extern += weekPain.extern; tp.total += weekPain.total
 
+  // Accumulate savings from active services (direct value, not event-based)
+  accumulateServiceSavings(state, weekRevenue, weekNetProfit)
+
   // Generate next-week cliffhanger teaser
   state.upcomingEventTeaser = generateNextWeekTeaser(state)
 
@@ -600,16 +612,12 @@ function generateNextWeekTeaser(state: GameState): string | null {
     }
   }
 
-  // Upcoming fokus penalty (day % 17 == 0)
-  const daysUntilFokus = 17 - (nextDay % 17)
-  if (!state.services?.fokus?.isActive && daysUntilFokus <= 7) {
-    return `⚠️ Без Контур.Фокуса через ${daysUntilFokus} дн. возможна проверка поставщика`
+  // Risk warnings (probabilistic — no fixed schedule)
+  if (!state.services?.fokus?.isActive) {
+    return `⚠️ Без Контур.Фокуса есть риск мошенничества со стороны поставщика`
   }
-
-  // Upcoming extern penalty (day % 31 == 0)
-  const daysUntilExtern = 31 - (nextDay % 31)
-  if (!state.services?.extern?.isActive && daysUntilExtern <= 7) {
-    return `🔒 Без Контур.Экстерна скоро возможна блокировка счёта`
+  if (!state.services?.extern?.isActive) {
+    return `🔒 Без Контур.Экстерна возможна блокировка счёта налоговой`
   }
 
   // Seasonal hint
@@ -634,6 +642,35 @@ function generateNextWeekTeaser(state: GameState): string | null {
     null,
   ]
   return tips[Math.floor(Math.random() * tips.length)]
+}
+
+function accumulateServiceSavings(state: GameState, weekRevenue: number, weekNetProfit: number): void {
+  let savings = 0
+
+  // Bank: enables 40% more revenue (clients who couldn't pay without cashless), net of 1.5% acquiring
+  if (state.services?.bank?.isActive) {
+    const acquiringRate = state.services.bank.effects.acquiringRate ?? 0.015
+    savings += Math.round(weekRevenue * 0.4 * (1 - acquiringRate))
+  }
+
+  // Market: prevents 8% manual accounting losses every day
+  if (state.services?.market?.isActive) {
+    savings += Math.round(weekRevenue * 0.08)
+  }
+
+  // Elba: expected tax declaration penalty prevented (15% profit × 4% daily chance × 7 days)
+  if (state.services?.elba?.isActive && weekNetProfit > 0) {
+    savings += Math.round(weekNetProfit * 0.15 * (7 / 25))
+  }
+
+  // Extern: expected account block prevented (2× daily revenue × 3.2% daily chance × 7 days)
+  if (state.services?.extern?.isActive) {
+    savings += Math.round((weekRevenue / 7) * 2 * (7 / 31))
+  }
+
+  if (savings > 0) {
+    state.savedBalance = (state.savedBalance ?? 0) + savings
+  }
 }
 
 function applyWeeklyMicroEvent(state: GameState): void {

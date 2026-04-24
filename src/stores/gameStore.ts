@@ -88,6 +88,7 @@ const createInitialState = (businessType: BusinessType): GameState => {
 
     // Service unlocking (start with Bank only)
     unlockedServices: SERVICE_UNLOCK_MAP[0],
+    serviceDeactivatedWeeks: {},
 
     // Cash registers
     cashRegisters: [],
@@ -514,25 +515,37 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Services
     toggleService: (serviceId) => {
       const state = get()
-      // Check if service is unlocked before allowing toggle
-      if (!(state.unlockedServices ?? []).includes(serviceId)) {
-        return
-      }
+      if (!(state.unlockedServices ?? []).includes(serviceId)) return
+
       const isCurrentlyActive = state.services[serviceId]?.isActive ?? false
-      // Activate with promo code reveal
-      if (!isCurrentlyActive) {
-        get().revealPromoCode(serviceId)
-      }
-      set((s) => ({
-        services: {
-          ...s.services,
-          [serviceId]: {
-            ...s.services[serviceId],
-            isActive: !s.services[serviceId]?.isActive,
+
+      if (isCurrentlyActive) {
+        // Deactivation: block if within 2-week cooldown from last deactivation
+        const deactivatedWeek = (state.serviceDeactivatedWeeks ?? {})[serviceId] ?? -99
+        if (state.currentWeek < deactivatedWeek + 2) return
+
+        set((s) => ({
+          services: {
+            ...s.services,
+            [serviceId]: { ...s.services[serviceId], isActive: false },
           },
-        },
-        lastUpdated: Date.now(),
-      }))
+          serviceDeactivatedWeeks: {
+            ...(s.serviceDeactivatedWeeks ?? {}),
+            [serviceId]: s.currentWeek,
+          },
+          lastUpdated: Date.now(),
+        }))
+      } else {
+        // Activation: always allowed, reveal promo code
+        get().revealPromoCode(serviceId)
+        set((s) => ({
+          services: {
+            ...s.services,
+            [serviceId]: { ...s.services[serviceId], isActive: true },
+          },
+          lastUpdated: Date.now(),
+        }))
+      }
     },
 
     activateService: (serviceId) => {
@@ -1227,6 +1240,7 @@ function extractState(state: any): GameState {
     onboardingCompleted: onboardingCompleted ?? false,
     onboardingStepIndex: onboardingStepIndex ?? 0,
     unlockedServices: unlockedServices ?? SERVICE_UNLOCK_MAP[0],
+    serviceDeactivatedWeeks: (state as any).serviceDeactivatedWeeks ?? {},
     cashRegisters: cashRegisters ?? [],
     enabledCategories: enabledCategories ?? [],
     promoCodesRevealed: promoCodesRevealed ?? [],

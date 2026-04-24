@@ -87,6 +87,7 @@ function makeDayResult(overrides: Partial<any> = {}): any {
     clients: 100,
     served: 100,
     missed: 0,
+    lostToBank: 0,
     revenue: 150000,
     expenses: 10000,
     tax: 9000,

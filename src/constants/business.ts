@@ -76,7 +76,7 @@ export const SERVICES_CONFIG: Record<ServiceType, ServiceConfig> = {
   market: {
     id: 'market',
     name: 'Контур.Маркет',
-    description: 'Автоматизация торговли: +20% пропускной, +15% к чеку, -20% убытков от просрочки. Главное — защита от катастрофических срывов поставок.',
+    description: 'Автоматизация торговли: +20% пропускной, +15% к чеку, -20% убытков от просрочки. Главное — защита от катастрофических срывов поставок. (В игре цены масштабированы под игровую экономику)',
     annualPrice: 48000,
     effects: {
       capacityBonus: 0.2,
@@ -87,11 +87,12 @@ export const SERVICES_CONFIG: Record<ServiceType, ServiceConfig> = {
   bank: {
     id: 'bank',
     name: 'Контур.Банк',
-    description: 'Льготное кредитование бизнеса по ставке 5%. Автоматизация платежей: -30% энергии на операции.',
-    annualPrice: 36000,
+    description: 'Терминал бесплатно, комиссия 1.5% с оборота. Без банка 40% клиентов уходят — нечем платить. Льготный кредит по ставке 5%.',
+    annualPrice: 0,
     effects: {
       creditRate: 0.05,
       energyReduction: 0.3,
+      acquiringRate: 0.015,
     },
   },
   ofd: {
@@ -115,10 +116,12 @@ export const SERVICES_CONFIG: Record<ServiceType, ServiceConfig> = {
   fokus: {
     id: 'fokus',
     name: 'Контур.Фокус',
-    description: 'Проверка контрагентов: +1 репутации/день. Главное — защита от мошенников-поставщиков (до −55 000 ₽ потерь).',
+    description: 'Проверка контрагентов: +1 репутации/день, +2% клиентов, +5% к чеку. Главное — защита от мошенников-поставщиков (до −55 000 ₽ потерь).',
     annualPrice: 24000,
     effects: {
       reputationBonus: 1,
+      clientBonus: 0.02,
+      checkBonus: 0.05,
     },
   },
   elba: {
