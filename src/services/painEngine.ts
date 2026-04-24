@@ -1,4 +1,4 @@
-import type { GameState, PainLossRecord } from '../types/game'
+import type { GameState, PainLossRecord, ServiceType } from '../types/game'
 
 export function calculatePainLosses(
   state: GameState,
@@ -6,8 +6,6 @@ export function calculatePainLosses(
   profit: number,
   totalCategoryRevenue: number,
 ): PainLossRecord {
-  const day = (state.currentWeek * 7 + state.dayOfWeek)
-  const hasBank = state.services?.bank?.isActive ?? false
   const hasMarket = state.services?.market?.isActive ?? false
   const hasOfd = state.services?.ofd?.isActive ?? false
   const hasDiadoc = state.services?.diadoc?.isActive ?? false
@@ -15,42 +13,51 @@ export function calculatePainLosses(
   const hasElba = state.services?.elba?.isActive ?? false
   const hasExtern = state.services?.extern?.isActive ?? false
 
-  // Bank: 40% клиентов не могут платить без безнала
-  // Уже учтено в bankPaymentRatio (revenue рассчитана с учётом этого),
-  // поэтому здесь возвращаем 0 (не дублируем потери)
+  // Only penalise for services the player already knows about (in unlockedServices).
+  // A service that hasn't appeared in onboarding yet can't cause "mysterious" losses.
+  const unlocked = new Set<ServiceType>(
+    state.onboardingCompleted
+      ? ['market', 'bank', 'ofd', 'diadoc', 'fokus', 'elba', 'extern']
+      : (state.unlockedServices ?? []),
+  )
+
+  // Bank: 40% клиентов не могут платить без безнала — учтено в bankPaymentRatio
   const bank = 0
 
   // Market: 8% потери от ошибок ручного учёта
-  const market = hasMarket ? 0 : Math.round(totalCategoryRevenue * 0.08)
+  const market = hasMarket || !unlocked.has('market')
+    ? 0
+    : Math.round(totalCategoryRevenue * 0.08)
 
-  // OFD: 10% шанс штрафа = 15% от выручки
+  // OFD: ~10% шанс штрафа в день = 15% от выручки
   let ofd = 0
-  if (!hasOfd && Math.random() < 0.1) {
+  if (!hasOfd && unlocked.has('ofd') && Math.random() < 0.1) {
     ofd = Math.round(revenue * 0.15)
   }
 
-  // Diadoc: каждые 10 дней задержка поставки → 2% от выручки
-  const diadoc = !hasDiadoc && day % 10 === 0
+  // Diadoc: ~10% шанс задержки поставки = 2% выручки
+  const diadoc = !hasDiadoc && unlocked.has('diadoc') && Math.random() < 0.1
     ? Math.round(revenue * 0.02)
     : 0
 
-  // Fokus: каждые 17 дней плохой поставщик → 5-10% баланса (сдвинуто с 15 чтобы не совпадать с Diadoc)
+  // Fokus: ~6% шанс плохого поставщика = 5-10% баланса
   let fokus = 0
-  if (!hasFokus && day % 17 === 0) {
+  if (!hasFokus && unlocked.has('fokus') && Math.random() < 1 / 17) {
     const riskPct = 0.05 + Math.random() * 0.05
     fokus = Math.round(state.balance * riskPct)
   }
 
-  // Elba: каждые 25 дней штраф за ошибки в декларации → 15% прибыли
-  const elba = !hasElba && day % 25 === 0 && profit > 0
+  // Elba: ~4% шанс штрафа за декларацию = 15% прибыли
+  const elba = !hasElba && unlocked.has('elba') && Math.random() < 1 / 25 && profit > 0
     ? Math.round(profit * 0.15)
     : 0
 
-  // Extern: каждые 31 день блокировка счёта → 2 дня выручки (сдвинуто с 30 чтобы не совпадать)
-  const avgDayRevenue = revenue
-  const extern = !hasExtern && day % 31 === 0
-    ? Math.round(avgDayRevenue * 2)
-    : 0
+  // Extern: ~3% шанс блокировки счёта = 2 дня выручки, но не более 25% баланса
+  let extern = 0
+  if (!hasExtern && unlocked.has('extern') && Math.random() < 1 / 31) {
+    const rawDamage = Math.round(revenue * 2)
+    extern = Math.min(rawDamage, Math.round(state.balance * 0.25))
+  }
 
   const total = bank + market + ofd + diadoc + fokus + elba + extern
 

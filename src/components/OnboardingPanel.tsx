@@ -1,7 +1,12 @@
 import { useState } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { ONBOARDING_STAGES, ONBOARDING_STAGE_LABELS } from '../constants/onboarding'
-import { isStepActionDone, isWaitStepReady } from '../services/onboardingEngine'
+import {
+  isStepActionDone,
+  isWaitStepReady,
+  checkOnboardingBlocked,
+  getBlockedActionStep,
+} from '../services/onboardingEngine'
 import type { OnboardingTrigger } from '../types/game'
 import { K } from './design-system/tokens'
 import type { NavId } from './design-system/KLeftRail'
@@ -43,12 +48,19 @@ const WAIT_HINT: Record<OnboardingTrigger, string> = {
 
 const STAGE_COLORS = [K.blue, K.violet, K.orange, K.mint, K.orange]
 
+// Confirmation state for destructive skip actions
+type ConfirmState = 'none' | 'skip-step' | 'skip-all'
+
 export function OnboardingPanel({ onNavigate, onAction }: OnboardingPanelProps) {
   const [expanded, setExpanded] = useState(true)
+  const [confirm, setConfirm] = useState<ConfirmState>('none')
+
   const gameState = useGameStore()
   const {
     onboardingStage, onboardingStepIndex, onboardingCompleted,
     nextOnboardingStep, advanceOnboardingStage, completeOnboarding,
+    skipOnboarding, skipOnboardingStep, claimEmergencyGrant,
+    onboardingEmergencyGrantUsed,
   } = gameState
 
   if (onboardingCompleted) return null
@@ -75,6 +87,12 @@ export function OnboardingPanel({ onNavigate, onAction }: OnboardingPanelProps) 
   const needsAction = stepKind === 'action' && !actionDone
   const isWaiting = stepKind === 'wait' && !waitReady
 
+  const { insufficientFunds } = checkOnboardingBlocked(gameState as any)
+  const blockedStep = getBlockedActionStep(gameState as any)
+  const canSkipStep = blockedStep !== null  // always show escape-valve on action steps
+  // Show full-onboarding skip from stage 1 onwards (player has seen the basics)
+  const canSkipAll = onboardingStage >= 1
+
   const targetNav = step.requiresAction ? ACTION_TO_NAV[step.requiresAction] : undefined
   const actionLabel = step.requiresAction ? ACTION_LABEL[step.requiresAction] : undefined
   const waitHint = stepKind === 'wait' && step.waitForTrigger ? WAIT_HINT[step.waitForTrigger] : undefined
@@ -83,11 +101,30 @@ export function OnboardingPanel({ onNavigate, onAction }: OnboardingPanelProps) 
 
   const handleConfirm = () => {
     if (!canProceed) return
+    setConfirm('none')
     if (isLastStep) {
       if (isLastStage) completeOnboarding()
       else advanceOnboardingStage()
     } else {
       nextOnboardingStep()
+    }
+  }
+
+  const handleSkipStep = () => {
+    if (confirm === 'skip-step') {
+      skipOnboardingStep()
+      setConfirm('none')
+    } else {
+      setConfirm('skip-step')
+    }
+  }
+
+  const handleSkipAll = () => {
+    if (confirm === 'skip-all') {
+      skipOnboarding()
+      setConfirm('none')
+    } else {
+      setConfirm('skip-all')
     }
   }
 
@@ -219,6 +256,32 @@ export function OnboardingPanel({ onNavigate, onAction }: OnboardingPanelProps) 
             </div>
           )}
 
+          {/* Insufficient funds warning + emergency grant (#2) */}
+          {insufficientFunds && !onboardingEmergencyGrantUsed && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              background: '#fff8f0', border: `1px solid ${K.orange}`,
+              borderRadius: 10, padding: '10px 14px',
+            }}>
+              <span style={{ fontSize: 16 }}>💸</span>
+              <div style={{ flex: 1, fontSize: 12, color: K.ink2 }}>
+                <span style={{ fontWeight: 700, color: K.orange }}>Не хватает средств на кассу.</span>
+                {' '}Государство поддерживает новый бизнес — получите стартовый грант 15 000 ₽
+              </div>
+              <button
+                onClick={() => claimEmergencyGrant()}
+                style={{
+                  padding: '5px 14px', borderRadius: 8, border: 'none',
+                  background: K.orange, color: K.white,
+                  fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                  flexShrink: 0,
+                }}
+              >
+                Получить грант
+              </button>
+            </div>
+          )}
+
           {isWaiting && waitHint && (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 10,
@@ -249,6 +312,118 @@ export function OnboardingPanel({ onNavigate, onAction }: OnboardingPanelProps) 
               fontSize: 12, fontWeight: 600, color: K.mintInk,
             }}>
               ✓ Отлично — жмите «Далее»
+            </div>
+          )}
+
+          {/* Escape-valve: skip this action step (#3) */}
+          {canSkipStep && !actionDone && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              borderTop: `1px solid ${K.lineSoft}`, paddingTop: 10, marginTop: 4,
+            }}>
+              {confirm === 'skip-step' ? (
+                <>
+                  <div style={{ flex: 1, fontSize: 12, color: K.ink2 }}>
+                    Пропустить сервис — значит отказаться от его защиты.
+                    {' '}<span style={{ fontWeight: 700 }}>Продолжить без него?</span>
+                  </div>
+                  <button
+                    onClick={() => setConfirm('none')}
+                    style={{
+                      padding: '4px 12px', borderRadius: 8,
+                      border: `1px solid ${K.lineSoft}`, background: K.white,
+                      fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                      color: K.ink2,
+                    }}
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    onClick={handleSkipStep}
+                    style={{
+                      padding: '4px 12px', borderRadius: 8, border: 'none',
+                      background: '#e53e3e', color: K.white,
+                      fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                    }}
+                  >
+                    Пропустить шаг
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div style={{ flex: 1, fontSize: 11, color: K.muted }}>
+                    Осознанно отказываетесь от этого сервиса?
+                  </div>
+                  <button
+                    onClick={handleSkipStep}
+                    style={{
+                      padding: '4px 12px', borderRadius: 8,
+                      border: `1px solid ${K.lineSoft}`, background: 'transparent',
+                      fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                      color: K.muted,
+                    }}
+                  >
+                    Пропустить шаг
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Skip entire onboarding (#6) */}
+          {canSkipAll && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              borderTop: confirm === 'skip-step' ? 'none' : `1px solid ${K.lineSoft}`,
+              paddingTop: canSkipStep && !actionDone ? 0 : 10,
+              marginTop: canSkipStep && !actionDone ? 0 : 4,
+            }}>
+              {confirm === 'skip-all' ? (
+                <>
+                  <div style={{ flex: 1, fontSize: 12, color: K.ink2 }}>
+                    Все сервисы будут разблокированы сразу, без объяснений.
+                    {' '}<span style={{ fontWeight: 700 }}>Пропустить всё обучение?</span>
+                  </div>
+                  <button
+                    onClick={() => setConfirm('none')}
+                    style={{
+                      padding: '4px 12px', borderRadius: 8,
+                      border: `1px solid ${K.lineSoft}`, background: K.white,
+                      fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                      color: K.ink2,
+                    }}
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    onClick={handleSkipAll}
+                    style={{
+                      padding: '4px 12px', borderRadius: 8, border: 'none',
+                      background: '#718096', color: K.white,
+                      fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                    }}
+                  >
+                    Да, пропустить
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div style={{ flex: 1, fontSize: 11, color: K.muted }}>
+                    Уже знаете как работают сервисы?
+                  </div>
+                  <button
+                    onClick={handleSkipAll}
+                    style={{
+                      padding: '4px 12px', borderRadius: 8,
+                      border: `1px solid ${K.lineSoft}`, background: 'transparent',
+                      fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                      color: K.muted,
+                    }}
+                  >
+                    Пропустить обучение
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>

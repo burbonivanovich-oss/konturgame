@@ -26,8 +26,8 @@ const MILESTONE_LABELS: Record<string, { title: string; text: string; emoji: str
 export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
   const {
     currentWeek, balance, lastDayResult, services, achievements,
-    upcomingEventTeaser, regularCustomer, pendingMilestoneCelebration,
-    lastWeekPainLosses,
+    upcomingEventTeaser, pendingMilestoneCelebration,
+    lastWeekPainLosses, lastWeekMicroEvent, npcs,
   } = useGameStore()
 
   if (!lastDayResult) return null
@@ -247,36 +247,54 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
           </div>
         )}
 
-        {/* Regular customer status */}
-        {regularCustomer && (
+        {/* Weekly micro event */}
+        {lastWeekMicroEvent && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 12,
-            background: regularCustomer.missedWeeks >= 2 ? K.orangeSoft : K.mintSoft,
-            border: `1px solid ${regularCustomer.missedWeeks >= 2 ? K.orange : K.mint}`,
+            background: K.bone, border: `1px solid ${K.lineSoft}`,
             borderRadius: 12, padding: '12px 16px',
           }}>
-            <span style={{ fontSize: 22 }}>{regularCustomer.emoji}</span>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: K.ink }}>
-                {regularCustomer.name}
-              </div>
-              <div style={{ fontSize: 11, color: K.ink2, marginTop: 1 }}>
-                {regularCustomer.missedWeeks >= 2
-                  ? `Не приходил ${regularCustomer.missedWeeks} нед. — ${regularCustomer.habit.toLowerCase()}`
-                  : regularCustomer.missedWeeks === 1
-                    ? 'На этой неделе не зашёл'
-                    : `${regularCustomer.habit} · ${regularCustomer.totalVisits} визит${regularCustomer.totalVisits >= 5 ? 'ов' : regularCustomer.totalVisits >= 2 ? 'а' : ''}`
-                }
-              </div>
-            </div>
-            <div style={{
-              fontSize: 11, fontWeight: 700,
-              color: regularCustomer.missedWeeks >= 2 ? K.orange : K.mintInk,
-            }}>
-              {regularCustomer.missedWeeks >= 2 ? 'Пропал' : '✓ Был'}
+            <span style={{ fontSize: 20, flexShrink: 0 }}>{lastWeekMicroEvent.icon}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: K.ink }}>{lastWeekMicroEvent.title}</div>
+              <div style={{ fontSize: 11, color: K.muted, marginTop: 2 }}>{lastWeekMicroEvent.effectText}</div>
             </div>
           </div>
         )}
+
+        {/* Active NPC allies */}
+        {(() => {
+          const allies = (npcs ?? []).filter(n => n.isRevealed && n.relationshipLevel >= 60)
+          if (allies.length === 0) return null
+          const bonuses: Record<string, string> = {
+            mikhail: 'Хорошая цена на поставки',
+            svetlana: '+1 лояльности / нед',
+            marina: '+1 репутации / нед',
+            viktor: 'Льготные условия в банке',
+            petrov: 'Лояльность при проверках',
+          }
+          const visible = allies.filter(n => bonuses[n.id])
+          if (visible.length === 0) return null
+          return (
+            <div style={{
+              background: K.bone, border: `1px solid ${K.lineSoft}`,
+              borderRadius: 12, padding: '12px 16px',
+            }}>
+              <div style={{ fontSize: 10, color: K.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+                Союзники
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {visible.map(n => (
+                  <div key={n.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 16 }}>{n.portrait}</span>
+                    <span style={{ fontSize: 12, color: K.ink, fontWeight: 600, flex: 1 }}>{n.name}</span>
+                    <span style={{ fontSize: 11, color: K.good }}>{bonuses[n.id]}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Cliffhanger teaser */}
         {upcomingEventTeaser && (

@@ -1,6 +1,15 @@
 import type { GameState, OnboardingStage, OnboardingStep, OnboardingTrigger, ServiceType } from '../types/game'
 import { ONBOARDING_STAGES, SERVICE_UNLOCK_MAP } from '../constants/onboarding'
 
+// Minimum days a player must spend in a stage before advancing to the next one.
+// Replaces the hard absolute-day gates (15, 29, 43) with a per-stage soak time,
+// so a fast player isn't stuck waiting while a slow player isn't rushed.
+const MIN_DAYS_IN_STAGE = 3
+
+// Cost the player must cover to complete a buy_register action step.
+// Service activations have no upfront cost (billed daily), so only the register matters.
+const MIN_REGISTER_COST = 8000
+
 export function getUnlockedServicesForStage(stage: OnboardingStage): ServiceType[] {
   return SERVICE_UNLOCK_MAP[stage] ?? []
 }
@@ -66,34 +75,49 @@ export function shouldAdvanceStage(state: GameState): boolean {
   const currentStage = state.onboardingStage
   if (currentStage >= 4) return false
 
-  const nextStageConfig = ONBOARDING_STAGES[currentStage + 1]
-  if (!nextStageConfig) return false
+  if (!ONBOARDING_STAGES[currentStage + 1]) return false
 
+  const currentStageConfig = ONBOARDING_STAGES[currentStage]
   const currentDay = (state.currentWeek - 1) * 7 + (state.dayOfWeek ?? 0) + 1
-  const dayThresholdReached = currentDay >= nextStageConfig.dayRange[0]
-  if (!dayThresholdReached) return false
 
-  // Stage 0 → 1: advance purely by day (basic-loop tutorial is educational only)
+  // Soft soak: player must spend MIN_DAYS_IN_STAGE days in the current stage.
+  // This replaces the old hard absolute-day gates (day 15, 29, 43) so efficient
+  // players aren't blocked after completing all required actions.
+  const stageStartDay = currentStageConfig?.dayRange[0] ?? 1
+  const daysInStage = currentDay - stageStartDay + 1
+  if (daysInStage < MIN_DAYS_IN_STAGE) return false
+
+  // Stage 0 → 1: advance purely by time (tutorial is educational only)
   if (currentStage === 0) return true
 
-  // Stage 1 → 2: bank + register + ofd must all be done
+  const skipped = new Set(state.skippedOnboardingActions ?? [])
+
+  // Stage 1 → 2: bank + register + ofd (each counts as done if active OR skipped)
   if (currentStage === 1) {
-    const bankOk = state.services?.bank?.isActive ?? false
-    const ofdOk = state.services?.ofd?.isActive ?? false
-    const registerOk = (state.cashRegisters?.length ?? 0) > 0
-    return bankOk && ofdOk && registerOk
+    const bankOk = (state.services?.bank?.isActive ?? false) || skipped.has('1-1')
+    const registerOk = (state.cashRegisters?.length ?? 0) > 0 || skipped.has('1-3')
+    const ofdOk = (state.services?.ofd?.isActive ?? false) || skipped.has('1-5')
+    return bankOk && registerOk && ofdOk
   }
-  // Stage 2 → 3: Market active
-  if (currentStage === 2) return state.services?.market?.isActive ?? false
-  // Stage 3 → 4: Diadoc active
-  if (currentStage === 3) return state.services?.diadoc?.isActive ?? false
+  // Stage 2 → 3: Market active or skipped
+  if (currentStage === 2) {
+    return (state.services?.market?.isActive ?? false) || skipped.has('2-2')
+  }
+  // Stage 3 → 4: Diadoc active or skipped
+  if (currentStage === 3) {
+    return (state.services?.diadoc?.isActive ?? false) || skipped.has('3-3')
+  }
 
   return false
 }
 
 // Block the "Next day" button only when the player is actively parked on an
 // unsatisfied action step. Intro/wait steps never block — they're learning aids.
-export function checkOnboardingBlocked(state: GameState): { blocked: boolean; reason?: string } {
+export function checkOnboardingBlocked(state: GameState): {
+  blocked: boolean
+  reason?: string
+  insufficientFunds?: boolean
+} {
   if (state.onboardingCompleted) return { blocked: false }
 
   const step = getCurrentStep(state)
@@ -109,8 +133,12 @@ export function checkOnboardingBlocked(state: GameState): { blocked: boolean; re
   const currentDay = (state.currentWeek - 1) * 7 + (state.dayOfWeek ?? 0) + 1
   if (stageConfig && currentDay < stageConfig.dayRange[0]) return { blocked: false }
 
+  // Detect insufficient funds on the buy_register step so UI can offer an emergency grant.
+  const insufficientFunds =
+    step.requiresAction === 'buy_register' && (state.balance ?? 0) < MIN_REGISTER_COST
+
   const reason = getBlockReasonForAction(step.requiresAction)
-  return { blocked: true, reason }
+  return { blocked: true, reason, insufficientFunds }
 }
 
 function getBlockReasonForAction(action?: string): string {
@@ -128,6 +156,16 @@ function getBlockReasonForAction(action?: string): string {
 export function getCurrentStageSteps(stage: OnboardingStage) {
   const config = ONBOARDING_STAGES[stage]
   return config?.steps ?? []
+}
+
+// Returns the current action step if the player is parked on one and hasn't completed it.
+// Used by UI to decide whether to show the "skip this step" escape-valve button.
+export function getBlockedActionStep(state: GameState): OnboardingStep | null {
+  if (state.onboardingCompleted) return null
+  const step = getCurrentStep(state)
+  if (!step || (step.kind !== 'action' && !step.requiresAction)) return null
+  if (isStepActionDone(state, step)) return null
+  return step
 }
 
 export function advanceOnboardingIfNeeded(state: GameState): void {

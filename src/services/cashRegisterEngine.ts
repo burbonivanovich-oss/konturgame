@@ -20,17 +20,14 @@ export function getTotalThroughput(registers: CashRegister[], state?: GameState)
   return total
 }
 
+// Returns the number of clients turned away due to register throughput limit.
+// Callers should subtract this from served clients before computing revenue.
 export function calculateRegisterPenalty(
   clients: number,
   throughput: number,
-  revenue: number,
 ): number {
   if (throughput === 0 || clients <= throughput) return 0
-  const overflow = clients - throughput
-  // 10% revenue penalty for each 5 clients over throughput
-  const penaltyGroups = Math.floor(overflow / 5)
-  const penalty = Math.min(0.8, penaltyGroups * 0.1) // max 80% penalty
-  return Math.round(revenue * penalty)
+  return clients - throughput
 }
 
 export function checkRegisterBreakdown(registers: CashRegister[]): boolean {

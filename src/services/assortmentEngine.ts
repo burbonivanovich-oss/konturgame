@@ -1,4 +1,6 @@
 import type { BusinessType, GameState, ProductCategory } from '../types/game'
+import { getTotalStock, predictedDemand } from './stockManager'
+import { BUSINESS_CONFIGS } from '../constants/business'
 
 export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
   shop: [
@@ -155,6 +157,16 @@ export function isCategoryAllowed(category: ProductCategory, state: GameState): 
 export function calculateCategoryRevenue(state: GameState): CategoryRevenueResult {
   const categories = PRODUCT_CATEGORIES[state.businessType] ?? []
   const enabledIds = state.enabledCategories ?? []
+  const config = BUSINESS_CONFIGS[state.businessType]
+
+  // If the business tracks physical stock, scale revenue by stock availability.
+  // Beauty salon has no stock (services), so stockRatio stays 1.
+  let stockRatio = 1
+  if (config?.hasStock) {
+    const weekDemand = predictedDemand(state, 7)
+    const currentStock = getTotalStock(state)
+    stockRatio = weekDemand > 0 ? Math.min(1, currentStock / weekDemand) : 1
+  }
 
   let totalRevenue = 0
   let totalDailyCost = 0
@@ -165,10 +177,10 @@ export function calculateCategoryRevenue(state: GameState): CategoryRevenueResul
 
     const allowed = isCategoryAllowed(cat, state)
     const cost = cat.dailyCost
-    // Fine: 10% of category revenue if requirements not met
     const fine = allowed ? 0 : Math.round(cat.baseRevenue * 0.1)
-    // Revenue is reduced by fine
-    const revenue = allowed ? cat.baseRevenue : Math.round(cat.baseRevenue * 0.5)
+    const baseRev = allowed ? cat.baseRevenue : Math.round(cat.baseRevenue * 0.5)
+    // Apply stock constraint: if shelves are half-empty, revenue drops proportionally
+    const revenue = Math.round(baseRev * stockRatio)
 
     breakdown[cat.id] = { revenue, cost, fine, allowed }
     totalRevenue += revenue

@@ -20,6 +20,7 @@ export interface NpcMemoryEntry {
   eventId: string
   choiceId: string
   note: string
+  isAnchor?: boolean  // anchor entries are never evicted by the 10-entry limit
 }
 
 export interface NPC {
@@ -199,6 +200,7 @@ export interface DayResult {
   clients: number
   served: number
   missed: number
+  lostToBank: number   // clients who left without payment due to no cashless
   revenue: number
   expenses: number
   tax: number
@@ -357,15 +359,6 @@ export interface BusinessConfig {
   usesAssortment: boolean
 }
 
-export interface RegularCustomer {
-  name: string
-  emoji: string
-  habit: string
-  lastVisitWeek: number
-  missedWeeks: number
-  totalVisits: number
-}
-
 export interface MetaPerk {
   id: string
   name: string
@@ -438,6 +431,9 @@ export interface GameState {
   // Service visibility (unlocked by onboarding)
   unlockedServices: ServiceType[]
 
+  // Cooldown: week when each service was last deactivated (can't re-enable for 2 weeks)
+  serviceDeactivatedWeeks: Partial<Record<ServiceType, number>>
+
   // Cash registers
   cashRegisters: CashRegister[]
 
@@ -460,19 +456,8 @@ export interface GameState {
   // Bundle promo shown
   bundlePromoShown: boolean
 
-  // Daily micro events
-  seenMicroEventIds: string[]  // Events already shown this week
-  pendingMicroEvent: null | {
-    id: string
-    title: string
-    description: string
-    icon: string
-    options: Array<{
-      id: string
-      text: string
-      effects: Record<string, number>
-    }>
-  }
+  // Weekly micro event (passive, shown in results)
+  lastWeekMicroEvent?: { icon: string; title: string; effectText: string } | null
 
   // Suppliers system (NEW v2.0)
   suppliers: Supplier[]
@@ -505,7 +490,7 @@ export interface GameState {
   playerBackstory: PlayerBackstory | null
   activeChainIds: string[]
   completedChainIds: string[]
-  pendingChainFollowUps: Array<{ chainEventId: string; triggerWeek: number }>
+  pendingChainFollowUps: Array<{ chainEventId: string; triggerWeek: number; contextNote?: string }>
 
   // Narrative systems (v3.1)
   decisionLog: DecisionLogEntry[]
@@ -519,9 +504,14 @@ export interface GameState {
   // Cliffhanger teaser for next week (v4.0)
   upcomingEventTeaser?: string | null
 
-  // Regular customer (v4.0)
-  regularCustomer?: RegularCustomer | null
-
   // Pending milestone celebration (shown in results overlay, v4.0)
   pendingMilestoneCelebration?: string | null  // 'week10' | 'week20' | 'week30'
+
+  // Onboarding resilience (v4.2)
+  // Step IDs where player explicitly chose to skip a required action
+  skippedOnboardingActions?: string[]
+  // True after emergency startup grant has been issued once
+  onboardingEmergencyGrantUsed?: boolean
+  // Unix ms timestamp saved on each persist — guards against real-time trigger drift
+  lastSavedTimestamp?: number
 }

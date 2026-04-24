@@ -56,8 +56,6 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     competitorEventTriggered: false,
     lastDayPainLosses: null,
     bundlePromoShown: false,
-    seenMicroEventIds: [],
-    pendingMicroEvent: null,
     weeklyEnergyRestored: false,
     suppliers: [],
     activeSupplierId: null,

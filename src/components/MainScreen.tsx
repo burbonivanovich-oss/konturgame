@@ -13,7 +13,6 @@ import AssortmentModal from './modals/AssortmentModal'
 import PromoCodeModal from './modals/PromoCodeModal'
 import PromoWalletModal from './modals/PromoWalletModal'
 import BundleModal from './modals/BundleModal'
-import MicroEventModal from './modals/MicroEventModal'
 import HireEmployeeModal from './modals/HireEmployeeModal'
 import OwnerInvestmentsModal from './modals/OwnerInvestmentsModal'
 import { WeekSummaryOverlay } from './WeekSummaryOverlay'
@@ -671,7 +670,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const [showHireEmployeeModal, setShowHireEmployeeModal] = useState(false)
   const [showOwnerInvestmentsModal, setShowOwnerInvestmentsModal] = useState(false)
   const [dayBlockedMsg, setDayBlockedMsg] = useState<string | null>(null)
-  const [savingsToast, setSavingsToast] = useState<number | null>(null)
+  const [savingsToast, setSavingsToast] = useState<{ savings: number; vsOption: string } | null>(null)
   const [unlockToast, setUnlockToast] = useState<string | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const unlockToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -750,14 +749,14 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
     if (option.isContourOption && c.balanceDelta !== undefined) {
       const nonKontour = pendingEvent.options.filter((o) => !o.isContourOption)
       if (nonKontour.length > 0) {
-        const cheapest = nonKontour.reduce((best, o) =>
+        const bestAlternative = nonKontour.reduce((best, o) =>
           (o.consequences.balanceDelta ?? 0) > (best.consequences.balanceDelta ?? 0) ? o : best
         )
-        const savings = c.balanceDelta - (cheapest.consequences.balanceDelta ?? 0)
+        const savings = c.balanceDelta - (bestAlternative.consequences.balanceDelta ?? 0)
         if (savings > 0) {
           addSavedBalance(savings)
           if (toastTimer.current) clearTimeout(toastTimer.current)
-          setSavingsToast(savings)
+          setSavingsToast({ savings, vsOption: bestAlternative.text })
           toastTimer.current = setTimeout(() => setSavingsToast(null), 3500)
         }
       }
@@ -880,7 +879,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       <PromoCodeModal />
       <PromoWalletModal isOpen={showPromoWalletModal} onClose={() => setShowPromoWalletModal(false)} />
       <BundleModal />
-      <MicroEventModal />
       <VictoryModal isOpen={isVictory} type="victory" />
       <VictoryModal isOpen={isGameOver && !isVictory} type="defeat" />
 
@@ -898,8 +896,12 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
           position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
           zIndex: 50, background: K.mint, color: K.white,
           padding: '16px 24px', borderRadius: 16, fontSize: 14, fontWeight: 700,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
         }}>
-          ✅ Спасено {savingsToast.toLocaleString('ru-RU')} ₽!
+          <span>✅ Контур сэкономил {savingsToast.savings.toLocaleString('ru-RU')} ₽</span>
+          <span style={{ fontSize: 11, fontWeight: 400, opacity: 0.8 }}>
+            vs «{savingsToast.vsOption}»
+          </span>
         </div>
       )}
 

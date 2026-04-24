@@ -1,4 +1,5 @@
 import type { GameState, DayResult } from '../types/game'
+import { DAILY_MICRO_EVENTS } from '../constants/dailyMicroEvents'
 import { BUSINESS_CONFIGS, ECONOMY_CONSTANTS, CAMPAIGN_DIMINISHING_FACTORS } from '../constants/business'
 import { ensureNPCsInitialized, applyNPCPassiveEffects, getInspectorChain2EventId } from './npcManager'
 import { getChainEvent, getChainStartEvent, CHAIN_TRIGGER_WEEKS, type ChainId } from '../constants/eventChains'
@@ -14,7 +15,7 @@ import {
   calculateMonthlyExpenses,
   getLoyaltyUpgradesBonus,
 } from './economyEngine'
-import { getTotalStock } from './stockManager'
+import { getTotalStock, checkExpiry } from './stockManager'
 import { generateEvent } from './eventGenerator'
 import {
   checkBankruptcy,
@@ -83,6 +84,7 @@ export function processWeek(state: GameState): DayResult {
   let weekLoyaltyChange = 0
   let totalDaysWithoutExpiry = 0
   let weekExpiredLoss = 0
+  let weekRegisterOverflow = 0
   const weekPain = { bank: 0, market: 0, ofd: 0, diadoc: 0, fokus: 0, elba: 0, extern: 0, total: 0 }
   let weeklySeasonalSum = 0
   let weeklyEventSum = 0
@@ -105,9 +107,8 @@ export function processWeek(state: GameState): DayResult {
     // Quality price premium
     const qualityPricePremium = getQualityPricePremium(state)
 
-    const expiredLoss = 0
-
-    // 2. Competitor event - now cyclic every 5-8 weeks (moved outside loop)
+    // 2. Stock expiry — must run before revenue to account for lost inventory
+    const { loss: expiredLoss } = checkExpiry(state)
 
     // 3. Calculate daily metrics
     let totalClients = calculateClients(config.baseClients, modifiers)
@@ -115,8 +116,6 @@ export function processWeek(state: GameState): DayResult {
     // Apply quality modifier (affects client acquisition)
     const qualityClientMod = getQualityClientModifier(state.qualityLevel)
     totalClients = Math.round(totalClients * (1 + qualityClientMod))
-
-    // Seasonality already applied in buildModifiers/calculateClients, skip redundant application
 
     // Apply brand effect (reputation + loyalty synergy)
     const brandEffect = getBrandEffect(state.reputation, state.loyalty)
@@ -127,8 +126,15 @@ export function processWeek(state: GameState): DayResult {
     if (employeeCapacityBonus > 0) {
       capacity = Math.round(capacity * (1 + employeeCapacityBonus * 0.1))
     }
-    
-    const served = Math.min(totalClients, capacity)
+
+    let served = Math.min(totalClients, capacity)
+
+    // 3b. Register throughput limits served clients (calculated before revenue)
+    const registerThroughput = getTotalThroughput(state.cashRegisters, state)
+    const registerMissed = registerThroughput > 0
+      ? calculateRegisterPenalty(served, registerThroughput)
+      : 0
+    served = served - registerMissed
     const missed = totalClients - served
 
     // 4. Bank payment ratio
@@ -163,12 +169,13 @@ export function processWeek(state: GameState): DayResult {
       dailyRevenue = Math.round(baseRevenue * (1 + totalRevenueBonus))
     }
 
-    // 7. Register penalty
-    const registerThroughput = getTotalThroughput(state.cashRegisters, state)
-    const registerPenalty = registerThroughput > 0
-      ? calculateRegisterPenalty(served, registerThroughput, dailyRevenue)
-      : 0
+    // 6b. Bank acquiring fee (1.5% of revenue — cost of cashless payments)
+    if (state.services?.bank?.isActive) {
+      const acquiringRate = state.services.bank.effects.acquiringRate ?? 0.015
+      dailyRevenue = Math.round(dailyRevenue * (1 - acquiringRate))
+    }
 
+    // 7. Register breakdown penalty (random equipment failure, separate from throughput)
     const registerBroke = checkRegisterBreakdown(state.cashRegisters)
     const breakdownPenalty = registerBroke ? Math.round(dailyRevenue * 0.15) : 0
 
@@ -180,7 +187,8 @@ export function processWeek(state: GameState): DayResult {
       energyModifier = 0.9  // -10% if tired
     }
 
-    const dayRevenue = Math.max(0, Math.round((dailyRevenue - registerPenalty - breakdownPenalty) * energyModifier))
+    const dayRevenue = Math.max(0, Math.round((dailyRevenue - breakdownPenalty) * energyModifier))
+    const registerOverflowPenalty = Math.round(registerMissed * avgCheck)
 
     // 8. Purchase costs (via assortment daily costs)
     const purchaseCost = totalDailyCategoryCost
@@ -260,6 +268,7 @@ export function processWeek(state: GameState): DayResult {
     weekRepChange += dayRepChange
     weekLoyaltyChange += dayLoyaltyChange
     weekExpiredLoss += expiredLoss
+    weekRegisterOverflow += registerOverflowPenalty
 
     if (expiredLoss === 0) {
       totalDaysWithoutExpiry += 1
@@ -320,7 +329,6 @@ export function processWeek(state: GameState): DayResult {
   // Update state (but don't advance week yet — done at end after all checks)
   state.dayOfWeek = 0
   state.weeklyEnergyRestored = false
-  state.seenMicroEventIds = []  // Reset seen events for new week
   state.balance = newBalance
   state.reputation = newReputation
   state.loyalty = newLoyalty
@@ -334,6 +342,9 @@ export function processWeek(state: GameState): DayResult {
     clients: Math.round(weekRevenue / (config.avgCheck * bankPaymentRatioForResult)), // Estimate from revenue
     served: 0,  // Not tracked in week mode
     missed: 0,
+    lostToBank: bankPaymentRatioForResult < 1
+      ? Math.round(weekRevenue / config.avgCheck * (1 - bankPaymentRatioForResult) / bankPaymentRatioForResult)
+      : 0,
     revenue: weekRevenue,
     expenses: weekExpenses,
     tax: 0,  // Accumulated in week
@@ -353,7 +364,7 @@ export function processWeek(state: GameState): DayResult {
     painLossFokusBadSupplier: 0,
     painLossElbaFine: 0,
     painLossExternBlock: 0,
-    registerOverflowPenalty: 0,
+    registerOverflowPenalty: weekRegisterOverflow,
     categoryFines: {},
   }
 
@@ -521,8 +532,8 @@ export function processWeek(state: GameState): DayResult {
   // Auto-resolve expired decision timers (pick first non-Kontour option)
   autoResolveExpiredDecisions(state)
 
-  // Trigger city newspaper event every 10 weeks
-  if (state.currentWeek % 10 === 0 && !(state.seenNewspaperWeeks ?? []).includes(state.currentWeek)) {
+  // Trigger city newspaper: first on week 5, then every 10 weeks (5, 15, 25, ...)
+  if ((state.currentWeek + 5) % 10 === 0 && !(state.seenNewspaperWeeks ?? []).includes(state.currentWeek)) {
     const newspaper = getNewspaperForWeek(state.currentWeek)
     if (newspaper && !state.triggeredEventIds.includes(newspaper.id)) {
       const newsEvent = templateToEvent(newspaper, state.currentWeek * 7, state.currentWeek)
@@ -531,6 +542,9 @@ export function processWeek(state: GameState): DayResult {
       queueChainEvent(state, newsEvent)
     }
   }
+
+  // Pick 1 micro event per week (passive, no modal — shown in WeekResults)
+  applyWeeklyMicroEvent(state)
 
   // Generate 1-2 events every week (crisis weeks always get 2)
   if (!state.isGameOver && !state.isVictory && !state.pendingEvent) {
@@ -568,11 +582,11 @@ export function processWeek(state: GameState): DayResult {
   tp.diadoc += weekPain.diadoc; tp.fokus += weekPain.fokus; tp.elba += weekPain.elba
   tp.extern += weekPain.extern; tp.total += weekPain.total
 
+  // Accumulate savings from active services (direct value, not event-based)
+  accumulateServiceSavings(state, weekRevenue, weekNetProfit)
+
   // Generate next-week cliffhanger teaser
   state.upcomingEventTeaser = generateNextWeekTeaser(state)
-
-  // Process regular customer visit
-  processRegularCustomer(state, weekNetProfit)
 
   // Clear milestone celebration after it's been generated (UI reads it once)
   // Milestone celebration is set based on newly achieved milestones this week
@@ -600,16 +614,12 @@ function generateNextWeekTeaser(state: GameState): string | null {
     }
   }
 
-  // Upcoming fokus penalty (day % 17 == 0)
-  const daysUntilFokus = 17 - (nextDay % 17)
-  if (!state.services?.fokus?.isActive && daysUntilFokus <= 7) {
-    return `⚠️ Без Контур.Фокуса через ${daysUntilFokus} дн. возможна проверка поставщика`
+  // Risk warnings (probabilistic — no fixed schedule)
+  if (!state.services?.fokus?.isActive) {
+    return `⚠️ Без Контур.Фокуса есть риск мошенничества со стороны поставщика`
   }
-
-  // Upcoming extern penalty (day % 31 == 0)
-  const daysUntilExtern = 31 - (nextDay % 31)
-  if (!state.services?.extern?.isActive && daysUntilExtern <= 7) {
-    return `🔒 Без Контур.Экстерна скоро возможна блокировка счёта`
+  if (!state.services?.extern?.isActive) {
+    return `🔒 Без Контур.Экстерна возможна блокировка счёта налоговой`
   }
 
   // Seasonal hint
@@ -619,11 +629,6 @@ function generateNextWeekTeaser(state: GameState): string | null {
   if (config === 'cafe' && nextMonth === 12) return `❄️ Зима снизит поток клиентов — подготовьтесь заранее`
   if (config === 'beauty-salon' && nextMonth === 3) return `🌸 Весна — сезонный рост для салона красоты`
   if (config === 'shop' && nextMonth === 7) return `🏖️ Летний сезон даёт небольшой рост — пользуйтесь`
-
-  // Regular customer missed
-  if (state.regularCustomer && state.regularCustomer.missedWeeks >= 2) {
-    return `😔 ${state.regularCustomer.name} не приходил уже ${state.regularCustomer.missedWeeks} нед. — возможно, что-то не так`
-  }
 
   // Crisis week hint
   if ((state.currentWeek + 1) % 9 === 0) {
@@ -641,44 +646,47 @@ function generateNextWeekTeaser(state: GameState): string | null {
   return tips[Math.floor(Math.random() * tips.length)]
 }
 
-const REGULAR_CUSTOMERS: Record<string, { name: string; emoji: string; habit: string }> = {
-  shop: { name: 'Николай Петрович', emoji: '🧔', habit: 'Заходит каждую пятницу за продуктами' },
-  cafe: { name: 'Катя', emoji: '☕', habit: 'Приходит каждое утро за кофе с молоком' },
-  'beauty-salon': { name: 'Мария Ивановна', emoji: '💅', habit: 'Записывается каждые две недели' },
+function accumulateServiceSavings(state: GameState, weekRevenue: number, weekNetProfit: number): void {
+  let savings = 0
+
+  // Market: prevents 8% manual accounting losses every day
+  if (state.services?.market?.isActive) {
+    savings += Math.round(weekRevenue * 0.08)
+  }
+
+  // Elba: expected tax declaration penalty prevented (15% profit × 4% daily chance × 7 days)
+  if (state.services?.elba?.isActive && weekNetProfit > 0) {
+    savings += Math.round(weekNetProfit * 0.15 * (7 / 25))
+  }
+
+  // Extern: expected account block prevented (2× daily revenue × 3.2% daily chance × 7 days)
+  if (state.services?.extern?.isActive) {
+    savings += Math.round((weekRevenue / 7) * 2 * (7 / 31))
+  }
+
+  if (savings > 0) {
+    state.savedBalance = (state.savedBalance ?? 0) + savings
+  }
 }
 
-function processRegularCustomer(state: GameState, weekProfit: number): void {
-  if (!state.regularCustomer) {
-    if (state.currentWeek >= 2) {
-      const def = REGULAR_CUSTOMERS[state.businessType]
-      if (def) {
-        state.regularCustomer = {
-          ...def,
-          lastVisitWeek: state.currentWeek,
-          missedWeeks: 0,
-          totalVisits: 1,
-        }
-      }
-    }
-    return
+function applyWeeklyMicroEvent(state: GameState): void {
+  const idx = (state.currentWeek - 1) % DAILY_MICRO_EVENTS.length
+  const micro = DAILY_MICRO_EVENTS[idx]
+  if (!micro) return
+
+  const option = micro.options[0]
+  if (!option) return
+
+  const e = option.effects
+  if (e.balanceDelta) state.balance = Math.max(0, state.balance + e.balanceDelta)
+  if (e.energyDelta) state.entrepreneurEnergy = Math.max(0, Math.min(100, state.entrepreneurEnergy + e.energyDelta))
+  if (e.reputationDelta) state.reputation = Math.max(0, Math.min(100, state.reputation + e.reputationDelta))
+  if (e.clientModifierPercent && e.clientModifierDays) {
+    state.temporaryClientMod = (state.temporaryClientMod ?? 0) + e.clientModifierPercent
+    state.temporaryModDaysLeft = Math.max(state.temporaryModDaysLeft ?? 0, e.clientModifierDays)
   }
 
-  const customer = state.regularCustomer
-  const willVisit = state.loyalty >= 40 && Math.random() < 0.8
-
-  if (willVisit) {
-    customer.lastVisitWeek = state.currentWeek
-    customer.totalVisits += 1
-    customer.missedWeeks = 0
-    // Small loyalty bonus for regular visit
-    state.loyalty = Math.min(100, state.loyalty + 1)
-  } else {
-    customer.missedWeeks += 1
-    if (customer.missedWeeks >= 4) {
-      // They've gone for good this run
-      state.loyalty = Math.max(0, state.loyalty - 2)
-    }
-  }
+  state.lastWeekMicroEvent = { icon: micro.icon, title: micro.title, effectText: option.text }
 }
 
 // ── Chain system helpers ─────────────────────────────────────────────────────
@@ -702,6 +710,9 @@ function triggerDueChainEvents(state: GameState): void {
     if ((state.triggeredEventIds ?? []).includes(template.id)) continue
 
     const event = templateToEvent(template, state.currentWeek * 7, state.currentWeek)
+    if (followUp.contextNote) {
+      event.description = `📌 Ранее вы выбрали: «${followUp.contextNote}»\n\n${event.description}`
+    }
     queueChainEvent(state, event)
   }
 

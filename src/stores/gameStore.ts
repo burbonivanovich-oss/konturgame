@@ -6,9 +6,10 @@ import type {
   DecisionLogEntry,
 } from '../types/game'
 import { SERVICES_CONFIG, BUSINESS_CONFIGS, ECONOMY_CONSTANTS, MAX_ACTIVE_CAMPAIGNS } from '../constants/business'
-import { SERVICE_UNLOCK_MAP } from '../constants/onboarding'
+import { ONBOARDING_STAGES, SERVICE_UNLOCK_MAP } from '../constants/onboarding'
 import { CASH_REGISTER_CONFIGS, REGISTER_COMBO_DISCOUNTS } from '../constants/cashRegisters'
 import { getDefaultCategories } from '../services/assortmentEngine'
+import { createEmployee } from '../constants/employees'
 import { checkWeekBlocked, processWeek } from '../services/weekCalculator'
 import { getBusinessStage, STAGE_CONFIG } from '../constants/businessStages'
 import { OWNER_INVESTMENTS_MAP } from '../constants/ownerInvestments'
@@ -85,9 +86,13 @@ const createInitialState = (businessType: BusinessType): GameState => {
     onboardingStage: 0,
     onboardingCompleted: false,
     onboardingStepIndex: 0,
+    skippedOnboardingActions: [],
+    onboardingEmergencyGrantUsed: false,
+    lastSavedTimestamp: Date.now(),
 
     // Service unlocking (start with Bank only)
     unlockedServices: SERVICE_UNLOCK_MAP[0],
+    serviceDeactivatedWeeks: {},
 
     // Cash registers
     cashRegisters: [],
@@ -117,9 +122,8 @@ const createInitialState = (businessType: BusinessType): GameState => {
     // Week energy restore
     weeklyEnergyRestored: false,
 
-    // Daily micro events
-    seenMicroEventIds: [],
-    pendingMicroEvent: null,
+    // Weekly micro event (passive feed)
+    lastWeekMicroEvent: null,
 
     // Suppliers system (NEW v2.0)
     suppliers: [],
@@ -162,9 +166,8 @@ const createInitialState = (businessType: BusinessType): GameState => {
     decisionLog: [],
     seenNewspaperWeeks: [],
 
-    // Cliffhanger teaser and regular customer (v4.0)
+    // Cliffhanger teaser (v4.0)
     upcomingEventTeaser: null,
-    regularCustomer: null,
     pendingMilestoneCelebration: null,
     // Pain tracking (v4.1)
     lastWeekPainLosses: null,
@@ -266,6 +269,9 @@ interface GameStoreActions {
   advanceOnboardingStage: () => void
   nextOnboardingStep: () => void
   completeOnboarding: () => void
+  skipOnboarding: () => void
+  skipOnboardingStep: () => void
+  claimEmergencyGrant: () => void
 
   // Cash registers
   buyCashRegister: (type: CashRegisterType) => boolean
@@ -278,14 +284,10 @@ interface GameStoreActions {
   clearPendingPromoCode: () => void
   markBundlePromoShown: () => void
 
-  // Daily micro events
-  setPendingMicroEvent: (event: any) => void
-  resolveMicroEvent: (optionId: string) => void
-  clearSeenMicroEvents: () => void  // Reset when week changes
-
   // Employees
-  hireEmployee: (position: any, name: string, salary: number) => void
+  hireEmployee: (position: any) => void
   fireEmployee: (employeeId: string) => void
+  runTrainingSession: () => boolean  // costs 20 energy, +0.1 efficiency to all employees (capped at max)
 
   // Quality level
   adjustQualityLevel: (delta: number) => void
@@ -521,25 +523,37 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Services
     toggleService: (serviceId) => {
       const state = get()
-      // Check if service is unlocked before allowing toggle
-      if (!(state.unlockedServices ?? []).includes(serviceId)) {
-        return
-      }
+      if (!(state.unlockedServices ?? []).includes(serviceId)) return
+
       const isCurrentlyActive = state.services[serviceId]?.isActive ?? false
-      // Activate with promo code reveal
-      if (!isCurrentlyActive) {
-        get().revealPromoCode(serviceId)
-      }
-      set((s) => ({
-        services: {
-          ...s.services,
-          [serviceId]: {
-            ...s.services[serviceId],
-            isActive: !s.services[serviceId]?.isActive,
+
+      if (isCurrentlyActive) {
+        // Deactivation: block if within 2-week cooldown from last deactivation
+        const deactivatedWeek = (state.serviceDeactivatedWeeks ?? {})[serviceId] ?? -99
+        if (state.currentWeek < deactivatedWeek + 2) return
+
+        set((s) => ({
+          services: {
+            ...s.services,
+            [serviceId]: { ...s.services[serviceId], isActive: false },
           },
-        },
-        lastUpdated: Date.now(),
-      }))
+          serviceDeactivatedWeeks: {
+            ...(s.serviceDeactivatedWeeks ?? {}),
+            [serviceId]: s.currentWeek,
+          },
+          lastUpdated: Date.now(),
+        }))
+      } else {
+        // Activation: always allowed, reveal promo code
+        get().revealPromoCode(serviceId)
+        set((s) => ({
+          services: {
+            ...s.services,
+            [serviceId]: { ...s.services[serviceId], isActive: true },
+          },
+          lastUpdated: Date.now(),
+        }))
+      }
     },
 
     activateService: (serviceId) => {
@@ -876,6 +890,45 @@ export const useGameStore = create<GameStore>((set, get) => ({
       })
     },
 
+    // Skip the entire onboarding (for returning players or rebels).
+    // Unlocks all services immediately without any service activation.
+    skipOnboarding: () => {
+      set({
+        onboardingCompleted: true,
+        onboardingStage: 4,
+        unlockedServices: SERVICE_UNLOCK_MAP[4],
+        lastUpdated: Date.now(),
+      })
+    },
+
+    // Skip the current action step without completing its required action.
+    // Records the step id in skippedOnboardingActions so shouldAdvanceStage
+    // can still allow progression without the service being active.
+    skipOnboardingStep: () => {
+      const state = get()
+      const stageConfig = ONBOARDING_STAGES[state.onboardingStage]
+      const step = stageConfig?.steps[state.onboardingStepIndex]
+      if (!step?.requiresAction) return
+      set((s) => ({
+        skippedOnboardingActions: [...(s.skippedOnboardingActions ?? []), step.id],
+        onboardingStepIndex: s.onboardingStepIndex + 1,
+        lastUpdated: Date.now(),
+      }))
+    },
+
+    // Emergency startup grant: adds enough funds to buy the cheapest cash register.
+    // Only available once, only when balance is below the minimum register cost.
+    claimEmergencyGrant: () => {
+      const state = get()
+      if (state.onboardingEmergencyGrantUsed) return
+      const GRANT_AMOUNT = 15000
+      set((s) => ({
+        balance: s.balance + GRANT_AMOUNT,
+        onboardingEmergencyGrantUsed: true,
+        lastUpdated: Date.now(),
+      }))
+    },
+
     // Cash registers
     buyCashRegister: (type: CashRegisterType): boolean => {
       const state = get()
@@ -946,78 +999,47 @@ export const useGameStore = create<GameStore>((set, get) => ({
     },
 
     // Daily micro events
-    setPendingMicroEvent: (event) => {
-      set({
-        pendingMicroEvent: event,
-        seenMicroEventIds: event ? [...get().seenMicroEventIds, event.id] : get().seenMicroEventIds,
-        lastUpdated: Date.now(),
-      })
-    },
-
-    resolveMicroEvent: (optionId) => {
-      const state = get()
-      const event = state.pendingMicroEvent
-      if (!event) return
-
-      const option = event.options.find(o => o.id === optionId)
-      if (!option) return
-
-      const effects = option.effects
-      let updates: any = { pendingMicroEvent: null, lastUpdated: Date.now() }
-
-      if (effects.balanceDelta) {
-        updates.balance = Math.max(0, state.balance + effects.balanceDelta)
-      }
-
-      if (effects.energyDelta) {
-        updates.entrepreneurEnergy = Math.max(0, Math.min(100, state.entrepreneurEnergy + effects.energyDelta))
-      }
-
-      if (effects.reputationDelta) {
-        updates.reputation = Math.max(0, Math.min(100, state.reputation + effects.reputationDelta))
-      }
-
-      if (effects.clientModifierPercent && effects.clientModifierDays) {
-        updates.temporaryClientMod = (state.temporaryClientMod ?? 0) + effects.clientModifierPercent
-        updates.temporaryModDaysLeft = Math.max(
-          state.temporaryModDaysLeft ?? 0,
-          effects.clientModifierDays
-        )
-      }
-
-      set(updates)
-    },
-
-    clearSeenMicroEvents: () => {
-      set({ seenMicroEventIds: [], lastUpdated: Date.now() })
-    },
-
     // Employees
-    hireEmployee: (position: any, name: string, salary: number) => {
+    hireEmployee: (position: any, _name: string, _salary: number) => {
       const state = get()
       const stage = getBusinessStage(state.currentWeek, state.level)
       const maxEmployees = STAGE_CONFIG[stage].maxEmployees
       if ((state.employees ?? []).length >= maxEmployees) return
       get().spendEnergy(ECONOMY_CONSTANTS.ENERGY_COST_BASE_OPERATION)
+      const employee = createEmployee(position, state.currentWeek)
       set((s) => ({
-        employees: [...s.employees, {
-          id: `emp_${Date.now()}`,
-          position,
-          name,
-          salary,
-          efficiency: 1.0,
-          hireDay: s.currentWeek,
-          energyCost: Math.round(salary / 2000),
-        }],
+        employees: [...s.employees, employee],
         lastUpdated: Date.now(),
       }))
     },
 
     fireEmployee: (employeeId: string) => {
-      set((state) => ({
-        employees: state.employees.filter(e => e.id !== employeeId),
+      set((state) => {
+        const employee = state.employees.find(e => e.id === employeeId)
+        if (!employee) return { lastUpdated: Date.now() }
+        const severancePay = Math.round(employee.salary * 0.5)
+        return {
+          employees: state.employees.filter(e => e.id !== employeeId),
+          balance: state.balance - severancePay,
+          lastUpdated: Date.now(),
+        }
+      })
+    },
+
+    runTrainingSession: () => {
+      const state = get()
+      const TRAINING_ENERGY_COST = 20
+      if ((state.entrepreneurEnergy ?? 0) < TRAINING_ENERGY_COST) return false
+      if (!state.employees?.length) return false
+      get().spendEnergy(TRAINING_ENERGY_COST)
+      set((s) => ({
+        employees: s.employees.map(emp => ({
+          ...emp,
+          efficiency: Math.min(1.6, Math.round((emp.efficiency + 0.1) * 100) / 100),
+        })),
         lastUpdated: Date.now(),
       }))
+      return true
     },
 
     // Quality level
@@ -1218,7 +1240,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 // LocalStorage persistence
 function saveToStorage(state: GameState) {
   try {
-    const stateToSave = extractState(state)
+    const stateToSave = extractState({ ...state, lastSavedTimestamp: Date.now() })
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave))
   } catch (error) {
     console.error('Failed to save game state to localStorage:', error)
@@ -1238,7 +1260,6 @@ function extractState(state: any): GameState {
     currentDay,
     // New fields
     onboardingStage, onboardingCompleted, onboardingStepIndex, unlockedServices,
-    seenMicroEventIds, pendingMicroEvent,
     cashRegisters, enabledCategories, promoCodesRevealed,
     daysBalanceNegative, competitorEventTriggered, lastDayPainLosses, bundlePromoShown,
     // v2.0 new fields
@@ -1253,6 +1274,8 @@ function extractState(state: any): GameState {
     npcs, playerBackstory, activeChainIds, completedChainIds, pendingChainFollowUps,
     // v3.1 narrative
     decisionLog, seenNewspaperWeeks,
+    // v4.2 onboarding resilience
+    skippedOnboardingActions, onboardingEmergencyGrantUsed, lastSavedTimestamp,
   } = state
 
   // Migration: convert old currentDay to currentWeek
@@ -1281,6 +1304,7 @@ function extractState(state: any): GameState {
     onboardingCompleted: onboardingCompleted ?? false,
     onboardingStepIndex: onboardingStepIndex ?? 0,
     unlockedServices: unlockedServices ?? SERVICE_UNLOCK_MAP[0],
+    serviceDeactivatedWeeks: (state as any).serviceDeactivatedWeeks ?? {},
     cashRegisters: cashRegisters ?? [],
     enabledCategories: enabledCategories ?? [],
     promoCodesRevealed: promoCodesRevealed ?? [],
@@ -1289,8 +1313,7 @@ function extractState(state: any): GameState {
     competitorEventTriggered: competitorEventTriggered ?? false,
     lastDayPainLosses: lastDayPainLosses ?? null,
     bundlePromoShown: bundlePromoShown ?? false,
-    seenMicroEventIds: seenMicroEventIds ?? [],
-    pendingMicroEvent: pendingMicroEvent ?? null,
+    lastWeekMicroEvent: null,
     // v2.0 fields with defaults for save compatibility
     suppliers: suppliers ?? [],
     activeSupplierId: activeSupplierId ?? null,
@@ -1318,13 +1341,16 @@ function extractState(state: any): GameState {
     // v3.1 narrative systems
     decisionLog: decisionLog ?? [],
     seenNewspaperWeeks: seenNewspaperWeeks ?? [],
-    // v4.0 teaser + regular customer
+    // v4.0 teaser
     upcomingEventTeaser: (state as any).upcomingEventTeaser ?? null,
-    regularCustomer: (state as any).regularCustomer ?? null,
     pendingMilestoneCelebration: (state as any).pendingMilestoneCelebration ?? null,
     lastWeekPainLosses: (state as any).lastWeekPainLosses ?? null,
     totalPainLosses: (state as any).totalPainLosses ?? null,
     seenUnlockTabs: (state as any).seenUnlockTabs ?? [],
+    // v4.2 onboarding resilience
+    skippedOnboardingActions: skippedOnboardingActions ?? [],
+    onboardingEmergencyGrantUsed: onboardingEmergencyGrantUsed ?? false,
+    lastSavedTimestamp: lastSavedTimestamp ?? Date.now(),
   }
 }
 
