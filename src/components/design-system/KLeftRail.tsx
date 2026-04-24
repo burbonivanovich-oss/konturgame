@@ -169,14 +169,14 @@ export function KLeftRail({
       <div style={{ flex: 1 }} />
 
       {/* Cumulative savings */}
-      <Card pad={12} radius={12} bg={K.ink} border={K.ink} style={{ color: K.white }}>
-        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+      <Card pad={12} radius={12} bg={K.mint} border={K.mint} style={{ color: K.white }}>
+        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
           Спасено с Контуром
         </div>
         <div style={{ fontSize: 22, fontWeight: 700, marginTop: 2, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
           {savedBalance.toLocaleString('ru-RU')} ₽
         </div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>
           за {currentWeek} {currentWeek === 1 ? 'неделю' : currentWeek < 5 ? 'недели' : 'недель'}
         </div>
       </Card>

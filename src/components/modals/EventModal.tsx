@@ -49,37 +49,61 @@ export default function EventModal({ isOpen, event, onOptionSelect, queueLength 
     return '→'
   }
 
+  const useHorizontal = event.options.length >= 2
+
   return (
     <Modal
       isOpen={isOpen}
-      title={`📰 ${event.title}`}
+      title=""
       onClose={() => {}}
       size="lg"
       closeButton={false}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {queueLength > 0 && (
-          <div style={{
-            background: K.orangeSoft,
-            border: `1px solid ${K.line}`,
-            borderRadius: 8,
-            padding: '10px 14px',
-            fontSize: 12,
-            fontWeight: 600,
-            color: K.orange,
-          }}>
-            ⚠️ Кризисный день — ещё {queueLength} {queueLength === 1 ? 'событие' : 'события'} после этого
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+        {/* Dark header block */}
+        <div style={{
+          background: K.ink, borderRadius: 12, padding: '16px 18px', marginBottom: 16,
+          display: 'flex', flexDirection: 'column', gap: 10,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{
+              background: K.orange, color: K.white,
+              fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
+              padding: '3px 10px', borderRadius: 999, textTransform: 'uppercase',
+            }}>
+              Событие · Требует решения
+            </span>
+            {queueLength > 0 && (
+              <span style={{
+                background: 'rgba(255,106,44,0.25)', color: K.orange,
+                fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
+              }}>
+                ещё {queueLength} {queueLength === 1 ? 'событие' : 'события'}
+              </span>
+            )}
           </div>
-        )}
+          <div style={{ fontSize: 19, fontWeight: 700, color: K.white, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+            {event.title}
+          </div>
+          {event.description && (
+            <p style={{ fontSize: 13, lineHeight: 1.55, color: 'rgba(255,255,255,0.55)', margin: 0 }}>
+              {event.description}
+            </p>
+          )}
+        </div>
 
-        <p style={{ fontSize: 14, lineHeight: 1.6, color: K.ink2, marginBottom: 16 }}>
-          {event.description}
-        </p>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* Options */}
+        <div style={{
+          display: 'flex',
+          flexDirection: useHorizontal ? 'row' : 'column',
+          gap: 8,
+        }}>
           {event.options.map((option) => {
             const available = isOptionAvailable(option)
             const isContour = option.isContourOption
+            const isRisk = !isContour &&
+              option.consequences.balanceDelta !== undefined &&
+              option.consequences.balanceDelta < -5000
 
             return (
               <button
@@ -87,77 +111,75 @@ export default function EventModal({ isOpen, event, onOptionSelect, queueLength 
                 onClick={() => available && onOptionSelect(option.id)}
                 disabled={!available}
                 style={{
-                  width: '100%',
+                  flex: useHorizontal ? 1 : undefined,
+                  width: useHorizontal ? undefined : '100%',
                   textAlign: 'left',
-                  padding: '12px 14px',
+                  padding: '14px 14px',
                   borderRadius: 12,
                   cursor: available ? 'pointer' : 'not-allowed',
                   fontFamily: 'inherit',
                   display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 12,
+                  flexDirection: 'column',
+                  gap: 8,
                   opacity: !available ? 0.5 : 1,
-                  background: !available
-                    ? K.bone
-                    : isContour
-                    ? K.mintSoft
-                    : K.bone,
-                  border: !available
-                    ? `1px solid ${K.line}`
-                    : isContour
+                  background: isContour ? K.mint : K.bone,
+                  border: isContour
                     ? `1.5px solid ${K.mint}`
                     : `1px solid ${K.line}`,
                 }}
               >
-                <span style={{ fontSize: 20 }}>{getOptionIcon(option)}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <p style={{
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: isContour ? K.mintInk : K.ink,
-                      margin: 0,
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, flexWrap: 'wrap' }}>
+                  <p style={{
+                    fontSize: 13, fontWeight: 700, lineHeight: 1.3,
+                    color: isContour ? K.white : K.ink,
+                    margin: 0, flex: 1,
+                  }}>
+                    {option.text}
+                  </p>
+                  {isContour && (
+                    <span style={{
+                      fontSize: 9, padding: '2px 8px', borderRadius: 999, flexShrink: 0,
+                      background: 'rgba(255,255,255,0.22)', color: K.white, fontWeight: 700, letterSpacing: '0.08em',
                     }}>
-                      {option.text}
-                    </p>
-                    {isContour && (
-                      <span style={{
-                        fontSize: 10,
-                        padding: '2px 8px',
-                        borderRadius: 999,
-                        background: K.mint,
-                        color: K.white,
-                        fontWeight: 700,
-                      }}>
-                        Контур ✓
-                      </span>
-                    )}
-                    {!available && option.requiredService && (
-                      <span style={{ fontSize: 11, color: K.bad, fontWeight: 600 }}>
-                        🔒 {SERVICE_NAMES[option.requiredService as ServiceType]}
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', gap: 16, marginTop: 6, fontSize: 12, fontWeight: 700 }}>
-                    {option.consequences.balanceDelta !== undefined && (
-                      <p style={{
-                        margin: 0,
-                        color: option.consequences.balanceDelta >= 0 ? K.good : K.bad,
-                      }}>
-                        {option.consequences.balanceDelta >= 0 ? '+' : ''}
-                        {option.consequences.balanceDelta.toLocaleString('ru-RU')} ₽
-                      </p>
-                    )}
-                    {option.consequences.reputationDelta !== undefined && (
-                      <p style={{
-                        margin: 0,
-                        color: option.consequences.reputationDelta >= 0 ? K.good : K.bad,
-                      }}>
-                        Репутация: {option.consequences.reputationDelta >= 0 ? '+' : ''}
-                        {option.consequences.reputationDelta}
-                      </p>
-                    )}
-                  </div>
+                      КОНТУР
+                    </span>
+                  )}
+                  {isRisk && (
+                    <span style={{
+                      fontSize: 9, padding: '2px 8px', borderRadius: 999, flexShrink: 0,
+                      background: 'rgba(255,90,90,0.15)', color: K.bad, fontWeight: 700,
+                    }}>
+                      РИСК
+                    </span>
+                  )}
+                  {!available && option.requiredService && (
+                    <span style={{ fontSize: 10, color: K.bad, fontWeight: 600, flexShrink: 0 }}>
+                      🔒 {SERVICE_NAMES[option.requiredService as ServiceType]}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  {option.consequences.balanceDelta !== undefined && (
+                    <span style={{
+                      fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em',
+                      fontVariantNumeric: 'tabular-nums',
+                      color: isContour
+                        ? K.white
+                        : option.consequences.balanceDelta >= 0 ? K.good : K.bad,
+                    }}>
+                      {option.consequences.balanceDelta >= 0 ? '+' : ''}
+                      {option.consequences.balanceDelta.toLocaleString('ru-RU')} ₽
+                    </span>
+                  )}
+                  {option.consequences.reputationDelta !== undefined && option.consequences.reputationDelta !== 0 && (
+                    <span style={{
+                      fontSize: 12, fontWeight: 600,
+                      color: isContour ? 'rgba(255,255,255,0.75)' : (option.consequences.reputationDelta >= 0 ? K.good : K.bad),
+                      alignSelf: 'flex-end', paddingBottom: 2,
+                    }}>
+                      реп {option.consequences.reputationDelta >= 0 ? '+' : ''}{option.consequences.reputationDelta}
+                    </span>
+                  )}
                 </div>
               </button>
             )

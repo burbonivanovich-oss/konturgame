@@ -151,20 +151,37 @@ function DashboardView({
           {/* Financial health tiles */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {[
-              { label: 'Доход', value: `${dailyRevenue.toLocaleString('ru-RU')} ₽`, color: K.good },
-              { label: 'Расходы', value: `${dailyExpenses.toLocaleString('ru-RU')} ₽`, color: K.orange },
-              { label: 'Прибыль', value: `${dailyProfit > 0 ? '+' : ''}${dailyProfit.toLocaleString('ru-RU')} ₽`, color: dailyProfit >= 0 ? K.good : K.bad },
-              { label: 'Клиенты', value: String(dailyClients), color: K.violet },
+              {
+                label: 'Доход за день',
+                value: `${dailyRevenue.toLocaleString('ru-RU')} ₽`,
+                bg: K.orange, textColor: K.white, labelColor: 'rgba(255,255,255,0.65)',
+              },
+              {
+                label: 'Прибыль',
+                value: `${dailyProfit > 0 ? '+' : ''}${dailyProfit.toLocaleString('ru-RU')} ₽`,
+                bg: dailyProfit >= 0 ? K.mint : '#c0392b',
+                textColor: K.white, labelColor: 'rgba(255,255,255,0.65)',
+              },
+              {
+                label: 'Расходы за день',
+                value: `${dailyExpenses.toLocaleString('ru-RU')} ₽`,
+                bg: K.violet, textColor: K.white, labelColor: 'rgba(255,255,255,0.65)',
+              },
+              {
+                label: 'Клиенты',
+                value: String(dailyClients),
+                bg: K.blue, textColor: K.white, labelColor: 'rgba(255,255,255,0.65)',
+              },
             ].map(t => (
               <div key={t.label} style={{
-                background: K.white, border: `1px solid ${K.line}`,
+                background: t.bg,
                 borderRadius: 12, padding: '12px 16px',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               }}>
-                <div style={{ fontSize: 10, color: K.muted, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 800 }}>
+                <div style={{ fontSize: 10, color: t.labelColor, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
                   {t.label}
                 </div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: t.color, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: t.textColor, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
                   {t.value}
                 </div>
               </div>
@@ -269,38 +286,42 @@ function DashboardView({
             const npcDef = pendingEvent.npcId ? getNPCDefinition(pendingEvent.npcId) : null
             const npc = pendingEvent.npcId ? (npcs ?? []).find(n => n.id === pendingEvent.npcId) : null
             const isMoral = pendingEvent.isMoralDilemma === true
-            const accentColor = isMoral ? K.warn : K.violet
-            const accentBg = isMoral ? K.orangeSoft : K.violetSoft
             const deadlineWeeksLeft = pendingEvent.decisionDeadlineWeek
               ? Math.max(0, pendingEvent.decisionDeadlineWeek - currentWeek)
               : null
+            const totalEvents = 1 + (pendingEventsQueue?.length ?? 0)
 
             return (
               <div style={{
-                background: K.white, borderRadius: 14, padding: 20,
-                border: `1.5px solid ${accentColor}`,
+                background: K.ink, borderRadius: 16, padding: 20,
                 display: 'flex', flexDirection: 'column', gap: 14,
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {/* Header row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{
+                    background: isMoral ? K.orange : K.orange,
+                    color: K.white,
+                    fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
+                    padding: '3px 10px', borderRadius: 999, textTransform: 'uppercase',
+                  }}>
+                    {isMoral ? 'Дилемма' : 'Событие · Требует решения'}
+                  </span>
+                  <span style={{
+                    background: 'rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.55)',
+                    fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 999,
+                  }}>
+                    Блокирует «Следующий день»
+                  </span>
+                  {deadlineWeeksLeft !== null && (
                     <span style={{
-                      background: accentBg, color: accentColor,
-                      fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
-                      padding: '3px 10px', borderRadius: 999, textTransform: 'uppercase',
+                      background: 'rgba(255,106,44,0.25)', color: K.orange,
+                      fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
                     }}>
-                      {isMoral ? 'Дилемма' : 'Событие'}
+                      {deadlineWeeksLeft === 0 ? 'Решить сейчас' : `${deadlineWeeksLeft} нед.`}
                     </span>
-                    {deadlineWeeksLeft !== null && (
-                      <span style={{
-                        background: K.orangeSoft, color: K.orange,
-                        fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
-                      }}>
-                        {deadlineWeeksLeft === 0 ? 'Решить сейчас' : `${deadlineWeeksLeft} нед.`}
-                      </span>
-                    )}
-                  </div>
-                  <span style={{ fontSize: 11, color: K.muted }}>
-                    1 / {1 + (pendingEventsQueue?.length ?? 0)}
+                  )}
+                  <span style={{ marginLeft: 'auto', fontSize: 11, color: 'rgba(255,255,255,0.35)', fontVariantNumeric: 'tabular-nums' }}>
+                    1 / {totalEvents}
                   </span>
                 </div>
 
@@ -308,15 +329,15 @@ function DashboardView({
                   <div style={{
                     display: 'flex', alignItems: 'center', gap: 10,
                     padding: '10px 14px', borderRadius: 10,
-                    background: K.bone,
+                    background: 'rgba(255,255,255,0.07)',
                   }}>
                     <span style={{ fontSize: 22 }}>{npcDef.portrait}</span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700 }}>{npcDef.name}</div>
-                      <div style={{ fontSize: 11, color: K.muted }}>{npcDef.shortRole}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: K.white }}>{npcDef.name}</div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{npcDef.shortRole}</div>
                     </div>
                     {npc && npc.isRevealed && (
-                      <div style={{ fontSize: 11, fontWeight: 700, color: npc.relationshipLevel >= 60 ? K.good : K.muted }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: npc.relationshipLevel >= 60 ? K.mint : 'rgba(255,255,255,0.4)' }}>
                         {npc.relationshipLevel >= 80 ? 'Союзник' :
                          npc.relationshipLevel >= 60 ? 'Доверяет' :
                          npc.relationshipLevel >= 40 ? 'Нейтрально' : 'Напряжённо'}
@@ -325,50 +346,88 @@ function DashboardView({
                   </div>
                 )}
 
-                <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.15 }}>
+                <div style={{ fontSize: 20, fontWeight: 700, color: K.white, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
                   {pendingEvent.title}
                 </div>
 
                 {pendingEvent.description && (
-                  <div style={{ fontSize: 13, color: K.ink2, lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
                     {pendingEvent.description}
                   </div>
                 )}
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {pendingEvent.options.map((opt: any) => (
-                    <button
-                      key={opt.id}
-                      onClick={() => handleEventOption(opt.id)}
-                      style={{
-                        background: opt.isContourOption ? K.mintSoft : K.bone,
-                        color: K.ink,
-                        border: `1.5px solid ${opt.isContourOption ? K.mint : K.line}`,
-                        borderRadius: 10, padding: '12px 14px',
-                        cursor: 'pointer', fontFamily: 'inherit',
-                        display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left',
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>{opt.text}</div>
-                        {opt.isContourOption && (
-                          <div style={{ fontSize: 10, color: K.mint, fontWeight: 700, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                            Контур ✓
+                {/* Options — horizontal row */}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {pendingEvent.options.map((opt: any) => {
+                    const isRisk = !opt.isContourOption &&
+                      opt.consequences?.balanceDelta != null &&
+                      opt.consequences.balanceDelta < -5000
+                    return (
+                      <button
+                        key={opt.id}
+                        onClick={() => handleEventOption(opt.id)}
+                        style={{
+                          flex: 1,
+                          background: opt.isContourOption ? K.mint : 'rgba(255,255,255,0.07)',
+                          border: opt.isContourOption
+                            ? `1.5px solid ${K.mint}`
+                            : '1.5px solid rgba(255,255,255,0.12)',
+                          borderRadius: 12, padding: '14px 12px',
+                          cursor: 'pointer', fontFamily: 'inherit',
+                          display: 'flex', flexDirection: 'column', gap: 6,
+                          textAlign: 'left',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, flexWrap: 'wrap' }}>
+                          <span style={{
+                            fontSize: 12, fontWeight: 700, lineHeight: 1.3,
+                            color: opt.isContourOption ? K.white : 'rgba(255,255,255,0.85)',
+                            flex: 1,
+                          }}>
+                            {opt.text}
+                          </span>
+                          {opt.isContourOption && (
+                            <span style={{
+                              fontSize: 9, padding: '2px 7px', borderRadius: 999, flexShrink: 0,
+                              background: 'rgba(255,255,255,0.22)', color: K.white,
+                              fontWeight: 700, letterSpacing: '0.08em',
+                            }}>
+                              КОНТУР
+                            </span>
+                          )}
+                          {isRisk && (
+                            <span style={{
+                              fontSize: 9, padding: '2px 7px', borderRadius: 999, flexShrink: 0,
+                              background: 'rgba(255,90,90,0.2)', color: '#FF8080',
+                              fontWeight: 700, letterSpacing: '0.06em',
+                            }}>
+                              РИСК
+                            </span>
+                          )}
+                        </div>
+                        {opt.consequences?.balanceDelta != null && (
+                          <div style={{
+                            fontSize: 18, fontWeight: 800, letterSpacing: '-0.02em',
+                            fontVariantNumeric: 'tabular-nums',
+                            color: opt.isContourOption
+                              ? K.white
+                              : opt.consequences.balanceDelta >= 0 ? K.mint : '#FF8080',
+                          }}>
+                            {opt.consequences.balanceDelta > 0 ? '+' : ''}
+                            {opt.consequences.balanceDelta.toLocaleString('ru-RU')} ₽
                           </div>
                         )}
-                      </div>
-                      {opt.consequences?.balanceDelta != null && (
-                        <span style={{
-                          fontSize: 13, fontWeight: 700,
-                          color: opt.consequences.balanceDelta >= 0 ? K.good : K.bad,
-                          fontVariantNumeric: 'tabular-nums', flexShrink: 0,
-                        }}>
-                          {opt.consequences.balanceDelta > 0 ? '+' : ''}
-                          {opt.consequences.balanceDelta.toLocaleString('ru-RU')} ₽
-                        </span>
-                      )}
-                    </button>
-                  ))}
+                        {opt.consequences?.reputationDelta != null && opt.consequences.reputationDelta !== 0 && (
+                          <div style={{
+                            fontSize: 11, fontWeight: 600,
+                            color: opt.isContourOption ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.45)',
+                          }}>
+                            репутация {opt.consequences.reputationDelta > 0 ? '+' : ''}{opt.consequences.reputationDelta}
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             )
