@@ -8,6 +8,7 @@ import type { NavId } from './design-system/KLeftRail'
 
 interface OnboardingPanelProps {
   onNavigate: (nav: NavId) => void
+  onAction?: (action: string) => void
 }
 
 const ACTION_TO_NAV: Record<string, NavId> = {
@@ -43,7 +44,7 @@ const WAIT_HINT: Record<OnboardingTrigger, string> = {
 
 const STAGE_COLORS = [K.blue, K.violet, K.orange, K.mint, K.orange]
 
-export function OnboardingPanel({ onNavigate }: OnboardingPanelProps) {
+export function OnboardingPanel({ onNavigate, onAction }: OnboardingPanelProps) {
   const [expanded, setExpanded] = useState(true)
   const gameState = useGameStore()
   const {
@@ -143,7 +144,11 @@ export function OnboardingPanel({ onNavigate }: OnboardingPanelProps) {
 
         {needsAction && targetNav && (
           <button
-            onClick={(e) => { e.stopPropagation(); onNavigate(targetNav) }}
+            onClick={(e) => {
+              e.stopPropagation()
+              onNavigate(targetNav)
+              if (step.requiresAction) onAction?.(step.requiresAction)
+            }}
             style={{
               padding: '5px 14px', borderRadius: 8, border: 'none',
               background: K.orange, color: K.white,

@@ -830,7 +830,12 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
           phase={weekPhase}
         />
 
-        <OnboardingPanel onNavigate={setActiveView} />
+        <OnboardingPanel
+          onNavigate={setActiveView}
+          onAction={(action) => {
+            if (action === 'buy_register') setShowCashRegisterModal(true)
+          }}
+        />
 
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
