@@ -96,6 +96,14 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     category: 'progress',
     wave: 1,
   },
+  {
+    id: 'perfect_day',
+    name: 'Идеальный день',
+    description: 'Обслужить всех пришедших клиентов без потерь',
+    icon: '✨',
+    category: 'business',
+    wave: 1,
+  },
 
   // Wave 2 — unlocks week 12
   {
@@ -178,6 +186,14 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     category: 'special',
     wave: 2,
   },
+  {
+    id: 'level_10',
+    name: 'Мастер бизнеса',
+    description: 'Достичь 10-го уровня',
+    icon: '🎖️',
+    category: 'progress',
+    wave: 2,
+  },
 
   // Wave 3 — unlocks week 26
   {
@@ -229,21 +245,26 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     wave: 3,
   },
 
-  // Wave 4 — unlocks week 52
+  // Wave 4 — unlocks week 52 (end-game mastery goals)
   {
-    id: 'perfect_day',
-    name: 'Идеальный день',
-    description: 'Обслужить всех пришедших клиентов без потерь',
-    icon: '✨',
-    category: 'business',
+    id: 'year_one_no_debt',
+    name: 'Год без долгов',
+    description: 'Пережить первый год, ни разу не уйдя в минус по балансу',
+    icon: '🛡️',
+    category: 'special',
     wave: 4,
   },
   {
-    id: 'level_10',
-    name: 'Мастер бизнеса',
-    description: 'Достичь 10-го уровня',
+    id: 'level_15',
+    name: 'Легенда бизнеса',
+    description: 'Достичь 15-го уровня',
     icon: '👑',
     category: 'progress',
     wave: 4,
   },
 ]
+
+// NOTE: perfect_day moved to wave 1 (achievable any day, no reason to lock).
+// level_10 moved to wave 2 (achievable ~week 20-25, wave 2 opens week 12).
+// level_15 replaces level_10 as the wave-4 mastery goal.
+// year_one_no_debt replaces perfect_day as a true end-game challenge.

@@ -255,8 +255,8 @@ describe('getLevelForExperience', () => {
     expect(getLevelForExperience(1000)).toBe(10)
   })
 
-  it('max level 10 even at high experience', () => {
-    expect(getLevelForExperience(9999)).toBe(10)
+  it('max level 15 even at high experience', () => {
+    expect(getLevelForExperience(9999)).toBe(15)
   })
 
   it('level 5 at 500 experience', () => {

@@ -34,6 +34,12 @@ const ACHIEVEMENT_CHECKS: Record<string, CheckFn> = {
   milestone_week10: (s) => s.milestoneStatus?.week10 ?? false,
   milestone_week20: (s) => s.milestoneStatus?.week20 ?? false,
   milestone_week30: (s) => s.milestoneStatus?.week30 ?? false,
+  // v4.3 new achievements
+  level_15: (s) => s.level >= 15,
+  year_one_no_debt: (s) =>
+    s.currentWeek >= ECONOMY_CONSTANTS.TOTAL_WEEKS_PER_YEAR
+    && (s.daysBalanceNegative ?? 0) === 0
+    && s.balance > 0,
 }
 
 export function checkNewAchievements(state: GameState): string[] {
