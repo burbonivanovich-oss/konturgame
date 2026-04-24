@@ -1,4 +1,4 @@
-import type { Employee, EmployeePosition } from '../types/game'
+import type { BusinessType, Employee, EmployeePosition } from '../types/game'
 
 export const EMPLOYEE_NAMES: Record<EmployeePosition, string[]> = {
   cashier: ['Анна', 'Борис', 'Виктор', 'Галина', 'Дмитрий'],
@@ -63,6 +63,46 @@ export function createEmployee(
     hireDay,
     energyCost: EMPLOYEE_ENERGY_COST[position],
   }
+}
+
+const GENERIC_LABELS: Record<EmployeePosition, string> = {
+  cashier: 'Кассир',
+  assistant: 'Помощник',
+  manager: 'Управляющий',
+  specialist: 'Специалист',
+  supervisor: 'Начальник смены',
+  trainer: 'Тренер',
+}
+
+export const EMPLOYEE_BUSINESS_LABELS: Record<BusinessType, Partial<Record<EmployeePosition, string>>> = {
+  shop: {
+    cashier: 'Кассир',
+    assistant: 'Продавец-консультант',
+    manager: 'Управляющий магазином',
+    specialist: 'Товаровед',
+    supervisor: 'Старший продавец',
+    trainer: 'Наставник',
+  },
+  cafe: {
+    cashier: 'Кассир',
+    assistant: 'Официант',
+    manager: 'Управляющий кафе',
+    specialist: 'Бариста',
+    supervisor: 'Шеф-повар',
+    trainer: 'Наставник',
+  },
+  'beauty-salon': {
+    cashier: 'Администратор',
+    assistant: 'Помощник мастера',
+    manager: 'Управляющий салоном',
+    specialist: 'Мастер',
+    supervisor: 'Старший мастер',
+    trainer: 'Наставник',
+  },
+}
+
+export function getEmployeeLabel(position: EmployeePosition, businessType: BusinessType): string {
+  return EMPLOYEE_BUSINESS_LABELS[businessType]?.[position] ?? GENERIC_LABELS[position]
 }
 
 export function getEmployeesByPosition(employees: Employee[], position: EmployeePosition): Employee[] {

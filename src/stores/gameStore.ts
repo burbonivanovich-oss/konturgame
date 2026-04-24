@@ -9,6 +9,7 @@ import { SERVICES_CONFIG, BUSINESS_CONFIGS, ECONOMY_CONSTANTS, MAX_ACTIVE_CAMPAI
 import { SERVICE_UNLOCK_MAP } from '../constants/onboarding'
 import { CASH_REGISTER_CONFIGS, REGISTER_COMBO_DISCOUNTS } from '../constants/cashRegisters'
 import { getDefaultCategories } from '../services/assortmentEngine'
+import { createEmployee } from '../constants/employees'
 import { checkWeekBlocked, processWeek } from '../services/weekCalculator'
 import { getBusinessStage, STAGE_CONFIG } from '../constants/businessStages'
 import { OWNER_INVESTMENTS_MAP } from '../constants/ownerInvestments'
@@ -278,8 +279,9 @@ interface GameStoreActions {
   markBundlePromoShown: () => void
 
   // Employees
-  hireEmployee: (position: any, name: string, salary: number) => void
+  hireEmployee: (position: any) => void
   fireEmployee: (employeeId: string) => void
+  runTrainingSession: () => boolean  // costs 20 energy, +0.1 efficiency to all employees (capped at max)
 
   // Quality level
   adjustQualityLevel: (delta: number) => void
@@ -953,31 +955,46 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // Daily micro events
     // Employees
-    hireEmployee: (position: any, name: string, salary: number) => {
+    hireEmployee: (position: any, _name: string, _salary: number) => {
       const state = get()
       const stage = getBusinessStage(state.currentWeek, state.level)
       const maxEmployees = STAGE_CONFIG[stage].maxEmployees
       if ((state.employees ?? []).length >= maxEmployees) return
       get().spendEnergy(ECONOMY_CONSTANTS.ENERGY_COST_BASE_OPERATION)
+      const employee = createEmployee(position, state.currentWeek)
       set((s) => ({
-        employees: [...s.employees, {
-          id: `emp_${Date.now()}`,
-          position,
-          name,
-          salary,
-          efficiency: 1.0,
-          hireDay: s.currentWeek,
-          energyCost: Math.round(salary / 2000),
-        }],
+        employees: [...s.employees, employee],
         lastUpdated: Date.now(),
       }))
     },
 
     fireEmployee: (employeeId: string) => {
-      set((state) => ({
-        employees: state.employees.filter(e => e.id !== employeeId),
+      set((state) => {
+        const employee = state.employees.find(e => e.id === employeeId)
+        if (!employee) return { lastUpdated: Date.now() }
+        const severancePay = Math.round(employee.salary * 0.5)
+        return {
+          employees: state.employees.filter(e => e.id !== employeeId),
+          balance: state.balance - severancePay,
+          lastUpdated: Date.now(),
+        }
+      })
+    },
+
+    runTrainingSession: () => {
+      const state = get()
+      const TRAINING_ENERGY_COST = 20
+      if ((state.entrepreneurEnergy ?? 0) < TRAINING_ENERGY_COST) return false
+      if (!state.employees?.length) return false
+      get().spendEnergy(TRAINING_ENERGY_COST)
+      set((s) => ({
+        employees: s.employees.map(emp => ({
+          ...emp,
+          efficiency: Math.min(1.6, Math.round((emp.efficiency + 0.1) * 100) / 100),
+        })),
         lastUpdated: Date.now(),
       }))
+      return true
     },
 
     // Quality level

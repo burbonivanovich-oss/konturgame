@@ -45,16 +45,20 @@ export function calculateQualityLevel(state: GameState): number {
   return Math.max(0, Math.min(100, Math.round(quality)))
 }
 
+const QUALITY_GRACE_WEEKS = 3  // no penalties while business is getting started
+
 /**
  * Get reputation bonus/penalty based on quality
  */
 export function getQualityReputationBonus(state: GameState): number {
   const quality = calculateQualityLevel(state)
-  
-  if (quality >= 80) return 2      // High quality: +2 rep/week
-  if (quality >= 60) return 1      // Good quality: +1 rep/week
-  if (quality <= 30) return -2     // Poor quality: -2 rep/week
-  if (quality <= 45) return -1     // Below average: -1 rep/week
+
+  if (quality >= 80) return 2
+  if (quality >= 60) return 1
+  // No penalties during the grace period
+  if ((state.currentWeek ?? 0) <= QUALITY_GRACE_WEEKS) return 0
+  if (quality <= 30) return -2
+  if (quality <= 45) return -1
   return 0
 }
 
@@ -63,11 +67,12 @@ export function getQualityReputationBonus(state: GameState): number {
  */
 export function getQualityLoyaltyBonus(state: GameState): number {
   const quality = calculateQualityLevel(state)
-  
-  if (quality >= 80) return 3      // High quality: +3 loyalty/week
-  if (quality >= 60) return 1      // Good quality: +1 loyalty/week
-  if (quality <= 30) return -3     // Poor quality: -3 loyalty/week
-  if (quality <= 45) return -1     // Below average: -1 loyalty/week
+
+  if (quality >= 80) return 3
+  if (quality >= 60) return 1
+  if ((state.currentWeek ?? 0) <= QUALITY_GRACE_WEEKS) return 0
+  if (quality <= 30) return -3
+  if (quality <= 45) return -1
   return 0
 }
 
@@ -76,11 +81,12 @@ export function getQualityLoyaltyBonus(state: GameState): number {
  */
 export function getQualityPricePremium(state: GameState): number {
   const quality = calculateQualityLevel(state)
-  
-  if (quality >= 80) return 0.15   // +15% check average
-  if (quality >= 60) return 0.08   // +8%
-  if (quality <= 30) return -0.15  // -15%
-  if (quality <= 45) return -0.08  // -8%
+
+  if (quality >= 80) return 0.15
+  if (quality >= 60) return 0.08
+  if ((state.currentWeek ?? 0) <= QUALITY_GRACE_WEEKS) return 0
+  if (quality <= 30) return -0.15
+  if (quality <= 45) return -0.08
   return 0
 }
 

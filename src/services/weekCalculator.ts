@@ -15,7 +15,7 @@ import {
   calculateMonthlyExpenses,
   getLoyaltyUpgradesBonus,
 } from './economyEngine'
-import { getTotalStock } from './stockManager'
+import { getTotalStock, checkExpiry } from './stockManager'
 import { generateEvent } from './eventGenerator'
 import {
   checkBankruptcy,
@@ -84,6 +84,7 @@ export function processWeek(state: GameState): DayResult {
   let weekLoyaltyChange = 0
   let totalDaysWithoutExpiry = 0
   let weekExpiredLoss = 0
+  let weekRegisterOverflow = 0
   const weekPain = { bank: 0, market: 0, ofd: 0, diadoc: 0, fokus: 0, elba: 0, extern: 0, total: 0 }
   let weeklySeasonalSum = 0
   let weeklyEventSum = 0
@@ -106,9 +107,8 @@ export function processWeek(state: GameState): DayResult {
     // Quality price premium
     const qualityPricePremium = getQualityPricePremium(state)
 
-    const expiredLoss = 0
-
-    // 2. Competitor event - now cyclic every 5-8 weeks (moved outside loop)
+    // 2. Stock expiry — must run before revenue to account for lost inventory
+    const { loss: expiredLoss } = checkExpiry(state)
 
     // 3. Calculate daily metrics
     let totalClients = calculateClients(config.baseClients, modifiers)
@@ -116,8 +116,6 @@ export function processWeek(state: GameState): DayResult {
     // Apply quality modifier (affects client acquisition)
     const qualityClientMod = getQualityClientModifier(state.qualityLevel)
     totalClients = Math.round(totalClients * (1 + qualityClientMod))
-
-    // Seasonality already applied in buildModifiers/calculateClients, skip redundant application
 
     // Apply brand effect (reputation + loyalty synergy)
     const brandEffect = getBrandEffect(state.reputation, state.loyalty)
@@ -128,8 +126,15 @@ export function processWeek(state: GameState): DayResult {
     if (employeeCapacityBonus > 0) {
       capacity = Math.round(capacity * (1 + employeeCapacityBonus * 0.1))
     }
-    
-    const served = Math.min(totalClients, capacity)
+
+    let served = Math.min(totalClients, capacity)
+
+    // 3b. Register throughput limits served clients (calculated before revenue)
+    const registerThroughput = getTotalThroughput(state.cashRegisters, state)
+    const registerMissed = registerThroughput > 0
+      ? calculateRegisterPenalty(served, registerThroughput)
+      : 0
+    served = served - registerMissed
     const missed = totalClients - served
 
     // 4. Bank payment ratio
@@ -170,12 +175,7 @@ export function processWeek(state: GameState): DayResult {
       dailyRevenue = Math.round(dailyRevenue * (1 - acquiringRate))
     }
 
-    // 7. Register penalty
-    const registerThroughput = getTotalThroughput(state.cashRegisters, state)
-    const registerPenalty = registerThroughput > 0
-      ? calculateRegisterPenalty(served, registerThroughput, dailyRevenue)
-      : 0
-
+    // 7. Register breakdown penalty (random equipment failure, separate from throughput)
     const registerBroke = checkRegisterBreakdown(state.cashRegisters)
     const breakdownPenalty = registerBroke ? Math.round(dailyRevenue * 0.15) : 0
 
@@ -187,7 +187,8 @@ export function processWeek(state: GameState): DayResult {
       energyModifier = 0.9  // -10% if tired
     }
 
-    const dayRevenue = Math.max(0, Math.round((dailyRevenue - registerPenalty - breakdownPenalty) * energyModifier))
+    const dayRevenue = Math.max(0, Math.round((dailyRevenue - breakdownPenalty) * energyModifier))
+    const registerOverflowPenalty = Math.round(registerMissed * avgCheck)
 
     // 8. Purchase costs (via assortment daily costs)
     const purchaseCost = totalDailyCategoryCost
@@ -267,6 +268,7 @@ export function processWeek(state: GameState): DayResult {
     weekRepChange += dayRepChange
     weekLoyaltyChange += dayLoyaltyChange
     weekExpiredLoss += expiredLoss
+    weekRegisterOverflow += registerOverflowPenalty
 
     if (expiredLoss === 0) {
       totalDaysWithoutExpiry += 1
@@ -362,7 +364,7 @@ export function processWeek(state: GameState): DayResult {
     painLossFokusBadSupplier: 0,
     painLossElbaFine: 0,
     painLossExternBlock: 0,
-    registerOverflowPenalty: 0,
+    registerOverflowPenalty: weekRegisterOverflow,
     categoryFines: {},
   }
 
