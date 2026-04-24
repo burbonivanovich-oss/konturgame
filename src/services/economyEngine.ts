@@ -104,17 +104,25 @@ export function calculateDailySubscriptions(state: GameState): number {
 }
 
 export function calculateMonthlyExpenses(state: GameState): number {
+  return calculateMonthlyRent(state) + calculateMonthlySalary(state)
+}
+
+export function calculateMonthlyRent(state: GameState): number {
   const base = MONTHLY_EXPENSES[state.businessType]
   let rent = base.rent
-  let salary = base.baseSalary
-
   for (const u of getPurchasedUpgradeConfigs(state)) {
     rent += u.monthlyRentIncrease ?? 0
+  }
+  return rent
+}
+
+export function calculateMonthlySalary(state: GameState): number {
+  const base = MONTHLY_EXPENSES[state.businessType]
+  let salary = base.baseSalary
+  for (const u of getPurchasedUpgradeConfigs(state)) {
     salary += u.monthlySalaryIncrease ?? 0
   }
-
-  // Subscriptions are already charged daily via calculateDailySubscriptions — do NOT add them here
-  return rent + salary
+  return salary
 }
 
 export function buildModifiers(state: GameState): Modifiers {

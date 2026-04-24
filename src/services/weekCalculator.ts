@@ -12,6 +12,8 @@ import {
   calculateRevenue,
   calculateDailySubscriptions,
   calculateMonthlyExpenses,
+  calculateMonthlyRent,
+  calculateMonthlySalary,
   getLoyaltyUpgradesBonus,
 } from './economyEngine'
 import { getTotalStock } from './stockManager'
@@ -91,9 +93,11 @@ export function processWeek(state: GameState): DayResult {
   const weeklySalaryCost = getWeeklySalaryCost(state)
   const weeklyEnergyCost = getWeeklyEnergyCost(state)
 
-  // Spread monthly fixed expenses (rent + base salary + upgrades) evenly across all 28 days
-  // so the player never gets a surprise one-shot that triggers accidental bankruptcy.
-  const dailyMonthlyShare = Math.round((calculateMonthlyExpenses(state) + weeklySalaryCost * 4) / 28)
+  // Bi-weekly payroll: half of total monthly salary each 14 days (аванс + зарплата).
+  // Rent is paid monthly together with the second payroll instalment (зарплата).
+  const monthlyRent = calculateMonthlyRent(state)
+  const biweeklySalary = Math.round((calculateMonthlySalary(state) + weeklySalaryCost * 4) / 2)
+
   const employeeCapacityBonus = getEmployeeCapacityBonus(state)
   const loyaltyUpgradesBonus = getLoyaltyUpgradesBonus(state)
 
@@ -209,9 +213,25 @@ export function processWeek(state: GameState): DayResult {
     const dailyRegisterMaintenance = totalRegisters * ECONOMY_CONSTANTS.DAILY_REGISTER_MAINTENANCE
     const dailyFixedCosts = dailyUtilities + dailyRegisterMaintenance
 
-    // 13. Daily profit (monthly expenses already distributed into dailyMonthlyShare)
-    const dayExpenses = dayTax + subscriptionCost + purchaseCost + dailyMonthlyShare + expiredLoss +
-      dailyFixedCosts + totalCategoryFines
+    // 12. Bi-weekly payroll trigger
+    // day 14 → аванс (50% salary); day 28 → зарплата (50% salary) + rent; then reset
+    const daysSince = state.daysSinceLastMonthly ?? 0
+    let payrollPayment = 0
+    let rentPayment = 0
+    if (daysSince >= ECONOMY_CONSTANTS.MONTHLY_CYCLE_WEEKS * 7) {
+      payrollPayment = biweeklySalary   // зарплата
+      rentPayment = monthlyRent
+      state.daysSinceLastMonthly = 0
+    } else {
+      if (daysSince === 14) {
+        payrollPayment = biweeklySalary  // аванс
+      }
+      state.daysSinceLastMonthly = daysSince + 1
+    }
+
+    // 13. Daily profit
+    const dayExpenses = dayTax + subscriptionCost + purchaseCost +
+      payrollPayment + rentPayment + expiredLoss + dailyFixedCosts + totalCategoryFines
     let dayNetProfit = dayRevenue - dayExpenses
 
     // 14. Pain losses
@@ -280,13 +300,6 @@ export function processWeek(state: GameState): DayResult {
       }
     }
 
-    // 19. Update monthly counter (kept for save-state compatibility, no longer drives expenses)
-    const currentDaysSinceMonthly = state.daysSinceLastMonthly ?? 0
-    if (currentDaysSinceMonthly >= ECONOMY_CONSTANTS.MONTHLY_CYCLE_WEEKS * 7) {
-      state.daysSinceLastMonthly = 0
-    } else {
-      state.daysSinceLastMonthly = currentDaysSinceMonthly + 1
-    }
   } // End of week loop
 
   // 2. Competitor event check (once per week, not 7 times)
