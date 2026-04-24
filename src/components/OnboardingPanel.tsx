@@ -19,7 +19,6 @@ const ACTION_TO_NAV: Record<string, NavId> = {
   activate_fokus:   'ecosystem',
   activate_elba:    'ecosystem',
   activate_extern:  'ecosystem',
-  buy_register:     'operations',
 }
 
 const ACTION_LABEL: Record<string, string> = {
@@ -142,11 +141,11 @@ export function OnboardingPanel({ onNavigate, onAction }: OnboardingPanelProps) 
           {step.title}
         </div>
 
-        {needsAction && targetNav && (
+        {needsAction && actionLabel && (
           <button
             onClick={(e) => {
               e.stopPropagation()
-              onNavigate(targetNav)
+              if (targetNav) onNavigate(targetNav)
               if (step.requiresAction) onAction?.(step.requiresAction)
             }}
             style={{
@@ -215,20 +214,8 @@ export function OnboardingPanel({ onNavigate, onAction }: OnboardingPanelProps) 
             }}>
               <span style={{ fontSize: 16 }}>⚠️</span>
               <div style={{ flex: 1, fontSize: 12, color: K.orange, fontWeight: 600 }}>
-                Требуется действие — перейдите в раздел и выполните его
+                Требуется действие — нажмите кнопку в правой части панели
               </div>
-              {targetNav && (
-                <button
-                  onClick={() => onNavigate(targetNav)}
-                  style={{
-                    padding: '6px 16px', borderRadius: 8, border: 'none',
-                    background: K.orange, color: K.white,
-                    fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                  }}
-                >
-                  {actionLabel} →
-                </button>
-              )}
             </div>
           )}
 
