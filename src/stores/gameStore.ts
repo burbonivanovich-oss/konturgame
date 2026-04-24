@@ -6,7 +6,7 @@ import type {
   DecisionLogEntry,
 } from '../types/game'
 import { SERVICES_CONFIG, BUSINESS_CONFIGS, ECONOMY_CONSTANTS, MAX_ACTIVE_CAMPAIGNS } from '../constants/business'
-import { SERVICE_UNLOCK_MAP } from '../constants/onboarding'
+import { ONBOARDING_STAGES, SERVICE_UNLOCK_MAP } from '../constants/onboarding'
 import { CASH_REGISTER_CONFIGS, REGISTER_COMBO_DISCOUNTS } from '../constants/cashRegisters'
 import { getDefaultCategories } from '../services/assortmentEngine'
 import { createEmployee } from '../constants/employees'
@@ -86,6 +86,9 @@ const createInitialState = (businessType: BusinessType): GameState => {
     onboardingStage: 0,
     onboardingCompleted: false,
     onboardingStepIndex: 0,
+    skippedOnboardingActions: [],
+    onboardingEmergencyGrantUsed: false,
+    lastSavedTimestamp: Date.now(),
 
     // Service unlocking (start with Bank only)
     unlockedServices: SERVICE_UNLOCK_MAP[0],
@@ -266,6 +269,9 @@ interface GameStoreActions {
   advanceOnboardingStage: () => void
   nextOnboardingStep: () => void
   completeOnboarding: () => void
+  skipOnboarding: () => void
+  skipOnboardingStep: () => void
+  claimEmergencyGrant: () => void
 
   // Cash registers
   buyCashRegister: (type: CashRegisterType) => boolean
@@ -884,6 +890,45 @@ export const useGameStore = create<GameStore>((set, get) => ({
       })
     },
 
+    // Skip the entire onboarding (for returning players or rebels).
+    // Unlocks all services immediately without any service activation.
+    skipOnboarding: () => {
+      set({
+        onboardingCompleted: true,
+        onboardingStage: 4,
+        unlockedServices: SERVICE_UNLOCK_MAP[4],
+        lastUpdated: Date.now(),
+      })
+    },
+
+    // Skip the current action step without completing its required action.
+    // Records the step id in skippedOnboardingActions so shouldAdvanceStage
+    // can still allow progression without the service being active.
+    skipOnboardingStep: () => {
+      const state = get()
+      const stageConfig = ONBOARDING_STAGES[state.onboardingStage]
+      const step = stageConfig?.steps[state.onboardingStepIndex]
+      if (!step?.requiresAction) return
+      set((s) => ({
+        skippedOnboardingActions: [...(s.skippedOnboardingActions ?? []), step.id],
+        onboardingStepIndex: s.onboardingStepIndex + 1,
+        lastUpdated: Date.now(),
+      }))
+    },
+
+    // Emergency startup grant: adds enough funds to buy the cheapest cash register.
+    // Only available once, only when balance is below the minimum register cost.
+    claimEmergencyGrant: () => {
+      const state = get()
+      if (state.onboardingEmergencyGrantUsed) return
+      const GRANT_AMOUNT = 15000
+      set((s) => ({
+        balance: s.balance + GRANT_AMOUNT,
+        onboardingEmergencyGrantUsed: true,
+        lastUpdated: Date.now(),
+      }))
+    },
+
     // Cash registers
     buyCashRegister: (type: CashRegisterType): boolean => {
       const state = get()
@@ -1195,7 +1240,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 // LocalStorage persistence
 function saveToStorage(state: GameState) {
   try {
-    const stateToSave = extractState(state)
+    const stateToSave = extractState({ ...state, lastSavedTimestamp: Date.now() })
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave))
   } catch (error) {
     console.error('Failed to save game state to localStorage:', error)
@@ -1229,6 +1274,8 @@ function extractState(state: any): GameState {
     npcs, playerBackstory, activeChainIds, completedChainIds, pendingChainFollowUps,
     // v3.1 narrative
     decisionLog, seenNewspaperWeeks,
+    // v4.2 onboarding resilience
+    skippedOnboardingActions, onboardingEmergencyGrantUsed, lastSavedTimestamp,
   } = state
 
   // Migration: convert old currentDay to currentWeek
@@ -1300,6 +1347,10 @@ function extractState(state: any): GameState {
     lastWeekPainLosses: (state as any).lastWeekPainLosses ?? null,
     totalPainLosses: (state as any).totalPainLosses ?? null,
     seenUnlockTabs: (state as any).seenUnlockTabs ?? [],
+    // v4.2 onboarding resilience
+    skippedOnboardingActions: skippedOnboardingActions ?? [],
+    onboardingEmergencyGrantUsed: onboardingEmergencyGrantUsed ?? false,
+    lastSavedTimestamp: lastSavedTimestamp ?? Date.now(),
   }
 }
 

@@ -506,4 +506,12 @@ export interface GameState {
 
   // Pending milestone celebration (shown in results overlay, v4.0)
   pendingMilestoneCelebration?: string | null  // 'week10' | 'week20' | 'week30'
+
+  // Onboarding resilience (v4.2)
+  // Step IDs where player explicitly chose to skip a required action
+  skippedOnboardingActions?: string[]
+  // True after emergency startup grant has been issued once
+  onboardingEmergencyGrantUsed?: boolean
+  // Unix ms timestamp saved on each persist — guards against real-time trigger drift
+  lastSavedTimestamp?: number
 }
