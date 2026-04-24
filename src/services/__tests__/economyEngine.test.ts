@@ -178,8 +178,8 @@ describe('calculateClients', () => {
 })
 
 describe('calculateCapacity', () => {
-  // Shop base capacity from BUSINESS_CONFIGS = 35
-  const BASE = 35
+  // Shop base capacity from BUSINESS_CONFIGS = 17
+  const BASE = 17
 
   it('base capacity for shop without services', () => {
     const state = makeState()

@@ -20,17 +20,23 @@ export function getTotalThroughput(registers: CashRegister[], state?: GameState)
   return total
 }
 
+// Returns how many clients can actually be served given register throughput.
+// Clients above throughput + 20% queue tolerance leave without paying.
+export function getRegisterServedCap(clients: number, throughput: number): number {
+  if (throughput === 0 || clients <= throughput) return clients
+  const tolerance = Math.ceil(throughput * 0.2)
+  return Math.min(clients, throughput + tolerance)
+}
+
+/** @deprecated Use getRegisterServedCap — kept for any residual callers */
 export function calculateRegisterPenalty(
   clients: number,
   throughput: number,
-  revenue: number,
+  _revenue: number,
 ): number {
-  if (throughput === 0 || clients <= throughput) return 0
-  const overflow = clients - throughput
-  // 10% revenue penalty for each 5 clients over throughput
-  const penaltyGroups = Math.floor(overflow / 5)
-  const penalty = Math.min(0.8, penaltyGroups * 0.1) // max 80% penalty
-  return Math.round(revenue * penalty)
+  const capped = getRegisterServedCap(clients, throughput)
+  const lost = clients - capped
+  return lost > 0 ? Math.round(_revenue * (lost / Math.max(1, clients))) : 0
 }
 
 export function checkRegisterBreakdown(registers: CashRegister[]): boolean {

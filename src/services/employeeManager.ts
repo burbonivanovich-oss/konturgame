@@ -1,6 +1,6 @@
 import type { GameState, Employee, EmployeePosition } from '../types/game'
 import { createEmployee, getTotalEmployeeEfficiency, getTotalEmployeeSalary, getTotalEmployeeEnergyCost, EMPLOYEE_SALARIES, EMPLOYEE_ENERGY_COST } from '../constants/employees'
-import { UPGRADES_CONFIG } from '../constants/business'
+import { UPGRADES_CONFIG, ECONOMY_CONSTANTS } from '../constants/business'
 
 /**
  * Initialize employees for a new game (start with no employees)
@@ -86,19 +86,19 @@ export function getWeeklySalaryCost(state: GameState): number {
  * Calculate weekly energy cost including base stress + employee management
  */
 export function getWeeklyEnergyCost(state: GameState): number {
-  // Base cost for running the business (stress, decisions, customers)
   const baseCost = 20
-
-  // Cost from managing employees
   const employeeCost = getTotalEmployeeEnergyCost(state.employees)
+  const understaffPenalty = state.employees.length === 0 ? 15 : 0
 
-  // Extra cost if working solo (no employees = more stress)
-  let understaffPenalty = 0
-  if (state.employees.length === 0) {
-    understaffPenalty = 15  // Running solo is very exhausting
-  }
+  const rawCost = baseCost + employeeCost + understaffPenalty
 
-  return baseCost + employeeCost + understaffPenalty
+  // Apply service energy reductions (defined in ECONOMY_CONSTANTS but were never applied before)
+  let reductionRate = 0
+  if (state.services?.bank?.isActive)   reductionRate += ECONOMY_CONSTANTS.ENERGY_REDUCTION_BANK
+  if (state.services?.diadoc?.isActive) reductionRate += ECONOMY_CONSTANTS.ENERGY_REDUCTION_DIADOC
+  if (state.services?.elba?.isActive)   reductionRate += ECONOMY_CONSTANTS.ENERGY_REDUCTION_ELBA
+
+  return Math.round(rawCost * Math.max(0, 1 - reductionRate))
 }
 
 /**

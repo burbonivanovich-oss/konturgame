@@ -149,6 +149,7 @@ function MarketingSection() {
                       {campaign.checkEffect !== 0 && (
                         <span style={{ color: campaign.checkEffect > 0 ? K.good : K.warn }}>
                           {campaign.checkEffect > 0 ? '+' : ''}{Math.round(campaign.checkEffect * factor * 100)}% чек
+                          {campaign.checkEffect < 0 && ' (скидка)'}
                         </span>
                       )}
                     </div>
@@ -212,10 +213,11 @@ function MarketingSection() {
                   {cfg.checkEffect !== 0 && (
                     <span style={{
                       fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
-                      background: cfg.checkEffect > 0 ? K.mintSoft : K.bone,
-                      color: cfg.checkEffect > 0 ? K.good : K.ink,
+                      background: cfg.checkEffect > 0 ? K.mintSoft : K.orangeSoft,
+                      color: cfg.checkEffect > 0 ? K.good : K.orange,
                     }}>
                       {cfg.checkEffect > 0 ? '+' : ''}{Math.round(cfg.checkEffect * 100)}% чек
+                      {cfg.checkEffect < 0 && ' (акционная скидка)'}
                     </span>
                   )}
                   <span style={{

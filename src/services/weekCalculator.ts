@@ -27,7 +27,7 @@ import { calculateSynergyModifiers } from './synergyEngine'
 import { checkNewAchievements } from './achievementChecker'
 import { checkOnboardingBlocked, advanceOnboardingIfNeeded } from './onboardingEngine'
 import { calculatePainLosses, getBankPaymentRatio } from './painEngine'
-import { getTotalThroughput, calculateRegisterPenalty, checkRegisterBreakdown } from './cashRegisterEngine'
+import { getTotalThroughput, getRegisterServedCap, checkRegisterBreakdown } from './cashRegisterEngine'
 import { calculateCategoryRevenue } from './assortmentEngine'
 import { initializeEmployees, getWeeklySalaryCost, getWeeklyEnergyCost, getEmployeeCapacityBonus, getUpgradeEnergyBonus } from './employeeManager'
 import { initializeQuality, updateQualityWeekly, getQualityReputationBonus, getQualityLoyaltyBonus, getQualityPricePremium } from './qualityManager'
@@ -90,6 +90,10 @@ export function processWeek(state: GameState): DayResult {
   // Calculate weekly employee costs
   const weeklySalaryCost = getWeeklySalaryCost(state)
   const weeklyEnergyCost = getWeeklyEnergyCost(state)
+
+  // Spread monthly fixed expenses (rent + base salary + upgrades) evenly across all 28 days
+  // so the player never gets a surprise one-shot that triggers accidental bankruptcy.
+  const dailyMonthlyShare = Math.round((calculateMonthlyExpenses(state) + weeklySalaryCost * 4) / 28)
   const employeeCapacityBonus = getEmployeeCapacityBonus(state)
   const loyaltyUpgradesBonus = getLoyaltyUpgradesBonus(state)
 
@@ -128,10 +132,17 @@ export function processWeek(state: GameState): DayResult {
       capacity = Math.round(capacity * (1 + employeeCapacityBonus * 0.1))
     }
     
-    const served = Math.min(totalClients, capacity)
-    const missed = totalClients - served
+    const capacityServed = Math.min(totalClients, capacity)
+    const missed = totalClients - capacityServed
 
-    // 4. Bank payment ratio
+    // 4. Register throughput cap — applied before revenue so only paid clients count
+    const registerThroughput = getTotalThroughput(state.cashRegisters, state)
+    const served = registerThroughput > 0
+      ? getRegisterServedCap(capacityServed, registerThroughput)
+      : capacityServed
+    const registerMissed = capacityServed - served
+
+    // 5. Bank payment ratio
     const bankPaymentRatio = getBankPaymentRatio(state)
     const effectiveServed = Math.floor(served * bankPaymentRatio)
 
@@ -163,12 +174,7 @@ export function processWeek(state: GameState): DayResult {
       dailyRevenue = Math.round(baseRevenue * (1 + totalRevenueBonus))
     }
 
-    // 7. Register penalty
-    const registerThroughput = getTotalThroughput(state.cashRegisters, state)
-    const registerPenalty = registerThroughput > 0
-      ? calculateRegisterPenalty(served, registerThroughput, dailyRevenue)
-      : 0
-
+    // 7. Register breakdown penalty (register overflow already handled above via served cap)
     const registerBroke = checkRegisterBreakdown(state.cashRegisters)
     const breakdownPenalty = registerBroke ? Math.round(dailyRevenue * 0.15) : 0
 
@@ -180,7 +186,7 @@ export function processWeek(state: GameState): DayResult {
       energyModifier = 0.9  // -10% if tired
     }
 
-    const dayRevenue = Math.max(0, Math.round((dailyRevenue - registerPenalty - breakdownPenalty) * energyModifier))
+    const dayRevenue = Math.max(0, Math.round((dailyRevenue - breakdownPenalty) * energyModifier))
 
     // 8. Purchase costs (via assortment daily costs)
     const purchaseCost = totalDailyCategoryCost
@@ -203,12 +209,8 @@ export function processWeek(state: GameState): DayResult {
     const dailyRegisterMaintenance = totalRegisters * ECONOMY_CONSTANTS.DAILY_REGISTER_MAINTENANCE
     const dailyFixedCosts = dailyUtilities + dailyRegisterMaintenance
 
-    // 12. Monthly expenses (every week 4, approximate every 28 days)
-    // Note: daysSinceMonthly is checked and updated inside the loop
-    let monthlyExpense = 0
-
-    // 13. Daily profit
-    const dayExpenses = dayTax + subscriptionCost + purchaseCost + monthlyExpense + expiredLoss +
+    // 13. Daily profit (monthly expenses already distributed into dailyMonthlyShare)
+    const dayExpenses = dayTax + subscriptionCost + purchaseCost + dailyMonthlyShare + expiredLoss +
       dailyFixedCosts + totalCategoryFines
     let dayNetProfit = dayRevenue - dayExpenses
 
@@ -226,7 +228,9 @@ export function processWeek(state: GameState): DayResult {
     weekPain.total += pain.total
 
     // 15. Reputation change with quality bonus
-    const repFromMissed = -(missed * 0.2)
+    // Both capacity-missed and register-queue-missed clients hurt reputation.
+    // Cap at -2/day so a single bad day can't trigger a unrecoverable death spiral.
+    const repFromMissed = Math.max(-2, -((missed + registerMissed) * 0.2))
     const fokusRepBonus = state.services?.fokus?.isActive
       ? (state.services.fokus.effects.reputationBonus ?? 0)
       : 0
@@ -276,10 +280,9 @@ export function processWeek(state: GameState): DayResult {
       }
     }
 
-    // 19. Update monthly counter
+    // 19. Update monthly counter (kept for save-state compatibility, no longer drives expenses)
     const currentDaysSinceMonthly = state.daysSinceLastMonthly ?? 0
     if (currentDaysSinceMonthly >= ECONOMY_CONSTANTS.MONTHLY_CYCLE_WEEKS * 7) {
-      monthlyExpense = calculateMonthlyExpenses(state) + weeklySalaryCost
       state.daysSinceLastMonthly = 0
     } else {
       state.daysSinceLastMonthly = currentDaysSinceMonthly + 1

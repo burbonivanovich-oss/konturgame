@@ -6,7 +6,7 @@ export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
     startBalance: 80000,
     baseClients: 15,  // ↓ Было 25
     avgCheck: 100,  // ↓ Было 180
-    capacity: 35,
+    capacity: 17,
     hasStock: true,
     stockExpiry: 10,
     seasonality: {
@@ -23,7 +23,7 @@ export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
     startBalance: 80000,
     baseClients: 18,  // ↓ Было 30
     avgCheck: 70,  // ↓ Было 150
-    capacity: 40,
+    capacity: 20,
     hasStock: true,
     stockExpiry: 7,
     seasonality: {
@@ -40,7 +40,7 @@ export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
     startBalance: 80000,
     baseClients: 6,  // ↓ Было 12
     avgCheck: 400,  // ↓ Было 800
-    capacity: 20,
+    capacity: 7,
     hasStock: false,
     stockExpiry: 0,
     seasonality: {
