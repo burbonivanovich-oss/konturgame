@@ -647,12 +647,6 @@ function generateNextWeekTeaser(state: GameState): string | null {
 function accumulateServiceSavings(state: GameState, weekRevenue: number, weekNetProfit: number): void {
   let savings = 0
 
-  // Bank: enables 40% more revenue (clients who couldn't pay without cashless), net of 1.5% acquiring
-  if (state.services?.bank?.isActive) {
-    const acquiringRate = state.services.bank.effects.acquiringRate ?? 0.015
-    savings += Math.round(weekRevenue * 0.4 * (1 - acquiringRate))
-  }
-
   // Market: prevents 8% manual accounting losses every day
   if (state.services?.market?.isActive) {
     savings += Math.round(weekRevenue * 0.08)
