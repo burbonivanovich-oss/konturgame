@@ -34,6 +34,9 @@ import { KLeftRail } from './design-system/KLeftRail'
 import { KHeaderBar } from './design-system/KHeaderBar'
 import { K } from './design-system/tokens'
 import type { NavId } from './design-system/KLeftRail'
+import { getActiveSynergies } from '../services/synergyEngine'
+import { getTotalThroughput } from '../services/cashRegisterEngine'
+import type { ServiceType } from '../types/game'
 
 const ONBOARDING_ACTION_TO_NAV: Record<string, NavId> = {
   activate_bank:    'ecosystem',
@@ -61,11 +64,13 @@ function DashboardView({
   handleEventOption: (id: string) => void
   onOpenOwnerInvestments: () => void
 }) {
+  const store = useGameStore()
   const {
     currentWeek, balance, reputation, loyalty, services,
     pendingEvent, pendingEventsQueue, lastDayResult,
-    entrepreneurEnergy, npcs, businessType, qualityLevel, level,
-  } = useGameStore()
+    entrepreneurEnergy, npcs, stockBatches, capacity, cashRegisters,
+    businessType, qualityLevel, level,
+  } = store
 
   const bizConfig = BUSINESS_CONFIGS[businessType]
   const activeServiceIds = Object.values(services).filter(s => s.isActive).map(s => s.id)
@@ -75,207 +80,125 @@ function DashboardView({
   const dailyClients = lastDayResult?.clients ?? 0
   const isDayBlocked = !!pendingEvent
 
+  const totalStock = (stockBatches ?? []).reduce((s: number, b: { quantity: number }) => s + b.quantity, 0)
+  const stockPct = capacity > 0 ? Math.round((totalStock / capacity) * 100) : 0
+  const stockLow = bizConfig.hasStock && stockPct < 25
+
+  // Day metrics for top KPI strip and viz
+  const servedToday = lastDayResult?.served ?? 0
+  const missedToday = lastDayResult?.missed ?? 0
+  const clientsToday = lastDayResult?.clients ?? 0
+  const throughput = cashRegisters && cashRegisters.length > 0
+    ? getTotalThroughput(cashRegisters, store)
+    : bizConfig.baseClientsPerDay * 2
+
+  // Active synergies (for right panel)
+  const synergies = getActiveSynergies(store)
+
+  // Stock batches with expiry info
+  const currentDayAbs = currentWeek * 7
+  const batchesWithInfo = (stockBatches ?? []).map(b => {
+    const age = Math.max(0, currentDayAbs - b.dayReceived)
+    const daysLeft = Math.max(0, b.expirationDays - age)
+    const pct = b.expirationDays > 0 ? Math.min(100, (age / b.expirationDays) * 100) : 0
+    return { ...b, age, daysLeft, pct }
+  }).sort((a, b) => a.daysLeft - b.daysLeft).slice(0, 3)
+
+  // Service → accent color (cycling through 4 accents)
+  const SERVICE_ACCENT: Record<ServiceType, string> = {
+    market:  K.orange,
+    bank:    K.blue,
+    ofd:     K.violet,
+    diadoc:  K.mint,
+    fokus:   K.orange,
+    elba:    K.mint,
+    extern:  K.violet,
+  }
+  const SERVICE_SHORT: Record<ServiceType, string> = {
+    market: 'Маркет', bank: 'Банк', ofd: 'ОФД',
+    diadoc: 'Диадок', fokus: 'Фокус', elba: 'Эльба', extern: 'Экстерн',
+  }
+  const serviceOrder: ServiceType[] = ['market', 'bank', 'ofd', 'extern', 'diadoc', 'fokus', 'elba']
+
+  // Business stage (from main)
+  const stage = getBusinessStage(currentWeek, level)
+  const stageCfg = STAGE_CONFIG[stage]
+  const nextStage = getNextStage(stage)
+  const nextCfg = nextStage ? STAGE_CONFIG[nextStage] : null
+
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: K.paper }}>
 
-      {/* Three-column body */}
+      {/* Two-column body: center content + right panel */}
       <div style={{
         flex: 1, display: 'grid',
-        gridTemplateColumns: '280px 1fr 240px',
+        gridTemplateColumns: '1fr 300px',
         gap: 0, overflow: 'hidden',
       }}>
 
-        {/* ── LEFT: Balance hero + energy + health ── */}
+        {/* ── CENTER: KPI strip + event + widgets ── */}
         <div style={{
-          borderRight: `1px solid ${K.line}`,
-          padding: 20, display: 'flex', flexDirection: 'column', gap: 12,
+          padding: '20px 20px 20px 24px',
+          display: 'flex', flexDirection: 'column', gap: 14,
           overflowY: 'auto',
         }}>
-          {/* Ink balance card */}
-          <div style={{
-            background: K.ink, borderRadius: 16, padding: 20,
-            position: 'relative', overflow: 'hidden',
-          }}>
-            <div style={{
-              position: 'absolute', top: -30, right: -30,
-              width: 120, height: 120, borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(0,200,150,0.18) 0%, transparent 70%)',
-              pointerEvents: 'none',
-            }} />
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              Баланс
-            </div>
-            <div style={{
-              fontSize: 28, fontWeight: 700, color: K.white,
-              marginTop: 4, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums',
-            }}>
-              {balance.toLocaleString('ru-RU')} ₽
-            </div>
-            <div style={{ marginTop: 8, fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>
-              Неделя {currentWeek}
-            </div>
-          </div>
-
-          {/* Energy */}
-          <div
-            onClick={onOpenOwnerInvestments}
-            style={{
-              background: K.white, borderRadius: 12, padding: 14,
-              border: `1px solid ${entrepreneurEnergy < 40 ? K.orange : K.line}`,
-              cursor: 'pointer',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 11, color: K.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Энергия
-              </span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: entrepreneurEnergy < 40 ? K.orange : K.ink }}>
-                {entrepreneurEnergy}/100
-              </span>
-            </div>
-            <div style={{ height: 6, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
-              <div style={{
-                height: '100%',
-                width: `${entrepreneurEnergy}%`,
-                background: entrepreneurEnergy < 40 ? K.orange : K.mint,
-                borderRadius: 999,
-              }} />
-            </div>
-            {entrepreneurEnergy < 40 && (
-              <div style={{ marginTop: 6, fontSize: 11, color: K.orange, fontWeight: 600 }}>
-                Восстановить →
-              </div>
-            )}
-          </div>
-
-          {/* Financial health tiles */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {/* Top KPI strip — 4 colored cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
             {[
-              {
-                label: 'Доход за день',
-                value: `${dailyRevenue.toLocaleString('ru-RU')} ₽`,
-                bg: K.orange, textColor: K.white, labelColor: 'rgba(255,255,255,0.65)',
-              },
-              {
-                label: 'Прибыль',
-                value: `${dailyProfit > 0 ? '+' : ''}${dailyProfit.toLocaleString('ru-RU')} ₽`,
-                bg: dailyProfit >= 0 ? K.mint : '#c0392b',
-                textColor: K.white, labelColor: 'rgba(255,255,255,0.65)',
-              },
-              {
-                label: 'Расходы за день',
-                value: `${dailyExpenses.toLocaleString('ru-RU')} ₽`,
-                bg: K.violet, textColor: K.white, labelColor: 'rgba(255,255,255,0.65)',
-              },
-              {
-                label: 'Клиенты',
-                value: String(dailyClients),
-                bg: K.blue, textColor: K.white, labelColor: 'rgba(255,255,255,0.65)',
-              },
+              { label: 'Баланс', value: `${balance.toLocaleString('ru-RU')} ₽`, bg: K.orange, sub: `Неделя ${currentWeek}` },
+              { label: 'Прибыль / день', value: `${dailyProfit > 0 ? '+' : ''}${dailyProfit.toLocaleString('ru-RU')} ₽`, bg: dailyProfit >= 0 ? K.mint : '#c0392b', sub: 'после налогов' },
+              { label: 'Расходы / день', value: `${dailyExpenses.toLocaleString('ru-RU')} ₽`, bg: K.violet, sub: lastDayResult ? 'за вчера' : 'нет данных' },
+              { label: 'Клиенты', value: lastDayResult ? `${servedToday} / ${clientsToday}` : '—', bg: K.blue, sub: missedToday > 0 ? `${missedToday} ушли` : 'все обслужены' },
             ].map(t => (
               <div key={t.label} style={{
-                background: t.bg,
-                borderRadius: 12, padding: '12px 16px',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                background: t.bg, borderRadius: 14, padding: '14px 16px',
+                display: 'flex', flexDirection: 'column', gap: 4,
               }}>
-                <div style={{ fontSize: 10, color: t.labelColor, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
                   {t.label}
                 </div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: t.textColor, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: K.white, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
                   {t.value}
                 </div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)' }}>{t.sub}</div>
               </div>
             ))}
           </div>
 
-          {/* Quality */}
-          {(() => {
-            const qualColor = qualityLevel > 70 ? K.mint : qualityLevel > 40 ? K.warn : K.bad
-            return (
-              <div style={{ background: K.white, border: `1px solid ${K.line}`, borderRadius: 12, padding: 14 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <span style={{ fontSize: 10, color: K.muted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    Качество
-                  </span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: qualColor }}>{qualityLevel}%</span>
-                </div>
-                <div style={{ height: 6, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%', width: `${qualityLevel}%`,
-                    background: qualColor, borderRadius: 999,
-                  }} />
-                </div>
-              </div>
-            )
-          })()}
-
-          {/* Stage */}
-          {(() => {
-            const stage = getBusinessStage(currentWeek, level)
-            const stageCfg = STAGE_CONFIG[stage]
-            const nextStage = getNextStage(stage)
-            const nextCfg = nextStage ? STAGE_CONFIG[nextStage] : null
-            return (
-              <div style={{ background: K.bone, border: `1px solid ${K.lineSoft}`, borderRadius: 12, padding: 14 }}>
-                <div style={{ fontSize: 10, color: K.muted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
-                  Стадия
-                </div>
-                <div style={{ fontSize: 14, fontWeight: 800 }}>{stageCfg.label}</div>
-                {nextCfg && (
-                  <div style={{ fontSize: 10, color: K.muted, marginTop: 4 }}>
-                    Далее: {nextCfg.label} · нед. {nextCfg.weeksMin} · ур. {nextCfg.levelMin}
-                  </div>
-                )}
-              </div>
-            )
-          })()}
-        </div>
-
-        {/* ── CENTER: Tasks + Event ── */}
-        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
-
           {/* Daily tasks checklist */}
-          <div style={{ background: K.white, border: `1px solid ${K.line}`, borderRadius: 14, padding: 16 }}>
-            <div style={{ fontSize: 11, color: K.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+          <div style={{ background: K.white, border: `1px solid ${K.line}`, borderRadius: 14, padding: 14 }}>
+            <div style={{ fontSize: 11, color: K.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
               Задачи дня
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {[
                 { label: 'Разрешить событие', done: !pendingEvent, urgent: !!pendingEvent },
                 { label: 'Нажать «Следующий день»', done: false, urgent: false },
               ].map(task => (
                 <div key={task.label} style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '7px 10px', borderRadius: 8,
-                  background: task.urgent ? K.orangeSoft : 'transparent',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '6px 10px', borderRadius: 999,
+                  background: task.urgent ? K.orangeSoft : K.bone,
                 }}>
                   <div style={{
-                    width: 18, height: 18, borderRadius: 999, flexShrink: 0,
+                    width: 14, height: 14, borderRadius: 999, flexShrink: 0,
                     border: `2px solid ${task.done ? K.mint : task.urgent ? K.orange : K.line}`,
                     background: task.done ? K.mint : 'transparent',
                     display: 'grid', placeItems: 'center',
                   }}>
                     {task.done && (
-                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                        <path d="M2 5l2 2 4-4" stroke={K.white} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                      <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
+                        <path d="M2 5l2 2 4-4" stroke={K.white} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     )}
                   </div>
                   <span style={{
-                    fontSize: 13, fontWeight: 500,
+                    fontSize: 12, fontWeight: 500,
                     color: task.urgent ? K.orange : task.done ? K.muted : K.ink,
                     textDecoration: task.done ? 'line-through' : 'none',
                   }}>
                     {task.label}
                   </span>
-                  {task.urgent && (
-                    <span style={{
-                      marginLeft: 'auto', fontSize: 10, fontWeight: 700, color: K.orange,
-                      background: 'rgba(255,111,26,0.12)', padding: '2px 7px', borderRadius: 999,
-                    }}>
-                      СРОЧНО
-                    </span>
-                  )}
                 </div>
               ))}
             </div>
@@ -433,69 +356,305 @@ function DashboardView({
             )
           })()}
 
+          {/* ── Widget row: Queue + Stock ── */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: bizConfig.hasStock ? '1fr 1fr' : '1fr',
+            gap: 12,
+          }}>
+            {/* QUEUE: served/missed dot grid */}
+            <div style={{
+              background: K.white, border: `1px solid ${K.line}`,
+              borderRadius: 14, padding: 16,
+              display: 'flex', flexDirection: 'column', gap: 10,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ fontSize: 10, color: K.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Пропускная · очередь
+                </div>
+                {missedToday > 0 && (
+                  <span style={{
+                    fontSize: 10, padding: '2px 8px', borderRadius: 999,
+                    background: K.orangeSoft, color: K.orange, fontWeight: 700,
+                  }}>
+                    {missedToday} ушли
+                  </span>
+                )}
+              </div>
+              <div style={{
+                fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em',
+                fontVariantNumeric: 'tabular-nums',
+              }}>
+                <span style={{ color: K.ink }}>{servedToday}</span>
+                <span style={{ color: K.muted, fontWeight: 600 }}> / {clientsToday || '—'}</span>
+              </div>
+              {/* Dot grid */}
+              {clientsToday > 0 ? (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${Math.min(clientsToday, 20)}, 1fr)`,
+                  gap: 3,
+                }}>
+                  {Array.from({ length: Math.min(clientsToday, 60) }).map((_, i) => {
+                    const isServed = i < Math.min(servedToday, 60)
+                    return (
+                      <div key={i} style={{
+                        aspectRatio: '1',
+                        borderRadius: 3,
+                        background: isServed ? K.mint : K.orange,
+                      }} />
+                    )
+                  })}
+                </div>
+              ) : (
+                <div style={{ fontSize: 11, color: K.muted }}>
+                  День ещё не завершён
+                </div>
+              )}
+              {/* Market hint if no market and missing clients */}
+              {!services.market?.isActive && missedToday > 0 && (
+                <div style={{
+                  marginTop: 4, padding: '8px 10px', borderRadius: 8,
+                  background: K.orangeSoft,
+                  display: 'flex', alignItems: 'center', gap: 8,
+                }}>
+                  <span style={{
+                    fontSize: 9, padding: '2px 7px', borderRadius: 999,
+                    background: K.orange, color: K.white, fontWeight: 700, letterSpacing: '0.06em',
+                  }}>
+                    МАРКЕТ
+                  </span>
+                  <span style={{ fontSize: 11, color: K.ink, fontWeight: 500 }}>
+                    +20% пропускной — очередь исчезает
+                  </span>
+                </div>
+              )}
+              <div style={{ fontSize: 10, color: K.muted }}>
+                касса: {throughput} чел/день
+              </div>
+            </div>
+
+            {/* STOCK: batches with expiry */}
+            {bizConfig.hasStock && (
+              <div style={{
+                background: K.white, border: `1px solid ${K.line}`,
+                borderRadius: 14, padding: 16,
+                display: 'flex', flexDirection: 'column', gap: 10,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ fontSize: 10, color: K.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    Склад · партии
+                  </div>
+                  {stockLow && (
+                    <span style={{
+                      fontSize: 10, padding: '2px 8px', borderRadius: 999,
+                      background: K.orangeSoft, color: K.orange, fontWeight: 700,
+                    }}>
+                      мало
+                    </span>
+                  )}
+                </div>
+                <div style={{
+                  fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em',
+                  fontVariantNumeric: 'tabular-nums', color: K.ink,
+                }}>
+                  {totalStock} ед
+                  <span style={{ fontSize: 12, color: K.muted, fontWeight: 600, marginLeft: 8 }}>
+                    · {stockPct}%
+                  </span>
+                </div>
+                {/* Batches */}
+                {batchesWithInfo.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {batchesWithInfo.map(b => {
+                      const color = b.daysLeft <= 1 ? K.orange : b.daysLeft <= 3 ? K.violet : K.blue
+                      return (
+                        <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ fontSize: 10, color: K.muted, width: 42, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+                            {b.daysLeft} {b.daysLeft === 1 ? 'дн' : 'дн'}
+                          </div>
+                          <div style={{ flex: 1, height: 14, background: K.bone, borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
+                            <div style={{
+                              height: '100%',
+                              width: `${Math.max(10, 100 - b.pct)}%`,
+                              background: color, borderRadius: 4,
+                              display: 'flex', alignItems: 'center', paddingLeft: 6,
+                            }}>
+                              <span style={{ fontSize: 10, color: K.white, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                                {b.quantity}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 11, color: K.muted }}>
+                    Склад пуст
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
         </div>
 
-        {/* ── RIGHT: KPIs + rep + loyalty ── */}
+        {/* ── RIGHT panel: status + ecosystem + synergies + CTA ── */}
         <div style={{
-          borderLeft: `1px solid ${K.line}`,
-          padding: 20, display: 'flex', flexDirection: 'column', gap: 12,
+          borderLeft: `1px solid ${K.line}`, background: K.white,
+          padding: 18, display: 'flex', flexDirection: 'column', gap: 14,
           overflowY: 'auto',
         }}>
-          <div style={{ fontSize: 11, color: K.muted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            ПОКАЗАТЕЛИ
+          {/* Status pills row */}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {[
+              { label: 'Реп', value: reputation, color: K.violet, bg: K.violetSoft },
+              { label: 'Лоял', value: `${loyalty}%`, color: K.mint, bg: K.mintSoft },
+              {
+                label: 'Энергия',
+                value: `${entrepreneurEnergy}`,
+                color: entrepreneurEnergy < 40 ? K.orange : K.blue,
+                bg: entrepreneurEnergy < 40 ? K.orangeSoft : K.blueSoft,
+                onClick: onOpenOwnerInvestments,
+              },
+            ].map(p => (
+              <button
+                key={p.label}
+                onClick={p.onClick}
+                disabled={!p.onClick}
+                style={{
+                  background: p.bg, border: 'none', borderRadius: 999,
+                  padding: '5px 10px', fontSize: 11, fontWeight: 700,
+                  color: p.color, cursor: p.onClick ? 'pointer' : 'default',
+                  fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', gap: 5,
+                }}
+              >
+                <span style={{ opacity: 0.7, fontWeight: 500 }}>{p.label}</span>
+                <span>{p.value}</span>
+              </button>
+            ))}
           </div>
 
-          {/* Reputation */}
-          <div style={{ background: K.white, border: `1px solid ${K.line}`, borderRadius: 14, padding: '14px 16px' }}>
-            <div style={{ fontSize: 10, color: K.muted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Репутация</div>
-            <div style={{ fontSize: 32, fontWeight: 800, color: K.violet, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{reputation}</div>
-            <div style={{ marginTop: 8, height: 4, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${Math.min(reputation, 100)}%`, background: K.violet, borderRadius: 999 }} />
+          {/* Quality + Stage compact row */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {(() => {
+              const qualColor = qualityLevel > 70 ? K.mint : qualityLevel > 40 ? K.orange : '#c0392b'
+              return (
+                <div style={{ background: K.bone, borderRadius: 10, padding: '10px 12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                    <span style={{ fontSize: 10, color: K.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                      Качество
+                    </span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: qualColor }}>{qualityLevel}%</span>
+                  </div>
+                  <div style={{ height: 5, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${qualityLevel}%`, background: qualColor, borderRadius: 999 }} />
+                  </div>
+                </div>
+              )
+            })()}
+            <div style={{ background: K.bone, borderRadius: 10, padding: '10px 12px' }}>
+              <div style={{ fontSize: 10, color: K.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
+                Стадия
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: K.ink }}>{stageCfg.label}</div>
+              {nextCfg && (
+                <div style={{ fontSize: 10, color: K.muted, marginTop: 2 }}>
+                  далее: {nextCfg.label}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Loyalty */}
-          <div style={{ background: K.white, border: `1px solid ${K.line}`, borderRadius: 14, padding: '14px 16px' }}>
-            <div style={{ fontSize: 10, color: K.muted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Лояльность</div>
-            <div style={{ fontSize: 32, fontWeight: 800, color: K.mint, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{loyalty}%</div>
-            <div style={{ marginTop: 8, height: 4, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${Math.min(loyalty, 100)}%`, background: K.mint, borderRadius: 999 }} />
+          {/* Ecosystem */}
+          <div>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8,
+            }}>
+              <div style={{ fontSize: 10, color: K.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Экосистема
+              </div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: K.ink }}>
+                Контур · {Object.values(services).filter(s => s.isActive).length}/7
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+              {serviceOrder.map(sid => {
+                const svc = services[sid]
+                const isActive = svc?.isActive
+                const accent = SERVICE_ACCENT[sid]
+                return (
+                  <div key={sid} style={{
+                    padding: '10px 10px',
+                    borderRadius: 10,
+                    background: isActive ? accent : K.bone,
+                    color: isActive ? K.white : K.muted,
+                    fontSize: 12, fontWeight: 700,
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    opacity: isActive ? 1 : 0.75,
+                  }}>
+                    <span>{SERVICE_SHORT[sid]}</span>
+                    <span style={{
+                      width: 6, height: 6, borderRadius: 999,
+                      background: isActive ? K.white : K.line,
+                    }} />
+                  </div>
+                )
+              })}
             </div>
           </div>
 
+          {/* Active synergies */}
+          {synergies.length > 0 && (
+            <div style={{
+              background: K.mintSoft, borderRadius: 12, padding: 12,
+              display: 'flex', flexDirection: 'column', gap: 6,
+            }}>
+              <div style={{ fontSize: 10, color: K.mint, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Активные синергии · {synergies.length}
+              </div>
+              {synergies.slice(0, 3).map(s => (
+                <div key={s.id} style={{ fontSize: 11, fontWeight: 600, color: K.ink, lineHeight: 1.35 }}>
+                  {s.name}
+                </div>
+              ))}
+              {synergies.length > 3 && (
+                <div style={{ fontSize: 11, color: K.muted }}>+ ещё {synergies.length - 3}</div>
+              )}
+            </div>
+          )}
+
+          <div style={{ flex: 1 }} />
+
+          {/* Primary CTA */}
+          <button
+            onClick={onNextDay}
+            disabled={isDayBlocked}
+            style={{
+              padding: '16px 20px', borderRadius: 14, border: 'none',
+              background: isDayBlocked ? K.lineSoft : K.orange,
+              color: isDayBlocked ? K.muted : K.white,
+              fontSize: 15, fontWeight: 800, letterSpacing: '-0.01em',
+              cursor: isDayBlocked ? 'not-allowed' : 'pointer',
+              fontFamily: 'inherit',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}
+          >
+            <span>{isDayBlocked ? 'Разрешите событие' : 'Следующий день'}</span>
+            <span style={{ fontSize: 18 }}>→</span>
+          </button>
+          {dayBlockedMsg && (
+            <div style={{
+              fontSize: 11, fontWeight: 600, color: K.orange,
+              background: K.orangeSoft, padding: '6px 10px', borderRadius: 8,
+              textAlign: 'center',
+            }}>
+              {dayBlockedMsg}
+            </div>
+          )}
         </div>
-      </div>
-
-      {/* ── Action bar ── */}
-      <div style={{
-        borderTop: `1px solid ${K.line}`, background: K.white,
-        padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 10,
-      }}>
-        <div style={{ flex: 1 }} />
-
-        {dayBlockedMsg && (
-          <div style={{
-            fontSize: 12, fontWeight: 600, color: K.orange,
-            background: K.orangeSoft, padding: '6px 14px', borderRadius: 8,
-          }}>
-            {dayBlockedMsg}
-          </div>
-        )}
-
-        <button
-          onClick={onNextDay}
-          disabled={isDayBlocked}
-          style={{
-            padding: '10px 28px', borderRadius: 10, border: 'none',
-            background: isDayBlocked ? K.lineSoft : K.ink,
-            color: isDayBlocked ? K.muted : K.white,
-            fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em',
-            cursor: isDayBlocked ? 'not-allowed' : 'pointer',
-            fontFamily: 'inherit',
-          }}
-        >
-          {isDayBlocked ? 'Разрешите событие' : 'Следующий день →'}
-        </button>
       </div>
 
     </div>
