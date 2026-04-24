@@ -27,7 +27,7 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
   const {
     currentWeek, balance, lastDayResult, services, achievements,
     upcomingEventTeaser, pendingMilestoneCelebration,
-    lastWeekPainLosses,
+    lastWeekPainLosses, lastWeekMicroEvent, npcs,
   } = useGameStore()
 
   if (!lastDayResult) return null
@@ -246,6 +246,55 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
             </div>
           </div>
         )}
+
+        {/* Weekly micro event */}
+        {lastWeekMicroEvent && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            background: K.bone, border: `1px solid ${K.lineSoft}`,
+            borderRadius: 12, padding: '12px 16px',
+          }}>
+            <span style={{ fontSize: 20, flexShrink: 0 }}>{lastWeekMicroEvent.icon}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: K.ink }}>{lastWeekMicroEvent.title}</div>
+              <div style={{ fontSize: 11, color: K.muted, marginTop: 2 }}>{lastWeekMicroEvent.effectText}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Active NPC allies */}
+        {(() => {
+          const allies = (npcs ?? []).filter(n => n.isRevealed && n.relationshipLevel >= 60)
+          if (allies.length === 0) return null
+          const bonuses: Record<string, string> = {
+            mikhail: 'Хорошая цена на поставки',
+            svetlana: '+1 лояльности / нед',
+            marina: '+1 репутации / нед',
+            viktor: 'Льготные условия в банке',
+            petrov: 'Лояльность при проверках',
+          }
+          const visible = allies.filter(n => bonuses[n.id])
+          if (visible.length === 0) return null
+          return (
+            <div style={{
+              background: K.bone, border: `1px solid ${K.lineSoft}`,
+              borderRadius: 12, padding: '12px 16px',
+            }}>
+              <div style={{ fontSize: 10, color: K.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+                Союзники
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {visible.map(n => (
+                  <div key={n.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 16 }}>{n.portrait}</span>
+                    <span style={{ fontSize: 12, color: K.ink, fontWeight: 600, flex: 1 }}>{n.name}</span>
+                    <span style={{ fontSize: 11, color: K.good }}>{bonuses[n.id]}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Cliffhanger teaser */}
         {upcomingEventTeaser && (

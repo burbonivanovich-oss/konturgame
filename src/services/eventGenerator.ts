@@ -810,6 +810,7 @@ export function applyEventConsequence(
       state.pendingChainFollowUps.push({
         chainEventId: option.chainFollowUpId,
         triggerWeek: state.currentWeek + delay,
+        contextNote: option.text.slice(0, 80),
       })
     }
   }

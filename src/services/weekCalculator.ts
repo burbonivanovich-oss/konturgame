@@ -1,4 +1,5 @@
 import type { GameState, DayResult } from '../types/game'
+import { DAILY_MICRO_EVENTS } from '../constants/dailyMicroEvents'
 import { BUSINESS_CONFIGS, ECONOMY_CONSTANTS, CAMPAIGN_DIMINISHING_FACTORS } from '../constants/business'
 import { ensureNPCsInitialized, applyNPCPassiveEffects, getInspectorChain2EventId } from './npcManager'
 import { getChainEvent, getChainStartEvent, CHAIN_TRIGGER_WEEKS, type ChainId } from '../constants/eventChains'
@@ -320,7 +321,6 @@ export function processWeek(state: GameState): DayResult {
   // Update state (but don't advance week yet — done at end after all checks)
   state.dayOfWeek = 0
   state.weeklyEnergyRestored = false
-  state.seenMicroEventIds = []  // Reset seen events for new week
   state.balance = newBalance
   state.reputation = newReputation
   state.loyalty = newLoyalty
@@ -521,8 +521,8 @@ export function processWeek(state: GameState): DayResult {
   // Auto-resolve expired decision timers (pick first non-Kontour option)
   autoResolveExpiredDecisions(state)
 
-  // Trigger city newspaper event every 10 weeks
-  if (state.currentWeek % 10 === 0 && !(state.seenNewspaperWeeks ?? []).includes(state.currentWeek)) {
+  // Trigger city newspaper: first on week 5, then every 10 weeks (5, 15, 25, ...)
+  if ((state.currentWeek + 5) % 10 === 0 && !(state.seenNewspaperWeeks ?? []).includes(state.currentWeek)) {
     const newspaper = getNewspaperForWeek(state.currentWeek)
     if (newspaper && !state.triggeredEventIds.includes(newspaper.id)) {
       const newsEvent = templateToEvent(newspaper, state.currentWeek * 7, state.currentWeek)
@@ -531,6 +531,9 @@ export function processWeek(state: GameState): DayResult {
       queueChainEvent(state, newsEvent)
     }
   }
+
+  // Pick 1 micro event per week (passive, no modal — shown in WeekResults)
+  applyWeeklyMicroEvent(state)
 
   // Generate 1-2 events every week (crisis weeks always get 2)
   if (!state.isGameOver && !state.isVictory && !state.pendingEvent) {
@@ -633,6 +636,26 @@ function generateNextWeekTeaser(state: GameState): string | null {
   return tips[Math.floor(Math.random() * tips.length)]
 }
 
+function applyWeeklyMicroEvent(state: GameState): void {
+  const idx = (state.currentWeek - 1) % DAILY_MICRO_EVENTS.length
+  const micro = DAILY_MICRO_EVENTS[idx]
+  if (!micro) return
+
+  const option = micro.options[0]
+  if (!option) return
+
+  const e = option.effects
+  if (e.balanceDelta) state.balance = Math.max(0, state.balance + e.balanceDelta)
+  if (e.energyDelta) state.entrepreneurEnergy = Math.max(0, Math.min(100, state.entrepreneurEnergy + e.energyDelta))
+  if (e.reputationDelta) state.reputation = Math.max(0, Math.min(100, state.reputation + e.reputationDelta))
+  if (e.clientModifierPercent && e.clientModifierDays) {
+    state.temporaryClientMod = (state.temporaryClientMod ?? 0) + e.clientModifierPercent
+    state.temporaryModDaysLeft = Math.max(state.temporaryModDaysLeft ?? 0, e.clientModifierDays)
+  }
+
+  state.lastWeekMicroEvent = { icon: micro.icon, title: micro.title, effectText: option.text }
+}
+
 // ── Chain system helpers ─────────────────────────────────────────────────────
 
 function triggerDueChainEvents(state: GameState): void {
@@ -654,6 +677,9 @@ function triggerDueChainEvents(state: GameState): void {
     if ((state.triggeredEventIds ?? []).includes(template.id)) continue
 
     const event = templateToEvent(template, state.currentWeek * 7, state.currentWeek)
+    if (followUp.contextNote) {
+      event.description = `📌 Ранее вы выбрали: «${followUp.contextNote}»\n\n${event.description}`
+    }
     queueChainEvent(state, event)
   }
 

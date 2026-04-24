@@ -451,19 +451,8 @@ export interface GameState {
   // Bundle promo shown
   bundlePromoShown: boolean
 
-  // Daily micro events
-  seenMicroEventIds: string[]  // Events already shown this week
-  pendingMicroEvent: null | {
-    id: string
-    title: string
-    description: string
-    icon: string
-    options: Array<{
-      id: string
-      text: string
-      effects: Record<string, number>
-    }>
-  }
+  // Weekly micro event (passive, shown in results)
+  lastWeekMicroEvent?: { icon: string; title: string; effectText: string } | null
 
   // Suppliers system (NEW v2.0)
   suppliers: Supplier[]
@@ -496,7 +485,7 @@ export interface GameState {
   playerBackstory: PlayerBackstory | null
   activeChainIds: string[]
   completedChainIds: string[]
-  pendingChainFollowUps: Array<{ chainEventId: string; triggerWeek: number }>
+  pendingChainFollowUps: Array<{ chainEventId: string; triggerWeek: number; contextNote?: string }>
 
   // Narrative systems (v3.1)
   decisionLog: DecisionLogEntry[]

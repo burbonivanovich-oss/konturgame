@@ -117,9 +117,8 @@ const createInitialState = (businessType: BusinessType): GameState => {
     // Week energy restore
     weeklyEnergyRestored: false,
 
-    // Daily micro events
-    seenMicroEventIds: [],
-    pendingMicroEvent: null,
+    // Weekly micro event (passive feed)
+    lastWeekMicroEvent: null,
 
     // Suppliers system (NEW v2.0)
     suppliers: [],
@@ -276,11 +275,6 @@ interface GameStoreActions {
   revealPromoCode: (serviceId: ServiceType) => void
   clearPendingPromoCode: () => void
   markBundlePromoShown: () => void
-
-  // Daily micro events
-  setPendingMicroEvent: (event: any) => void
-  resolveMicroEvent: (optionId: string) => void
-  clearSeenMicroEvents: () => void  // Reset when week changes
 
   // Employees
   hireEmployee: (position: any, name: string, salary: number) => void
@@ -945,52 +939,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     },
 
     // Daily micro events
-    setPendingMicroEvent: (event) => {
-      set({
-        pendingMicroEvent: event,
-        seenMicroEventIds: event ? [...get().seenMicroEventIds, event.id] : get().seenMicroEventIds,
-        lastUpdated: Date.now(),
-      })
-    },
-
-    resolveMicroEvent: (optionId) => {
-      const state = get()
-      const event = state.pendingMicroEvent
-      if (!event) return
-
-      const option = event.options.find(o => o.id === optionId)
-      if (!option) return
-
-      const effects = option.effects
-      let updates: any = { pendingMicroEvent: null, lastUpdated: Date.now() }
-
-      if (effects.balanceDelta) {
-        updates.balance = Math.max(0, state.balance + effects.balanceDelta)
-      }
-
-      if (effects.energyDelta) {
-        updates.entrepreneurEnergy = Math.max(0, Math.min(100, state.entrepreneurEnergy + effects.energyDelta))
-      }
-
-      if (effects.reputationDelta) {
-        updates.reputation = Math.max(0, Math.min(100, state.reputation + effects.reputationDelta))
-      }
-
-      if (effects.clientModifierPercent && effects.clientModifierDays) {
-        updates.temporaryClientMod = (state.temporaryClientMod ?? 0) + effects.clientModifierPercent
-        updates.temporaryModDaysLeft = Math.max(
-          state.temporaryModDaysLeft ?? 0,
-          effects.clientModifierDays
-        )
-      }
-
-      set(updates)
-    },
-
-    clearSeenMicroEvents: () => {
-      set({ seenMicroEventIds: [], lastUpdated: Date.now() })
-    },
-
     // Employees
     hireEmployee: (position: any, name: string, salary: number) => {
       const state = get()
@@ -1237,7 +1185,6 @@ function extractState(state: any): GameState {
     currentDay,
     // New fields
     onboardingStage, onboardingCompleted, onboardingStepIndex, unlockedServices,
-    seenMicroEventIds, pendingMicroEvent,
     cashRegisters, enabledCategories, promoCodesRevealed,
     daysBalanceNegative, competitorEventTriggered, lastDayPainLosses, bundlePromoShown,
     // v2.0 new fields
@@ -1288,8 +1235,7 @@ function extractState(state: any): GameState {
     competitorEventTriggered: competitorEventTriggered ?? false,
     lastDayPainLosses: lastDayPainLosses ?? null,
     bundlePromoShown: bundlePromoShown ?? false,
-    seenMicroEventIds: seenMicroEventIds ?? [],
-    pendingMicroEvent: pendingMicroEvent ?? null,
+    lastWeekMicroEvent: null,
     // v2.0 fields with defaults for save compatibility
     suppliers: suppliers ?? [],
     activeSupplierId: activeSupplierId ?? null,
