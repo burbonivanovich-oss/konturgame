@@ -3,6 +3,7 @@ import { MORAL_DILEMMA_EVENTS } from '../constants/moralDilemmas'
 import { getChainEvent, CHAIN_FOLLOWUP_DELAY } from '../constants/eventChains'
 import { RECURRING_CUSTOMER_EVENTS } from '../constants/recurringCustomers'
 import { NPC_EVENTS } from '../constants/npcEvents'
+import { applyRelationshipDeltaToState } from './npcManager'
 
 export const EVENTS_DATABASE: EventTemplate[] = [
   {
@@ -783,22 +784,14 @@ export function applyEventConsequence(
     )
   }
 
-  // NPC relationship delta
+  // NPC relationship delta — anchors large decisions, converts overflow to XP
   if (option.npcRelationshipDelta !== undefined && event.npcId) {
-    const npcId = event.npcId
-    const delta = option.npcRelationshipDelta
-    state.npcs = (state.npcs ?? []).map(npc => {
-      if (npc.id !== npcId) return npc
-      return {
-        ...npc,
-        relationshipLevel: Math.max(0, Math.min(100, npc.relationshipLevel + delta)),
-        isRevealed: true,
-        memory: [
-          ...npc.memory.slice(-9),
-          { week: state.currentWeek, eventId: event.id, choiceId: optionId, note: option.text.slice(0, 60) },
-        ],
-      }
-    })
+    applyRelationshipDeltaToState(
+      state,
+      event.npcId,
+      option.npcRelationshipDelta,
+      { week: state.currentWeek, eventId: event.id, choiceId: optionId, note: option.text.slice(0, 60) },
+    )
   }
 
   // Chain follow-up scheduling

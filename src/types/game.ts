@@ -20,6 +20,7 @@ export interface NpcMemoryEntry {
   eventId: string
   choiceId: string
   note: string
+  isAnchor?: boolean  // anchor entries are never evicted by the 10-entry limit
 }
 
 export interface NPC {

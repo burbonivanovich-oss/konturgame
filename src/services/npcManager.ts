@@ -9,6 +9,15 @@ export function getNPC(state: GameState, npcId: string): NPC | undefined {
   return (state.npcs ?? []).find(n => n.id === npcId)
 }
 
+// Keep last maxSize entries, but anchor entries are never evicted.
+function trimMemory(memory: NpcMemoryEntry[], maxSize = 10): NpcMemoryEntry[] {
+  if (memory.length <= maxSize) return memory
+  const anchors = memory.filter(e => e.isAnchor)
+  const nonAnchors = memory.filter(e => !e.isAnchor)
+  const recentSlots = Math.max(0, maxSize - anchors.length)
+  return [...anchors, ...nonAnchors.slice(-recentSlots)]
+}
+
 export function updateNPCRelationship(npcs: NPC[], npcId: string, delta: number): NPC[] {
   return npcs.map(npc => {
     if (npc.id !== npcId) return npc
@@ -20,17 +29,45 @@ export function updateNPCRelationship(npcs: NPC[], npcId: string, delta: number)
   })
 }
 
+// Applies a relationship delta with memory recording and overflow-to-XP conversion.
+// Replaces the inline map in eventGenerator so all callers share the same logic.
+export function applyRelationshipDeltaToState(
+  state: GameState,
+  npcId: string,
+  delta: number,
+  memoryEntry: Omit<NpcMemoryEntry, 'isAnchor'>,
+): void {
+  // Events with large deltas (≥15) are anchored so they survive memory trimming
+  const isAnchor = Math.abs(delta) >= 15
+
+  state.npcs = (state.npcs ?? []).map(npc => {
+    if (npc.id !== npcId) return npc
+
+    const current = npc.relationshipLevel
+
+    // Overflow: positive delta when already at 100 → small XP reward
+    if (delta > 0 && current >= 100) {
+      state.experience = (state.experience ?? 0) + Math.max(1, Math.floor(delta / 5))
+    }
+
+    const newRel = Math.max(0, Math.min(100, current + delta))
+    const newMemory = trimMemory([...npc.memory, { ...memoryEntry, isAnchor }])
+
+    return { ...npc, relationshipLevel: newRel, isRevealed: true, memory: newMemory }
+  })
+}
+
 export function recordNPCMemory(
   npcs: NPC[],
   npcId: string,
-  entry: Omit<NpcMemoryEntry, never>
+  entry: NpcMemoryEntry,
 ): NPC[] {
   return npcs.map(npc => {
     if (npc.id !== npcId) return npc
     return {
       ...npc,
       isRevealed: true,
-      memory: [...npc.memory.slice(-9), entry],  // keep last 10 entries
+      memory: trimMemory([...npc.memory, entry]),
     }
   })
 }
@@ -41,45 +78,121 @@ export function revealNPC(npcs: NPC[], npcId: string): NPC[] {
   )
 }
 
-// Passive NPC effects applied each week
+// ─── Passive NPC effects applied each week ─────────────────────────────────
+//
+// Design rules:
+//  • Positive bonuses: high threshold → full bonus; mid threshold → bonus every
+//    other week (altWeek) → smooth ramp-up feel
+//  • Negative penalties: hostile (≤25) → active weekly drain; tense (26-40)
+//    → lighter drain every other week
+//  • Decay: revealed NPCs with no interaction for 4+ weeks drift 1 pt toward 50
+//
 export function applyNPCPassiveEffects(state: GameState): void {
   const npcs = state.npcs ?? []
+  const altWeek = (state.currentWeek ?? 0) % 2 === 0
 
+  // ── MIKHAIL (supplier) ─────────────────────────────────────────────────
   const mikhail = npcs.find(n => n.id === 'mikhail')
-  if (mikhail && mikhail.isRevealed) {
-    // High relationship with supplier: slight price reduction (represented as checkModifier)
-    if (mikhail.relationshipLevel >= 75 && state.temporaryCheckMod === 0) {
-      state.temporaryCheckMod = 0.04
-      state.temporaryCheckMod = Math.min(state.temporaryCheckMod + 0.04, 0.1)
+  if (mikhail?.isRevealed) {
+    if (mikhail.relationshipLevel >= 75) {
+      if (state.temporaryCheckMod === 0) state.temporaryCheckMod = 0.06
+    } else if (mikhail.relationshipLevel >= 55 && altWeek) {
+      if (state.temporaryCheckMod === 0) state.temporaryCheckMod = 0.03
+    } else if (mikhail.relationshipLevel <= 25) {
+      // Bad relations → higher supply costs, returns, quality disputes
+      state.balance = Math.max(0, state.balance - 800)
+    } else if (mikhail.relationshipLevel <= 40 && altWeek) {
+      state.balance = Math.max(0, state.balance - 300)
     }
   }
 
+  // ── SVETLANA (employee) ────────────────────────────────────────────────
   const svetlana = npcs.find(n => n.id === 'svetlana')
-  if (svetlana && svetlana.isRevealed && svetlana.relationshipLevel >= 70) {
-    // Loyal high-performing employee boosts loyalty
-    if (state.loyalty < 100) {
-      state.loyalty = Math.min(100, state.loyalty + 1)
+  if (svetlana?.isRevealed) {
+    if (svetlana.relationshipLevel >= 70) {
+      if (state.loyalty < 100) state.loyalty = Math.min(100, state.loyalty + 1)
+    } else if (svetlana.relationshipLevel >= 52 && altWeek) {
+      if (state.loyalty < 100) state.loyalty = Math.min(100, state.loyalty + 1)
     }
+    // No active penalty — unmotivated employee's harm is modelled via energy cost
   }
 
+  // ── MARINA (consultant/marketer) ───────────────────────────────────────
   const marina = npcs.find(n => n.id === 'marina')
-  if (marina && marina.isRevealed && marina.relationshipLevel >= 65) {
-    // Good relationship with marketer: small ongoing reputation boost
-    if (state.reputation < 100) {
-      state.reputation = Math.min(100, state.reputation + 1)
+  if (marina?.isRevealed) {
+    if (marina.relationshipLevel >= 65) {
+      if (state.reputation < 100) state.reputation = Math.min(100, state.reputation + 1)
+    } else if (marina.relationshipLevel >= 50 && altWeek) {
+      if (state.reputation < 100) state.reputation = Math.min(100, state.reputation + 1)
     }
   }
 
+  // ── VIKTOR (banker) ────────────────────────────────────────────────────
   const viktor = npcs.find(n => n.id === 'viktor')
-  if (viktor && viktor.isRevealed && viktor.relationshipLevel >= 70) {
-    // Banker ally: slightly better cash flow awareness (minor check boost)
-    if (state.temporaryCheckMod === 0) {
-      state.temporaryCheckMod = 0.02
+  if (viktor?.isRevealed) {
+    if (viktor.relationshipLevel >= 70) {
+      if (state.temporaryCheckMod === 0) state.temporaryCheckMod = 0.02
+    } else if (viktor.relationshipLevel >= 55 && altWeek) {
+      if (state.temporaryCheckMod === 0) state.temporaryCheckMod = 0.01
     }
   }
+
+  // ── PETROV (inspector) ────────────────────────────────────────────────
+  const petrov = npcs.find(n => n.id === 'petrov')
+  if (petrov?.isRevealed) {
+    if (petrov.relationshipLevel <= 25) {
+      // Inspector actively files complaints → direct reputation damage
+      state.reputation = Math.max(0, state.reputation - 1)
+    } else if (petrov.relationshipLevel <= 40 && altWeek) {
+      state.reputation = Math.max(0, state.reputation - 1)
+    }
+  }
+
+  // ── ANNA (competitor) ─────────────────────────────────────────────────
+  const anna = npcs.find(n => n.id === 'anna')
+  if (anna?.isRevealed) {
+    if (anna.relationshipLevel <= 25) {
+      // Active sabotage: negative word-of-mouth, luring customers
+      state.reputation = Math.max(0, state.reputation - 1)
+    }
+    // Declared truce: rivals occasionally send overflow customers
+    if (anna.relationshipLevel >= 60 && altWeek) {
+      if (state.reputation < 100) state.reputation = Math.min(100, state.reputation + 1)
+    }
+  }
+
+  // ── GLEB (blogger) ────────────────────────────────────────────────────
+  const gleb = npcs.find(n => n.id === 'gleb')
+  if (gleb?.isRevealed) {
+    if (gleb.relationshipLevel >= 65) {
+      if (state.reputation < 100) state.reputation = Math.min(100, state.reputation + 1)
+    } else if (gleb.relationshipLevel >= 50 && altWeek) {
+      if (state.reputation < 100) state.reputation = Math.min(100, state.reputation + 1)
+    } else if (gleb.relationshipLevel <= 25) {
+      // Active negative posts
+      state.reputation = Math.max(0, state.reputation - 2)
+    } else if (gleb.relationshipLevel <= 40 && altWeek) {
+      state.reputation = Math.max(0, state.reputation - 1)
+    }
+  }
+
+  // ── DECAY: drift toward neutral (50) when relationship goes stale ─────
+  const currentWeek = state.currentWeek ?? 0
+  state.npcs = (state.npcs ?? []).map(npc => {
+    if (!npc.isRevealed || npc.relationshipLevel === 50) return npc
+    const lastInteraction = npc.memory.length > 0
+      ? npc.memory[npc.memory.length - 1].week
+      : 0
+    if (currentWeek - lastInteraction < 4) return npc
+    return {
+      ...npc,
+      relationshipLevel: npc.relationshipLevel > 50
+        ? npc.relationshipLevel - 1
+        : npc.relationshipLevel + 1,
+    }
+  })
 }
 
-// Returns relationship label for UI
 export function getRelationshipLabel(level: number): { text: string; color: string } {
   if (level >= 80) return { text: 'Союзник', color: '#00b478' }
   if (level >= 60) return { text: 'Доверяет', color: '#2d8aff' }
@@ -88,8 +201,6 @@ export function getRelationshipLabel(level: number): { text: string; color: stri
   return { text: 'Враждебно', color: '#dc3545' }
 }
 
-// Determine which chain follow-up to use for inspector_chain step 2
-// based on relationship with Petrov after step 1
 export function getInspectorChain2EventId(state: GameState): string {
   const petrov = getNPC(state, 'petrov')
   const relationship = petrov?.relationshipLevel ?? 40
