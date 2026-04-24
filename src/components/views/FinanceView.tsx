@@ -1,6 +1,6 @@
 import { useGameStore } from '../../stores/gameStore'
 import type { Loan } from '../../types/game'
-import { ECONOMY_CONSTANTS } from '../../constants/business'
+import { ECONOMY_CONSTANTS, MONTHLY_EXPENSES, UPGRADES_CONFIG } from '../../constants/business'
 import { K } from '../design-system/tokens'
 
 function calcTotalOwed(loan: Loan): number {
@@ -20,8 +20,24 @@ const LOAN_OPTIONS: Array<{ type: Loan['type']; amount: number; label: string; w
   { type: 'long-term', amount: 200000, label: '200 000 ₽ · 12 нед · 8%', weeks: 12, rate: '8%' },
 ]
 
+function ForecastBar({ label, value }: { label: string; value: number }) {
+  const color = value >= 0 ? K.good : K.bad
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0' }}>
+      <span style={{ fontSize: 12, color: K.muted, fontWeight: 600 }}>{label}</span>
+      <span style={{ fontSize: 14, fontWeight: 800, color }} className="k-num">
+        {value >= 0 ? '' : '−'}{Math.abs(value).toLocaleString('ru-RU')} ₽
+      </span>
+    </div>
+  )
+}
+
 export function FinanceView() {
-  const { balance, savedBalance, lastDayResult, services, currentWeek, loans, takeLoan, repayLoan } = useGameStore()
+  const {
+    balance, savedBalance, lastDayResult, services, currentWeek,
+    loans, takeLoan, repayLoan,
+    businessType, employees, purchasedUpgrades,
+  } = useGameStore()
 
   const activeLoans = (loans ?? []).filter(l => !l.isRepaid)
   const bankActive = services?.bank?.isActive ?? false
@@ -31,14 +47,41 @@ export function FinanceView() {
   const activeServices = Object.values(services).filter(s => s.isActive)
   const yearlySubscription = activeServices.reduce((s, svc) => s + (svc.annualPrice ?? 0), 0)
 
+  // Monthly fixed costs breakdown
+  const baseMonthly = MONTHLY_EXPENSES[businessType]
+  let monthlyRent = baseMonthly.rent
+  let monthlySalaryBase = baseMonthly.baseSalary
+  for (const upgradeId of (purchasedUpgrades ?? [])) {
+    const upgrade = (UPGRADES_CONFIG[businessType] ?? []).find(u => u.id === upgradeId)
+    if (upgrade) {
+      monthlyRent += upgrade.monthlyRentIncrease ?? 0
+      monthlySalaryBase += upgrade.monthlySalaryIncrease ?? 0
+    }
+  }
+  const employeeMonthlySalary = (employees ?? []).reduce((sum, e) => sum + (e.salary ?? 0), 0)
+  const monthlySubscriptions = Math.round(yearlySubscription / 12)
+  const totalMonthlyFixed = monthlyRent + monthlySalaryBase + employeeMonthlySalary + monthlySubscriptions
+
+  // Forecast: project 4 and 8 weeks based on last week's revenue minus monthly obligations
+  const weeklyRevenue = lastDayResult?.revenue ?? 0
+  const weeklySubscriptionCost = Math.round(yearlySubscription / 52)
+  const weeklyVariableCosts = Math.max(0,
+    (lastDayResult?.expenses ?? 0) - (lastDayResult?.monthlyExpense ?? 0) - weeklySubscriptionCost
+  )
+  // Expected weekly net = revenue minus weekly portion of fixed costs (monthly/4) minus variable costs
+  const weeklyFixedPortion = Math.round(totalMonthlyFixed / 4)
+  const expectedWeeklyProfit = weeklyRevenue - weeklyFixedPortion - weeklyVariableCosts
+  const forecast4Weeks = balance + expectedWeeklyProfit * 4
+  const forecast8Weeks = balance + expectedWeeklyProfit * 8
+
   const incomeItems = lastDayResult ? [
     { label: 'Выручка от продаж', value: lastDayResult.revenue, positive: true },
   ] : []
 
   const expenseItems = lastDayResult ? [
     ...(lastDayResult.purchaseCost > 0 ? [{ label: 'Закупки / ассортимент', value: lastDayResult.purchaseCost }] : []),
-    { label: 'Налог УСН 6%', value: lastDayResult.tax },
-    ...(lastDayResult.monthlyExpense > 0 ? [{ label: 'Аренда и зарплата', value: lastDayResult.monthlyExpense }] : []),
+    ...(lastDayResult.tax > 0 ? [{ label: 'Налог УСН 6%', value: lastDayResult.tax }] : []),
+    ...(lastDayResult.monthlyExpense > 0 ? [{ label: 'Аренда и зарплата (плановый платёж)', value: lastDayResult.monthlyExpense }] : []),
     ...(lastDayResult.subscriptionCost > 0 ? [{ label: 'Подписки Контур', value: lastDayResult.subscriptionCost }] : []),
     ...(lastDayResult.expiredLoss > 0 ? [{ label: 'Списание просрочки', value: lastDayResult.expiredLoss }] : []),
     ...(lastDayResult.registerOverflowPenalty > 0 ? [{ label: 'Штраф за очередь (касса)', value: lastDayResult.registerOverflowPenalty }] : []),
@@ -67,52 +110,69 @@ export function FinanceView() {
       </div>
 
       {/* Top KPI row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr', gap: 10, height: 130 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr', gap: 10 }}>
         {/* Balance hero */}
         <div style={{
           background: balance > 0 ? K.ink : K.bad,
           color: K.white, borderRadius: 20, padding: 18,
-          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+          display: 'flex', flexDirection: 'column', gap: 10,
         }}>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.75 }}>ТЕКУЩИЙ БАЛАНС</div>
+          <div style={{ fontSize: 36, fontWeight: 800, letterSpacing: '-0.03em', color: K.mint }} className="k-num">
+            {balance.toLocaleString('ru-RU')} ₽
+          </div>
+          {/* Goal mini progress */}
           <div>
-            <div style={{ fontSize: 36, fontWeight: 800, letterSpacing: '-0.03em', color: K.mint }} className="k-num">
-              {balance.toLocaleString('ru-RU')} ₽
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, opacity: 0.6, marginBottom: 4, fontWeight: 600 }}>
+              <span>К цели 1 000 000 ₽</span>
+              <span>{Math.round(toGoalPct)}%</span>
             </div>
-            <div style={{ fontSize: 10, fontWeight: 600, opacity: 0.75, marginTop: 4 }}>
-              День {currentWeek}
+            <div style={{ height: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 999, overflow: 'hidden' }}>
+              <div style={{ width: `${toGoalPct}%`, height: '100%', background: K.mint, borderRadius: 999 }} />
             </div>
           </div>
         </div>
 
-        {/* Last day revenue */}
+        {/* Last week revenue */}
         <div style={{ background: K.white, borderRadius: 20, padding: 18, border: `1px solid ${K.line}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted }}>ВЫРУЧКА ВЧЕРА</div>
-          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em', color: K.orange }} className="k-num">
-            {(lastDayResult?.revenue ?? 0).toLocaleString('ru-RU')} ₽
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted }}>ВЫРУЧКА ЗА НЕДЕЛЮ</div>
+          <div>
+            <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em', color: K.orange }} className="k-num">
+              {(lastDayResult?.revenue ?? 0).toLocaleString('ru-RU')} ₽
+            </div>
+            <div style={{ fontSize: 10, color: K.muted, marginTop: 4, fontWeight: 600 }}>
+              ~{Math.round((lastDayResult?.revenue ?? 0) / 7).toLocaleString('ru-RU')} ₽/день
+            </div>
           </div>
         </div>
 
-        {/* Last day net */}
+        {/* Last week net */}
         <div style={{ background: K.white, borderRadius: 20, padding: 18, border: `1px solid ${K.line}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted }}>ПРИБЫЛЬ ВЧЕРА</div>
-          <div style={{
-            fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em',
-            color: (lastDayResult?.netProfit ?? 0) >= 0 ? K.good : K.bad,
-          }} className="k-num">
-            {(lastDayResult?.netProfit ?? 0) >= 0 ? '+' : ''}
-            {(lastDayResult?.netProfit ?? 0).toLocaleString('ru-RU')} ₽
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted }}>ПРИБЫЛЬ ЗА НЕДЕЛЮ</div>
+          <div>
+            <div style={{
+              fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em',
+              color: (lastDayResult?.netProfit ?? 0) >= 0 ? K.good : K.bad,
+            }} className="k-num">
+              {(lastDayResult?.netProfit ?? 0) >= 0 ? '+' : ''}
+              {(lastDayResult?.netProfit ?? 0).toLocaleString('ru-RU')} ₽
+            </div>
+            <div style={{ fontSize: 10, color: K.muted, marginTop: 4, fontWeight: 600 }}>
+              {(lastDayResult?.revenue ?? 0) > 0
+                ? `${Math.round(((lastDayResult?.netProfit ?? 0) / lastDayResult!.revenue) * 100)}% маржа`
+                : 'нет данных'}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main row */}
+      {/* Main content row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 12, flex: 1, minHeight: 0 }}>
 
-        {/* Receipt */}
+        {/* Weekly P&L receipt */}
         <div style={{ background: K.white, borderRadius: 14, padding: 18, border: `1px solid ${K.line}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>
-            ПОСЛЕДНИЙ ДЕНЬ · {lastDayResult ? `День ${lastDayResult.dayNumber}` : 'нет данных'}
+            ПРОШЛАЯ НЕДЕЛЯ{lastDayResult ? ` · Неделя ${lastDayResult.dayNumber}` : ''}
           </div>
 
           {!lastDayResult ? (
@@ -120,7 +180,7 @@ export function FinanceView() {
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 24, marginBottom: 8 }}>📊</div>
                 <div style={{ fontSize: 14, fontWeight: 600 }}>Нажмите «Следующий день»</div>
-                <div style={{ fontSize: 12, marginTop: 4 }}>Данные появятся после первого дня</div>
+                <div style={{ fontSize: 12, marginTop: 4 }}>Данные появятся после первой недели</div>
               </div>
             </div>
           ) : (
@@ -140,21 +200,25 @@ export function FinanceView() {
               ))}
 
               {/* Expenses */}
-              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase', marginTop: 4 }}>РАСХОДЫ</div>
-              {expenseItems.map((item, i) => (
-                <div key={i} style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '6px 10px', borderRadius: 10,
-                  borderBottom: i < expenseItems.length - 1 ? `1px dashed ${K.lineSoft}` : 'none',
-                }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: K.muted }}>{item.label}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: K.bad }} className="k-num">
-                    −{item.value.toLocaleString('ru-RU')} ₽
-                  </span>
-                </div>
-              ))}
+              {expenseItems.length > 0 && (
+                <>
+                  <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase', marginTop: 4 }}>РАСХОДЫ</div>
+                  {expenseItems.map((item, i) => (
+                    <div key={i} style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '6px 10px', borderRadius: 10,
+                      borderBottom: i < expenseItems.length - 1 ? `1px dashed ${K.lineSoft}` : 'none',
+                    }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: K.muted }}>{item.label}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: K.bad }} className="k-num">
+                        −{item.value.toLocaleString('ru-RU')} ₽
+                      </span>
+                    </div>
+                  ))}
+                </>
+              )}
 
-              {/* Pain losses from missing services */}
+              {/* Pain losses */}
               {painItems.length > 0 && (
                 <>
                   <div style={{
@@ -186,7 +250,7 @@ export function FinanceView() {
                 borderTop: `2px solid ${K.ink}`,
                 marginTop: 4,
               }}>
-                <span style={{ fontSize: 14, fontWeight: 800 }}>Чистая прибыль</span>
+                <span style={{ fontSize: 14, fontWeight: 800 }}>Чистая прибыль за неделю</span>
                 <span style={{
                   fontSize: 20, fontWeight: 800,
                   color: lastDayResult.netProfit >= 0 ? K.good : K.bad,
@@ -199,24 +263,65 @@ export function FinanceView() {
         </div>
 
         {/* Right column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {/* Goal progress */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
+
+          {/* Balance forecast */}
           <div style={{ background: K.white, borderRadius: 14, padding: 18, border: `1px solid ${K.line}` }}>
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>К ЦЕЛИ 1 000 000 ₽</div>
-            <div style={{ fontSize: 28, fontWeight: 800, marginTop: 6 }} className="k-num">
-              {Math.round(toGoalPct)}%
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase', marginBottom: 8 }}>
+              ПРОГНОЗ БАЛАНСА
             </div>
-            <div style={{ height: 8, background: K.lineSoft, borderRadius: 999, overflow: 'hidden', marginTop: 8 }}>
-              <div style={{ width: `${toGoalPct}%`, height: '100%', background: K.mint, borderRadius: 999 }} />
-            </div>
-            <div style={{ fontSize: 11, color: K.muted, marginTop: 6, fontWeight: 600 }}>
-              Осталось: {Math.max(0, goalAmount - balance).toLocaleString('ru-RU')} ₽
-            </div>
+            {!lastDayResult ? (
+              <div style={{ fontSize: 12, color: K.muted }}>Прогноз появится после первой недели</div>
+            ) : (
+              <>
+                <ForecastBar label="Через 4 недели (~1 мес.)" value={forecast4Weeks} />
+                <div style={{ borderTop: `1px dashed ${K.lineSoft}` }} />
+                <ForecastBar label="Через 8 недель (~2 мес.)" value={forecast8Weeks} />
+                <div style={{ fontSize: 10, color: K.muted, marginTop: 8, lineHeight: 1.5 }}>
+                  На основе выручки прошлой недели и плановых обязательств
+                </div>
+              </>
+            )}
           </div>
 
-          {/* Годовые расходы на подписки */}
+          {/* Monthly obligations breakdown */}
           <div style={{ background: K.white, borderRadius: 14, padding: 18, border: `1px solid ${K.line}` }}>
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase', marginBottom: 10 }}>ГОДОВАЯ СТОИМОСТЬ ПОДПИСОК</div>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase', marginBottom: 10 }}>
+              ОБЯЗАТЕЛЬСТВА / МЕСЯЦ
+            </div>
+            {[
+              { label: 'Аренда', value: monthlyRent },
+              { label: 'Зарплата (база + улучшения)', value: monthlySalaryBase },
+              ...(employeeMonthlySalary > 0 ? [{ label: 'Зарплата сотрудников', value: employeeMonthlySalary }] : []),
+              ...(monthlySubscriptions > 0 ? [{ label: 'Подписки Контур', value: monthlySubscriptions }] : []),
+            ].map((item, i, arr) => (
+              <div key={i} style={{
+                display: 'flex', justifyContent: 'space-between',
+                fontSize: 12, fontWeight: 600, padding: '5px 0',
+                borderBottom: i < arr.length - 1 ? `1px dashed ${K.lineSoft}` : 'none',
+              }}>
+                <span style={{ color: K.muted }}>{item.label}</span>
+                <span className="k-num">{item.value.toLocaleString('ru-RU')} ₽</span>
+              </div>
+            ))}
+            <div style={{
+              display: 'flex', justifyContent: 'space-between',
+              fontSize: 13, fontWeight: 800, paddingTop: 8, marginTop: 4,
+              borderTop: `1.5px solid ${K.ink}`,
+            }}>
+              <span>Итого в месяц</span>
+              <span className="k-num" style={{ color: K.bad }}>−{totalMonthlyFixed.toLocaleString('ru-RU')} ₽</span>
+            </div>
+            {weeklyRevenue > 0 && (
+              <div style={{ fontSize: 10, color: K.muted, marginTop: 6, fontWeight: 600 }}>
+                Покрытие: {Math.round((weeklyRevenue * 4 / totalMonthlyFixed) * 100)}% выручкой
+              </div>
+            )}
+          </div>
+
+          {/* Subscriptions */}
+          <div style={{ background: K.white, borderRadius: 14, padding: 18, border: `1px solid ${K.line}` }}>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase', marginBottom: 10 }}>ПОДПИСКИ КОНТУРА</div>
             {activeServices.length === 0 ? (
               <div style={{ fontSize: 12, color: K.muted }}>Нет активных подписок</div>
             ) : (
@@ -237,8 +342,8 @@ export function FinanceView() {
                 fontSize: 13, fontWeight: 800, paddingTop: 8, marginTop: 4,
                 borderTop: `1.5px solid ${K.ink}`,
               }}>
-                <span>Подписки итого</span>
-                <span className="k-num">{yearlySubscription.toLocaleString('ru-RU')} ₽/год</span>
+                <span>Итого/год</span>
+                <span className="k-num">{yearlySubscription.toLocaleString('ru-RU')} ₽</span>
               </div>
             )}
           </div>
@@ -262,7 +367,6 @@ export function FinanceView() {
               ЗАЙМЫ · КОНТУР.БАНК
             </div>
 
-            {/* Active loans */}
             {activeLoans.length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {activeLoans.map(loan => {
@@ -310,7 +414,6 @@ export function FinanceView() {
               </div>
             )}
 
-            {/* Take new loan — only if bank connected and no active loan */}
             {bankActive ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {activeLoans.length === 0 ? (

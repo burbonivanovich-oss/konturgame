@@ -38,22 +38,6 @@ describe('MainScreen Integration', () => {
     expect(state.isVictory).toBe(false)
   })
 
-  it('should calculate stock level from batches', () => {
-    const state = useGameStore.getState()
-
-    state.addStockBatch({
-      id: 'test-batch',
-      quantity: 30,
-      costPerUnit: 100,
-      dayReceived: 1,
-      expirationDays: 10,
-    })
-
-    const newState = useGameStore.getState()
-    expect(newState.stockBatches.length).toBe(1)
-    expect(newState.stockBatches[0].quantity).toBe(30)
-  })
-
   it('should have active ad campaigns', () => {
     const state = useGameStore.getState()
 

@@ -25,8 +25,8 @@ interface OperationsViewProps {
 export default function OperationsView({ onShowHireModal }: OperationsViewProps) {
   const {
     businessType, enabledCategories, services,
-    toggleCategory, employees, suppliers,
-    fireEmployee, setActiveSupplierId, activeSupplierId,
+    toggleCategory, employees,
+    fireEmployee,
     currentWeek, level,
   } = useGameStore()
 
@@ -251,52 +251,6 @@ export default function OperationsView({ onShowHireModal }: OperationsViewProps)
         </div>
       </div>
 
-      {/* Suppliers */}
-      <div>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase', marginBottom: 12 }}>ПОСТАВЩИК</div>
-        {suppliers.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {suppliers.map((supplier) => {
-              const isActive = activeSupplierId === supplier.id
-              return (
-                <div
-                  key={supplier.id}
-                  onClick={() => { if (!isActive) setActiveSupplierId(supplier.id) }}
-                  style={{
-                    borderRadius: 12, padding: 14,
-                    border: isActive ? `2px solid ${K.mint}` : `1px solid ${K.line}`,
-                    background: isActive ? K.mintSoft : K.white,
-                    cursor: isActive ? 'default' : 'pointer',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{supplier.name}</div>
-                      <div style={{ display: 'flex', gap: 14, fontSize: 10, color: K.muted }}>
-                        <span>Качество: <span style={{ fontWeight: 700, color: supplier.qualityModifier > 0 ? K.good : K.warn }}>
-                          {supplier.qualityModifier > 0 ? '+' : ''}{(supplier.qualityModifier * 100).toFixed(0)}%
-                        </span></span>
-                        <span>Цена: <span style={{ fontWeight: 700, color: supplier.priceModifier < 0 ? K.good : K.warn }}>
-                          {supplier.priceModifier > 0 ? '+' : ''}{(supplier.priceModifier * 100).toFixed(0)}%
-                        </span></span>
-                        <span>Надёжность: <span style={{ fontWeight: 700 }}>{(supplier.reliability * 100).toFixed(0)}%</span></span>
-                      </div>
-                    </div>
-                    {isActive && (
-                      <span style={{ fontSize: 12, fontWeight: 800, color: K.mint, marginLeft: 12 }}>✓ Активен</span>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        ) : (
-          <div style={{ padding: 20, textAlign: 'center', color: K.muted }}>
-            Нет доступных поставщиков
-          </div>
-        )}
-      </div>
 
     </div>
   )

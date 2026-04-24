@@ -4,7 +4,6 @@ import { getNPCDefinition } from '../constants/npcs'
 import ResponsiveLayout from './ResponsiveLayout'
 import MobileMainScreen from './MobileMainScreen'
 import { OnboardingPanel } from './OnboardingPanel'
-import PurchaseModal from './modals/PurchaseModal'
 import HelpModal from './modals/HelpModal'
 import SettingsModal from './modals/SettingsModal'
 import VictoryModal from './modals/VictoryModal'
@@ -52,14 +51,11 @@ type ActiveView = NavId
 
 function DashboardView({
   onNextDay, dayBlockedMsg,
-  showPurchaseModal, setShowPurchaseModal,
   showCashRegisterModal, setShowCashRegisterModal,
   handleEventOption, onOpenOwnerInvestments,
 }: {
   onNextDay: () => void
   dayBlockedMsg: string | null
-  showPurchaseModal: boolean
-  setShowPurchaseModal: (v: boolean) => void
   showCashRegisterModal: boolean
   setShowCashRegisterModal: (v: boolean) => void
   handleEventOption: (id: string) => void
@@ -68,8 +64,7 @@ function DashboardView({
   const {
     currentWeek, balance, reputation, loyalty, services,
     pendingEvent, pendingEventsQueue, lastDayResult,
-    entrepreneurEnergy, npcs, stockBatches, capacity, businessType,
-    qualityLevel, level,
+    entrepreneurEnergy, npcs, businessType, qualityLevel, level,
   } = useGameStore()
 
   const bizConfig = BUSINESS_CONFIGS[businessType]
@@ -79,10 +74,6 @@ function DashboardView({
   const dailyProfit = lastDayResult?.netProfit ?? 0
   const dailyClients = lastDayResult?.clients ?? 0
   const isDayBlocked = !!pendingEvent
-
-  const totalStock = (stockBatches ?? []).reduce((s: number, b: { quantity: number }) => s + b.quantity, 0)
-  const stockPct = capacity > 0 ? Math.round((totalStock / capacity) * 100) : 0
-  const stockLow = bizConfig.hasStock && stockPct < 25
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: K.paper }}>
@@ -233,7 +224,6 @@ function DashboardView({
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {[
-                ...(bizConfig.hasStock ? [{ label: 'Пополнить склад', done: !stockLow, urgent: stockLow }] : []),
                 { label: 'Разрешить событие', done: !pendingEvent, urgent: !!pendingEvent },
                 { label: 'Нажать «Следующий день»', done: false, urgent: false },
               ].map(task => (
@@ -414,19 +404,6 @@ function DashboardView({
             </div>
           </div>
 
-          {/* Склад — только для hasStock бизнесов */}
-          {bizConfig.hasStock && (
-            <div style={{ background: K.white, border: `1px solid ${stockLow ? K.orange : K.line}`, borderRadius: 14, padding: '14px 16px' }}>
-              <div style={{ fontSize: 10, color: K.muted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Склад</div>
-              <div style={{ fontSize: 32, fontWeight: 800, color: stockLow ? K.orange : K.ink, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{stockPct}%</div>
-              <div style={{ marginTop: 8, height: 4, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${stockPct}%`, background: stockLow ? K.orange : K.mint, borderRadius: 999 }} />
-              </div>
-              {stockLow && (
-                <div style={{ marginTop: 6, fontSize: 11, color: K.orange, fontWeight: 700 }}>Пополнить →</div>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
@@ -435,19 +412,6 @@ function DashboardView({
         borderTop: `1px solid ${K.line}`, background: K.white,
         padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 10,
       }}>
-        {bizConfig.hasStock && (
-          <button
-            onClick={() => setShowPurchaseModal(true)}
-            style={{
-              padding: '9px 18px', borderRadius: 10, border: `1px solid ${K.line}`,
-              background: K.bone, color: K.ink, fontSize: 13, fontWeight: 600,
-              cursor: 'pointer', fontFamily: 'inherit',
-            }}
-          >
-            Закупить
-          </button>
-        )}
-
         <div style={{ flex: 1 }} />
 
         {dayBlockedMsg && (
@@ -475,14 +439,12 @@ function DashboardView({
         </button>
       </div>
 
-      <PurchaseModal isOpen={showPurchaseModal} onClose={() => setShowPurchaseModal(false)} />
     </div>
   )
 }
 
 function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const [activeView, setActiveView] = useState<ActiveView>('dashboard')
-  const [showPurchaseModal, setShowPurchaseModal] = useState(false)
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [showAchievementsModal, setShowAchievementsModal] = useState(false)
@@ -658,8 +620,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
         <DashboardView
           onNextDay={handleNextDay}
           dayBlockedMsg={dayBlockedMsg}
-          showPurchaseModal={showPurchaseModal}
-          setShowPurchaseModal={setShowPurchaseModal}
           showCashRegisterModal={showCashRegisterModal}
           setShowCashRegisterModal={setShowCashRegisterModal}
           handleEventOption={handleEventOption}
