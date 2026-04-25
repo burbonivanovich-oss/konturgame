@@ -46,7 +46,7 @@ export interface PlayerBackstory {
  */
 export interface PersonalGoal {
   // Stable id used for ending text and analytics
-  id: 'mother_car' | 'dimka_wedding' | 'kids_coach'
+  id: 'parent_reno' | 'katya_deposit' | 'courtyard_save'
   // Short label shown in the UI ("Своя квартира")
   shortLabel: string
   // Full sentence shown in dashboard ("Накопить 500 000 ₽ на квартиру в новом районе")

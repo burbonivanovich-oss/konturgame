@@ -119,14 +119,14 @@ export const DIARY_ENTRIES: DiaryEntry[] = [
     }),
   },
 
-  // ── Personal: friend (Dimka) ───────────────────────────────────────
+  // ── Personal: friend (Katya) ───────────────────────────────────────
   {
-    id: 'diary_friend_dimka_calls',
+    id: 'diary_friend_katya_checks_in',
     specificity: 4,
     matches: (s) => hasPersonal(s, 'friend') && s.currentWeek % 8 === 0,
     compose: (s) => ({
       header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Димка позвонил вечером — третий раз за неделю. «Ну как ты там, держишься?» Иногда хочется сказать «нет, не держусь». Но он расстроится. Сказал: «Норм».',
+      body: 'Катя написала вечером — коротко: «Ну как там?» Иногда хочется ответить честно. Написала «нормально». Она поставила сердечко.',
     }),
   },
   {
@@ -135,7 +135,7 @@ export const DIARY_ENTRIES: DiaryEntry[] = [
     matches: (s) => hasPersonal(s, 'friend') && s.balance < 30000 && s.currentWeek >= 6,
     compose: (s) => ({
       header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Димка: «Слушай, у меня есть тысяч сто свободных. Возьми, потом отдашь». Хотел отказать сразу — но не отказал. Подумаю. Хочется самому, но цифры говорят другое.',
+      body: 'Катя: «Слышала, сложно сейчас. Если нужны деньги — я найду». Не спросила сколько. Просто написала. Почему-то это и было труднее всего принять.',
       loyaltyDelta: 1,
     }),
   },
@@ -199,61 +199,61 @@ export const DIARY_ENTRIES: DiaryEntry[] = [
   },
 
   // ── Goal-specific reflections (v5.3) ───────────────────────────────
-  // Mom's car — small daydreams that won't sit still
+  // Parent renovation — a small but persistent weight
   {
-    id: 'diary_goal_mother_marshrutka',
+    id: 'diary_goal_parent_call',
     specificity: 6,
-    matches: (s) => s.personalGoal?.id === 'mother_car' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    matches: (s) => s.personalGoal?.id === 'parent_reno' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
     compose: (s) => ({
       header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Звонил маме. Сказала, опять простояла полчаса на остановке — маршрутка ушла раньше расписания. «Ничего, не критично». Положил трубку, открыл сайт б/у машин. Закрыл. Открыл. Так каждый вечер.',
+      body: 'Позвонили домой. Папа сказал, в ванной снова капает — «труба немного, несущественно». Положил трубку. Открыл сайт ремонтных бригад. Закрыл. Пока рано. Но не совсем рано.',
     }),
   },
   {
-    id: 'diary_goal_mother_test_drive',
+    id: 'diary_goal_parent_estimate',
     specificity: 6,
-    matches: (s) => s.personalGoal?.id === 'mother_car' && s.currentWeek >= 18 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    matches: (s) => s.personalGoal?.id === 'parent_reno' && s.currentWeek >= 18 && !s.personalGoal.achieved && !s.personalGoal.missed,
     compose: (s) => ({
       header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Зашёл в автосалон — посмотреть Granta вживую. Продавец спросил, для кого. «Маме на день рождения». Он улыбнулся, как человек, который слышал это много раз. Дал тест-драйв. Машина пахнет новым пластиком и чьей-то будущей радостью.',
+      body: 'Прислали смету из бригады — мама сфотографировала и отправила в вотсапе. Смотришь на цифры, прикидываешь. Реально. Если продолжить в том же темпе — реально.',
     }),
   },
-  // Dimka's wedding — quiet pre-celebration nerves
+  // Katya's deposit — quiet countdown to her fresh start
   {
-    id: 'diary_goal_dimka_envelope',
+    id: 'diary_goal_katya_photo',
     specificity: 6,
-    matches: (s) => s.personalGoal?.id === 'dimka_wedding' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    matches: (s) => s.personalGoal?.id === 'katya_deposit' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
     compose: (s) => ({
       header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Димка прислал приглашение в конверте — настоящем, бумажном. Внутри — фото с Иркой, дата, адрес зала. Прикрепил магнитиком к холодильнику. Каждое утро смотрю и считаю недели до. И сумму, которая нужна.',
-    }),
-  },
-  {
-    id: 'diary_goal_dimka_zal',
-    specificity: 6,
-    matches: (s) => s.personalGoal?.id === 'dimka_wedding' && s.currentWeek >= 22 && !s.personalGoal.achieved && !s.personalGoal.missed,
-    compose: (s) => ({
-      header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Заехали с Иркой смотреть зал — чисто формально, выбор уже сделан. На выходе она тихо: «Спасибо, что помогаете». Не Димке — Ирке. Вы пожали плечами, мол, «мы не уточняли». Она поняла. Они оба знают, что на бумаге — не сходится.',
-    }),
-  },
-  // Coach for the kids' team — the courtyard watches
-  {
-    id: 'diary_goal_kids_empty_field',
-    specificity: 6,
-    matches: (s) => s.personalGoal?.id === 'kids_coach' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
-    compose: (s) => ({
-      header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Прошёл вечером через двор. На поле — никого, ворота скрипят. Раньше тут грохот стоял, сейчас тишина. Витёк, тот самый рыжий, сидел на лавочке, пинал бутылку. Кивнули друг другу. Он уже знает, что лето не такое, как было.',
+      body: 'Катя прислала фото — квартира на Советской, третий этаж, вид во двор. «Вот такая. Хозяйка нормальная». Сохранили в телефон. Считаете недели.',
     }),
   },
   {
-    id: 'diary_goal_kids_coach_visit',
+    id: 'diary_goal_katya_viewing',
     specificity: 6,
-    matches: (s) => s.personalGoal?.id === 'kids_coach' && s.currentWeek >= 20 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    matches: (s) => s.personalGoal?.id === 'katya_deposit' && s.currentWeek >= 22 && !s.personalGoal.achieved && !s.personalGoal.missed,
     compose: (s) => ({
       header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Заехал к тренеру — Сергей Палычу, бывшему КамАЗовскому. Сказал «как только смогу — вернусь, держите место за нами». Он молча налил чай. «Старик, я подержу до сентября. Но потом мне семью кормить, ты понимаешь». Понимаю.',
+      body: 'Съездили с Катей смотреть квартиру — формально она уже решила, просто хотела, чтобы кто-то был рядом. На кухне дочка спросила: «А тут мы будем жить?» Катя ответила: «Посмотрим». Оба понимают, что посмотрит в первую очередь цифра.',
+    }),
+  },
+  // Courtyard — the trees are still there, for now
+  {
+    id: 'diary_goal_courtyard_walk',
+    specificity: 6,
+    matches: (s) => s.personalGoal?.id === 'courtyard_save' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    compose: (s) => ({
+      header: `Дневник · Неделя ${s.currentWeek}`,
+      body: 'Прошли через двор вечером. Берёзы стоят, лавочки на месте. Детский голос где-то из-за угла. Всё как обычно — пока. Комиссия соберётся через полтора месяца.',
+    }),
+  },
+  {
+    id: 'diary_goal_courtyard_lawyer',
+    specificity: 6,
+    matches: (s) => s.personalGoal?.id === 'courtyard_save' && s.currentWeek >= 20 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    compose: (s) => ({
+      header: `Дневник · Неделя ${s.currentWeek}`,
+      body: 'Юрист из инициативной группы сказал: «Шансы есть, если подадим полный пакет до пятницы». Я перевела часть суммы. Он сказал спасибо. Я сказала — за дело.',
     }),
   },
 

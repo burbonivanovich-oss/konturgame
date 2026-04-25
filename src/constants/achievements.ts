@@ -292,7 +292,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'choice_dimka_paper',
     name: 'По-настоящему',
-    description: 'Взяли у Димки в долг строго под расписку и проценты',
+    description: 'Взяли у подруги взаймы строго под расписку и проценты — чтобы было честно',
     icon: '📄',
     category: 'special',
     wave: 1,
