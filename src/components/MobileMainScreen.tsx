@@ -27,6 +27,7 @@ import { WEEKLY_TACTICS, getWeeklyTacticDef } from '../constants/weeklyTactics'
 import { WeekSummaryOverlay } from './WeekSummaryOverlay'
 import { WeekResultsOverlay } from './WeekResultsOverlay'
 import { useGameStore } from '../stores/gameStore'
+import { ONBOARDING_STAGES as ONBOARDING_STAGES_FOR_HIGHLIGHT } from '../constants/onboarding'
 
 interface MobileMainScreenProps {
   onRestart?: () => void
@@ -50,8 +51,29 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
     pendingEvent, pendingEventsQueue, isGameOver, isVictory, businessType, achievements, promoCodesRevealed,
     weekPhase, completeResultsPhase, completeSummaryPhase, lastDayResult, balance,
     weeklyTactic, setWeeklyTactic, personalGoal, currentWeek, npcs,
+    onboardingStage, onboardingStepIndex, onboardingCompleted,
   } = useGameStore()
   const [savingsToast, setSavingsToast] = useState<number | null>(null)
+
+  // Map onboarding action → mobile tab id so we can pulse the right tab.
+  const ONBOARDING_ACTION_TO_TAB: Record<string, string> = {
+    activate_bank: 'services',
+    activate_ofd: 'services',
+    activate_market: 'services',
+    activate_diadoc: 'services',
+    activate_fokus: 'services',
+    activate_elba: 'services',
+    activate_extern: 'services',
+    buy_register: 'operations',
+  }
+  const onboardingTargetTab = (() => {
+    if (onboardingCompleted) return null
+    const stage = ONBOARDING_STAGES_FOR_HIGHLIGHT[onboardingStage as 0|1|2|3|4]
+    if (!stage) return null
+    const step = stage.steps[onboardingStepIndex ?? 0]
+    if (!step?.requiresAction) return null
+    return ONBOARDING_ACTION_TO_TAB[step.requiresAction] ?? null
+  })()
 
   const handleEventOption = (optionId: string) => {
     const state = useGameStore.getState()
@@ -201,21 +223,26 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
           { id: 'journal',     label: '📓 Журнал',      unlocksAtWeek: 10 },
         ]
           .filter(tab => currentWeek >= tab.unlocksAtWeek)
-          .map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                padding: '8px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700,
-                border: 'none', background: activeTab === tab.id ? K.ink : 'transparent',
-                color: activeTab === tab.id ? K.white : K.ink,
-                cursor: 'pointer', transition: 'all 0.2s',
-                whiteSpace: 'nowrap', flexShrink: 0,
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
+          .map((tab) => {
+            const isPulsing = onboardingTargetTab === tab.id && activeTab !== tab.id
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={isPulsing ? 'nav-pulse' : undefined}
+                style={{
+                  padding: '8px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700,
+                  border: 'none', background: activeTab === tab.id ? K.ink : 'transparent',
+                  color: activeTab === tab.id ? K.white : K.ink,
+                  cursor: 'pointer', transition: 'all 0.2s',
+                  whiteSpace: 'nowrap', flexShrink: 0,
+                  outline: isPulsing ? `2px solid ${K.orange}` : 'none',
+                }}
+              >
+                {tab.label}
+              </button>
+            )
+          })}
       </div>
 
       {/* Content */}
