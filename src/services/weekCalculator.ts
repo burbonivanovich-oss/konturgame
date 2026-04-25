@@ -238,13 +238,25 @@ export function processWeek(state: GameState): DayResult {
     const dailyRegisterMaintenance = totalRegisters * ECONOMY_CONSTANTS.DAILY_REGISTER_MAINTENANCE
     const dailyFixedCosts = dailyUtilities + dailyRegisterMaintenance
 
-    // 12. Monthly expenses (every week 4, approximate every 28 days)
-    // Note: daysSinceMonthly is checked and updated inside the loop
+    // 12. Monthly expenses (rent + owner's base salary) — charged once every
+    // 28 days. Must run BEFORE dayExpenses so the bill actually hits balance.
     let monthlyExpense = 0
+    const currentDaysSinceMonthly = state.daysSinceLastMonthly ?? 0
+    if (currentDaysSinceMonthly >= ECONOMY_CONSTANTS.MONTHLY_CYCLE_WEEKS * 7) {
+      monthlyExpense = calculateMonthlyExpenses(state)
+      state.daysSinceLastMonthly = 0
+    } else {
+      state.daysSinceLastMonthly = currentDaysSinceMonthly + 1
+    }
+
+    // 12b. Employee salary spread across the week (was previously folded into
+    // the monthly bill which under-charged it by 75%: the weekly amount only
+    // hit once per 28 days instead of every week).
+    const dailyEmployeeSalary = Math.round(weeklySalaryCost / 7)
 
     // 13. Daily profit
-    const dayExpenses = dayTax + subscriptionCost + purchaseCost + monthlyExpense + expiredLoss +
-      dailyFixedCosts + totalCategoryFines
+    const dayExpenses = dayTax + subscriptionCost + purchaseCost + monthlyExpense +
+      dailyEmployeeSalary + expiredLoss + dailyFixedCosts + totalCategoryFines
     let dayNetProfit = dayRevenue - dayExpenses
 
     // 14. Pain losses
@@ -312,14 +324,6 @@ export function processWeek(state: GameState): DayResult {
       }
     }
 
-    // 19. Update monthly counter
-    const currentDaysSinceMonthly = state.daysSinceLastMonthly ?? 0
-    if (currentDaysSinceMonthly >= ECONOMY_CONSTANTS.MONTHLY_CYCLE_WEEKS * 7) {
-      monthlyExpense = calculateMonthlyExpenses(state) + weeklySalaryCost
-      state.daysSinceLastMonthly = 0
-    } else {
-      state.daysSinceLastMonthly = currentDaysSinceMonthly + 1
-    }
   } // End of week loop
 
   // 2. Competitor event check (once per week, not 7 times)
