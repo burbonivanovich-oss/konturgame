@@ -141,10 +141,32 @@ function DashboardView({
           display: 'flex', flexDirection: 'column', gap: 14,
           overflowY: 'auto',
         }}>
-          {/* Top KPI strip — 4 colored cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+          {/* Top KPI strip — hero balance card + 3 supporting metrics */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr', gap: 10 }}>
+            {/* Hero balance card — visually dominant */}
+            <div style={{
+              background: `linear-gradient(135deg, ${K.orange} 0%, #FFB020 100%)`,
+              borderRadius: 14, padding: '16px 18px',
+              display: 'flex', flexDirection: 'column', gap: 4,
+              boxShadow: '0 4px 14px rgba(255,106,44,0.25)',
+            }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
+                Баланс
+              </div>
+              <div style={{ fontSize: 32, fontWeight: 900, color: K.white, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.025em', lineHeight: 1.05 }}>
+                {balance.toLocaleString('ru-RU')} ₽
+              </div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)' }}>
+                Неделя {currentWeek}
+                {dailyProfit !== 0 && (
+                  <> · <span style={{ fontWeight: 700 }}>
+                    {dailyProfit > 0 ? '+' : ''}{dailyProfit.toLocaleString('ru-RU')} ₽/день
+                  </span></>
+                )}
+              </div>
+            </div>
+
             {[
-              { label: 'Баланс', value: `${balance.toLocaleString('ru-RU')} ₽`, bg: K.orange, sub: `Неделя ${currentWeek}` },
               { label: 'Прибыль / день', value: `${dailyProfit > 0 ? '+' : ''}${dailyProfit.toLocaleString('ru-RU')} ₽`, bg: dailyProfit >= 0 ? K.mint : '#c0392b', sub: 'после налогов' },
               { label: 'Расходы / день', value: `${dailyExpenses.toLocaleString('ru-RU')} ₽`, bg: K.violet, sub: lastDayResult ? 'за вчера' : 'нет данных' },
               { label: 'Клиенты', value: lastDayResult ? `${servedToday} / ${clientsToday}` : '—', bg: K.blue, sub: missedToday > 0 ? `${missedToday} ушли` : 'все обслужены' },
@@ -156,7 +178,7 @@ function DashboardView({
                 <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
                   {t.label}
                 </div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: K.white, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: K.white, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
                   {t.value}
                 </div>
                 <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)' }}>{t.sub}</div>

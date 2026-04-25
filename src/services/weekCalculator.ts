@@ -29,6 +29,15 @@ import { calculateSynergyModifiers } from './synergyEngine'
 import { checkNewAchievements } from './achievementChecker'
 import { checkOnboardingBlocked, advanceOnboardingIfNeeded } from './onboardingEngine'
 import { calculatePainLosses, getBankPaymentRatio } from './painEngine'
+import {
+  ENERGY_THRESHOLDS,
+  ENERGY_REVENUE_MULTIPLIER,
+  REPUTATION_LOSS_PER_MISSED_CLIENT,
+  REGISTER_BREAKDOWN_PENALTY_RATE,
+  ELBA_LOYALTY_PENALTY_REDUCTION,
+  COMPETITOR_CYCLE,
+  SERVICE_SAVINGS_RATES,
+} from '../constants/gameBalance'
 import { getTotalThroughput, calculateRegisterPenalty, checkRegisterBreakdown } from './cashRegisterEngine'
 import { calculateCategoryRevenue } from './assortmentEngine'
 import { initializeEmployees, getWeeklySalaryCost, getWeeklyEnergyCost, getEmployeeCapacityBonus, getUpgradeEnergyBonus } from './employeeManager'
@@ -178,14 +187,16 @@ export function processWeek(state: GameState): DayResult {
 
     // 7. Register breakdown penalty (random equipment failure, separate from throughput)
     const registerBroke = checkRegisterBreakdown(state.cashRegisters)
-    const breakdownPenalty = registerBroke ? Math.round(dailyRevenue * 0.15) : 0
+    const breakdownPenalty = registerBroke
+      ? Math.round(dailyRevenue * REGISTER_BREAKDOWN_PENALTY_RATE)
+      : 0
 
     // Apply energy penalty: low energy = reduced productivity
-    let energyModifier = 1
-    if (state.entrepreneurEnergy < 30) {
-      energyModifier = 0.8  // -20% if critical burnout
-    } else if (state.entrepreneurEnergy < 60) {
-      energyModifier = 0.9  // -10% if tired
+    let energyModifier: number = ENERGY_REVENUE_MULTIPLIER.NORMAL
+    if (state.entrepreneurEnergy < ENERGY_THRESHOLDS.CRITICAL) {
+      energyModifier = ENERGY_REVENUE_MULTIPLIER.CRITICAL
+    } else if (state.entrepreneurEnergy < ENERGY_THRESHOLDS.TIRED) {
+      energyModifier = ENERGY_REVENUE_MULTIPLIER.TIRED
     }
 
     const dayRevenue = Math.max(0, Math.round((dailyRevenue - breakdownPenalty) * energyModifier))
@@ -235,7 +246,7 @@ export function processWeek(state: GameState): DayResult {
     weekPain.total += pain.total
 
     // 15. Reputation change with quality bonus
-    const repFromMissed = -(missed * 0.2)
+    const repFromMissed = -(missed * REPUTATION_LOSS_PER_MISSED_CLIENT)
     const fokusRepBonus = state.services?.fokus?.isActive
       ? (state.services.fokus.effects.reputationBonus ?? 0)
       : 0
@@ -251,7 +262,7 @@ export function processWeek(state: GameState): DayResult {
       state.consecutiveOverloadDays = newOverloadDays
       if (newOverloadDays >= ECONOMY_CONSTANTS.OVERLOAD_DAYS_FOR_LOYALTY_PENALTY) {
         const penalty = elbaActive
-          ? -(ECONOMY_CONSTANTS.LOYALTY_PENALTY_PER_DAY * 0.5)
+          ? -(ECONOMY_CONSTANTS.LOYALTY_PENALTY_PER_DAY * ELBA_LOYALTY_PENALTY_REDUCTION)
           : -ECONOMY_CONSTANTS.LOYALTY_PENALTY_PER_DAY
         dayLoyaltyChange = Math.round(penalty)
       }
@@ -298,7 +309,9 @@ export function processWeek(state: GameState): DayResult {
 
   // 2. Competitor event check (once per week, not 7 times)
   state.weeksSinceCompetitorEvent++
-  const competitorInterval = 5 + Math.floor(state.currentWeek / 10)
+  const competitorInterval =
+    COMPETITOR_CYCLE.BASE_INTERVAL_WEEKS +
+    Math.floor(state.currentWeek / COMPETITOR_CYCLE.WEEK_DIVISOR)
   if (state.weeksSinceCompetitorEvent >= competitorInterval && !state.competitorEventTriggered) {
     state.competitorEventTriggered = true
     state.weeksSinceCompetitorEvent = 0
@@ -663,19 +676,24 @@ function generateNextWeekTeaser(state: GameState): string | null {
 function accumulateServiceSavings(state: GameState, weekRevenue: number, weekNetProfit: number): void {
   let savings = 0
 
-  // Market: prevents 8% manual accounting losses every day
   if (state.services?.market?.isActive) {
-    savings += Math.round(weekRevenue * 0.08)
+    savings += Math.round(weekRevenue * SERVICE_SAVINGS_RATES.MARKET_REVENUE_PROTECTION)
   }
 
-  // Elba: expected tax declaration penalty prevented (15% profit × 4% daily chance × 7 days)
   if (state.services?.elba?.isActive && weekNetProfit > 0) {
-    savings += Math.round(weekNetProfit * 0.15 * (7 / 25))
+    savings += Math.round(
+      weekNetProfit *
+        SERVICE_SAVINGS_RATES.ELBA_PROFIT_PROTECTION *
+        SERVICE_SAVINGS_RATES.ELBA_WEEKLY_CHANCE,
+    )
   }
 
-  // Extern: expected account block prevented (2× daily revenue × 3.2% daily chance × 7 days)
   if (state.services?.extern?.isActive) {
-    savings += Math.round((weekRevenue / 7) * 2 * (7 / 31))
+    savings += Math.round(
+      (weekRevenue / 7) *
+        SERVICE_SAVINGS_RATES.EXTERN_REVENUE_DAYS *
+        SERVICE_SAVINGS_RATES.EXTERN_WEEKLY_CHANCE,
+    )
   }
 
   if (savings > 0) {

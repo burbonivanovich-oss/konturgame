@@ -1,4 +1,5 @@
 import type { GameState, PainLossRecord, ServiceType } from '../types/game'
+import { PAIN_LOSSES, BANK_PAYMENT_RATIO } from '../constants/gameBalance'
 
 export function calculatePainLosses(
   state: GameState,
@@ -24,39 +25,40 @@ export function calculatePainLosses(
   // Bank: 40% клиентов не могут платить без безнала — учтено в bankPaymentRatio
   const bank = 0
 
-  // Market: 8% потери от ошибок ручного учёта
+  // Market: потери от ошибок ручного учёта
   const market = hasMarket || !unlocked.has('market')
     ? 0
-    : Math.round(totalCategoryRevenue * 0.08)
+    : Math.round(totalCategoryRevenue * PAIN_LOSSES.MARKET.revenueRate)
 
-  // OFD: ~10% шанс штрафа в день = 15% от выручки
+  // OFD: шанс штрафа в день
   let ofd = 0
-  if (!hasOfd && unlocked.has('ofd') && Math.random() < 0.1) {
-    ofd = Math.round(revenue * 0.15)
+  if (!hasOfd && unlocked.has('ofd') && Math.random() < PAIN_LOSSES.OFD.dailyChance) {
+    ofd = Math.round(revenue * PAIN_LOSSES.OFD.revenueRate)
   }
 
-  // Diadoc: ~10% шанс задержки поставки = 2% выручки
-  const diadoc = !hasDiadoc && unlocked.has('diadoc') && Math.random() < 0.1
-    ? Math.round(revenue * 0.02)
+  // Diadoc: шанс задержки поставки
+  const diadoc = !hasDiadoc && unlocked.has('diadoc') && Math.random() < PAIN_LOSSES.DIADOC.dailyChance
+    ? Math.round(revenue * PAIN_LOSSES.DIADOC.revenueRate)
     : 0
 
-  // Fokus: ~6% шанс плохого поставщика = 5-10% баланса
+  // Fokus: шанс плохого поставщика — % от баланса
   let fokus = 0
-  if (!hasFokus && unlocked.has('fokus') && Math.random() < 1 / 17) {
-    const riskPct = 0.05 + Math.random() * 0.05
+  if (!hasFokus && unlocked.has('fokus') && Math.random() < PAIN_LOSSES.FOKUS.dailyChance) {
+    const range = PAIN_LOSSES.FOKUS.maxBalanceRate - PAIN_LOSSES.FOKUS.minBalanceRate
+    const riskPct = PAIN_LOSSES.FOKUS.minBalanceRate + Math.random() * range
     fokus = Math.round(state.balance * riskPct)
   }
 
-  // Elba: ~4% шанс штрафа за декларацию = 15% прибыли
-  const elba = !hasElba && unlocked.has('elba') && Math.random() < 1 / 25 && profit > 0
-    ? Math.round(profit * 0.15)
+  // Elba: шанс штрафа за декларацию (только если есть прибыль)
+  const elba = !hasElba && unlocked.has('elba') && Math.random() < PAIN_LOSSES.ELBA.dailyChance && profit > 0
+    ? Math.round(profit * PAIN_LOSSES.ELBA.profitRate)
     : 0
 
-  // Extern: ~3% шанс блокировки счёта = 2 дня выручки, но не более 25% баланса
+  // Extern: шанс блокировки счёта — N дней выручки, но не больше X% баланса
   let extern = 0
-  if (!hasExtern && unlocked.has('extern') && Math.random() < 1 / 31) {
-    const rawDamage = Math.round(revenue * 2)
-    extern = Math.min(rawDamage, Math.round(state.balance * 0.25))
+  if (!hasExtern && unlocked.has('extern') && Math.random() < PAIN_LOSSES.EXTERN.dailyChance) {
+    const rawDamage = Math.round(revenue * PAIN_LOSSES.EXTERN.revenueDaysOfDamage)
+    extern = Math.min(rawDamage, Math.round(state.balance * PAIN_LOSSES.EXTERN.maxBalancePct))
   }
 
   const total = bank + market + ofd + diadoc + fokus + elba + extern
@@ -65,5 +67,7 @@ export function calculatePainLosses(
 }
 
 export function getBankPaymentRatio(state: GameState): number {
-  return state.services?.bank?.isActive ? 1.0 : 0.6
+  return state.services?.bank?.isActive
+    ? BANK_PAYMENT_RATIO.WITH_BANK
+    : BANK_PAYMENT_RATIO.WITHOUT_BANK
 }

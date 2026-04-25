@@ -38,8 +38,11 @@ export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
   'beauty-salon': {
     type: 'beauty-salon',
     startBalance: 80000,
-    baseClients: 6,  // ↓ Было 12
-    avgCheck: 400,  // ↓ Было 800
+    // Salon was unwinnable: 6 clients × 400₽ × 7 days = 16.8k weekly revenue vs
+    // ~35k weekly expenses → −18.5k/week, bankrupt in 4-5 weeks. Bumping clients
+    // to 11 brings weekly revenue to ~30.8k, leaving room to break even.
+    baseClients: 11,
+    avgCheck: 400,
     capacity: 20,
     hasStock: false,
     stockExpiry: 0,
@@ -48,8 +51,8 @@ export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
       '6': 0, '7': 0, '8': 0, '9': 0, '10': 0, '11': 0, '12': 0,
     },
     mainService: 'elba',
-    monthlyRent: 55000,  // ↑ Было 20000
-    monthlyBaseSalary: 60000,  // ↑ Было 30000
+    monthlyRent: 45000,
+    monthlyBaseSalary: 50000,
     usesAssortment: true,
   },
 }
@@ -77,7 +80,9 @@ export const SERVICES_CONFIG: Record<ServiceType, ServiceConfig> = {
     id: 'market',
     name: 'Контур.Маркет',
     description: 'Автоматизация торговли: +20% пропускной, +15% к чеку, -20% убытков от просрочки. Главное — защита от катастрофических срывов поставок. (В игре цены масштабированы под игровую экономику)',
-    annualPrice: 48000,
+    // Lowered from 48k → 24k. At 48k the ROI was ~9 weeks vs the 8% revenue
+    // protection it provides — too slow to be a meaningful early decision.
+    annualPrice: 24000,
     effects: {
       capacityBonus: 0.2,
       checkBonus: 0.15,
@@ -98,10 +103,12 @@ export const SERVICES_CONFIG: Record<ServiceType, ServiceConfig> = {
   ofd: {
     id: 'ofd',
     name: 'Контур.ОФД',
-    description: 'Онлайн-касса. Синергия с Маркетом: +2 репутации в день.',
-    annualPrice: 12000,  // ↑ Было 6000
+    // OFD now has its own +1 reputation/day, on top of the +1 synergy with
+    // Market. Without an own effect it was useless without Market.
+    description: 'Онлайн-касса: +1 репутации/день. Синергия с Маркетом: дополнительно +1 репутации/день.',
+    annualPrice: 12000,
     effects: {
-      reputationBonus: 0,
+      reputationBonus: 1,
     },
   },
   diadoc: {
@@ -136,8 +143,10 @@ export const SERVICES_CONFIG: Record<ServiceType, ServiceConfig> = {
   extern: {
     id: 'extern',
     name: 'Контур.Экстерн',
-    description: 'Сдача отчётности онлайн. Снижает налоговую нагрузку на 2%.',
-    annualPrice: 48000,  // ↑ Было 24000
+    description: 'Сдача отчётности онлайн. Снижает налоговую нагрузку на 2%. Защищает от блокировки счёта налоговой.',
+    // Lowered from 48k → 24k. The −2% tax saving alone gave a ~18-year ROI;
+    // the real value is account-block protection (handled in painEngine).
+    annualPrice: 24000,
     effects: {
       taxSaving: 0.02,
     },
@@ -317,9 +326,10 @@ export const LEVEL_TABLE: Array<{ level: number; expRequired: number }> = [
 ]
 
 export const MONTHLY_EXPENSES: Record<BusinessType, { rent: number; baseSalary: number }> = {
-  shop: { rent: 50000, baseSalary: 40000 },  // ↑
-  cafe: { rent: 60000, baseSalary: 50000 },  // ↑
-  'beauty-salon': { rent: 55000, baseSalary: 60000 },  // ↑
+  shop: { rent: 50000, baseSalary: 40000 },
+  cafe: { rent: 60000, baseSalary: 50000 },
+  // Salon: lowered to match BUSINESS_CONFIGS — was unwinnable at 55k+60k.
+  'beauty-salon': { rent: 45000, baseSalary: 50000 },
 }
 
 export const AD_CAMPAIGNS_CONFIG = [
