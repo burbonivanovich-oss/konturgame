@@ -514,4 +514,10 @@ export interface GameState {
   onboardingEmergencyGrantUsed?: boolean
   // Unix ms timestamp saved on each persist — guards against real-time trigger drift
   lastSavedTimestamp?: number
+
+  // Progression fixes (v4.3)
+  // True for exactly one week when energy first hits 0; game ends only on second consecutive zero week
+  burnoutWarningActive?: boolean
+  // How the player won: 'combined' (all 5 conditions before year 1) or 'year_one' (survived full year)
+  victoryType?: 'year_one' | 'combined' | null
 }

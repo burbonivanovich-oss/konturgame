@@ -35,12 +35,7 @@ export function getVictoryStatus(state: GameState): Record<string, boolean> {
 }
 
 export function checkVictory(state: GameState): boolean {
-  const status = getVictoryStatus(state)
-  // Need to survive a year OR meet all other conditions
-  if (status.yearOneComplete) {
-    return (state.balance > 0 && state.reputation > 0)  // Just surviving year 1 is a win
-  }
-  return Object.values(status).slice(0, -1).every(Boolean)  // Other conditions
+  return resolveVictoryType(state) !== null
 }
 
 export function updateGameOverCounters(state: GameState): void {
@@ -52,12 +47,35 @@ export function updateGameOverCounters(state: GameState): void {
 }
 
 export function getLevelForExperience(experience: number): number {
-  const LEVEL_THRESHOLDS = [0, 100, 200, 350, 500, 650, 750, 850, 930, 1000]
+  // Levels 1-10: original thresholds preserved (no regression for existing saves).
+  // Levels 11-15: extended post-endgame progression to fill the mid-game desert
+  // between week 20 (level 10 cap under old system) and week 52 (year end).
+  const LEVEL_THRESHOLDS = [
+    0, 100, 200, 350, 500, 650, 750, 850, 930, 1000,  // levels 1-10
+    1120, 1270, 1450, 1660, 1900,                      // levels 11-15
+  ]
   let level = 1
   for (let i = 0; i < LEVEL_THRESHOLDS.length; i++) {
     if (experience >= LEVEL_THRESHOLDS[i]) {
       level = i + 1
     }
   }
-  return Math.min(level, 10)
+  return Math.min(level, 15)
+}
+
+export type VictoryType = 'year_one' | 'combined'
+
+// Returns HOW the player won, or null if no victory condition is met.
+// 'combined' = all 5 non-year conditions met before week 52 (harder path).
+// 'year_one' = survived the full year with positive balance and reputation.
+export function resolveVictoryType(state: GameState): VictoryType | null {
+  const status = getVictoryStatus(state)
+  const combinedMet = status.weeklyProfitReached
+    && status.balanceReached
+    && status.allServicesConnected
+    && status.levelReached
+    && status.achievementsReached
+  if (combinedMet) return 'combined'
+  if (status.yearOneComplete && state.balance > 0 && state.reputation > 0) return 'year_one'
+  return null
 }

@@ -90,6 +90,10 @@ const createInitialState = (businessType: BusinessType): GameState => {
     onboardingEmergencyGrantUsed: false,
     lastSavedTimestamp: Date.now(),
 
+    // Progression fixes (v4.3)
+    burnoutWarningActive: false,
+    victoryType: null,
+
     // Service unlocking (start with Bank only)
     unlockedServices: SERVICE_UNLOCK_MAP[0],
     serviceDeactivatedWeeks: {},
@@ -1276,6 +1280,8 @@ function extractState(state: any): GameState {
     decisionLog, seenNewspaperWeeks,
     // v4.2 onboarding resilience
     skippedOnboardingActions, onboardingEmergencyGrantUsed, lastSavedTimestamp,
+    // v4.3 progression fixes
+    burnoutWarningActive, victoryType,
   } = state
 
   // Migration: convert old currentDay to currentWeek
@@ -1351,6 +1357,9 @@ function extractState(state: any): GameState {
     skippedOnboardingActions: skippedOnboardingActions ?? [],
     onboardingEmergencyGrantUsed: onboardingEmergencyGrantUsed ?? false,
     lastSavedTimestamp: lastSavedTimestamp ?? Date.now(),
+    // v4.3 progression fixes
+    burnoutWarningActive: burnoutWarningActive ?? false,
+    victoryType: victoryType ?? null,
   }
 }
 

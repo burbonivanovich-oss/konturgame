@@ -21,6 +21,7 @@ import {
   checkBankruptcy,
   checkReputationLoss,
   checkVictory,
+  resolveVictoryType,
   updateGameOverCounters,
   getLevelForExperience,
 } from './victoryChecker'
@@ -320,10 +321,19 @@ export function processWeek(state: GameState): DayResult {
   const actualEnergyCost = Math.max(0, weeklyEnergyCost - upgradeEnergyBonus)
   state.entrepreneurEnergy = Math.max(0, state.entrepreneurEnergy - actualEnergyCost)
 
-  // Check if entrepreneur energy reached 0 (end of week)
+  // Check if entrepreneur energy reached 0 (end of week).
+  // Grace week: first time energy hits 0 we set a warning flag and give one
+  // more week to recover (rest, hire employees, buy owner items). Only on the
+  // SECOND consecutive zero-energy week do we declare burnout.
   if (state.entrepreneurEnergy <= 0) {
-    state.isGameOver = true
-    state.gameOverReason = 'burnout'
+    if (state.burnoutWarningActive) {
+      state.isGameOver = true
+      state.gameOverReason = 'burnout'
+    } else {
+      state.burnoutWarningActive = true
+    }
+  } else {
+    state.burnoutWarningActive = false
   }
 
   // Update state (but don't advance week yet — done at end after all checks)
@@ -383,11 +393,14 @@ export function processWeek(state: GameState): DayResult {
     }
   }
 
-  // Update counters (note: despite the name, this counts weeks, not days)
+  // Update counters (note: despite the name, this counts weeks, not days).
+  // On recovery: decrement by 1 rather than resetting to 0. This prevents the
+  // exploit where taking a micro-loan for a single positive week resets the
+  // entire consecutive-negative counter, enabling infinite bankruptcy avoidance.
   if (state.balance < 0) {
     state.daysBalanceNegative = (state.daysBalanceNegative ?? 0) + 1
-  } else {
-    state.daysBalanceNegative = 0
+  } else if ((state.daysBalanceNegative ?? 0) > 0) {
+    state.daysBalanceNegative = (state.daysBalanceNegative ?? 0) - 1
   }
 
   // Track achievement helpers
@@ -481,6 +494,7 @@ export function processWeek(state: GameState): DayResult {
     state.gameOverReason = 'reputation'
   } else if (checkVictory(state)) {
     state.isVictory = true
+    state.victoryType = resolveVictoryType(state)
   }
 
   // Check milestone achievements
