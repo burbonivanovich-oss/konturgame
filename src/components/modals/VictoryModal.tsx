@@ -131,7 +131,15 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
   const {
     startNewGame, currentWeek, balance, reputation, gameOverReason,
     playerBackstory, npcs, completedChainIds, totalPainLosses, personalGoal,
+    decisionLog,
   } = useGameStore()
+
+  // Postmortem: keep only choices that mattered — moral / NPC events with
+  // non-neutral impact. Take up to 8, oldest first, so the timeline reads
+  // as a story rather than a feed.
+  const postmortemEntries = ((decisionLog ?? [])
+    .filter(e => (e.type === 'choice' || e.type === 'npc') && e.impact !== 'neutral')
+    .slice(-8))
 
   const isVictory = type === 'victory'
   const gameOverMsg = getGameOverMessage(gameOverReason)
@@ -278,6 +286,51 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
                 fontStyle: 'italic', fontFamily: 'Georgia, "Times New Roman", serif',
               }}>
                 {goalClosure.text}
+              </div>
+            </div>
+          )}
+
+          {/* Postmortem timeline — key moral choices the player made */}
+          {postmortemEntries.length > 0 && (
+            <div style={{
+              background: K.white,
+              border: `1px solid ${K.line}`,
+              borderRadius: 12, padding: '14px 16px',
+              marginBottom: 16, textAlign: 'left',
+            }}>
+              <div style={{
+                fontSize: 10, fontWeight: 700, color: K.muted,
+                textTransform: 'uppercase', letterSpacing: '0.08em',
+                marginBottom: 10,
+              }}>
+                Ключевые решения
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {postmortemEntries.map((e, i) => {
+                  const dotColor =
+                    e.impact === 'positive' ? K.mint :
+                    e.impact === 'negative' ? '#c0392b' :
+                    K.muted
+                  return (
+                    <div key={i} style={{
+                      display: 'flex', gap: 10,
+                      alignItems: 'flex-start',
+                    }}>
+                      <div style={{
+                        width: 8, height: 8, borderRadius: 999,
+                        background: dotColor, flexShrink: 0, marginTop: 6,
+                      }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 10, color: K.muted, fontVariantNumeric: 'tabular-nums' }}>
+                          Неделя {e.week}
+                        </div>
+                        <div style={{ fontSize: 12, color: K.ink, lineHeight: 1.45 }}>
+                          {e.text}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )}

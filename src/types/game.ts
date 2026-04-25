@@ -46,7 +46,7 @@ export interface PlayerBackstory {
  */
 export interface PersonalGoal {
   // Stable id used for ending text and analytics
-  id: 'mother_surgery' | 'dimka_cosign' | 'grandma_flat'
+  id: 'mother_car' | 'dimka_wedding' | 'kids_coach'
   // Short label shown in the UI ("Своя квартира")
   shortLabel: string
   // Full sentence shown in dashboard ("Накопить 500 000 ₽ на квартиру в новом районе")
@@ -562,4 +562,9 @@ export interface GameState {
   burnoutWarningActive?: boolean
   // How the player won: 'combined' (all 5 conditions before year 1) or 'year_one' (survived full year)
   victoryType?: 'year_one' | 'combined' | null
+
+  // Tracks which option the player picked for each resolved event (v5.4).
+  // Used by backstory achievements + postmortem timeline. Optional for save
+  // migration; new runs always populate it via markEventAsResolved.
+  chosenEventOptions?: Record<string, string>
 }

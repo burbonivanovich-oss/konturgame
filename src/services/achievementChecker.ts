@@ -40,6 +40,31 @@ const ACHIEVEMENT_CHECKS: Record<string, CheckFn> = {
     s.currentWeek >= ECONOMY_CONSTANTS.TOTAL_WEEKS_PER_YEAR
     && (s.daysBalanceNegative ?? 0) === 0
     && s.balance > 0,
+
+  // v5.4 backstory choice achievements — read state.chosenEventOptions
+  choice_refused_old_boss: (s) =>
+    s.chosenEventOptions?.['PERS_CORP_OFFER'] === 'refuse_proudly',
+  choice_opened_to_colleague: (s) =>
+    s.chosenEventOptions?.['PERS_CORP_EXCOLLEAGUE'] === 'open_up',
+  choice_mother_time: (s) =>
+    s.chosenEventOptions?.['PERS_FREE_MOTHER_DROPIN'] === 'sit_with_her',
+  choice_dimka_paper: (s) =>
+    s.chosenEventOptions?.['PERS_FRIEND_LOAN_OFFER'] === 'take_with_terms',
+  choice_lifted_anna: (s) =>
+    s.chosenEventOptions?.['NPC_ANNA_CRISIS'] === 'lend_kindness',
+  choice_svetlana_partner: (s) =>
+    s.chosenEventOptions?.['NPC_SVETLANA_POACHED'] === 'partner_share',
+  choice_gleb_recorded: (s) =>
+    s.chosenEventOptions?.['NPC_GLEB_SCANDAL'] === 'go_public',
+
+  // Goal achievements
+  goal_achieved: (s) => s.personalGoal?.achieved === true,
+  goal_clutch: (s) => {
+    const g = s.personalGoal
+    if (!g?.achieved) return false
+    // "clutch" = achieved within the last 2 weeks before deadline
+    return g.deadlineWeek - s.currentWeek <= 2
+  },
 }
 
 export function checkNewAchievements(state: GameState): string[] {

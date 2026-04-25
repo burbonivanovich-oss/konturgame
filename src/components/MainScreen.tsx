@@ -711,6 +711,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
     updateNPCRelationship: storeUpdateNPCRelationship,
     addChainFollowUp,
     addDecisionLogEntry,
+    recordEventChoice,
   } = useGameStore()
 
   const activeServiceIds = Object.values(services).filter(s => s.isActive).map(s => s.id)
@@ -731,6 +732,9 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
     if (!pendingEvent) return
     const option = pendingEvent.options.find((o) => o.id === optionId)
     if (!option) return
+    // Record the choice before applying consequences — used by achievements
+    // and the postmortem timeline.
+    recordEventChoice(pendingEvent.id, optionId)
     const c = option.consequences
     if (c.balanceDelta !== undefined) addBalance(c.balanceDelta)
     if (c.reputationDelta !== undefined) addReputation(c.reputationDelta)

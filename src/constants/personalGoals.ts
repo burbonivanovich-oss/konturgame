@@ -2,45 +2,41 @@ import type { BackstoryPersonal, PersonalGoal } from '../types/game'
 
 /**
  * Personal goals tied to the backstory's "personal situation". Each goal is a
- * concrete, urgent reason that exists outside the business — the kind of thing
- * a small-business owner actually wakes up at 4am over. The deadline creates
- * Papers Please / This Is The Police time pressure; the specifics ground the
- * money number in a real person.
+ * concrete, warm thing the protagonist promised to themselves — the kind of
+ * promise a small-business owner actually makes and quietly carries. The
+ * deadline creates time pressure (à la Papers Please / This Is The Police);
+ * the specifics ground the money number in a real moment with a real person.
  *
  * Targets and deadlines tuned so that:
  *  - achievable with active service usage and reasonable decisions
  *  - missable if the player coasts on bare survival
  *  - meaningful: at least 2x the starting balance, so it requires real growth
  *
- * Tone notes:
- *  - These are not philanthropic dreams. They're emergencies dressed in
- *    family clothes — the kind of stake that makes "просто выжить" feel
- *    insufficient without being overtly tragic.
- *  - Each goal carries some moral complexity (помочь = и долг, и
- *    самоуспокоение). Closure scenes lean into that, not away from it.
+ * Tone: light but not naïve. No tragedy required to feel weight — a missed
+ * birthday, a smaller wedding, an empty courtyard already do the work.
  */
 export const PERSONAL_GOAL_TEMPLATES: Record<BackstoryPersonal, Omit<PersonalGoal, 'achieved' | 'missed'>> = {
   free: {
-    id: 'mother_surgery',
-    shortLabel: 'Операция матери',
+    id: 'mother_car',
+    shortLabel: 'Машина для мамы',
     description:
-      'Маме нужна операция в платной клинике — врачи говорят, до октября (неделя 38), потом поздно. 500 000 ₽. Сама не просит, ходит в районную, делает вид, что справляется. Вы знаете, что не справляется.',
+      'Маме в ноябре 60 лет. Всю жизнь — маршрутки и метро. Дважды за год сказала «хорошо бы свою, хоть какую-нибудь». Сами решили: подарите хорошую подержанную, с растаможкой и страховкой — 500 000 ₽. До недели 38, чтобы успеть к дню рождения.',
     targetAmount: 500_000,
     deadlineWeek: 38,
   },
   friend: {
-    id: 'dimka_cosign',
-    shortLabel: 'Снять Димку с поручительства',
+    id: 'dimka_wedding',
+    shortLabel: 'Свадьба Димки',
     description:
-      'Когда вы открывались, Димка подписал поручительство по вашему стартовому кредиту. Банк прислал требование о досрочном погашении — 600 000 ₽ до недели 45. Если не закроете, начнут списывать с его зарплаты. Он этого не знает.',
+      'Димка позвал свидетелем — они с Иркой пять лет ждали. Бюджет считали-считали, не сходится на 600 000 ₽: зал, фотограф, банкет на 80 человек. Вы пообещали закрыть разницу, не назвав цифру. Свадьба в начале ноября — неделя 45.',
     targetAmount: 600_000,
     deadlineWeek: 45,
   },
   hometown: {
-    id: 'grandma_flat',
-    shortLabel: 'Бабушкина квартира',
+    id: 'kids_coach',
+    shortLabel: 'Тренер для дворовой команды',
     description:
-      'Бабушку похоронили в позапрошлом году. Дядя продаёт её квартиру — у вас есть преимущественное право, нужно внести 400 000 ₽ задатка до недели 38. Вы не были у бабушки в последние месяцы. Это не вернёт того, что упустили — но и не пустить туда чужих людей вы тоже не можете.',
+      'В вашем дворе пацаны играют в футбол. Старый тренер ушёл — зарплата мизер, нашёл получше. Без него команда рассыпется, ребята разойдутся по подъездам. Нужно 400 000 ₽ на год тренеру и форму к началу сезона — неделя 38.',
     targetAmount: 400_000,
     deadlineWeek: 38,
   },

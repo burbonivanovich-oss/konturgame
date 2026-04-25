@@ -226,6 +226,9 @@ interface GameStoreActions {
   // Events
   setPendingEvent: (event: Event | null) => void
   markEventAsResolved: (eventId: string) => void
+  // Record which option the player picked for an event — feeds achievements
+  // + postmortem timeline. Idempotent; first choice wins per event id.
+  recordEventChoice: (eventId: string, choiceId: string) => void
   setPendingEventsQueue: (events: Event[]) => void
 
   // Saved balance
@@ -644,6 +647,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
         pendingEvent: event,
         lastUpdated: Date.now(),
       })
+    },
+
+    recordEventChoice: (eventId, choiceId) => {
+      set((state) => ({
+        chosenEventOptions: {
+          ...(state.chosenEventOptions ?? {}),
+          [eventId]: choiceId,
+        },
+        lastUpdated: Date.now(),
+      }))
     },
 
     markEventAsResolved: (eventId) => {
