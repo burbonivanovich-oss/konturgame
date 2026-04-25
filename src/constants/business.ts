@@ -72,6 +72,7 @@ export interface ServiceConfig {
     loyaltyBonus?: number
     taxSaving?: number
     energyReduction?: number
+    acquiringRate?: number
   }
 }
 

@@ -506,8 +506,8 @@ function detectVulnerabilities(results: RunResult[]): Vulnerability[] {
   })
   const passiveResults = results.filter(r => r.policy.weeklyTactic === null)
   if (passiveResults.length && activeResults.length) {
-    const bestPassive = Math.max(...passiveResults.map(r => r.rows.at(-1)?.balance ?? 0))
-    const bestActive = Math.max(...activeResults.map(r => r.rows.at(-1)?.balance ?? 0))
+    const bestPassive = Math.max(...passiveResults.map(r => r.rows[r.rows.length - 1]?.balance ?? 0))
+    const bestActive = Math.max(...activeResults.map(r => r.rows[r.rows.length - 1]?.balance ?? 0))
     if (bestPassive > bestActive) {
       vulns.push({
         policy: 'meta',

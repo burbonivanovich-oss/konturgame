@@ -3,7 +3,7 @@ import type {
   GameState, BusinessType, ServiceType, Service, DayResult, Event,
   AdCampaign, CashRegisterType, CashRegister, OnboardingStage,
   CampaignROI, MilestoneStatus, WeekPhase, NPC, PlayerBackstory, NpcMemoryEntry,
-  DecisionLogEntry, WeeklyTactic,
+  DecisionLogEntry, WeeklyTactic, EmployeePosition,
 } from '../types/game'
 import { SERVICES_CONFIG, BUSINESS_CONFIGS, ECONOMY_CONSTANTS, MAX_ACTIVE_CAMPAIGNS } from '../constants/business'
 import { ONBOARDING_STAGES, SERVICE_UNLOCK_MAP } from '../constants/onboarding'
@@ -298,7 +298,7 @@ interface GameStoreActions {
   markBundlePromoShown: () => void
 
   // Employees
-  hireEmployee: (position: any) => void
+  hireEmployee: (position: EmployeePosition, name: string, salary: number) => void
   fireEmployee: (employeeId: string) => void
   runTrainingSession: () => boolean  // costs 20 energy, +0.1 efficiency to all employees (capped at max)
 
@@ -1071,7 +1071,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // Daily micro events
     // Employees
-    hireEmployee: (position: any, _name: string, _salary: number) => {
+    hireEmployee: (position: EmployeePosition, _name: string, _salary: number) => {
       const state = get()
       const stage = getBusinessStage(state.currentWeek, state.level)
       const maxEmployees = STAGE_CONFIG[stage].maxEmployees

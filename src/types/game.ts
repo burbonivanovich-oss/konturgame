@@ -199,6 +199,7 @@ export interface Service {
     loyaltyBonus?: number
     taxSaving?: number
     energyReduction?: number
+    acquiringRate?: number
   }
 }
 
@@ -471,7 +472,7 @@ export interface GameState {
   unlockedServices: ServiceType[]
 
   // Cooldown: week when each service was last deactivated (can't re-enable for 2 weeks)
-  serviceDeactivatedWeeks: Partial<Record<ServiceType, number>>
+  serviceDeactivatedWeeks?: Partial<Record<ServiceType, number>>
 
   // Cash registers
   cashRegisters: CashRegister[]
