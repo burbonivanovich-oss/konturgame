@@ -107,7 +107,12 @@ export default function BackstoryScreen({ onComplete }: BackstoryScreenProps) {
                 Прогонов: {meta.totalRuns} · Лучшая неделя: {meta.bestWeek}
               </span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{
+              display: 'flex', flexDirection: 'column', gap: 6,
+              // Cap height so a long list doesn't push the backstory pickers
+              // off-screen on small devices. Scrolls inside the card.
+              maxHeight: 220, overflowY: 'auto',
+            }}>
               {unlockedLessons.map(l => (
                 <div key={l.id} style={{
                   display: 'flex', alignItems: 'flex-start', gap: 10,

@@ -223,7 +223,20 @@ export function KLeftRail({
 
       <div style={{ flex: 1 }} />
 
-      {/* Personal goal — anchors the run with a real reason and deadline */}
+      {/* Personal goal — anchors the run with a real reason and deadline.
+          When the player hasn't started a backstory (or goal is null) we
+          show a quiet placeholder so the rail layout doesn't shift when
+          the goal appears. */}
+      {!personalGoal && (
+        <Card pad={12} radius={12} bg={K.bone} border={K.lineSoft}>
+          <div style={{ fontSize: 10, color: K.muted, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700 }}>
+            Личная цель
+          </div>
+          <div style={{ fontSize: 12, color: K.muted, marginTop: 6, lineHeight: 1.35 }}>
+            Появится после выбора предыстории
+          </div>
+        </Card>
+      )}
       {personalGoal && (() => {
         const pct = Math.min(100, Math.round((balance / personalGoal.targetAmount) * 100))
         const weeksLeft = Math.max(0, personalGoal.deadlineWeek - currentWeek)

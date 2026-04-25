@@ -10,7 +10,6 @@ import VictoryModal from './modals/VictoryModal'
 import AchievementsModal from './modals/AchievementsModal'
 import NPCRosterModal from './modals/NPCRosterModal'
 import CashRegisterModal from './modals/CashRegisterModal'
-import AssortmentModal from './modals/AssortmentModal'
 import PromoCodeModal from './modals/PromoCodeModal'
 import PromoWalletModal from './modals/PromoWalletModal'
 import BundleModal from './modals/BundleModal'
@@ -253,14 +252,19 @@ function DashboardView({
             </div>
 
             {[
-              { label: 'Прибыль / день', value: `${dailyProfit > 0 ? '+' : ''}${dailyProfit.toLocaleString('ru-RU')} ₽`, bg: dailyProfit >= 0 ? K.mint : '#c0392b', sub: 'после налогов' },
-              { label: 'Расходы / день', value: `${dailyExpenses.toLocaleString('ru-RU')} ₽`, bg: K.violet, sub: lastDayResult ? 'за вчера' : 'нет данных' },
-              { label: 'Клиенты', value: lastDayResult ? `${servedToday} / ${clientsToday}` : '—', bg: K.blue, sub: missedToday > 0 ? `${missedToday} ушли` : 'все обслужены' },
+              { icon: '💹', label: 'Прибыль / день', value: `${dailyProfit > 0 ? '+' : ''}${dailyProfit.toLocaleString('ru-RU')} ₽`, bg: dailyProfit >= 0 ? K.mint : '#c0392b', sub: 'после налогов' },
+              { icon: '💸', label: 'Расходы / день', value: `${dailyExpenses.toLocaleString('ru-RU')} ₽`, bg: K.violet, sub: lastDayResult ? 'за вчера' : 'нет данных' },
+              { icon: '👥', label: 'Клиенты', value: lastDayResult ? `${servedToday} / ${clientsToday}` : '—', bg: K.blue, sub: missedToday > 0 ? `${missedToday} ушли` : 'все обслужены' },
             ].map(t => (
               <div key={t.label} style={{
                 background: t.bg, borderRadius: 14, padding: '14px 16px',
                 display: 'flex', flexDirection: 'column', gap: 4,
+                position: 'relative', overflow: 'hidden',
               }}>
+                <span style={{
+                  position: 'absolute', top: 8, right: 10,
+                  fontSize: 22, opacity: 0.35, lineHeight: 1,
+                }}>{t.icon}</span>
                 <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
                   {t.label}
                 </div>
