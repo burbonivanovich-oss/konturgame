@@ -27,7 +27,7 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
   const {
     currentWeek, balance, lastDayResult, services, achievements,
     upcomingEventTeaser, pendingMilestoneCelebration,
-    lastWeekPainLosses, lastWeekMicroEvent, npcs,
+    lastWeekPainLosses, lastWeekMicroEvent, npcs, lastDiaryEntry,
   } = useGameStore()
 
   if (!lastDayResult) return null
@@ -258,6 +258,30 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: K.ink }}>{lastWeekMicroEvent.title}</div>
               <div style={{ fontSize: 11, color: K.muted, marginTop: 2 }}>{lastWeekMicroEvent.effectText}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Diary entry — first-person reflection, fired every 5 weeks */}
+        {lastDiaryEntry && (
+          <div style={{
+            background: '#fdf6e3',
+            border: `1px solid #e8dfc6`,
+            borderLeft: `3px solid ${K.orange}`,
+            borderRadius: 10, padding: '14px 16px',
+            display: 'flex', flexDirection: 'column', gap: 6,
+          }}>
+            <div style={{
+              fontSize: 10, fontWeight: 700, color: K.muted,
+              textTransform: 'uppercase', letterSpacing: '0.08em',
+            }}>
+              {lastDiaryEntry.header}
+            </div>
+            <div style={{
+              fontSize: 13, color: K.ink, lineHeight: 1.55,
+              fontStyle: 'italic', fontFamily: 'Georgia, "Times New Roman", serif',
+            }}>
+              {lastDiaryEntry.body}
             </div>
           </div>
         )}

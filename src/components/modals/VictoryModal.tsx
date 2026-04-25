@@ -2,6 +2,9 @@ import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
 import type { PlayerBackstory, NPC } from '../../types/game'
 import { K } from '../design-system/tokens'
+import { buildNpcExitLines, buildGoalClosure } from '../../constants/npcExits'
+import { getNPCDefinition } from '../../constants/npcs'
+import { getMetaLesson } from '../../constants/metaLessons'
 
 interface VictoryModalProps {
   isOpen: boolean
@@ -103,8 +106,8 @@ function getNarrativeEnding(
   // Friend personal
   if (backstory?.personal === 'friend') {
     return {
-      title: 'Лучший друг не ошибся',
-      text: 'Димка верил в вас с самого начала. Теперь у него есть право говорить «я так и знал». А у вас — бизнес, который доказал: поддержка имеет значение.',
+      title: 'Катя не ошиблась',
+      text: 'Катя верила с самого начала — даже когда вы сами не были уверены. Теперь вы квиты: она помогала вам подняться, вы помогли ей начать заново. Так и работает настоящее.',
     }
   }
 
@@ -128,8 +131,20 @@ const SERVICE_LABELS: Record<string, string> = {
 export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
   const {
     startNewGame, currentWeek, balance, reputation, gameOverReason,
-    playerBackstory, npcs, completedChainIds, totalPainLosses,
+    playerBackstory, npcs, completedChainIds, totalPainLosses, personalGoal,
+    decisionLog, newlyUnlockedLessons,
   } = useGameStore()
+
+  const newLessons = (newlyUnlockedLessons ?? [])
+    .map(id => getMetaLesson(id))
+    .filter((l): l is NonNullable<typeof l> => !!l)
+
+  // Postmortem: keep only choices that mattered — moral / NPC events with
+  // non-neutral impact. Take up to 8, oldest first, so the timeline reads
+  // as a story rather than a feed.
+  const postmortemEntries = ((decisionLog ?? [])
+    .filter(e => (e.type === 'choice' || e.type === 'npc') && e.impact !== 'neutral')
+    .slice(-8))
 
   const isVictory = type === 'victory'
   const gameOverMsg = getGameOverMessage(gameOverReason)
@@ -143,6 +158,12 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
         currentWeek,
       )
     : null
+
+  // Goal closure + per-NPC exit lines (v5.2). Shown on both victory and
+  // defeat — these are the "where everyone ended up" moments that turn a
+  // game-over into an ending.
+  const goalClosure = buildGoalClosure(personalGoal, playerBackstory ?? null, balance)
+  const npcExits = buildNpcExitLines(npcs ?? [])
 
   const handleNewGame = () => {
     startNewGame('shop')
@@ -213,6 +234,41 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
             </div>
           </div>
 
+          {/* Newly unlocked lessons — moved here so they're visible right
+              after the stats, not buried at the bottom of the scroll. */}
+          {newLessons.length > 0 && (
+            <div style={{
+              background: K.bone,
+              border: `1px solid ${K.orange}`,
+              borderLeft: `4px solid ${K.orange}`,
+              borderRadius: 12, padding: '14px 16px',
+              marginBottom: 16, textAlign: 'left',
+            }}>
+              <div style={{
+                fontSize: 11, fontWeight: 800, color: K.orange,
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+                marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+                <span>📚</span>
+                <span>Новые уроки — пойдут в следующую попытку</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {newLessons.map(l => (
+                  <div key={l.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>{l.icon}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: K.ink }}>{l.name}</div>
+                      <div style={{ fontSize: 12, color: K.ink2, marginTop: 1 }}>{l.earnedHow}.</div>
+                      <div style={{ fontSize: 12, color: K.orange, fontWeight: 600, marginTop: 2 }}>
+                        {l.bonusText}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {isVictory && (
             <p style={{ fontSize: 14, color: K.muted, marginBottom: 24, lineHeight: 1.6 }}>
               Вы успешно управляли бизнесом и освоили экосистему Контура!
@@ -247,6 +303,122 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
               </div>
             ) : null
           })()}
+          {/* Goal closure scene — what happened to the personal dream */}
+          {goalClosure && (
+            <div style={{
+              background: '#fdf6e3',
+              border: `1px solid #e8dfc6`,
+              borderLeft: `3px solid ${K.orange}`,
+              borderRadius: 10,
+              padding: '14px 16px',
+              marginBottom: 16,
+              textAlign: 'left',
+            }}>
+              <div style={{
+                fontSize: 10, fontWeight: 700, color: K.orange,
+                textTransform: 'uppercase', letterSpacing: '0.08em',
+                marginBottom: 6,
+              }}>
+                {goalClosure.title}
+              </div>
+              <div style={{
+                fontSize: 13, color: K.ink, lineHeight: 1.55,
+                fontStyle: 'italic', fontFamily: 'Georgia, "Times New Roman", serif',
+              }}>
+                {goalClosure.text}
+              </div>
+            </div>
+          )}
+
+          {/* Postmortem timeline — key moral choices the player made */}
+          {postmortemEntries.length > 0 && (
+            <div style={{
+              background: K.white,
+              border: `1px solid ${K.line}`,
+              borderRadius: 12, padding: '14px 16px',
+              marginBottom: 16, textAlign: 'left',
+            }}>
+              <div style={{
+                fontSize: 10, fontWeight: 700, color: K.muted,
+                textTransform: 'uppercase', letterSpacing: '0.08em',
+                marginBottom: 10,
+              }}>
+                Ключевые решения
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {postmortemEntries.map((e, i) => {
+                  const dotColor =
+                    e.impact === 'positive' ? K.mint :
+                    e.impact === 'negative' ? '#c0392b' :
+                    K.muted
+                  return (
+                    <div key={i} style={{
+                      display: 'flex', gap: 10,
+                      alignItems: 'flex-start',
+                    }}>
+                      <div style={{
+                        width: 8, height: 8, borderRadius: 999,
+                        background: dotColor, flexShrink: 0, marginTop: 6,
+                      }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 10, color: K.muted, fontVariantNumeric: 'tabular-nums' }}>
+                          Неделя {e.week}
+                        </div>
+                        <div style={{ fontSize: 11, color: K.ink2, lineHeight: 1.45 }}>
+                          {e.text}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* NPC exit lines — where everyone ended up */}
+          {npcExits.length > 0 && (
+            <div style={{
+              background: K.bone,
+              border: `1px solid ${K.lineSoft}`,
+              borderRadius: 12, padding: '14px 16px',
+              marginBottom: 16, textAlign: 'left',
+            }}>
+              <div style={{
+                fontSize: 10, fontWeight: 700, color: K.muted,
+                textTransform: 'uppercase', letterSpacing: '0.08em',
+                marginBottom: 10,
+              }}>
+                Окружение — финал
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {npcExits.map(line => {
+                  const def = getNPCDefinition(line.npcId)
+                  if (!def) return null
+                  return (
+                    <div key={line.npcId} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                      <div style={{
+                        width: 28, height: 28, borderRadius: 999,
+                        background: K.white, border: `1px solid ${K.lineSoft}`,
+                        display: 'grid', placeItems: 'center', fontSize: 16,
+                        flexShrink: 0,
+                      }}>
+                        {def.portrait}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: K.ink }}>
+                          {def.name}
+                        </div>
+                        <div style={{ fontSize: 12, color: K.ink2, lineHeight: 1.5, marginTop: 2 }}>
+                          {line.text}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           {!isVictory && (
             <p style={{ fontSize: 14, color: K.muted, marginBottom: 24, lineHeight: 1.6 }}>
               Анализируйте ошибки и попробуйте снова!

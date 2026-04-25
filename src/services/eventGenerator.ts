@@ -1,5 +1,8 @@
 import type { GameState, Event, EventTemplate } from '../types/game'
 import { MORAL_DILEMMA_EVENTS } from '../constants/moralDilemmas'
+import { PERSONAL_BACKSTORY_EVENTS } from '../constants/personalEvents'
+import { NPC_ARC_EVENTS } from '../constants/npcArcs'
+import { CRISIS_EVENTS } from '../constants/crisisEvents'
 import { getChainEvent, CHAIN_FOLLOWUP_DELAY } from '../constants/eventChains'
 import { RECURRING_CUSTOMER_EVENTS } from '../constants/recurringCustomers'
 import { NPC_EVENTS } from '../constants/npcEvents'
@@ -34,15 +37,26 @@ export const EVENTS_DATABASE: EventTemplate[] = [
   },
   {
     id: 'BLOGGER01',
-    title: 'Популярный блогер',
-    description: 'Местный блогер упомянул ваш бизнес в своём посте. Поток клиентов резко вырос!',
+    title: 'Блогер привёл толпу',
+    description:
+      'Местный блогер упомянул вас в посте — на пороге очередь, какой не было никогда. Половина клиентов — впервые. Команда не справляется. Что делать?',
     npcId: 'gleb',
     trigger: { randomChance: 0.03 },
     options: [
       {
-        id: 'accept',
-        text: 'Принять всех клиентов',
-        consequences: { clientModifier: 0.3, clientModifierDays: 7, reputationDelta: 5 },
+        id: 'all_in',
+        text: 'Работать на пределе — каждый клиент важен (стресс −15 энергии, +30% клиентов на 7 дней)',
+        consequences: { clientModifier: 0.3, clientModifierDays: 7, reputationDelta: 5, energyDelta: -15 },
+      },
+      {
+        id: 'limit_quality',
+        text: 'Замедлиться, держать качество — кто-то уйдёт, но без грязи (+15% клиентов на 10 дней)',
+        consequences: { clientModifier: 0.15, clientModifierDays: 10, reputationDelta: 8 },
+      },
+      {
+        id: 'hire_temp',
+        text: 'Нанять временного помощника на 2 недели (−12 000 ₽)',
+        consequences: { balanceDelta: -12000, clientModifier: 0.25, clientModifierDays: 14, reputationDelta: 6 },
       },
     ],
   },
@@ -69,14 +83,25 @@ export const EVENTS_DATABASE: EventTemplate[] = [
   },
   {
     id: 'HOLIDAY01',
-    title: 'Праздничный ажиотаж',
-    description: 'Приближается праздник. Клиентов стало значительно больше.',
+    title: 'Праздник на носу',
+    description:
+      'До праздника три дня. Конкуренты делают акции, у вас — обычный ассортимент. Можно вложиться в подготовку, можно остаться при своих, можно сделать ставку на премиум.',
     trigger: { randomChance: 0.04 },
     options: [
       {
-        id: 'normal',
-        text: 'Работать в стандартном режиме',
-        consequences: { clientModifier: 0.2, clientModifierDays: 5 },
+        id: 'discount_push',
+        text: 'Скидки и расширенные часы (−6 000 ₽ на закупку, +25% клиентов на 7 дней)',
+        consequences: { balanceDelta: -6000, clientModifier: 0.25, clientModifierDays: 7 },
+      },
+      {
+        id: 'standard',
+        text: 'Работать как обычно — без авралов',
+        consequences: { clientModifier: 0.1, clientModifierDays: 5 },
+      },
+      {
+        id: 'premium_focus',
+        text: 'Делать ставку на чек: дорогие позиции в витрине (+15% к чеку на 10 дней)',
+        consequences: { checkModifier: 0.15, checkModifierDays: 10, reputationDelta: 2 },
       },
     ],
   },
@@ -108,38 +133,61 @@ export const EVENTS_DATABASE: EventTemplate[] = [
   },
   {
     id: 'COMPETITOR01',
-    title: 'Новый конкурент',
-    description: 'Рядом открылся конкурент. Часть клиентов переключается на него.',
+    title: 'Анна открылась на той же улице',
+    description:
+      'Через дорогу — баннер «Открытие». Она специально выбрала ваш район. В первый день у неё очередь, ваш зал полупустой. Это начало или конец — зависит от первой реакции.',
     npcId: 'anna',
     trigger: { randomChance: 0.04, oneTime: true },
     options: [
       {
         id: 'promo',
-        text: 'Запустить акцию (-3 000 ₽)',
+        text: 'Запустить агрессивную акцию — отбить трафик (−3 000 ₽, +10% клиентов 10 дней)',
         consequences: { balanceDelta: -3000, clientModifier: 0.1, clientModifierDays: 10 },
       },
       {
         id: 'quality',
-        text: 'Сделать ставку на качество',
+        text: 'Не реагировать на цену — делать ставку на качество (+5 репутации, +10% к чеку 10 дней)',
         consequences: { reputationDelta: 5, checkModifier: 0.1, checkModifierDays: 10 },
+      },
+      {
+        id: 'visit',
+        text: 'Зайти к Анне на открытие, поздравить — установить тон отношений',
+        consequences: { reputationDelta: 2 },
+        npcRelationshipDelta: 8,
+      },
+      {
+        id: 'wait',
+        text: 'Ждать — конкуренция нормально, посмотрим',
+        consequences: { clientModifier: -0.05, clientModifierDays: 14 },
       },
     ],
   },
   {
     id: 'EQUIPMENT01',
-    title: 'Поломка оборудования',
-    description: 'Вышло из строя ключевое оборудование. Требуется срочный ремонт.',
+    title: 'Сломалось ключевое оборудование',
+    description:
+      'Утром не запустилось — то ли провод, то ли электроника. Сервисный центр предлагает три варианта. У знакомого мастера — четвёртый, но без гарантии.',
     trigger: { randomChance: 0.04 },
     options: [
       {
         id: 'full-repair',
-        text: 'Полноценный ремонт (-15 000 ₽)',
+        text: 'Сервис официальный, гарантия на год (−15 000 ₽)',
         consequences: { balanceDelta: -15000 },
       },
       {
         id: 'cheap-repair',
-        text: 'Быстрый ремонт (-7 000 ₽, временные потери клиентов)',
+        text: 'Сервис эконом, без гарантии — может опять сломаться (−7 000 ₽, −10% клиентов 3 дня)',
         consequences: { balanceDelta: -7000, clientModifier: -0.1, clientModifierDays: 3 },
+      },
+      {
+        id: 'friend-master',
+        text: 'Знакомый мастер «по дружбе» — без чека, втрое дешевле (−5 000 ₽, риск повтора через месяц)',
+        consequences: { balanceDelta: -5000, reputationDelta: -1 },
+      },
+      {
+        id: 'replace',
+        text: 'Купить новое, более надёжное (−28 000 ₽, +5% к пропускной на 30 дней)',
+        consequences: { balanceDelta: -28000, clientModifier: 0.05, clientModifierDays: 30 },
       },
     ],
   },
@@ -166,19 +214,30 @@ export const EVENTS_DATABASE: EventTemplate[] = [
   },
   {
     id: 'REVIEW01',
-    title: 'Негативный отзыв',
-    description: 'Клиент оставил плохой отзыв в интернете. Репутация под угрозой.',
+    title: 'Негативный отзыв на 2GIS — много лайков',
+    description:
+      'Клиентка пишет: «Хамское обслуживание, обманули с ценой». Вы помните этот случай — была ошибка кассира, она вспылила, вы извинились. Сейчас лайков 27. Можно молча, можно публично, можно искать клиента и решать офлайн.',
     trigger: { randomChance: 0.05, reputationMax: 70 },
     options: [
       {
-        id: 'respond',
-        text: 'Публично ответить',
+        id: 'respond-defend',
+        text: 'Публично ответить, защитить кассира (−3 репутации)',
         consequences: { reputationDelta: -3 },
       },
       {
+        id: 'respond-honest',
+        text: 'Публично признать ошибку, извиниться, предложить компенсацию',
+        consequences: { reputationDelta: 4 },
+      },
+      {
         id: 'resolve',
-        text: 'Решить проблему клиента (-5 000 ₽)',
+        text: 'Найти клиента в личке, решить офлайн (−5 000 ₽, +5 репутации)',
         consequences: { balanceDelta: -5000, reputationDelta: 5 },
+      },
+      {
+        id: 'ignore',
+        text: 'Не реагировать — забудут (−1 репутации, риск ухудшения)',
+        consequences: { reputationDelta: -1 },
       },
     ],
   },
@@ -204,50 +263,79 @@ export const EVENTS_DATABASE: EventTemplate[] = [
   },
   {
     id: 'LOYAL01',
-    title: 'Постоянный клиент',
-    description: 'Довольный постоянный клиент привёл с собой новых друзей.',
+    title: 'Постоянный привёл компанию',
+    description:
+      'Игорь — ходит к вам полгода, всегда тихо. Сегодня пришёл с пятью друзьями: «Ребята, я вам говорил — место огонь». Все смотрят. Можно встретить как обычно, можно сделать что-то особенное — для Игоря и в их глазах.',
     trigger: { randomChance: 0.04, reputationMin: 60 },
     options: [
       {
-        id: 'welcome',
-        text: 'Тепло встретить новых клиентов',
-        consequences: { reputationDelta: 3, clientModifier: 0.1, clientModifierDays: 5 },
+        id: 'standard',
+        text: 'Принять как обычных клиентов — без выделения',
+        consequences: { clientModifier: 0.1, clientModifierDays: 5 },
+      },
+      {
+        id: 'thanks_loyalty_card',
+        text: 'Подарить Игорю карту лояльности на месяц — публично (−2 500 ₽)',
+        consequences: { balanceDelta: -2500, reputationDelta: 5, loyaltyDelta: 4, clientModifier: 0.12, clientModifierDays: 7 },
+      },
+      {
+        id: 'free_round',
+        text: 'Угостить всю компанию бесплатно — щедрый жест (−5 000 ₽)',
+        consequences: { balanceDelta: -5000, reputationDelta: 8, clientModifier: 0.18, clientModifierDays: 7 },
       },
     ],
   },
   {
     id: 'RENT01',
-    title: 'Повышение аренды',
-    description: 'Арендодатель сообщил о повышении арендной ставки с следующего месяца.',
+    title: 'Арендодатель поднимает ставку',
+    description:
+      'Письмо от собственника: со следующего месяца аренда +15%. Объясняет «коммуналка, инфляция». Можно согласиться, поторговаться, поугрожать съездом — или начать искать другое помещение всерьёз.',
     trigger: { dayMin: 30, randomChance: 0.03, oneTime: true },
     options: [
       {
         id: 'agree',
-        text: 'Согласиться с повышением (-5 000 ₽)',
+        text: 'Согласиться без споров — мир дороже (−5 000 ₽)',
         consequences: { balanceDelta: -5000 },
       },
       {
         id: 'negotiate',
-        text: 'Поторговаться (-2 000 ₽)',
+        text: 'Спокойно поторговаться — «давайте +5%» (−2 000 ₽)',
         consequences: { balanceDelta: -2000 },
+      },
+      {
+        id: 'threaten',
+        text: 'Угрозой съездом сбить до нуля — но отношения испортятся',
+        consequences: { reputationDelta: -2 },
+      },
+      {
+        id: 'search_alt',
+        text: 'Параллельно искать новое помещение (−3 000 ₽ риелтор, время на поиск)',
+        consequences: { balanceDelta: -3000, energyDelta: -10 },
       },
     ],
   },
   {
     id: 'FIRE01',
-    title: 'Пожарная проверка',
-    description: 'Пожарная инспекция выявила нарушения в вашем помещении.',
+    title: 'Пожарный инспектор зашёл «на чай»',
+    description:
+      'Молодой инспектор, второй год в должности. Прошёл по залу, поморщился у щитка: «Нарушения серьёзные, по уму — закрыть до устранения». Помолчал. «Хотя... всякое бывает. Я могу написать "по результатам устных рекомендаций"». Смотрит выжидающе.',
     trigger: { randomChance: 0.02, oneTime: true },
+    isMoralDilemma: true,
     options: [
       {
         id: 'pay-fine',
-        text: 'Оплатить штраф (-10 000 ₽)',
+        text: 'Принять штраф по протоколу (−10 000 ₽)',
         consequences: { balanceDelta: -10000 },
       },
       {
         id: 'fix',
-        text: 'Устранить нарушения (-5 000 ₽)',
+        text: 'Признать, устранить за свой счёт, попросить акт «без штрафа» (−5 000 ₽, +репутация)',
         consequences: { balanceDelta: -5000, reputationDelta: 2 },
+      },
+      {
+        id: 'bribe',
+        text: '«Понимаю, спасибо за понимание» — конверт (−3 000 ₽, репутация ниже, нарушения остались)',
+        consequences: { balanceDelta: -3000, reputationDelta: -4 },
       },
     ],
   },
@@ -291,157 +379,236 @@ export const EVENTS_DATABASE: EventTemplate[] = [
   },
   {
     id: 'VIRAL01',
-    title: 'Вирусное видео',
-    description: 'Видео о вашем бизнесе стало вирусным в соцсетях!',
+    title: 'Видео залетело в топ',
+    description:
+      'Кто-то снял ваш бизнес — видео набрало 200 тысяч просмотров за ночь. Половина комментов: «надо съездить!». Половина: «жду подвоха». На пороге уже стоит первая «волна». Окно — пара недель, потом интерес упадёт.',
     trigger: { randomChance: 0.02, reputationMin: 70 },
     options: [
       {
         id: 'ride-wave',
-        text: 'Использовать момент',
-        consequences: { clientModifier: 0.5, clientModifierDays: 14, reputationDelta: 10 },
+        text: 'Бросить всё на обслуживание ажиотажа (+50% клиентов 14 дней, −20 энергии)',
+        consequences: { clientModifier: 0.5, clientModifierDays: 14, reputationDelta: 10, energyDelta: -20 },
+      },
+      {
+        id: 'capitalize',
+        text: 'Выпустить «вирусную» лимитированную позицию (−8 000 ₽, +35% клиентов, +10% к чеку 14 дней)',
+        consequences: { balanceDelta: -8000, clientModifier: 0.35, clientModifierDays: 14, checkModifier: 0.1, checkModifierDays: 14 },
+      },
+      {
+        id: 'controlled',
+        text: 'Не раздувать — пусть будет органично, без перегрева (+25% клиентов 21 день)',
+        consequences: { clientModifier: 0.25, clientModifierDays: 21, reputationDelta: 5 },
       },
     ],
   },
   {
     id: 'SANPIN01',
     title: 'Санитарная проверка',
-    description: 'СЭС пришла с внеплановой проверкой. Претензий к гигиене.',
+    description:
+      'Девушка из СЭС в перчатках. Претензии к мелочам — отсутствие журнала уборки, неподписанные ёмкости. По букве — штраф 8 000 ₽. Реально это «лень оформить, а не грязь». Можно обсуждать.',
     trigger: { randomChance: 0.02, oneTime: false },
     options: [
       {
         id: 'fine',
-        text: 'Заплатить штраф (-8 000 ₽)',
+        text: 'Принять протокол, заплатить штраф (−8 000 ₽)',
         consequences: { balanceDelta: -8000 },
       },
       {
         id: 'fix-now',
-        text: 'Немедленно устранить (-4 000 ₽, +репутация)',
+        text: 'Купить шаблоны, всё оформить за день (−4 000 ₽, +3 репутации)',
         consequences: { balanceDelta: -4000, reputationDelta: 3 },
+      },
+      {
+        id: 'systemic',
+        text: 'Нанять разовый аудит и сертификат на год (−18 000 ₽, +6 репутации, −риск повтора)',
+        consequences: { balanceDelta: -18000, reputationDelta: 6 },
       },
     ],
   },
   {
     id: 'DISCOUNT01',
-    title: 'Выгодное предложение от поставщика',
-    description: 'Поставщик предлагает большую партию со скидкой 30%. Выгодная возможность.',
+    title: 'Поставщик предлагает большую партию со скидкой',
+    description:
+      'Скидка 30%, объём — на месяц вперёд. Деньги нужно сейчас, склад загрузится, оборотных средств станет меньше. Можно урвать всё, можно по чуть-чуть, можно вообще не лезть.',
     trigger: { randomChance: 0.03 },
     options: [
       {
         id: 'buy',
-        text: 'Купить партию (-10 000 ₽)',
-        consequences: { balanceDelta: -10000 },
+        text: 'Взять всю партию — деньги связаны на месяц (−10 000 ₽, +5% к чеку 30 дней)',
+        consequences: { balanceDelta: -10000, checkModifier: 0.05, checkModifierDays: 30 },
+      },
+      {
+        id: 'half',
+        text: 'Взять половину — попроще для бюджета (−5 000 ₽, +3% к чеку 14 дней)',
+        consequences: { balanceDelta: -5000, checkModifier: 0.03, checkModifierDays: 14 },
       },
       {
         id: 'skip',
-        text: 'Отказаться от предложения',
+        text: 'Отказаться — кэш важнее',
         consequences: {},
       },
     ],
   },
   {
     id: 'FAMILY01',
-    title: 'Выходной с семьей',
-    description: 'Семья давно не видела вас. Может быть, стоит провести выходной вместе?',
+    title: 'Семья давно не видела вас',
+    description:
+      'Мама в десятый раз спрашивает: «Ты вообще приедешь?» Брат собирает родственников на воскресенье. Все знают, что у вас «новое дело». Но смотрят-то на отсутствие. Можно вырваться полностью, можно частично — каждое решение отзовётся.',
     trigger: { randomChance: 0.06 },
     options: [
       {
         id: 'family-time',
-        text: 'Провести выходной с семьей (-8 000 ₽, +40% энергии)',
-        consequences: { balanceDelta: -8000, energyDelta: 40 },
+        text: 'Закрыть на воскресенье — поехать (−8 000 ₽ выручки, +40 энергии)',
+        consequences: { balanceDelta: -8000, energyDelta: 40, loyaltyDelta: 1 },
+      },
+      {
+        id: 'short-visit',
+        text: 'Заехать на 2 часа после смены — компромисс (+15 энергии)',
+        consequences: { energyDelta: 15 },
       },
       {
         id: 'work-again',
-        text: 'Продолжить работать (-5% репутация)',
-        consequences: { reputationDelta: -5 },
+        text: 'Не поехать — работать. Виноваты перед родными (−5 репутации, −10 энергии)',
+        consequences: { reputationDelta: -5, energyDelta: -10 },
       },
     ],
   },
   {
     id: 'VACATION01',
-    title: 'Отпуск на неделю',
-    description: 'Вы совсем забыли об отдыхе. Недельный отпуск поможет вернуть силы и переосмыслить жизнь.',
+    title: 'Тело требует отпуска',
+    description:
+      'Уже три раза за неделю засыпали в неурочное время. Подруга (или жена/муж) забронировала путёвку «на всякий случай» — Сочи, неделя, можно сдать. Но неделя закрытия — это деньги и риск, что клиенты привыкнут к конкуренту.',
     trigger: { dayMin: 30, randomChance: 0.04, oneTime: true },
     options: [
       {
-        id: 'vacation',
-        text: 'Уехать в отпуск (-15 000 ₽, +70% энергии)',
+        id: 'full-vacation',
+        text: 'Уехать на неделю — закрыть бизнес (−15 000 ₽, +70 энергии)',
         consequences: { balanceDelta: -15000, energyDelta: 70 },
       },
       {
+        id: 'staycation',
+        text: 'Взять три выходных, остаться в городе — без поездки (−4 000 ₽, +35 энергии)',
+        consequences: { balanceDelta: -4000, energyDelta: 35 },
+      },
+      {
+        id: 'delegate',
+        text: 'Уехать, оставить смену на сотруднике — рисковать качеством (−15 000 ₽, +60 энергии, −3 репутации)',
+        consequences: { balanceDelta: -15000, energyDelta: 60, reputationDelta: -3 },
+      },
+      {
         id: 'no-vacation',
-        text: 'Остаться на месте (-20% энергии)',
-        consequences: { energyDelta: -20 },
+        text: 'Сдать путёвку, остаться — вы нужны бизнесу (−20 энергии, −2 лояльности дома)',
+        consequences: { energyDelta: -20, loyaltyDelta: -2 },
       },
     ],
   },
   {
     id: 'HEALTH01',
-    title: 'Здоровье требует внимания',
-    description: 'Вы чувствуете усталость и стресс. Может быть, стоит посетить врача или начать заниматься спортом?',
+    title: 'Тревожный сигнал — голова, давление',
+    description:
+      'Третий раз за неделю — резкая головная боль, в ушах шум. На приёме в платной клинике укажут «нервное переутомление, рекомендация — спорт + сон». Вопрос: лечить «правильно» или «по-быстрому»?',
     trigger: { randomChance: 0.05 },
     options: [
       {
-        id: 'doctor',
-        text: 'Посетить врача и спортзал (-5 000 ₽, +30% энергии)',
-        consequences: { balanceDelta: -5000, energyDelta: 30 },
+        id: 'doctor-full',
+        text: 'Полное обследование + абонемент в зал на квартал (−12 000 ₽, +40 энергии)',
+        consequences: { balanceDelta: -12000, energyDelta: 40 },
+      },
+      {
+        id: 'doctor-quick',
+        text: 'Только консультация + таблетки (−5 000 ₽, +25 энергии)',
+        consequences: { balanceDelta: -5000, energyDelta: 25 },
+      },
+      {
+        id: 'self-treat',
+        text: 'Купить в аптеке без рецепта — «сам разберусь» (−1 000 ₽, +10 энергии)',
+        consequences: { balanceDelta: -1000, energyDelta: 10 },
       },
       {
         id: 'ignore-health',
-        text: 'Игнорировать сигналы организма (-15% энергии)',
+        text: 'Игнорировать — само пройдёт (−15 энергии, риск повтора)',
         consequences: { energyDelta: -15 },
       },
     ],
   },
   {
     id: 'HOBBIES01',
-    title: 'Давно не занимались хобби?',
-    description: 'Ваше любимое занятие ждёт вас. Может, уделить ему время и отвлечься от забот?',
+    title: 'Старое хобби пылится',
+    description:
+      'Гитара/велосипед/удочка — нужное подчеркнуть. Лежит без дела с момента, как вы стали «предпринимателем». Однокурсники в чате собираются на выходных. Хочется — но кажется, не время.',
     trigger: { randomChance: 0.05 },
     options: [
       {
-        id: 'hobby-time',
-        text: 'Провести вечер с хобби (-3 000 ₽, +25% энергии)',
-        consequences: { balanceDelta: -3000, energyDelta: 25 },
+        id: 'go-with-others',
+        text: 'Поехать с друзьями — настоящее переключение (−4 000 ₽, +30 энергии, +1 лояльность)',
+        consequences: { balanceDelta: -4000, energyDelta: 30, loyaltyDelta: 1 },
+      },
+      {
+        id: 'solo-hour',
+        text: 'Час дома — наедине с любимым делом (бесплатно, +15 энергии)',
+        consequences: { energyDelta: 15 },
       },
       {
         id: 'skip-hobby',
-        text: 'Работать дальше',
+        text: 'Не сейчас — работы много (нет эффекта)',
         consequences: {},
       },
     ],
   },
   {
     id: 'FRIENDS01',
-    title: 'Встреча со старыми друзьями',
-    description: 'Друзья организуют встречу. Давно вас не видели и очень скучают.',
+    title: 'Друзья зовут, но не знают, как с вами общаться',
+    description:
+      'Ваня в чате: «Старик, мы все тебя видим только в сторис рабочих. Приходи, посидим, как раньше». Давно не было таких слов. Но они тоже устают сами — и каждый раз чуть-чуть отдалились.',
     trigger: { randomChance: 0.04 },
     options: [
       {
         id: 'meet-friends',
-        text: 'Встретиться со друзьями (-4 000 ₽, +35% энергии)',
-        consequences: { balanceDelta: -4000, energyDelta: 35 },
+        text: 'Пойти, не оглядываясь на дела (−4 000 ₽, +35 энергии, +2 репутации)',
+        consequences: { balanceDelta: -4000, energyDelta: 35, reputationDelta: 2 },
+      },
+      {
+        id: 'half-meet',
+        text: 'Заскочить на час — потом вернуться (−2 000 ₽, +15 энергии)',
+        consequences: { balanceDelta: -2000, energyDelta: 15 },
+      },
+      {
+        id: 'invite-here',
+        text: 'Пригласить их к себе на смену — пусть видят (+10 энергии, +1 репутация)',
+        consequences: { energyDelta: 10, reputationDelta: 1 },
       },
       {
         id: 'decline',
-        text: 'Отказать (остаться в работе)',
-        consequences: {},
+        text: 'Отказаться — не до этого (нет эффекта; но они отдалятся)',
+        consequences: { reputationDelta: -1 },
       },
     ],
   },
   {
     id: 'MEDITATION01',
-    title: 'Медитация и внимательность',
-    description: 'Стресс накапливается. Может быть, попробовать медитацию или йогу?',
+    title: 'Стресс на пределе — что-то надо менять',
+    description:
+      'Психолог-тренер из ютуба, абонемент в студию йоги, бумажный дневник, или просто «час молчания утром» — всё работает по-разному. Вопрос — на что вы готовы потратить деньги и привычку.',
     trigger: { randomChance: 0.04 },
     options: [
       {
-        id: 'meditate',
-        text: 'Медитировать в течение часа (+20% энергии)',
-        consequences: { energyDelta: 20 },
+        id: 'paid-program',
+        text: 'Курс с психологом, 8 сессий (−20 000 ₽, +50 энергии, длится дольше)',
+        consequences: { balanceDelta: -20000, energyDelta: 50 },
+      },
+      {
+        id: 'yoga-pass',
+        text: 'Абонемент в студию йоги на месяц (−6 000 ₽, +25 энергии)',
+        consequences: { balanceDelta: -6000, energyDelta: 25 },
+      },
+      {
+        id: 'free-meditate',
+        text: 'Час медитации дома — без вложений (+15 энергии)',
+        consequences: { energyDelta: 15 },
       },
       {
         id: 'no-meditate',
-        text: 'Продолжить работу',
+        text: 'Продолжать как есть — потом будет легче (нет эффекта)',
         consequences: {},
       },
     ],
@@ -686,7 +853,15 @@ export function generateEvent(day: number, state: GameState): Event | null {
   const triggered = state.triggeredEventIds ?? []
   const candidates: EventTemplate[] = []
 
-  const allTemplates = [...EVENTS_DATABASE, ...MORAL_DILEMMA_EVENTS, ...RECURRING_CUSTOMER_EVENTS, ...NPC_EVENTS]
+  const allTemplates = [
+    ...EVENTS_DATABASE,
+    ...MORAL_DILEMMA_EVENTS,
+    ...RECURRING_CUSTOMER_EVENTS,
+    ...NPC_EVENTS,
+    ...PERSONAL_BACKSTORY_EVENTS,
+    ...NPC_ARC_EVENTS,
+    // CRISIS_EVENTS excluded: they get their own independent roll via generateCrisisEvent()
+  ]
 
   for (const template of allTemplates) {
     if (template.trigger.oneTime && triggered.includes(template.id)) continue
@@ -718,6 +893,31 @@ export function generateEvent(day: number, state: GameState): Event | null {
       Math.random() > template.trigger.randomChance
     )
       continue
+    // Backstory gating (v5.0)
+    if (
+      template.trigger.requiredMotivation !== undefined &&
+      state.playerBackstory?.motivation !== template.trigger.requiredMotivation
+    )
+      continue
+    if (
+      template.trigger.requiredPersonal !== undefined &&
+      state.playerBackstory?.personal !== template.trigger.requiredPersonal
+    )
+      continue
+    // Crisis gating (v5.5): only fire when the player is doing well enough
+    // for the event to feel like a setback rather than a death blow.
+    if (template.trigger.balanceMin !== undefined && state.balance < template.trigger.balanceMin) continue
+    if (template.trigger.weekMin !== undefined && state.currentWeek < template.trigger.weekMin) continue
+    if (template.trigger.loyaltyMin !== undefined && state.loyalty < template.trigger.loyaltyMin) continue
+    // NPC relationship gating (v5.1)
+    if (template.npcId) {
+      const npc = (state.npcs ?? []).find(n => n.id === template.npcId)
+      if (template.trigger.requiresNpcRevealed && (!npc || !npc.isRevealed)) continue
+      if (template.trigger.npcRelationshipMin !== undefined &&
+          (!npc || npc.relationshipLevel < template.trigger.npcRelationshipMin)) continue
+      if (template.trigger.npcRelationshipMax !== undefined &&
+          (!npc || npc.relationshipLevel > template.trigger.npcRelationshipMax)) continue
+    }
 
     candidates.push(template)
   }
@@ -727,6 +927,26 @@ export function generateEvent(day: number, state: GameState): Event | null {
   const chosen = candidates[Math.floor(Math.random() * candidates.length)]
 
   return templateToEvent(chosen, day, state.currentWeek)
+}
+
+/**
+ * Rolls crisis events independently of the regular event pool.
+ * Called once per week from weekCalculator after main event generation.
+ */
+export function generateCrisisEvent(state: GameState): Event | null {
+  const triggered = state.triggeredEventIds ?? []
+  const candidates = CRISIS_EVENTS.filter(template => {
+    if (template.trigger.oneTime && triggered.includes(template.id)) return false
+    if (template.trigger.balanceMin !== undefined && state.balance < template.trigger.balanceMin) return false
+    if (template.trigger.weekMin !== undefined && state.currentWeek < template.trigger.weekMin) return false
+    if (template.trigger.loyaltyMin !== undefined && state.loyalty < template.trigger.loyaltyMin) return false
+    if (template.trigger.reputationMin !== undefined && state.reputation < template.trigger.reputationMin) return false
+    if (template.trigger.randomChance !== undefined && Math.random() > template.trigger.randomChance) return false
+    return true
+  })
+  if (candidates.length === 0) return null
+  const chosen = candidates[Math.floor(Math.random() * candidates.length)]
+  return templateToEvent(chosen, state.currentWeek * 7, state.currentWeek)
 }
 
 export function templateToEvent(template: EventTemplate, day: number, currentWeek: number): Event {

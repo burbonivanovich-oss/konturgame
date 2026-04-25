@@ -3,7 +3,7 @@ import type {
   GameState, BusinessType, ServiceType, Service, DayResult, Event,
   AdCampaign, CashRegisterType, CashRegister, OnboardingStage,
   CampaignROI, MilestoneStatus, WeekPhase, NPC, PlayerBackstory, NpcMemoryEntry,
-  DecisionLogEntry,
+  DecisionLogEntry, WeeklyTactic, EmployeePosition,
 } from '../types/game'
 import { SERVICES_CONFIG, BUSINESS_CONFIGS, ECONOMY_CONSTANTS, MAX_ACTIVE_CAMPAIGNS } from '../constants/business'
 import { ONBOARDING_STAGES, SERVICE_UNLOCK_MAP } from '../constants/onboarding'
@@ -15,6 +15,8 @@ import { getBusinessStage, STAGE_CONFIG } from '../constants/businessStages'
 import { OWNER_INVESTMENTS_MAP } from '../constants/ownerInvestments'
 import type { OwnerInvestmentId } from '../constants/ownerInvestments'
 import { createInitialNPCs } from '../constants/npcs'
+import { createPersonalGoal } from '../constants/personalGoals'
+import { loadMetaProgress, saveMetaProgress, evaluateRun, getAggregateBonus } from '../services/metaProgress'
 import { updateNPCRelationship, recordNPCMemory } from '../services/npcManager'
 
 const STORAGE_KEY = 'konturgame_state'
@@ -162,6 +164,9 @@ const createInitialState = (businessType: BusinessType): GameState => {
     // NPC system (v3.0)
     npcs: createInitialNPCs(),
     playerBackstory: null,
+    personalGoal: null,
+    weeklyTactic: null,
+    newlyUnlockedLessons: [],
     activeChainIds: [],
     completedChainIds: [],
     pendingChainFollowUps: [],
@@ -191,6 +196,7 @@ interface GameStoreActions {
   completeActionsPhase: () => { blocked: boolean; reason?: string }
   completeResultsPhase: () => void
   completeSummaryPhase: () => void
+  setWeeklyTactic: (tactic: WeeklyTactic | null) => void
 
   // Balance and metrics
   setBalance: (amount: number) => void
@@ -224,6 +230,9 @@ interface GameStoreActions {
   // Events
   setPendingEvent: (event: Event | null) => void
   markEventAsResolved: (eventId: string) => void
+  // Record which option the player picked for an event — feeds achievements
+  // + postmortem timeline. Idempotent; first choice wins per event id.
+  recordEventChoice: (eventId: string, choiceId: string) => void
   setPendingEventsQueue: (events: Event[]) => void
 
   // Saved balance
@@ -289,7 +298,7 @@ interface GameStoreActions {
   markBundlePromoShown: () => void
 
   // Employees
-  hireEmployee: (position: any) => void
+  hireEmployee: (position: EmployeePosition, name: string, salary: number) => void
   fireEmployee: (employeeId: string) => void
   runTrainingSession: () => boolean  // costs 20 energy, +0.1 efficiency to all employees (capped at max)
 
@@ -332,7 +341,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // Core game actions
     startNewGame: (businessType) => {
-      const newState = createInitialState(businessType)
+      const meta = loadMetaProgress()
+      const bonus = getAggregateBonus(meta)
+      const baseState = createInitialState(businessType)
+      const newState: GameState = {
+        ...baseState,
+        balance: baseState.balance + (bonus.startingBalanceDelta ?? 0),
+        entrepreneurEnergy: Math.min(
+          ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY,
+          baseState.entrepreneurEnergy + (bonus.startingEnergyDelta ?? 0)
+        ),
+        reputation: Math.min(100, baseState.reputation + (bonus.startingReputationDelta ?? 0)),
+        loyalty: Math.min(100, baseState.loyalty + (bonus.startingLoyaltyDelta ?? 0)),
+      }
       set(newState)
       saveToStorage(newState)
     },
@@ -426,6 +447,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     completeSummaryPhase: () => {
       set({
         weekPhase: 'actions' as WeekPhase,
+        // Clear weekly tactic — player will pick a fresh one for the new week.
+        weeklyTactic: null,
+        lastUpdated: Date.now(),
+      })
+    },
+
+    setWeeklyTactic: (tactic: WeeklyTactic | null) => {
+      set({
+        weeklyTactic: tactic,
         lastUpdated: Date.now(),
       })
     },
@@ -644,6 +674,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
       })
     },
 
+    recordEventChoice: (eventId, choiceId) => {
+      set((state) => ({
+        chosenEventOptions: {
+          ...(state.chosenEventOptions ?? {}),
+          [eventId]: choiceId,
+        },
+        lastUpdated: Date.now(),
+      }))
+    },
+
     markEventAsResolved: (eventId) => {
       set((state) => {
         const queue = state.pendingEventsQueue ?? []
@@ -682,18 +722,42 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // Game state
     setGameOver: (isGameOver: boolean, reason?: string) => {
-      set({
-        isGameOver,
-        gameOverReason: reason,
-        lastUpdated: Date.now(),
-      })
+      const finalState = get()
+      // Evaluate metaprogression once per ending — only when transitioning
+      // from "running" to "game over" (isGameOver=true) and not already over.
+      if (isGameOver && !finalState.isGameOver) {
+        const meta = loadMetaProgress()
+        const { updated, newLessons } = evaluateRun(finalState, meta)
+        saveMetaProgress(updated)
+        set({
+          isGameOver,
+          gameOverReason: reason,
+          newlyUnlockedLessons: newLessons,
+          lastUpdated: Date.now(),
+        })
+      } else {
+        set({
+          isGameOver,
+          gameOverReason: reason,
+          lastUpdated: Date.now(),
+        })
+      }
     },
 
     setVictory: (isVictory: boolean) => {
-      set({
-        isVictory,
-        lastUpdated: Date.now(),
-      })
+      const finalState = get()
+      if (isVictory && !finalState.isVictory) {
+        const meta = loadMetaProgress()
+        const { updated, newLessons } = evaluateRun(finalState, meta)
+        saveMetaProgress(updated)
+        set({
+          isVictory,
+          newlyUnlockedLessons: newLessons,
+          lastUpdated: Date.now(),
+        })
+      } else {
+        set({ isVictory, lastUpdated: Date.now() })
+      }
     },
 
     // Achievements and progression
@@ -790,6 +854,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         // v3.0 NPC system
         npcs: state.npcs ?? createInitialNPCs(),
         playerBackstory: state.playerBackstory ?? null,
+        // v5.0: derive personalGoal from existing backstory if save predates the field
+        personalGoal: state.personalGoal
+          ?? (state.playerBackstory ? createPersonalGoal(state.playerBackstory.personal) : null),
         activeChainIds: state.activeChainIds ?? [],
         completedChainIds: state.completedChainIds ?? [],
         pendingChainFollowUps: state.pendingChainFollowUps ?? [],
@@ -1004,7 +1071,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // Daily micro events
     // Employees
-    hireEmployee: (position: any, _name: string, _salary: number) => {
+    hireEmployee: (position: EmployeePosition, _name: string, _salary: number) => {
       const state = get()
       const stage = getBusinessStage(state.currentWeek, state.level)
       const maxEmployees = STAGE_CONFIG[stage].maxEmployees
@@ -1185,7 +1252,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     },
 
     setPlayerBackstory: (backstory: PlayerBackstory) => {
-      set({ playerBackstory: backstory, lastUpdated: Date.now() })
+      set({
+        playerBackstory: backstory,
+        // Generate the personal goal from the chosen "personal" situation.
+        // Each backstory ties to a different goal + deadline.
+        personalGoal: createPersonalGoal(backstory.personal),
+        lastUpdated: Date.now(),
+      })
     },
 
     addChainFollowUp: (chainEventId: string, triggerWeek: number) => {

@@ -8,8 +8,8 @@ import HelpModal from './modals/HelpModal'
 import SettingsModal from './modals/SettingsModal'
 import VictoryModal from './modals/VictoryModal'
 import AchievementsModal from './modals/AchievementsModal'
+import NPCRosterModal from './modals/NPCRosterModal'
 import CashRegisterModal from './modals/CashRegisterModal'
-import AssortmentModal from './modals/AssortmentModal'
 import PromoCodeModal from './modals/PromoCodeModal'
 import PromoWalletModal from './modals/PromoWalletModal'
 import BundleModal from './modals/BundleModal'
@@ -28,6 +28,7 @@ import { useGameStore } from '../stores/gameStore'
 import { ONBOARDING_STAGES } from '../constants/onboarding'
 import { BUSINESS_CONFIGS } from '../constants/business'
 import { getBusinessStage, STAGE_CONFIG, getNextStage } from '../constants/businessStages'
+import { WEEKLY_TACTICS, getWeeklyTacticDef } from '../constants/weeklyTactics'
 import type { BusinessType } from '../types/game'
 import { KLeftRail } from './design-system/KLeftRail'
 import { KHeaderBar } from './design-system/KHeaderBar'
@@ -68,7 +69,7 @@ function DashboardView({
     currentWeek, balance, reputation, loyalty, services,
     pendingEvent, pendingEventsQueue, lastDayResult,
     entrepreneurEnergy, npcs, stockBatches, capacity, cashRegisters,
-    businessType, qualityLevel, level,
+    businessType, qualityLevel, level, weeklyTactic, setWeeklyTactic,
   } = store
 
   const bizConfig = BUSINESS_CONFIGS[businessType]
@@ -141,22 +142,133 @@ function DashboardView({
           display: 'flex', flexDirection: 'column', gap: 14,
           overflowY: 'auto',
         }}>
-          {/* Top KPI strip — 4 colored cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+          {/* Weekly tactic — chooser card or active chip */}
+          {!weeklyTactic ? (
+            <div style={{
+              background: K.white,
+              border: `2px solid ${K.orange}`,
+              borderRadius: 14,
+              padding: '14px 16px',
+              display: 'flex', flexDirection: 'column', gap: 10,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: K.orange, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Тактика на неделю
+                  </div>
+                  <div style={{ fontSize: 13, color: K.muted, marginTop: 2 }}>
+                    Выберите фокус — он будет влиять на эту неделю
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                {WEEKLY_TACTICS.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => setWeeklyTactic(t.id)}
+                    style={{
+                      textAlign: 'left', padding: '10px 12px',
+                      background: K.bone, border: `1px solid ${K.lineSoft}`,
+                      borderRadius: 10, cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      display: 'flex', flexDirection: 'column', gap: 4,
+                      transition: 'all 0.15s',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = K.orange }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = K.lineSoft }}
+                  >
+                    <div style={{ fontSize: 18 }}>{t.icon}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: K.ink }}>{t.title}</div>
+                    <div style={{ fontSize: 11, color: K.muted, lineHeight: 1.4 }}>{t.blurb}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (() => {
+            const def = getWeeklyTacticDef(weeklyTactic)
+            return def ? (
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(255,107,0,0.06) 0%, rgba(255,176,32,0.06) 100%)',
+                border: `1px solid ${K.orange}`,
+                borderRadius: 12, padding: '10px 16px',
+                display: 'flex', alignItems: 'center', gap: 12,
+              }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: 999,
+                  background: K.white, border: `1px solid ${K.lineSoft}`,
+                  display: 'grid', placeItems: 'center',
+                  fontSize: 18, flexShrink: 0,
+                }}>
+                  {def.icon}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: K.orange, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      Тактика недели
+                    </span>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: K.ink }}>{def.title}</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: K.ink2, marginTop: 2 }}>{def.blurb}</div>
+                </div>
+                <button
+                  onClick={() => setWeeklyTactic(null)}
+                  title="Сменить тактику"
+                  style={{
+                    background: K.white, border: `1px solid ${K.lineSoft}`,
+                    borderRadius: 8, padding: '6px 10px',
+                    fontSize: 11, fontWeight: 700, color: K.muted,
+                    cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
+                  }}
+                >
+                  Сменить
+                </button>
+              </div>
+            ) : null
+          })()}
+
+          {/* Top KPI strip — hero balance card + 3 supporting metrics */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr', gap: 10 }}>
+            {/* Hero balance card — visually dominant */}
+            <div style={{
+              background: `linear-gradient(135deg, ${K.orange} 0%, #FFB020 100%)`,
+              borderRadius: 14, padding: '16px 18px',
+              display: 'flex', flexDirection: 'column', gap: 4,
+              boxShadow: '0 4px 14px rgba(255,106,44,0.25)',
+            }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
+                Баланс
+              </div>
+              <div style={{ fontSize: 32, fontWeight: 900, color: K.white, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.025em', lineHeight: 1.05 }}>
+                {balance.toLocaleString('ru-RU')} ₽
+              </div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)' }}>
+                Неделя {currentWeek}
+                {dailyProfit !== 0 && (
+                  <> · <span style={{ fontWeight: 700 }}>
+                    {dailyProfit > 0 ? '+' : ''}{dailyProfit.toLocaleString('ru-RU')} ₽/день
+                  </span></>
+                )}
+              </div>
+            </div>
+
             {[
-              { label: 'Баланс', value: `${balance.toLocaleString('ru-RU')} ₽`, bg: K.orange, sub: `Неделя ${currentWeek}` },
-              { label: 'Прибыль / день', value: `${dailyProfit > 0 ? '+' : ''}${dailyProfit.toLocaleString('ru-RU')} ₽`, bg: dailyProfit >= 0 ? K.mint : '#c0392b', sub: 'после налогов' },
-              { label: 'Расходы / день', value: `${dailyExpenses.toLocaleString('ru-RU')} ₽`, bg: K.violet, sub: lastDayResult ? 'за вчера' : 'нет данных' },
-              { label: 'Клиенты', value: lastDayResult ? `${servedToday} / ${clientsToday}` : '—', bg: K.blue, sub: missedToday > 0 ? `${missedToday} ушли` : 'все обслужены' },
+              { icon: '💹', label: 'Прибыль / день', value: `${dailyProfit > 0 ? '+' : ''}${dailyProfit.toLocaleString('ru-RU')} ₽`, bg: dailyProfit >= 0 ? K.mint : '#c0392b', sub: 'после налогов' },
+              { icon: '💸', label: 'Расходы / день', value: `${dailyExpenses.toLocaleString('ru-RU')} ₽`, bg: K.violet, sub: lastDayResult ? 'за вчера' : 'нет данных' },
+              { icon: '👥', label: 'Клиенты', value: lastDayResult ? `${servedToday} / ${clientsToday}` : '—', bg: K.blue, sub: missedToday > 0 ? `${missedToday} ушли` : 'все обслужены' },
             ].map(t => (
               <div key={t.label} style={{
                 background: t.bg, borderRadius: 14, padding: '14px 16px',
                 display: 'flex', flexDirection: 'column', gap: 4,
+                position: 'relative', overflow: 'hidden',
               }}>
+                <span style={{
+                  position: 'absolute', top: 8, right: 10,
+                  fontSize: 22, opacity: 0.35, lineHeight: 1,
+                }}>{t.icon}</span>
                 <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
                   {t.label}
                 </div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: K.white, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: K.white, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
                   {t.value}
                 </div>
                 <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)' }}>{t.sub}</div>
@@ -665,6 +777,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [showAchievementsModal, setShowAchievementsModal] = useState(false)
+  const [showNpcRosterModal, setShowNpcRosterModal] = useState(false)
   const [showCashRegisterModal, setShowCashRegisterModal] = useState(false)
   const [showPromoWalletModal, setShowPromoWalletModal] = useState(false)
   const [showHireEmployeeModal, setShowHireEmployeeModal] = useState(false)
@@ -677,16 +790,17 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const visitedTabsRef = useRef<Set<NavId>>(new Set(['dashboard', 'ecosystem', 'finance', 'development']))
 
   const {
-    currentWeek, services, pendingEvent, pendingEventsQueue,
+    currentWeek, balance, services, pendingEvent, pendingEventsQueue,
     isGameOver, isVictory, savedBalance, promoCodesRevealed,
     addBalance, addReputation, addLoyalty, markEventAsResolved, activateService,
     addSavedBalance, setTemporaryModifiers, advanceDay,
     weekPhase, completeActionsPhase, completeResultsPhase, completeSummaryPhase,
     onboardingStage, onboardingStepIndex, onboardingCompleted,
-    businessType, npcs,
+    businessType, npcs, personalGoal,
     updateNPCRelationship: storeUpdateNPCRelationship,
     addChainFollowUp,
     addDecisionLogEntry,
+    recordEventChoice,
   } = useGameStore()
 
   const activeServiceIds = Object.values(services).filter(s => s.isActive).map(s => s.id)
@@ -707,6 +821,9 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
     if (!pendingEvent) return
     const option = pendingEvent.options.find((o) => o.id === optionId)
     if (!option) return
+    // Record the choice before applying consequences — used by achievements
+    // and the postmortem timeline.
+    recordEventChoice(pendingEvent.id, optionId)
     const c = option.consequences
     if (c.balanceDelta !== undefined) addBalance(c.balanceDelta)
     if (c.reputationDelta !== undefined) addReputation(c.reputationDelta)
@@ -811,14 +928,18 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
         currentWeek={currentWeek}
         activeServiceCount={activeCount}
         savedBalance={savedBalance ?? 0}
+        balance={balance}
+        personalGoal={personalGoal}
         pendingEventCount={pendingEventCount}
         promoCodesCount={promoCodesRevealed?.length ?? 0}
+        revealedNpcCount={(npcs ?? []).filter(n => n.isRevealed).length}
         highlightNav={highlightNav}
         onNav={handleNavClick}
         onHelp={() => setShowHelpModal(true)}
         onSettings={() => setShowSettingsModal(true)}
         onPromoWallet={() => setShowPromoWalletModal(true)}
         onAchievements={() => setShowAchievementsModal(true)}
+        onNpcRoster={() => setShowNpcRosterModal(true)}
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
@@ -873,6 +994,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
       <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} onRestart={onRestart} />
       <AchievementsModal isOpen={showAchievementsModal} onClose={() => setShowAchievementsModal(false)} />
+      <NPCRosterModal isOpen={showNpcRosterModal} onClose={() => setShowNpcRosterModal(false)} />
       <CashRegisterModal isOpen={showCashRegisterModal} onClose={() => setShowCashRegisterModal(false)} />
       <HireEmployeeModal isOpen={showHireEmployeeModal} onClose={() => setShowHireEmployeeModal(false)} />
       <OwnerInvestmentsModal isOpen={showOwnerInvestmentsModal} onClose={() => setShowOwnerInvestmentsModal(false)} />

@@ -262,6 +262,83 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     category: 'progress',
     wave: 4,
   },
+
+  // Backstory choice achievements (v5.4) — wave 1 so they fire when earned.
+  // Each is gated by a specific option id chosen in a backstory/NPC event.
+  {
+    id: 'choice_refused_old_boss',
+    name: 'Назад дороги нет',
+    description: 'Отказали бывшему начальнику — твёрдо, без «подумаю»',
+    icon: '🚪',
+    category: 'special',
+    wave: 1,
+  },
+  {
+    id: 'choice_opened_to_colleague',
+    name: 'Открылся',
+    description: 'Сели и рассказали бывшему коллеге всё — про усталость и про надежды',
+    icon: '🫶',
+    category: 'special',
+    wave: 1,
+  },
+  {
+    id: 'choice_mother_time',
+    name: 'Сел рядом',
+    description: 'Когда мама заехала — отдали 20 минут смены, не выкручивались',
+    icon: '☕',
+    category: 'special',
+    wave: 1,
+  },
+  {
+    id: 'choice_dimka_paper',
+    name: 'По-настоящему',
+    description: 'Взяли у подруги взаймы строго под расписку и проценты — чтобы было честно',
+    icon: '📄',
+    category: 'special',
+    wave: 1,
+  },
+  {
+    id: 'choice_lifted_anna',
+    name: 'Поднял Анну',
+    description: 'Дали 30 000 ₽ конкуренту, когда у неё закрывался счёт',
+    icon: '🤝',
+    category: 'special',
+    wave: 1,
+  },
+  {
+    id: 'choice_svetlana_partner',
+    name: 'Доля Светлане',
+    description: 'Когда Анна переманивала — предложили Светлане долю в прибыли',
+    icon: '📈',
+    category: 'special',
+    wave: 1,
+  },
+  {
+    id: 'choice_gleb_recorded',
+    name: 'Записал шантажиста',
+    description: 'Записали разговор с Глебом и выложили — не дали ему развернуться',
+    icon: '🎙️',
+    category: 'special',
+    wave: 1,
+  },
+
+  // Goal achievements (v5.4)
+  {
+    id: 'goal_achieved',
+    name: 'Обещание сдержано',
+    description: 'Достигли личной цели в срок',
+    icon: '🎁',
+    category: 'special',
+    wave: 1,
+  },
+  {
+    id: 'goal_clutch',
+    name: 'На последних минутах',
+    description: 'Достигли личной цели на финальной неделе перед дедлайном',
+    icon: '⏱️',
+    category: 'special',
+    wave: 1,
+  },
 ]
 
 // NOTE: perfect_day moved to wave 1 (achievable any day, no reason to lock).

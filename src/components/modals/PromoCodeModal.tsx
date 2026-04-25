@@ -32,7 +32,23 @@ export default function PromoCodeModal() {
         maxWidth: 380, width: '100%',
         boxShadow: '0 24px 80px rgba(0,0,0,0.25)',
         textAlign: 'center',
+        position: 'relative',
       }}>
+        {/* Close button (top-right) */}
+        <button
+          onClick={clearPendingPromoCode}
+          aria-label="Закрыть"
+          style={{
+            position: 'absolute', top: 14, right: 14,
+            width: 28, height: 28, borderRadius: 999,
+            border: 'none', background: K.bone, color: K.muted,
+            fontSize: 16, lineHeight: 1, cursor: 'pointer',
+            display: 'grid', placeItems: 'center', fontFamily: 'inherit',
+          }}
+        >
+          ✕
+        </button>
+
         {/* Icon */}
         <div style={{
           width: 64, height: 64, borderRadius: 20,

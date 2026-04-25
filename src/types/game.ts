@@ -38,6 +38,29 @@ export interface PlayerBackstory {
   personal: BackstoryPersonal
 }
 
+/**
+ * Personal goal — the protagonist's reason for being in business.
+ * Tied to backstory.personal: each personal situation has its own goal,
+ * deadline, and narrative ending. Drives time pressure and meaning beyond
+ * "don't go bankrupt".
+ */
+export interface PersonalGoal {
+  // Stable id used for ending text and analytics
+  id: 'parent_reno' | 'katya_deposit' | 'courtyard_save'
+  // Short label shown in the UI ("Своя квартира")
+  shortLabel: string
+  // Full sentence shown in dashboard ("Накопить 500 000 ₽ на квартиру в новом районе")
+  description: string
+  // Monetary target. Goal is met when balance >= targetAmount before deadline.
+  targetAmount: number
+  // Inclusive deadline week. After this week, goal is missed if not yet met.
+  deadlineWeek: number
+  // True once balance crossed the target before deadline
+  achieved: boolean
+  // True if the deadline passed without achievement (immutable failure)
+  missed: boolean
+}
+
 export type ServiceType = 'market' | 'bank' | 'ofd' | 'diadoc' | 'fokus' | 'elba' | 'extern'
 
 export type OnboardingStage = 0 | 1 | 2 | 3 | 4
@@ -176,6 +199,7 @@ export interface Service {
     loyaltyBonus?: number
     taxSaving?: number
     energyReduction?: number
+    acquiringRate?: number
   }
 }
 
@@ -277,6 +301,22 @@ export interface EventTemplate {
     oneTime?: boolean
     chainId?: string
     chainStep?: number
+    // Personal-event gating (v5.0): event only fires if the player picked
+    // this backstory. Used by personalEvents.ts to make NPC arcs feel earned.
+    requiredMotivation?: BackstoryMotivation
+    requiredPersonal?: BackstoryPersonal
+    // NPC relationship gating (v5.1): only fire if a specific NPC's
+    // relationship is in [min, max]. Used to branch NPC arcs by trust level.
+    npcRelationshipMin?: number
+    npcRelationshipMax?: number
+    // Require the NPC to have been revealed at least once (i.e. interacted with)
+    requiresNpcRevealed?: boolean
+    // Crisis-event gating (v5.5): trigger only when player is "doing well".
+    // These let us spawn high-impact destabilization events that don't
+    // overwhelm players who are already struggling.
+    balanceMin?: number
+    weekMin?: number
+    loyaltyMin?: number
   }
   options: EventOption[]
   npcId?: string
@@ -432,7 +472,7 @@ export interface GameState {
   unlockedServices: ServiceType[]
 
   // Cooldown: week when each service was last deactivated (can't re-enable for 2 weeks)
-  serviceDeactivatedWeeks: Partial<Record<ServiceType, number>>
+  serviceDeactivatedWeeks?: Partial<Record<ServiceType, number>>
 
   // Cash registers
   cashRegisters: CashRegister[]
@@ -458,6 +498,12 @@ export interface GameState {
 
   // Weekly micro event (passive, shown in results)
   lastWeekMicroEvent?: { icon: string; title: string; effectText: string } | null
+
+  // Last diary entry (passive, first-person reflection — v5.0)
+  // Picked every 5 weeks based on backstory/state, shown in WeekResults.
+  lastDiaryEntry?: { header: string; body: string } | null
+  // Weeks at which a diary entry has been picked (prevents double-firing)
+  diaryEntryWeeks?: number[]
 
   // Suppliers system (NEW v2.0)
   suppliers: Supplier[]
@@ -488,6 +534,9 @@ export interface GameState {
   // NPC system (v3.0)
   npcs: NPC[]
   playerBackstory: PlayerBackstory | null
+  // Personal goal — generated from backstory.personal at game start (v5.0).
+  // Optional for save migration; production runs always have it after backstory.
+  personalGoal?: PersonalGoal | null
   activeChainIds: string[]
   completedChainIds: string[]
   pendingChainFollowUps: Array<{ chainEventId: string; triggerWeek: number; contextNote?: string }>
@@ -520,4 +569,45 @@ export interface GameState {
   burnoutWarningActive?: boolean
   // How the player won: 'combined' (all 5 conditions before year 1) or 'year_one' (survived full year)
   victoryType?: 'year_one' | 'combined' | null
+
+  // Tracks which option the player picked for each resolved event (v5.4).
+  // Used by backstory achievements + postmortem timeline. Optional for save
+  // migration; new runs always populate it via markEventAsResolved.
+  chosenEventOptions?: Record<string, string>
+
+  // Weekly tactic — small player-driven choice at the start of each week.
+  // Resets to null when a new week starts; player picks from 3 options.
+  // - 'aggressive': +15% revenue, -3 energy/day
+  // - 'calm':      -8% revenue, +2 energy/day
+  // - 'service':   -5% revenue, +0.5 reputation/day, +1 loyalty/day
+  weeklyTactic?: WeeklyTactic | null
+
+  // Lessons unlocked by THIS run (i.e. just earned at game-over). Set by
+  // setGameOver / setVictory; consumed by VictoryModal to celebrate them.
+  // Cleared on new game start.
+  newlyUnlockedLessons?: string[]
+}
+
+export type WeeklyTactic = 'aggressive' | 'calm' | 'service'
+
+/**
+ * Cross-run metaprogression (v5.5). Persists separately from the main save
+ * so it survives "new game". Each finished run can unlock "lessons" — small,
+ * permanent perks granted at the start of every future run, paid for by
+ * what the player already accomplished.
+ *
+ * The point: a death stops being a hard reset and becomes investment.
+ */
+export interface MetaProgress {
+  totalRuns: number
+  unlockedLessons: string[]      // ids of MetaLesson.id
+  bestWeek: number               // furthest week ever reached
+  totalGoalsAchieved: number     // count of personal goals achieved across runs
+}
+
+export interface MetaLessonBonus {
+  startingBalanceDelta?: number
+  startingEnergyDelta?: number
+  startingReputationDelta?: number
+  startingLoyaltyDelta?: number
 }

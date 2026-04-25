@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import type { BackstoryMotivation, BackstoryPersonal, PlayerBackstory } from '../types/game'
 import { K } from './design-system/tokens'
+import { loadMetaProgress } from '../services/metaProgress'
+import { getMetaLesson, META_LESSONS } from '../constants/metaLessons'
 
 interface BackstoryScreenProps {
   onComplete: (backstory: PlayerBackstory) => void
@@ -44,27 +46,34 @@ const PERSONAL_SITUATIONS: Array<{
 }> = [
   {
     id: 'free',
-    icon: '🧭',
-    title: 'Полная свобода',
-    description: 'Никаких обязательств. Можно работать в 2 ночи или уйти в 3 дня. Всё только на ваш вкус.',
+    icon: '🏚️',
+    title: 'Родители ждут ремонта',
+    description: 'Живут в другом городе, в старой хрущёвке. Батарея гремит, трубы текут. «Нам тут нормально». Решили: сделать ремонт, пока ещё можно.',
   },
   {
     id: 'friend',
     icon: '🤝',
-    title: 'Лучший друг — болельщик №1',
-    description: 'Димка верит в вас больше, чем вы сами. Звонит каждую неделю, спрашивает как дела. Иногда заходит помочь.',
+    title: 'Подруга начинает заново',
+    description: 'Катя — подруга с детского сада. После развода осталась одна с дочкой. Нашла нормальную квартиру, но депозит три месяца — не потянуть. Попросила помочь.',
   },
   {
     id: 'hometown',
-    icon: '🏘️',
-    title: 'Возвращение в свой район',
-    description: 'Выросли здесь. Знаете половину жителей. Они знают вас. Хочется сделать что-то настоящее для своего места.',
+    icon: '🌳',
+    title: 'Сквер хотят снести',
+    description: 'Двор, в котором прошло детство, собираются застроить паркингом. Соседи создали инициативную группу — вы вошли первым и пообещали помочь с деньгами на юристов.',
   },
 ]
 
 export default function BackstoryScreen({ onComplete }: BackstoryScreenProps) {
   const [motivation, setMotivation] = useState<BackstoryMotivation | null>(null)
   const [personal, setPersonal] = useState<BackstoryPersonal | null>(null)
+
+  // Read once on mount — meta progress doesn't change while picking backstory
+  const meta = useMemo(() => loadMetaProgress(), [])
+  const unlockedLessons = meta.unlockedLessons
+    .map(id => getMetaLesson(id))
+    .filter((l): l is NonNullable<typeof l> => !!l)
+  const hasLessons = unlockedLessons.length > 0
 
   const canProceed = motivation !== null && personal !== null
 
@@ -79,6 +88,46 @@ export default function BackstoryScreen({ onComplete }: BackstoryScreenProps) {
       fontFamily: 'Manrope, sans-serif',
     }}>
       <div style={{ maxWidth: 680, width: '100%' }}>
+
+        {/* Lessons from past runs */}
+        {hasLessons && (
+          <div style={{
+            background: K.bone,
+            border: `1px solid ${K.lineSoft}`,
+            borderRadius: 14,
+            padding: '14px 18px',
+            marginBottom: 20,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <span style={{ fontSize: 18 }}>📚</span>
+              <span style={{ fontSize: 12, fontWeight: 800, color: K.ink, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Уроки прошлых попыток ({unlockedLessons.length}/{META_LESSONS.length})
+              </span>
+              <span style={{ fontSize: 11, color: K.muted, marginLeft: 'auto' }}>
+                Прогонов: {meta.totalRuns} · Лучшая неделя: {meta.bestWeek}
+              </span>
+            </div>
+            <div style={{
+              display: 'flex', flexDirection: 'column', gap: 6,
+              // Cap height so a long list doesn't push the backstory pickers
+              // off-screen on small devices. Scrolls inside the card.
+              maxHeight: 220, overflowY: 'auto',
+            }}>
+              {unlockedLessons.map(l => (
+                <div key={l.id} style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 10,
+                  fontSize: 12, lineHeight: 1.4,
+                }}>
+                  <span style={{ fontSize: 16, flexShrink: 0 }}>{l.icon}</span>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontWeight: 700, color: K.ink }}>{l.name}.</span>{' '}
+                    <span style={{ color: K.ink2 }}>{l.bonusText}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Header */}
         <div style={{ marginBottom: 40, textAlign: 'center' }}>

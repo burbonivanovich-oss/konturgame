@@ -1,7 +1,7 @@
 import { K } from './tokens'
 import { KIcon } from './KIcon'
 import { Row, Col, Card } from './primitives'
-import type { BusinessType } from '../../types/game'
+import type { BusinessType, PersonalGoal } from '../../types/game'
 
 type NavId = 'dashboard' | 'ecosystem' | 'finance' | 'development' | 'operations' |
              'warehouse' | 'statistics' | 'journal'
@@ -50,21 +50,26 @@ interface KLeftRailProps {
   currentWeek: number
   activeServiceCount: number
   savedBalance: number
+  balance: number
+  personalGoal: PersonalGoal | null | undefined
   pendingEventCount: number
   promoCodesCount: number
+  revealedNpcCount: number
   highlightNav?: NavId
   onNav: (id: NavId) => void
   onHelp: () => void
   onSettings: () => void
   onPromoWallet: () => void
   onAchievements: () => void
+  onNpcRoster: () => void
 }
 
 export function KLeftRail({
   active, businessType, currentWeek, activeServiceCount,
-  savedBalance, pendingEventCount,
-  promoCodesCount, highlightNav, onNav, onHelp, onSettings,
-  onPromoWallet, onAchievements,
+  savedBalance, balance, personalGoal, pendingEventCount,
+  promoCodesCount, revealedNpcCount,
+  highlightNav, onNav, onHelp, onSettings,
+  onPromoWallet, onAchievements, onNpcRoster,
 }: KLeftRailProps) {
   const season = getSeason(currentWeek)
 
@@ -104,51 +109,76 @@ export function KLeftRail({
         </Row>
       </Card>
 
-      {/* Navigation */}
+      {/* Navigation — only currently-unlocked items, plus a single peek
+          showing what unlocks next. Hidden-until-earned reads as progress;
+          a long list of disabled items reads as friction. */}
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {NAV_ITEMS.filter(item => !item.unlocksAtWeek || currentWeek >= item.unlocksAtWeek).map(item => {
-          const isActive = item.id === active
-          const badge =
-            item.id === 'dashboard' && pendingEventCount > 0 ? String(pendingEventCount) :
-            item.id === 'ecosystem' ? `${activeServiceCount}/7` :
-            undefined
-
-          const isPulsing = item.id === highlightNav && !isActive
-          return (
-            <button
-              key={item.id}
-              onClick={() => onNav(item.id)}
-              className={isPulsing ? 'nav-pulse' : undefined}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '8px 10px', borderRadius: 9,
-                background: isActive ? K.ink : 'transparent',
-                color: isActive ? K.white : K.ink,
-                fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                border: 'none', fontFamily: 'inherit', width: '100%', textAlign: 'left',
-                outline: isPulsing ? `2px solid ${K.orange}` : 'none',
-              }}
-            >
-              <KIcon name={item.icon} size={16} color={isActive ? K.white : K.ink2} />
-              <div style={{ flex: 1 }}>{item.label}</div>
-              {badge && (
-                <span style={{
-                  fontSize: 10, fontWeight: 700,
-                  padding: '2px 7px', borderRadius: 999,
-                  background: badge === 'NEW'
-                    ? K.violet
-                    : isActive ? 'rgba(255,255,255,0.15)' : K.bone,
-                  color: badge === 'NEW'
-                    ? K.white
-                    : isActive ? K.white : K.muted,
-                  letterSpacing: '0.04em',
-                }}>
-                  {badge}
-                </span>
-              )}
-            </button>
+        {(() => {
+          const unlockedItems = NAV_ITEMS.filter(
+            it => !it.unlocksAtWeek || currentWeek >= it.unlocksAtWeek
           )
-        })}
+          // The next-to-unlock item (smallest unlocksAtWeek > currentWeek)
+          const nextLocked = NAV_ITEMS
+            .filter(it => it.unlocksAtWeek && currentWeek < it.unlocksAtWeek)
+            .sort((a, b) => (a.unlocksAtWeek ?? 0) - (b.unlocksAtWeek ?? 0))[0]
+
+          return [...unlockedItems, ...(nextLocked ? [nextLocked] : [])].map(item => {
+            const isActive = item.id === active
+            const isLocked = !!item.unlocksAtWeek && currentWeek < item.unlocksAtWeek
+            const badge =
+              item.id === 'dashboard' && pendingEventCount > 0 ? String(pendingEventCount) :
+              item.id === 'ecosystem' ? `${activeServiceCount}/7` :
+              undefined
+
+            const isPulsing = item.id === highlightNav && !isActive && !isLocked
+            return (
+              <button
+                key={item.id}
+                onClick={() => !isLocked && onNav(item.id)}
+                disabled={isLocked}
+                title={isLocked ? `Откроется на неделе ${item.unlocksAtWeek}` : undefined}
+                className={isPulsing ? 'nav-pulse' : undefined}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '8px 10px', borderRadius: 9,
+                  background: isActive ? K.ink : 'transparent',
+                  color: isActive ? K.white : K.ink,
+                  fontSize: 13, fontWeight: 500,
+                  cursor: isLocked ? 'not-allowed' : 'pointer',
+                  opacity: isLocked ? 0.45 : 1,
+                  border: 'none', fontFamily: 'inherit', width: '100%', textAlign: 'left',
+                  outline: isPulsing ? `2px solid ${K.orange}` : 'none',
+                }}
+              >
+                <KIcon name={item.icon} size={16} color={isActive ? K.white : K.ink2} />
+                <div style={{ flex: 1 }}>{item.label}</div>
+                {isLocked ? (
+                  <span style={{
+                    fontSize: 10, fontWeight: 600,
+                    color: K.muted,
+                    display: 'inline-flex', alignItems: 'center', gap: 3,
+                  }}>
+                    🔒 нед.{item.unlocksAtWeek}
+                  </span>
+                ) : badge && (
+                  <span style={{
+                    fontSize: 10, fontWeight: 700,
+                    padding: '2px 7px', borderRadius: 999,
+                    background: badge === 'NEW'
+                      ? K.violet
+                      : isActive ? 'rgba(255,255,255,0.15)' : K.bone,
+                    color: badge === 'NEW'
+                      ? K.white
+                      : isActive ? K.white : K.muted,
+                    letterSpacing: '0.04em',
+                  }}>
+                    {badge}
+                  </span>
+                )}
+              </button>
+            )
+          })
+        })()}
 
         {/* Achievements — opens modal, no view */}
         <button
@@ -164,9 +194,84 @@ export function KLeftRail({
           <KIcon name="rep" size={16} color={K.muted} />
           <div style={{ flex: 1 }}>Достижения</div>
         </button>
+
+        {/* NPC roster — opens modal */}
+        <button
+          onClick={onNpcRoster}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '8px 10px', borderRadius: 9,
+            background: 'transparent', color: K.ink,
+            fontSize: 13, fontWeight: 500, cursor: 'pointer',
+            border: 'none', fontFamily: 'inherit', width: '100%', textAlign: 'left',
+          }}
+        >
+          <span style={{ fontSize: 14, width: 16, textAlign: 'center' }}>👥</span>
+          <div style={{ flex: 1 }}>Окружение</div>
+          {revealedNpcCount > 0 && (
+            <span style={{
+              fontSize: 10, fontWeight: 700,
+              padding: '2px 7px', borderRadius: 999,
+              background: K.bone, color: K.muted,
+              letterSpacing: '0.04em',
+            }}>
+              {revealedNpcCount}
+            </span>
+          )}
+        </button>
       </nav>
 
       <div style={{ flex: 1 }} />
+
+      {/* Personal goal — anchors the run with a real reason and deadline.
+          When the player hasn't started a backstory (or goal is null) we
+          show a quiet placeholder so the rail layout doesn't shift when
+          the goal appears. */}
+      {!personalGoal && (
+        <Card pad={12} radius={12} bg={K.bone} border={K.lineSoft}>
+          <div style={{ fontSize: 10, color: K.muted, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700 }}>
+            Личная цель
+          </div>
+          <div style={{ fontSize: 12, color: K.muted, marginTop: 6, lineHeight: 1.35 }}>
+            Появится после выбора предыстории
+          </div>
+        </Card>
+      )}
+      {personalGoal && (() => {
+        const pct = Math.min(100, Math.round((balance / personalGoal.targetAmount) * 100))
+        const weeksLeft = Math.max(0, personalGoal.deadlineWeek - currentWeek)
+        const isAchieved = personalGoal.achieved
+        const isMissed = personalGoal.missed
+        // Tone: green when on track, amber when behind, red when missed
+        const expectedPctByNow = Math.min(100, Math.round((currentWeek / personalGoal.deadlineWeek) * 100))
+        const onTrack = pct >= expectedPctByNow * 0.9
+        const accent = isAchieved ? K.mint : isMissed ? '#c0392b' : onTrack ? K.ink : K.orange
+        return (
+          <Card pad={12} radius={12} bg={K.white} border={K.line}>
+            <div style={{ fontSize: 10, color: K.muted, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700 }}>
+              Личная цель
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4, color: K.ink, lineHeight: 1.25 }}>
+              {personalGoal.shortLabel}
+            </div>
+            <div style={{ marginTop: 8, height: 6, borderRadius: 999, background: K.lineSoft, overflow: 'hidden' }}>
+              <div style={{
+                width: `${pct}%`, height: '100%',
+                background: accent, transition: 'width 0.3s',
+              }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 11, color: K.muted, fontVariantNumeric: 'tabular-nums' }}>
+              <span style={{ color: accent, fontWeight: 700 }}>{pct}%</span>
+              <span>
+                {isAchieved ? 'Цель достигнута ✓'
+                  : isMissed ? 'Срок истёк'
+                  : weeksLeft === 0 ? 'Последняя неделя!'
+                  : `${weeksLeft} нед. до срока`}
+              </span>
+            </div>
+          </Card>
+        )
+      })()}
 
       {/* Cumulative savings */}
       <Card pad={12} radius={12} bg={K.mint} border={K.mint} style={{ color: K.white }}>

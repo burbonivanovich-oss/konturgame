@@ -1,5 +1,6 @@
 import type { GameState, Modifiers } from '../types/game'
-import { BUSINESS_CONFIGS, MONTHLY_EXPENSES, UPGRADES_CONFIG, CAMPAIGN_DIMINISHING_FACTORS } from '../constants/business'
+import { BUSINESS_CONFIGS, MONTHLY_EXPENSES, UPGRADES_CONFIG, CAMPAIGN_DIMINISHING_FACTORS, SERVICES_CONFIG } from '../constants/business'
+import { LOYALTY_CAPACITY_THRESHOLDS, LOYALTY_CAPACITY_MODIFIER } from '../constants/gameBalance'
 import { calculateSynergyModifiers } from './synergyEngine'
 
 function getPurchasedUpgradeConfigs(state: GameState) {
@@ -35,9 +36,15 @@ export function calculateCapacity(state: GameState): number {
   const baseCapacity = config.capacity
 
   let capacityMod = 1.0
-  if (state.services?.market?.isActive) capacityMod += 0.2
-  if (state.loyalty > 80) capacityMod += 0.1
-  if (state.loyalty < 30) capacityMod -= 0.15
+  if (state.services?.market?.isActive) {
+    capacityMod += SERVICES_CONFIG.market.effects.capacityBonus ?? 0
+  }
+  if (state.loyalty > LOYALTY_CAPACITY_THRESHOLDS.HIGH) {
+    capacityMod += LOYALTY_CAPACITY_MODIFIER.HIGH_BONUS
+  }
+  if (state.loyalty < LOYALTY_CAPACITY_THRESHOLDS.LOW) {
+    capacityMod -= LOYALTY_CAPACITY_MODIFIER.LOW_PENALTY
+  }
 
   const upgradeBonus = getCapacityUpgradesBonus(state)
   const synergyBonus = calculateSynergyModifiers(state).capacityBonus
