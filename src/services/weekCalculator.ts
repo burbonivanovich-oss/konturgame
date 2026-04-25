@@ -240,16 +240,16 @@ export function processWeek(state: GameState): DayResult {
     const dailyRegisterMaintenance = totalRegisters * ECONOMY_CONSTANTS.DAILY_REGISTER_MAINTENANCE
     const dailyFixedCosts = dailyUtilities + dailyRegisterMaintenance
 
-    // 12. Monthly expenses (rent + owner's base salary) — charged once every
-    // 28 days. Must run BEFORE dayExpenses so the bill actually hits balance.
-    let monthlyExpense = 0
-    const currentDaysSinceMonthly = state.daysSinceLastMonthly ?? 0
-    if (currentDaysSinceMonthly >= ECONOMY_CONSTANTS.MONTHLY_CYCLE_WEEKS * 7) {
-      monthlyExpense = calculateMonthlyExpenses(state)
-      state.daysSinceLastMonthly = 0
-    } else {
-      state.daysSinceLastMonthly = currentDaysSinceMonthly + 1
-    }
+    // 12. Monthly fixed costs (rent + owner's base salary) — spread evenly
+    // across the 28-day cycle so the player doesn't get one brutal hit per
+    // month. First 28 days are a grace period so a fresh business has time
+    // to find its feet (matches the previous lump-sum behaviour where the
+    // first bill fired only on day 29).
+    const daysAlive = state.daysSinceLastMonthly ?? 0
+    const monthlyExpense = daysAlive >= ECONOMY_CONSTANTS.MONTHLY_CYCLE_WEEKS * 7
+      ? Math.round(calculateMonthlyExpenses(state) / (ECONOMY_CONSTANTS.MONTHLY_CYCLE_WEEKS * 7))
+      : 0
+    state.daysSinceLastMonthly = daysAlive + 1
 
     // 12b. Employee salary spread across the week (was previously folded into
     // the monthly bill which under-charged it by 75%: the weekly amount only
