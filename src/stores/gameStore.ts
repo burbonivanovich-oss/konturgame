@@ -196,7 +196,7 @@ interface GameStoreActions {
   completeActionsPhase: () => { blocked: boolean; reason?: string }
   completeResultsPhase: () => void
   completeSummaryPhase: () => void
-  setWeeklyTactic: (tactic: WeeklyTactic) => void
+  setWeeklyTactic: (tactic: WeeklyTactic | null) => void
 
   // Balance and metrics
   setBalance: (amount: number) => void
@@ -453,7 +453,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       })
     },
 
-    setWeeklyTactic: (tactic: WeeklyTactic) => {
+    setWeeklyTactic: (tactic: WeeklyTactic | null) => {
       set({
         weeklyTactic: tactic,
         lastUpdated: Date.now(),

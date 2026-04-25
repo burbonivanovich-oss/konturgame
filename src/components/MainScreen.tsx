@@ -189,15 +189,40 @@ function DashboardView({
             const def = getWeeklyTacticDef(weeklyTactic)
             return def ? (
               <div style={{
-                background: K.bone, border: `1px solid ${K.lineSoft}`,
-                borderRadius: 10, padding: '8px 14px',
-                display: 'flex', alignItems: 'center', gap: 10,
-                fontSize: 12,
+                background: 'linear-gradient(135deg, rgba(255,107,0,0.06) 0%, rgba(255,176,32,0.06) 100%)',
+                border: `1px solid ${K.orange}`,
+                borderRadius: 12, padding: '10px 16px',
+                display: 'flex', alignItems: 'center', gap: 12,
               }}>
-                <span style={{ fontSize: 16 }}>{def.icon}</span>
-                <span style={{ fontWeight: 700, color: K.ink }}>Тактика недели:</span>
-                <span style={{ color: K.ink2 }}>{def.title}</span>
-                <span style={{ color: K.muted, marginLeft: 'auto', fontSize: 11 }}>{def.blurb}</span>
+                <div style={{
+                  width: 32, height: 32, borderRadius: 999,
+                  background: K.white, border: `1px solid ${K.lineSoft}`,
+                  display: 'grid', placeItems: 'center',
+                  fontSize: 18, flexShrink: 0,
+                }}>
+                  {def.icon}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: K.orange, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      Тактика недели
+                    </span>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: K.ink }}>{def.title}</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: K.ink2, marginTop: 2 }}>{def.blurb}</div>
+                </div>
+                <button
+                  onClick={() => setWeeklyTactic(null)}
+                  title="Сменить тактику"
+                  style={{
+                    background: K.white, border: `1px solid ${K.lineSoft}`,
+                    borderRadius: 8, padding: '6px 10px',
+                    fontSize: 11, fontWeight: 700, color: K.muted,
+                    cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
+                  }}
+                >
+                  Сменить
+                </button>
               </div>
             ) : null
           })()}

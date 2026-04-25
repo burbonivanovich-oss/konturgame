@@ -109,64 +109,76 @@ export function KLeftRail({
         </Row>
       </Card>
 
-      {/* Navigation */}
+      {/* Navigation — only currently-unlocked items, plus a single peek
+          showing what unlocks next. Hidden-until-earned reads as progress;
+          a long list of disabled items reads as friction. */}
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {NAV_ITEMS.map(item => {
-          const isActive = item.id === active
-          const isLocked = !!item.unlocksAtWeek && currentWeek < item.unlocksAtWeek
-          const badge =
-            item.id === 'dashboard' && pendingEventCount > 0 ? String(pendingEventCount) :
-            item.id === 'ecosystem' ? `${activeServiceCount}/7` :
-            undefined
-
-          const isPulsing = item.id === highlightNav && !isActive && !isLocked
-          return (
-            <button
-              key={item.id}
-              onClick={() => !isLocked && onNav(item.id)}
-              disabled={isLocked}
-              title={isLocked ? `Откроется на неделе ${item.unlocksAtWeek}` : undefined}
-              className={isPulsing ? 'nav-pulse' : undefined}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '8px 10px', borderRadius: 9,
-                background: isActive ? K.ink : 'transparent',
-                color: isActive ? K.white : K.ink,
-                fontSize: 13, fontWeight: 500,
-                cursor: isLocked ? 'not-allowed' : 'pointer',
-                opacity: isLocked ? 0.4 : 1,
-                border: 'none', fontFamily: 'inherit', width: '100%', textAlign: 'left',
-                outline: isPulsing ? `2px solid ${K.orange}` : 'none',
-              }}
-            >
-              <KIcon name={item.icon} size={16} color={isActive ? K.white : K.ink2} />
-              <div style={{ flex: 1 }}>{item.label}</div>
-              {isLocked ? (
-                <span style={{
-                  fontSize: 10, fontWeight: 600,
-                  color: K.muted,
-                  display: 'inline-flex', alignItems: 'center', gap: 3,
-                }}>
-                  🔒 нед.{item.unlocksAtWeek}
-                </span>
-              ) : badge && (
-                <span style={{
-                  fontSize: 10, fontWeight: 700,
-                  padding: '2px 7px', borderRadius: 999,
-                  background: badge === 'NEW'
-                    ? K.violet
-                    : isActive ? 'rgba(255,255,255,0.15)' : K.bone,
-                  color: badge === 'NEW'
-                    ? K.white
-                    : isActive ? K.white : K.muted,
-                  letterSpacing: '0.04em',
-                }}>
-                  {badge}
-                </span>
-              )}
-            </button>
+        {(() => {
+          const unlockedItems = NAV_ITEMS.filter(
+            it => !it.unlocksAtWeek || currentWeek >= it.unlocksAtWeek
           )
-        })}
+          // The next-to-unlock item (smallest unlocksAtWeek > currentWeek)
+          const nextLocked = NAV_ITEMS
+            .filter(it => it.unlocksAtWeek && currentWeek < it.unlocksAtWeek)
+            .sort((a, b) => (a.unlocksAtWeek ?? 0) - (b.unlocksAtWeek ?? 0))[0]
+
+          return [...unlockedItems, ...(nextLocked ? [nextLocked] : [])].map(item => {
+            const isActive = item.id === active
+            const isLocked = !!item.unlocksAtWeek && currentWeek < item.unlocksAtWeek
+            const badge =
+              item.id === 'dashboard' && pendingEventCount > 0 ? String(pendingEventCount) :
+              item.id === 'ecosystem' ? `${activeServiceCount}/7` :
+              undefined
+
+            const isPulsing = item.id === highlightNav && !isActive && !isLocked
+            return (
+              <button
+                key={item.id}
+                onClick={() => !isLocked && onNav(item.id)}
+                disabled={isLocked}
+                title={isLocked ? `Откроется на неделе ${item.unlocksAtWeek}` : undefined}
+                className={isPulsing ? 'nav-pulse' : undefined}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '8px 10px', borderRadius: 9,
+                  background: isActive ? K.ink : 'transparent',
+                  color: isActive ? K.white : K.ink,
+                  fontSize: 13, fontWeight: 500,
+                  cursor: isLocked ? 'not-allowed' : 'pointer',
+                  opacity: isLocked ? 0.45 : 1,
+                  border: 'none', fontFamily: 'inherit', width: '100%', textAlign: 'left',
+                  outline: isPulsing ? `2px solid ${K.orange}` : 'none',
+                }}
+              >
+                <KIcon name={item.icon} size={16} color={isActive ? K.white : K.ink2} />
+                <div style={{ flex: 1 }}>{item.label}</div>
+                {isLocked ? (
+                  <span style={{
+                    fontSize: 10, fontWeight: 600,
+                    color: K.muted,
+                    display: 'inline-flex', alignItems: 'center', gap: 3,
+                  }}>
+                    🔒 нед.{item.unlocksAtWeek}
+                  </span>
+                ) : badge && (
+                  <span style={{
+                    fontSize: 10, fontWeight: 700,
+                    padding: '2px 7px', borderRadius: 999,
+                    background: badge === 'NEW'
+                      ? K.violet
+                      : isActive ? 'rgba(255,255,255,0.15)' : K.bone,
+                    color: badge === 'NEW'
+                      ? K.white
+                      : isActive ? K.white : K.muted,
+                    letterSpacing: '0.04em',
+                  }}>
+                    {badge}
+                  </span>
+                )}
+              </button>
+            )
+          })
+        })()}
 
         {/* Achievements — opens modal, no view */}
         <button
