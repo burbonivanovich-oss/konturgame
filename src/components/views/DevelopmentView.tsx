@@ -5,9 +5,10 @@ import {
   getUpgradesForBusiness,
 } from '../../constants/business'
 import { getCampaignStats } from '../../services/weekCalculator'
+import { getCurrentTier, getNextTier, canUpgradeTier } from '../../services/economyEngine'
 import { K } from '../design-system/tokens'
 
-type DevTab = 'marketing' | 'upgrades' | 'roi'
+type DevTab = 'marketing' | 'upgrades' | 'tier' | 'roi'
 
 export function DevelopmentView() {
   const [tab, setTab] = useState<DevTab>('marketing')
@@ -26,6 +27,7 @@ export function DevelopmentView() {
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 6, borderBottom: `1px solid ${K.line}` }}>
         {([
+          { id: 'tier',      label: 'Уровень бизнеса' },
           { id: 'marketing', label: 'Реклама' },
           { id: 'upgrades',  label: 'Улучшения' },
           { id: 'roi',       label: 'ROI кампаний' },
@@ -47,9 +49,182 @@ export function DevelopmentView() {
         ))}
       </div>
 
+      {tab === 'tier'      && <TierSection />}
       {tab === 'marketing' && <MarketingSection />}
       {tab === 'upgrades'  && <UpgradesSection />}
       {tab === 'roi'       && <RoiSection />}
+    </div>
+  )
+}
+
+function TierSection() {
+  const upgradeBusinessTier = useGameStore(s => s.upgradeBusinessTier)
+  const state = useGameStore.getState()
+  const current = getCurrentTier(state)
+  const next = getNextTier(state)
+  const check = canUpgradeTier(state)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+
+  const handleUpgrade = () => {
+    setError(null)
+    setSuccess(null)
+    const r = upgradeBusinessTier()
+    if (r.ok) {
+      setSuccess(`Поздравляем! Теперь это ${getCurrentTier(useGameStore.getState()).name}.`)
+    } else {
+      setError(r.reason ?? 'Не удалось')
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Current tier card */}
+      <div style={{
+        background: K.bone, border: `1px solid ${K.lineSoft}`,
+        borderRadius: 14, padding: 18,
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>
+          ТЕКУЩИЙ УРОВЕНЬ · T{current.level}
+        </div>
+        <div style={{ fontSize: 22, fontWeight: 800, marginTop: 4, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 28 }}>{current.icon}</span>
+          {current.name}
+        </div>
+        <div style={{ fontSize: 13, color: K.ink2, marginTop: 6, lineHeight: 1.5 }}>
+          {current.description}
+        </div>
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)',
+          gap: 8, marginTop: 14,
+        }}>
+          {[
+            { label: 'Клиенты', v: current.multipliers.clients },
+            { label: 'Чек', v: current.multipliers.check },
+            { label: 'Аренда', v: current.multipliers.rent },
+            { label: 'З/п', v: current.multipliers.baseSalary },
+            { label: 'Зал', v: current.multipliers.capacity },
+          ].map(m => (
+            <div key={m.label} style={{
+              background: K.white, borderRadius: 8, padding: '6px 10px', textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 10, color: K.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                {m.label}
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: K.ink }}>×{m.v.toFixed(1)}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Next tier */}
+      {next ? (
+        <div style={{
+          background: K.white, border: `1px solid ${K.line}`,
+          borderRadius: 14, padding: 18,
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>
+            СЛЕДУЮЩИЙ УРОВЕНЬ · T{next.level}
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 800, marginTop: 4, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 28 }}>{next.icon}</span>
+            {next.name}
+          </div>
+          <div style={{ fontSize: 13, color: K.ink2, marginTop: 6, lineHeight: 1.5 }}>
+            {next.description}
+          </div>
+
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)',
+            gap: 8, marginTop: 14,
+          }}>
+            {[
+              { label: 'Клиенты', v: next.multipliers.clients },
+              { label: 'Чек', v: next.multipliers.check },
+              { label: 'Аренда', v: next.multipliers.rent },
+              { label: 'З/п', v: next.multipliers.baseSalary },
+              { label: 'Зал', v: next.multipliers.capacity },
+            ].map(m => (
+              <div key={m.label} style={{
+                background: K.bone, borderRadius: 8, padding: '6px 10px', textAlign: 'center',
+              }}>
+                <div style={{ fontSize: 10, color: K.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  {m.label}
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: m.v >= 1 ? K.mint : K.muted }}>
+                  ×{m.v.toFixed(1)}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <Requirement met={state.currentWeek >= next.unlockWeek}
+              label={`Неделя ${next.unlockWeek}+`}
+              actual={`сейчас ${state.currentWeek}`} />
+            <Requirement met={state.balance >= next.unlockBalance}
+              label={`Оборот от ${next.unlockBalance.toLocaleString('ru-RU')} ₽`}
+              actual={`${state.balance.toLocaleString('ru-RU')} ₽`} />
+            <Requirement met={state.reputation >= next.unlockReputation}
+              label={`Репутация ${next.unlockReputation}+`}
+              actual={`${state.reputation}`} />
+            {next.unlockQuality !== undefined && (
+              <Requirement met={(state.qualityLevel ?? 0) >= next.unlockQuality}
+                label={`Качество ${next.unlockQuality}+`}
+                actual={`${state.qualityLevel ?? 0}`} />
+            )}
+            <Requirement met={state.balance >= next.upgradeCost}
+              label={`Стоимость апгрейда: ${next.upgradeCost.toLocaleString('ru-RU')} ₽`}
+              actual={state.balance >= next.upgradeCost ? 'хватает' : 'не хватает'} />
+          </div>
+
+          <button
+            disabled={!check.ok}
+            onClick={handleUpgrade}
+            style={{
+              marginTop: 16, width: '100%',
+              padding: '14px 18px', borderRadius: 12,
+              background: check.ok ? K.ink : K.lineSoft,
+              color: check.ok ? K.white : K.muted,
+              border: 'none', fontSize: 14, fontWeight: 800,
+              cursor: check.ok ? 'pointer' : 'not-allowed',
+              fontFamily: 'inherit', letterSpacing: '-0.01em',
+            }}
+          >
+            {check.ok ? `Перейти на «${next.name}» за ${next.upgradeCost.toLocaleString('ru-RU')} ₽` : (check.reason ?? 'Недоступно')}
+          </button>
+          {error && (
+            <div style={{ marginTop: 8, fontSize: 12, color: '#c0392b' }}>{error}</div>
+          )}
+          {success && (
+            <div style={{ marginTop: 8, fontSize: 12, color: K.mint, fontWeight: 700 }}>{success}</div>
+          )}
+        </div>
+      ) : (
+        <div style={{
+          background: K.mintSoft, border: `1px solid ${K.mint}`,
+          borderRadius: 14, padding: 18, color: K.mintInk,
+        }}>
+          <div style={{ fontSize: 14, fontWeight: 800 }}>🏆 Достигнут максимальный уровень</div>
+          <div style={{ fontSize: 13, marginTop: 6, lineHeight: 1.5 }}>
+            Ваш бизнес работает в самой крупной форме. Дальше — масштабироваться можно только сетью.
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function Requirement({ met, label, actual }: { met: boolean; label: string; actual: string }) {
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      fontSize: 12, padding: '6px 10px',
+      background: met ? K.mintSoft : K.bone,
+      borderRadius: 8, color: met ? K.mintInk : K.ink2,
+    }}>
+      <span style={{ fontWeight: 600 }}>{met ? '✓' : '○'} {label}</span>
+      <span style={{ fontSize: 11, color: K.muted }}>{actual}</span>
     </div>
   )
 }

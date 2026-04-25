@@ -18,6 +18,7 @@ import { createInitialNPCs } from '../constants/npcs'
 import { createPersonalGoal } from '../constants/personalGoals'
 import { loadMetaProgress, saveMetaProgress, evaluateRun, getAggregateBonus } from '../services/metaProgress'
 import { updateNPCRelationship, recordNPCMemory } from '../services/npcManager'
+import { canUpgradeTier, getNextTier } from '../services/economyEngine'
 
 const STORAGE_KEY = 'konturgame_state'
 const ROLLBACK_STORAGE_KEY = 'konturgame_rollback'
@@ -41,6 +42,7 @@ const createInitialState = (businessType: BusinessType): GameState => {
   const config = BUSINESS_CONFIGS[businessType]
   return {
     businessType,
+    businessTier: 1,
     currentWeek: 1,
     dayOfWeek: 0,  // 0 = Monday
     balance: config.startBalance,
@@ -226,6 +228,9 @@ interface GameStoreActions {
 
   // Upgrades
   purchaseUpgrade: (upgradeId: string) => void
+
+  // Business tier — upgrades the whole format (Cafe → Bistro → Restaurant etc.)
+  upgradeBusinessTier: () => { ok: boolean; reason?: string }
 
   // Events
   setPendingEvent: (event: Event | null) => void
@@ -664,6 +669,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
         purchasedUpgrades: [...s.purchasedUpgrades, upgradeId],
         lastUpdated: Date.now(),
       }))
+    },
+
+    upgradeBusinessTier: () => {
+      const state = get()
+      const check = canUpgradeTier(state)
+      if (!check.ok) return check
+      const next = getNextTier(state)
+      if (!next) return { ok: false, reason: 'Достигнут максимальный уровень' }
+      set((s) => ({
+        businessTier: next.level,
+        balance: s.balance - next.upgradeCost,
+        // Reset overload counter — bigger venue won't be cramped on day 1
+        consecutiveOverloadDays: 0,
+        lastUpdated: Date.now(),
+      }))
+      return { ok: true }
     },
 
     // Events

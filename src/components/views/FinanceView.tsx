@@ -1,6 +1,7 @@
 import { useGameStore } from '../../stores/gameStore'
 import type { Loan } from '../../types/game'
-import { ECONOMY_CONSTANTS, MONTHLY_EXPENSES, UPGRADES_CONFIG } from '../../constants/business'
+import { ECONOMY_CONSTANTS, UPGRADES_CONFIG } from '../../constants/business'
+import { getEffectiveRent, getEffectiveBaseSalary } from '../../services/economyEngine'
 import { K } from '../design-system/tokens'
 
 function calcTotalOwed(loan: Loan): number {
@@ -47,10 +48,10 @@ export function FinanceView() {
   const activeServices = Object.values(services).filter(s => s.isActive)
   const yearlySubscription = activeServices.reduce((s, svc) => s + (svc.annualPrice ?? 0), 0)
 
-  // Monthly fixed costs breakdown
-  const baseMonthly = MONTHLY_EXPENSES[businessType]
-  let monthlyRent = baseMonthly.rent
-  let monthlySalaryBase = baseMonthly.baseSalary
+  // Monthly fixed costs breakdown — uses tier-adjusted rent/salary
+  const fullState = useGameStore.getState()
+  let monthlyRent = getEffectiveRent(fullState)
+  let monthlySalaryBase = getEffectiveBaseSalary(fullState)
   for (const upgradeId of (purchasedUpgrades ?? [])) {
     const upgrade = (UPGRADES_CONFIG[businessType] ?? []).find(u => u.id === upgradeId)
     if (upgrade) {

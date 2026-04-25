@@ -15,6 +15,8 @@ import {
   calculateDailySubscriptions,
   calculateMonthlyExpenses,
   getLoyaltyUpgradesBonus,
+  getEffectiveBaseClients,
+  getEffectiveAvgCheck,
 } from './economyEngine'
 import { getTotalStock, checkExpiry } from './stockManager'
 import { generateEvent } from './eventGenerator'
@@ -130,7 +132,7 @@ export function processWeek(state: GameState): DayResult {
     const { loss: expiredLoss } = checkExpiry(state)
 
     // 3. Calculate daily metrics
-    let totalClients = calculateClients(config.baseClients, modifiers)
+    let totalClients = calculateClients(getEffectiveBaseClients(state), modifiers)
 
     // Apply quality modifier (affects client acquisition)
     const qualityClientMod = getQualityClientModifier(state.qualityLevel)
@@ -167,7 +169,7 @@ export function processWeek(state: GameState): DayResult {
     const effectiveServed = Math.floor(served * bankPaymentRatio)
 
     // 5. Average check with quality and brand premiums
-    let avgCheck = calculateAverageCheck(config.avgCheck, modifiers)
+    let avgCheck = calculateAverageCheck(getEffectiveAvgCheck(state), modifiers)
 
     // Add quality price premium + brand effect (skip getQualityPriceModifier to avoid double-counting)
     const totalPriceModifier = qualityPricePremium + brandEffect.priceMod
@@ -399,11 +401,11 @@ export function processWeek(state: GameState): DayResult {
   const bankPaymentRatioForResult = getBankPaymentRatio(state)
   const result: DayResult = {
     dayNumber: state.currentWeek - 1,  // Report previous week
-    clients: Math.round(weekRevenue / (config.avgCheck * bankPaymentRatioForResult)), // Estimate from revenue
+    clients: Math.round(weekRevenue / (getEffectiveAvgCheck(state) * bankPaymentRatioForResult)), // Estimate from revenue
     served: 0,  // Not tracked in week mode
     missed: 0,
     lostToBank: bankPaymentRatioForResult < 1
-      ? Math.round(weekRevenue / config.avgCheck * (1 - bankPaymentRatioForResult) / bankPaymentRatioForResult)
+      ? Math.round(weekRevenue / getEffectiveAvgCheck(state) * (1 - bankPaymentRatioForResult) / bankPaymentRatioForResult)
       : 0,
     revenue: weekRevenue,
     expenses: weekExpenses,
@@ -517,7 +519,7 @@ export function processWeek(state: GameState): DayResult {
           launchedWeek: campaign.launchedWeek ?? state.currentWeek,
           costSpent: campaign.cost,
           revenueGenerated: totalRevenue,
-          clientsAcquired: Math.round(totalRevenue / Math.max(1, config.avgCheck)),
+          clientsAcquired: Math.round(totalRevenue / Math.max(1, getEffectiveAvgCheck(state))),
           roi: campaign.cost > 0 ? ((totalRevenue - campaign.cost) / campaign.cost) * 100 : 0,
         })
       }

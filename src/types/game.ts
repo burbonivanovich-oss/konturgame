@@ -407,6 +407,9 @@ export interface MetaPerk {
 
 export interface GameState {
   businessType: BusinessType
+  // 1, 2, 3 — controls multipliers on baseClients/avgCheck/rent/etc.
+  // Tier 1 is starting baseline; player upgrades via upgradeBusinessTier().
+  businessTier?: 1 | 2 | 3
   currentWeek: number  // 1-52
   dayOfWeek: number    // 0-6 (0 = Monday, 6 = Sunday)
   balance: number
