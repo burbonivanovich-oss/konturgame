@@ -860,7 +860,7 @@ export function generateEvent(day: number, state: GameState): Event | null {
     ...NPC_EVENTS,
     ...PERSONAL_BACKSTORY_EVENTS,
     ...NPC_ARC_EVENTS,
-    ...CRISIS_EVENTS,
+    // CRISIS_EVENTS excluded: they get their own independent roll via generateCrisisEvent()
   ]
 
   for (const template of allTemplates) {
@@ -927,6 +927,26 @@ export function generateEvent(day: number, state: GameState): Event | null {
   const chosen = candidates[Math.floor(Math.random() * candidates.length)]
 
   return templateToEvent(chosen, day, state.currentWeek)
+}
+
+/**
+ * Rolls crisis events independently of the regular event pool.
+ * Called once per week from weekCalculator after main event generation.
+ */
+export function generateCrisisEvent(state: GameState): Event | null {
+  const triggered = state.triggeredEventIds ?? []
+  const candidates = CRISIS_EVENTS.filter(template => {
+    if (template.trigger.oneTime && triggered.includes(template.id)) return false
+    if (template.trigger.balanceMin !== undefined && state.balance < template.trigger.balanceMin) return false
+    if (template.trigger.weekMin !== undefined && state.currentWeek < template.trigger.weekMin) return false
+    if (template.trigger.loyaltyMin !== undefined && state.loyalty < template.trigger.loyaltyMin) return false
+    if (template.trigger.reputationMin !== undefined && state.reputation < template.trigger.reputationMin) return false
+    if (template.trigger.randomChance !== undefined && Math.random() > template.trigger.randomChance) return false
+    return true
+  })
+  if (candidates.length === 0) return null
+  const chosen = candidates[Math.floor(Math.random() * candidates.length)]
+  return templateToEvent(chosen, state.currentWeek * 7, state.currentWeek)
 }
 
 export function templateToEvent(template: EventTemplate, day: number, currentWeek: number): Event {

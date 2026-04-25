@@ -3,7 +3,7 @@ import { DAILY_MICRO_EVENTS } from '../constants/dailyMicroEvents'
 import { BUSINESS_CONFIGS, ECONOMY_CONSTANTS, CAMPAIGN_DIMINISHING_FACTORS } from '../constants/business'
 import { ensureNPCsInitialized, applyNPCPassiveEffects, getInspectorChain2EventId } from './npcManager'
 import { getChainEvent, getChainStartEvent, CHAIN_TRIGGER_WEEKS, type ChainId } from '../constants/eventChains'
-import { templateToEvent, applyEventConsequence } from './eventGenerator'
+import { templateToEvent, applyEventConsequence, generateCrisisEvent } from './eventGenerator'
 import { pickDiaryEntry } from '../constants/diary'
 import { getWeeklyTacticDef } from '../constants/weeklyTactics'
 import {
@@ -107,9 +107,9 @@ export function processWeek(state: GameState): DayResult {
   const loyaltyUpgradesBonus = getLoyaltyUpgradesBonus(state)
 
   // Weekly tactic — multipliers/deltas applied per day in the loop below.
-  // Player picks at week start; null means "no tactic" (neutral defaults).
+  // null tactic = operational drift penalty (-5%): no focus means small inefficiencies.
   const tactic = getWeeklyTacticDef(state.weeklyTactic)
-  const tacticRevenueMul = tactic?.revenueMultiplier ?? 1
+  const tacticRevenueMul = tactic?.revenueMultiplier ?? 0.95
   const tacticEnergyPerDay = tactic?.energyDelta ?? 0
   const tacticRepPerDay = tactic?.reputationDelta ?? 0
   const tacticLoyaltyPerDay = tactic?.loyaltyDelta ?? 0
@@ -139,6 +139,12 @@ export function processWeek(state: GameState): DayResult {
     // Apply brand effect (reputation + loyalty synergy)
     const brandEffect = getBrandEffect(state.reputation, state.loyalty)
     totalClients = Math.round(totalClients * (1 + brandEffect.clientMod))
+
+    // Hard reputation penalty: below 30 customers actively avoid you; below 15 it's word of mouth damage
+    const repClientMod = state.reputation < 15 ? 0.75 : state.reputation < 30 ? 0.90 : 1.0
+    if (repClientMod < 1) {
+      totalClients = Math.round(totalClients * repClientMod)
+    }
 
     // Capacity with employee bonus
     let capacity = calculateCapacity(state)
@@ -369,6 +375,19 @@ export function processWeek(state: GameState): DayResult {
   state.balance = newBalance
   state.reputation = newReputation
   state.loyalty = newLoyalty
+
+  // Loyalty sustained bonus: max loyalty generates word-of-mouth every 5 weeks.
+  // Rewards players who invest in loyalty rather than just hitting the cap once.
+  if (newLoyalty >= 95 && state.currentWeek % 5 === 0 && !state.isGameOver && !state.isVictory) {
+    state.temporaryClientMod = (state.temporaryClientMod ?? 0) + 0.10
+    state.temporaryModDaysLeft = Math.max(state.temporaryModDaysLeft ?? 0, 14)
+    state.reputation = Math.min(100, state.reputation + 2)
+    state.lastWeekMicroEvent = {
+      icon: '💛',
+      title: 'Сарафанное радио',
+      effectText: 'Постоянные клиенты советуют вас друзьям — +10% трафика на 2 недели, +2 репутации',
+    }
+  }
   state.purchaseOfferedThisDay = false
   state.lastUpdated = Date.now()
 
@@ -631,6 +650,19 @@ export function processWeek(state: GameState): DayResult {
           }
         }
         state.pendingEventsQueue = queue
+      }
+    }
+  }
+
+  // Crisis events get their own independent roll — they must not compete with the
+  // regular event pool or they'd almost never fire when the main pool is crowded.
+  if (!state.isGameOver && !state.isVictory) {
+    const crisisEvent = generateCrisisEvent(state)
+    if (crisisEvent) {
+      if (state.pendingEvent === null) {
+        state.pendingEvent = crisisEvent
+      } else {
+        state.pendingEventsQueue = [...(state.pendingEventsQueue ?? []), crisisEvent]
       }
     }
   }
