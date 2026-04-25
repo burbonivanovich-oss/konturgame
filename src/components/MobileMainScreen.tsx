@@ -16,6 +16,13 @@ import PromoWalletModal from './modals/PromoWalletModal'
 import BundleModal from './modals/BundleModal'
 import OwnerInvestmentsModal from './modals/OwnerInvestmentsModal'
 import NPCRosterModal from './modals/NPCRosterModal'
+import HireEmployeeModal from './modals/HireEmployeeModal'
+import { FinanceView } from './views/FinanceView'
+import { WarehouseView } from './views/WarehouseView'
+import OperationsView from './views/OperationsView'
+import { DevelopmentView } from './views/DevelopmentView'
+import StatisticsView from './views/StatisticsView'
+import { DecisionLogView } from './views/DecisionLogView'
 import { WEEKLY_TACTICS, getWeeklyTacticDef } from '../constants/weeklyTactics'
 import { WeekSummaryOverlay } from './WeekSummaryOverlay'
 import { WeekResultsOverlay } from './WeekResultsOverlay'
@@ -36,6 +43,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
   const [showPromoWalletModal, setShowPromoWalletModal] = useState(false)
   const [showOwnerInvestmentsModal, setShowOwnerInvestmentsModal] = useState(false)
   const [showNpcRosterModal, setShowNpcRosterModal] = useState(false)
+  const [showHireEmployeeModal, setShowHireEmployeeModal] = useState(false)
   const [activeTab, setActiveTab] = useState('day')
 
   const {
@@ -172,29 +180,42 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
         </div>
       </div>
 
-      {/* Tab navigation */}
+      {/* Tab navigation — horizontally scrollable, view tabs gated by week */}
       <div style={{
-        display: 'flex', gap: 4, overflow: 'x', borderBottom: `1px solid ${K.line}`,
+        display: 'flex', gap: 4,
+        overflowX: 'auto', overflowY: 'hidden',
+        borderBottom: `1px solid ${K.line}`,
         marginBottom: 8,
+        WebkitOverflowScrolling: 'touch',
+        scrollbarWidth: 'none',
       }}>
         {[
-          { id: 'day', label: '◎ День' },
-          { id: 'stats', label: '⭐ Индикаторы' },
-          { id: 'services', label: '🔌 Сервисы' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              padding: '8px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700,
-              border: 'none', background: activeTab === tab.id ? K.ink : 'transparent',
-              color: activeTab === tab.id ? K.white : K.ink,
-              cursor: 'pointer', transition: 'all 0.2s',
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
+          { id: 'day',         label: '◎ День',         unlocksAtWeek: 0  },
+          { id: 'stats',       label: '⭐ Индикаторы',  unlocksAtWeek: 0  },
+          { id: 'services',    label: '🔌 Сервисы',     unlocksAtWeek: 0  },
+          { id: 'finance',     label: '💼 Финансы',     unlocksAtWeek: 0  },
+          { id: 'operations',  label: '⚙️ Управление',  unlocksAtWeek: 0  },
+          { id: 'warehouse',   label: '📦 Склад',       unlocksAtWeek: 2  },
+          { id: 'development', label: '🚀 Развитие',    unlocksAtWeek: 2  },
+          { id: 'statistics',  label: '📊 Статистика',  unlocksAtWeek: 7  },
+          { id: 'journal',     label: '📓 Журнал',      unlocksAtWeek: 10 },
+        ]
+          .filter(tab => currentWeek >= tab.unlocksAtWeek)
+          .map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                padding: '8px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700,
+                border: 'none', background: activeTab === tab.id ? K.ink : 'transparent',
+                color: activeTab === tab.id ? K.white : K.ink,
+                cursor: 'pointer', transition: 'all 0.2s',
+                whiteSpace: 'nowrap', flexShrink: 0,
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
       </div>
 
       {/* Content */}
@@ -410,6 +431,15 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
             <ServicePanel />
           </>
         )}
+
+        {activeTab === 'finance' && <FinanceView />}
+        {activeTab === 'operations' && (
+          <OperationsView onShowHireModal={() => setShowHireEmployeeModal(true)} />
+        )}
+        {activeTab === 'warehouse' && <WarehouseView />}
+        {activeTab === 'development' && <DevelopmentView />}
+        {activeTab === 'statistics' && <StatisticsView />}
+        {activeTab === 'journal' && <DecisionLogView />}
       </div>
 
       {/* Toast */}
@@ -437,6 +467,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
       <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} onRestart={onRestart} />
       <AchievementsModal isOpen={showAchievementsModal} onClose={() => setShowAchievementsModal(false)} />
       <NPCRosterModal isOpen={showNpcRosterModal} onClose={() => setShowNpcRosterModal(false)} />
+      <HireEmployeeModal isOpen={showHireEmployeeModal} onClose={() => setShowHireEmployeeModal(false)} />
       <CashRegisterModal isOpen={showCashRegisterModal} onClose={() => setShowCashRegisterModal(false)} />
       <PromoCodeModal />
       <PromoWalletModal isOpen={showPromoWalletModal} onClose={() => setShowPromoWalletModal(false)} />
