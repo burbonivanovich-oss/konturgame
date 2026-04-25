@@ -699,13 +699,13 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const visitedTabsRef = useRef<Set<NavId>>(new Set(['dashboard', 'ecosystem', 'finance', 'development']))
 
   const {
-    currentWeek, services, pendingEvent, pendingEventsQueue,
+    currentWeek, balance, services, pendingEvent, pendingEventsQueue,
     isGameOver, isVictory, savedBalance, promoCodesRevealed,
     addBalance, addReputation, addLoyalty, markEventAsResolved, activateService,
     addSavedBalance, setTemporaryModifiers, advanceDay,
     weekPhase, completeActionsPhase, completeResultsPhase, completeSummaryPhase,
     onboardingStage, onboardingStepIndex, onboardingCompleted,
-    businessType, npcs,
+    businessType, npcs, personalGoal,
     updateNPCRelationship: storeUpdateNPCRelationship,
     addChainFollowUp,
     addDecisionLogEntry,
@@ -833,6 +833,8 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
         currentWeek={currentWeek}
         activeServiceCount={activeCount}
         savedBalance={savedBalance ?? 0}
+        balance={balance}
+        personalGoal={personalGoal}
         pendingEventCount={pendingEventCount}
         promoCodesCount={promoCodesRevealed?.length ?? 0}
         highlightNav={highlightNav}

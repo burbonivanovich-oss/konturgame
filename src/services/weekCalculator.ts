@@ -3,8 +3,8 @@ import { DAILY_MICRO_EVENTS } from '../constants/dailyMicroEvents'
 import { BUSINESS_CONFIGS, ECONOMY_CONSTANTS, CAMPAIGN_DIMINISHING_FACTORS } from '../constants/business'
 import { ensureNPCsInitialized, applyNPCPassiveEffects, getInspectorChain2EventId } from './npcManager'
 import { getChainEvent, getChainStartEvent, CHAIN_TRIGGER_WEEKS, type ChainId } from '../constants/eventChains'
-import { getNewspaperForWeek } from '../constants/cityNewspaper'
 import { templateToEvent, applyEventConsequence } from './eventGenerator'
+import { pickDiaryEntry } from '../constants/diary'
 import {
   buildModifiers,
   calculateClients,
@@ -559,15 +559,40 @@ export function processWeek(state: GameState): DayResult {
   // Auto-resolve expired decision timers (pick first non-Kontour option)
   autoResolveExpiredDecisions(state)
 
-  // Trigger city newspaper: first on week 5, then every 10 weeks (5, 15, 25, ...)
-  if ((state.currentWeek + 5) % 10 === 0 && !(state.seenNewspaperWeeks ?? []).includes(state.currentWeek)) {
-    const newspaper = getNewspaperForWeek(state.currentWeek)
-    if (newspaper && !state.triggeredEventIds.includes(newspaper.id)) {
-      const newsEvent = templateToEvent(newspaper, state.currentWeek * 7, state.currentWeek)
-      if (!state.seenNewspaperWeeks) state.seenNewspaperWeeks = []
-      state.seenNewspaperWeeks.push(state.currentWeek)
-      queueChainEvent(state, newsEvent)
+  // Personal goal tracking (v5.0): mark achieved when balance crosses target
+  // before deadline; mark missed when deadline passes without achievement.
+  // Once flipped, both flags are sticky — the run keeps the outcome.
+  if (state.personalGoal && !state.personalGoal.achieved && !state.personalGoal.missed) {
+    if (state.balance >= state.personalGoal.targetAmount) {
+      state.personalGoal.achieved = true
+    } else if (state.currentWeek > state.personalGoal.deadlineWeek) {
+      state.personalGoal.missed = true
     }
+  }
+
+  // Diary entry (v5.0): replaces the city-newspaper stub. Fires every 5 weeks
+  // starting from week 5, picking a state-aware first-person reflection. Tone
+  // anchor for the run; no blocking modal, just a card in WeekResults.
+  // Cleared on non-fire weeks so the overlay only shows fresh entries.
+  if (
+    state.currentWeek % 5 === 0 &&
+    !(state.diaryEntryWeeks ?? []).includes(state.currentWeek)
+  ) {
+    const entry = pickDiaryEntry(state)
+    if (entry) {
+      state.lastDiaryEntry = { header: entry.header, body: entry.body }
+      if (!state.diaryEntryWeeks) state.diaryEntryWeeks = []
+      state.diaryEntryWeeks.push(state.currentWeek)
+      // Apply optional flavor effects (small reputation/loyalty nudges)
+      if (entry.reputationDelta) {
+        state.reputation = Math.max(0, Math.min(100, state.reputation + entry.reputationDelta))
+      }
+      if (entry.loyaltyDelta) {
+        state.loyalty = Math.max(0, Math.min(100, state.loyalty + entry.loyaltyDelta))
+      }
+    }
+  } else {
+    state.lastDiaryEntry = null
   }
 
   // Pick 1 micro event per week (passive, no modal — shown in WeekResults)

@@ -38,6 +38,29 @@ export interface PlayerBackstory {
   personal: BackstoryPersonal
 }
 
+/**
+ * Personal goal — the protagonist's reason for being in business.
+ * Tied to backstory.personal: each personal situation has its own goal,
+ * deadline, and narrative ending. Drives time pressure and meaning beyond
+ * "don't go bankrupt".
+ */
+export interface PersonalGoal {
+  // Stable id used for ending text and analytics
+  id: 'apartment' | 'second_shop' | 'school_donation'
+  // Short label shown in the UI ("Своя квартира")
+  shortLabel: string
+  // Full sentence shown in dashboard ("Накопить 500 000 ₽ на квартиру в новом районе")
+  description: string
+  // Monetary target. Goal is met when balance >= targetAmount before deadline.
+  targetAmount: number
+  // Inclusive deadline week. After this week, goal is missed if not yet met.
+  deadlineWeek: number
+  // True once balance crossed the target before deadline
+  achieved: boolean
+  // True if the deadline passed without achievement (immutable failure)
+  missed: boolean
+}
+
 export type ServiceType = 'market' | 'bank' | 'ofd' | 'diadoc' | 'fokus' | 'elba' | 'extern'
 
 export type OnboardingStage = 0 | 1 | 2 | 3 | 4
@@ -277,6 +300,10 @@ export interface EventTemplate {
     oneTime?: boolean
     chainId?: string
     chainStep?: number
+    // Personal-event gating (v5.0): event only fires if the player picked
+    // this backstory. Used by personalEvents.ts to make NPC arcs feel earned.
+    requiredMotivation?: BackstoryMotivation
+    requiredPersonal?: BackstoryPersonal
   }
   options: EventOption[]
   npcId?: string
@@ -459,6 +486,12 @@ export interface GameState {
   // Weekly micro event (passive, shown in results)
   lastWeekMicroEvent?: { icon: string; title: string; effectText: string } | null
 
+  // Last diary entry (passive, first-person reflection — v5.0)
+  // Picked every 5 weeks based on backstory/state, shown in WeekResults.
+  lastDiaryEntry?: { header: string; body: string } | null
+  // Weeks at which a diary entry has been picked (prevents double-firing)
+  diaryEntryWeeks?: number[]
+
   // Suppliers system (NEW v2.0)
   suppliers: Supplier[]
   activeSupplierId: string | null
@@ -488,6 +521,9 @@ export interface GameState {
   // NPC system (v3.0)
   npcs: NPC[]
   playerBackstory: PlayerBackstory | null
+  // Personal goal — generated from backstory.personal at game start (v5.0).
+  // Optional for save migration; production runs always have it after backstory.
+  personalGoal?: PersonalGoal | null
   activeChainIds: string[]
   completedChainIds: string[]
   pendingChainFollowUps: Array<{ chainEventId: string; triggerWeek: number; contextNote?: string }>

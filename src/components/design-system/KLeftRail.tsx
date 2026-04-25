@@ -1,7 +1,7 @@
 import { K } from './tokens'
 import { KIcon } from './KIcon'
 import { Row, Col, Card } from './primitives'
-import type { BusinessType } from '../../types/game'
+import type { BusinessType, PersonalGoal } from '../../types/game'
 
 type NavId = 'dashboard' | 'ecosystem' | 'finance' | 'development' | 'operations' |
              'warehouse' | 'statistics' | 'journal'
@@ -50,6 +50,8 @@ interface KLeftRailProps {
   currentWeek: number
   activeServiceCount: number
   savedBalance: number
+  balance: number
+  personalGoal: PersonalGoal | null | undefined
   pendingEventCount: number
   promoCodesCount: number
   highlightNav?: NavId
@@ -62,7 +64,7 @@ interface KLeftRailProps {
 
 export function KLeftRail({
   active, businessType, currentWeek, activeServiceCount,
-  savedBalance, pendingEventCount,
+  savedBalance, balance, personalGoal, pendingEventCount,
   promoCodesCount, highlightNav, onNav, onHelp, onSettings,
   onPromoWallet, onAchievements,
 }: KLeftRailProps) {
@@ -180,6 +182,43 @@ export function KLeftRail({
       </nav>
 
       <div style={{ flex: 1 }} />
+
+      {/* Personal goal — anchors the run with a real reason and deadline */}
+      {personalGoal && (() => {
+        const pct = Math.min(100, Math.round((balance / personalGoal.targetAmount) * 100))
+        const weeksLeft = Math.max(0, personalGoal.deadlineWeek - currentWeek)
+        const isAchieved = personalGoal.achieved
+        const isMissed = personalGoal.missed
+        // Tone: green when on track, amber when behind, red when missed
+        const expectedPctByNow = Math.min(100, Math.round((currentWeek / personalGoal.deadlineWeek) * 100))
+        const onTrack = pct >= expectedPctByNow * 0.9
+        const accent = isAchieved ? K.mint : isMissed ? '#c0392b' : onTrack ? K.ink : K.orange
+        return (
+          <Card pad={12} radius={12} bg={K.white} border={K.line}>
+            <div style={{ fontSize: 10, color: K.muted, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700 }}>
+              Личная цель
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4, color: K.ink, lineHeight: 1.25 }}>
+              {personalGoal.shortLabel}
+            </div>
+            <div style={{ marginTop: 8, height: 6, borderRadius: 999, background: K.lineSoft, overflow: 'hidden' }}>
+              <div style={{
+                width: `${pct}%`, height: '100%',
+                background: accent, transition: 'width 0.3s',
+              }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 11, color: K.muted, fontVariantNumeric: 'tabular-nums' }}>
+              <span style={{ color: accent, fontWeight: 700 }}>{pct}%</span>
+              <span>
+                {isAchieved ? 'Цель достигнута ✓'
+                  : isMissed ? 'Срок истёк'
+                  : weeksLeft === 0 ? 'Последняя неделя!'
+                  : `${weeksLeft} нед. до срока`}
+              </span>
+            </div>
+          </Card>
+        )
+      })()}
 
       {/* Cumulative savings */}
       <Card pad={12} radius={12} bg={K.mint} border={K.mint} style={{ color: K.white }}>

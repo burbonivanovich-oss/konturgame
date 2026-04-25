@@ -1,5 +1,6 @@
 import type { GameState, Event, EventTemplate } from '../types/game'
 import { MORAL_DILEMMA_EVENTS } from '../constants/moralDilemmas'
+import { PERSONAL_BACKSTORY_EVENTS } from '../constants/personalEvents'
 import { getChainEvent, CHAIN_FOLLOWUP_DELAY } from '../constants/eventChains'
 import { RECURRING_CUSTOMER_EVENTS } from '../constants/recurringCustomers'
 import { NPC_EVENTS } from '../constants/npcEvents'
@@ -686,7 +687,13 @@ export function generateEvent(day: number, state: GameState): Event | null {
   const triggered = state.triggeredEventIds ?? []
   const candidates: EventTemplate[] = []
 
-  const allTemplates = [...EVENTS_DATABASE, ...MORAL_DILEMMA_EVENTS, ...RECURRING_CUSTOMER_EVENTS, ...NPC_EVENTS]
+  const allTemplates = [
+    ...EVENTS_DATABASE,
+    ...MORAL_DILEMMA_EVENTS,
+    ...RECURRING_CUSTOMER_EVENTS,
+    ...NPC_EVENTS,
+    ...PERSONAL_BACKSTORY_EVENTS,
+  ]
 
   for (const template of allTemplates) {
     if (template.trigger.oneTime && triggered.includes(template.id)) continue
@@ -716,6 +723,17 @@ export function generateEvent(day: number, state: GameState): Event | null {
     if (
       template.trigger.randomChance !== undefined &&
       Math.random() > template.trigger.randomChance
+    )
+      continue
+    // Backstory gating (v5.0)
+    if (
+      template.trigger.requiredMotivation !== undefined &&
+      state.playerBackstory?.motivation !== template.trigger.requiredMotivation
+    )
+      continue
+    if (
+      template.trigger.requiredPersonal !== undefined &&
+      state.playerBackstory?.personal !== template.trigger.requiredPersonal
     )
       continue
 

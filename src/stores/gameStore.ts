@@ -15,6 +15,7 @@ import { getBusinessStage, STAGE_CONFIG } from '../constants/businessStages'
 import { OWNER_INVESTMENTS_MAP } from '../constants/ownerInvestments'
 import type { OwnerInvestmentId } from '../constants/ownerInvestments'
 import { createInitialNPCs } from '../constants/npcs'
+import { createPersonalGoal } from '../constants/personalGoals'
 import { updateNPCRelationship, recordNPCMemory } from '../services/npcManager'
 
 const STORAGE_KEY = 'konturgame_state'
@@ -162,6 +163,7 @@ const createInitialState = (businessType: BusinessType): GameState => {
     // NPC system (v3.0)
     npcs: createInitialNPCs(),
     playerBackstory: null,
+    personalGoal: null,
     activeChainIds: [],
     completedChainIds: [],
     pendingChainFollowUps: [],
@@ -790,6 +792,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         // v3.0 NPC system
         npcs: state.npcs ?? createInitialNPCs(),
         playerBackstory: state.playerBackstory ?? null,
+        // v5.0: derive personalGoal from existing backstory if save predates the field
+        personalGoal: state.personalGoal
+          ?? (state.playerBackstory ? createPersonalGoal(state.playerBackstory.personal) : null),
         activeChainIds: state.activeChainIds ?? [],
         completedChainIds: state.completedChainIds ?? [],
         pendingChainFollowUps: state.pendingChainFollowUps ?? [],
@@ -1185,7 +1190,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     },
 
     setPlayerBackstory: (backstory: PlayerBackstory) => {
-      set({ playerBackstory: backstory, lastUpdated: Date.now() })
+      set({
+        playerBackstory: backstory,
+        // Generate the personal goal from the chosen "personal" situation.
+        // Each backstory ties to a different goal + deadline.
+        personalGoal: createPersonalGoal(backstory.personal),
+        lastUpdated: Date.now(),
+      })
     },
 
     addChainFollowUp: (chainEventId: string, triggerWeek: number) => {
