@@ -169,7 +169,7 @@ export const DIARY_ENTRIES: DiaryEntry[] = [
     matches: (s) => isBehindOnGoal(s) && s.currentWeek >= 12,
     compose: (s) => ({
       header: `Дневник · Неделя ${s.currentWeek}`,
-      body: `Сел вечером, посчитал. До цели «${s.personalGoal?.shortLabel}» осталось ${s.personalGoal!.deadlineWeek - s.currentWeek} недель. Темп — не успеваю. Надо что-то менять.`,
+      body: `Сел вечером, посчитал. До дедлайна — ${s.personalGoal!.deadlineWeek - s.currentWeek} недель, до нужной суммы не дотягиваю по темпу. Цифры не врут. Надо что-то менять, и быстро.`,
     }),
   },
   {
@@ -178,7 +178,7 @@ export const DIARY_ENTRIES: DiaryEntry[] = [
     matches: (s) => isOnTrackForGoal(s) && s.currentWeek >= 10,
     compose: (s) => ({
       header: `Дневник · Неделя ${s.currentWeek}`,
-      body: `Посмотрел на счёт — впервые поверил, что «${s.personalGoal?.shortLabel}» — реально. Не мечта, не «когда-нибудь», а просто следующая остановка.`,
+      body: 'Посмотрел на счёт. Впервые подумал — успею. Не «может быть» и не «если повезёт». Просто — успею. Странное чувство.',
       reputationDelta: 1,
     }),
   },
@@ -194,7 +194,66 @@ export const DIARY_ENTRIES: DiaryEntry[] = [
     },
     compose: (s) => ({
       header: `Дневник · Неделя ${s.currentWeek}`,
-      body: `Меньше месяца до срока. Сплю плохо. Каждый рубль теперь — про «${s.personalGoal?.shortLabel}». Хочется, чтобы уже было «или-или», без этого подвешенного состояния.`,
+      body: 'Меньше месяца до срока. Сплю плохо, считаю на салфетках. Каждый рубль теперь идёт в одну сторону — и от этого ни легче, ни тяжелее. Просто яснее.',
+    }),
+  },
+
+  // ── Goal-specific reflections (v5.3) ───────────────────────────────
+  // Mother surgery — between honor and panic
+  {
+    id: 'diary_goal_mother_silence',
+    specificity: 6,
+    matches: (s) => s.personalGoal?.id === 'mother_surgery' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    compose: (s) => ({
+      header: `Дневник · Неделя ${s.currentWeek}`,
+      body: 'Звонил маме. Спрашиваю «как самочувствие» — отвечает «нормально, не переживай». Это её «нормально» уже три месяца. Положил трубку, открыл расчёт — мне нужно ещё столько-то. Стало стыдно, что я считаю.',
+    }),
+  },
+  {
+    id: 'diary_goal_mother_doctor',
+    specificity: 6,
+    matches: (s) => s.personalGoal?.id === 'mother_surgery' && s.currentWeek >= 18 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    compose: (s) => ({
+      header: `Дневник · Неделя ${s.currentWeek}`,
+      body: 'Доктор позвонил уточнить дату — «когда вы планируете». Ответил «работаем над этим». Он не уточнил, я не стал. Профессиональная вежливость двух людей, у которых разные виды бессилия.',
+    }),
+  },
+  // Dimka co-sign — guilt of silence
+  {
+    id: 'diary_goal_dimka_doesnt_know',
+    specificity: 6,
+    matches: (s) => s.personalGoal?.id === 'dimka_cosign' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    compose: (s) => ({
+      header: `Дневник · Неделя ${s.currentWeek}`,
+      body: 'Димка зашёл с пирожками от мамы. Сидим, болтаем про чемпионат. Хочется сказать про банк — и не получается. Не из страха. Из жадности: пока он не знает, у меня есть шанс это исправить молча.',
+    }),
+  },
+  {
+    id: 'diary_goal_dimka_letter',
+    specificity: 6,
+    matches: (s) => s.personalGoal?.id === 'dimka_cosign' && s.currentWeek >= 22 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    compose: (s) => ({
+      header: `Дневник · Неделя ${s.currentWeek}`,
+      body: 'Подумал — может, написать ему всё в письме. Сел, начал. Дошёл до «прости, что молчал». Закрыл ноутбук. Не потому что струсил. Потому что письмо — это уже признание поражения. А я пока ещё могу выиграть.',
+    }),
+  },
+  // Grandma's apartment — absence is the real bill
+  {
+    id: 'diary_goal_grandma_keys',
+    specificity: 6,
+    matches: (s) => s.personalGoal?.id === 'grandma_flat' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    compose: (s) => ({
+      header: `Дневник · Неделя ${s.currentWeek}`,
+      body: 'Зашёл во двор бабушкиного дома. Лавочка — её. Голуби — её. Постоял, посмотрел на её окно — там темно. Не поднимался. Не имею пока права. Скоро пойму, имею ли вообще.',
+    }),
+  },
+  {
+    id: 'diary_goal_grandma_uncle_call',
+    specificity: 6,
+    matches: (s) => s.personalGoal?.id === 'grandma_flat' && s.currentWeek >= 20 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    compose: (s) => ({
+      header: `Дневник · Неделя ${s.currentWeek}`,
+      body: 'Дядя написал: «Если не успеваешь — там семья из Краснодара уже звонила». Это и не давление, и не утешение — просто факт. Хорошо, что не утешает. От утешений было бы хуже.',
     }),
   },
 

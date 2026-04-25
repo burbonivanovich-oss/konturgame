@@ -171,17 +171,48 @@ export const PERSONAL_BACKSTORY_EVENTS: EventTemplate[] = [
   },
 
   // ──────────────────────────────────────────────────────────────────
-  // Personal: free (no obligations)
+  // Personal: free — life with one obligation: mother
   // ──────────────────────────────────────────────────────────────────
   {
-    id: 'PERS_FREE_DATE',
-    title: 'Свидание в среду',
+    id: 'PERS_FREE_MOTHER_TEST',
+    title: 'Мама прислала фото из поликлиники',
     description:
-      'В приложении — совпадение. Оля. Зовёт в среду в 19:00, кафе на Покровке. Среда — самый поток клиентов. Можно закрыть пораньше (потерять выручку), можно перенести (выглядит как «не приоритет»), можно не пойти.',
+      'В мессенджере — фото листка анализов и подпись «доктор сказал, ничего срочного». Под фото видно дрожание её рук. Можно ехать сейчас, можно позвонить, можно сделать вид, что поверили.',
     trigger: {
-      dayMin: 49,  // week 7
+      dayMin: 35,  // week 5
       dayMax: 140, // week 20
-      randomChance: 0.6,
+      randomChance: 0.7,
+      oneTime: true,
+      requiredPersonal: 'free',
+    },
+    isMoralDilemma: true,
+    options: [
+      {
+        id: 'go_now',
+        text: 'Закрыть и приехать в больницу — сегодня (−12 000 ₽ выручки)',
+        consequences: { balanceDelta: -12000, energyDelta: -10, loyaltyDelta: 4 },
+      },
+      {
+        id: 'call_long',
+        text: 'Позвонить, спросить про каждое слово — давить, пока не скажет правду',
+        consequences: { energyDelta: -5, reputationDelta: 1 },
+      },
+      {
+        id: 'pretend_believe',
+        text: '«Ну хорошо, что ничего срочного» — потом съезжу',
+        consequences: { energyDelta: -8, loyaltyDelta: -3 },
+      },
+    ],
+  },
+  {
+    id: 'PERS_FREE_DATE',
+    title: 'Совпадение в приложении',
+    description:
+      'Оля, 31, преподаёт английский. Пишет с уважением, отвечает быстро. Зовёт в среду на кофе. Среда — пиковый день. Плюс мысль: «как я объясню про маму, бизнес, что я почти не сплю». Может, это и не время.',
+    trigger: {
+      dayMin: 70,  // week 10
+      dayMax: 175, // week 25
+      randomChance: 0.5,
       oneTime: true,
       requiredPersonal: 'free',
     },
@@ -189,17 +220,17 @@ export const PERSONAL_BACKSTORY_EVENTS: EventTemplate[] = [
     options: [
       {
         id: 'go_close_early',
-        text: 'Закрыть на час раньше, поехать',
+        text: 'Закрыть на час раньше, поехать как есть (−8 000 ₽)',
         consequences: { balanceDelta: -8000, energyDelta: 15 },
       },
       {
         id: 'reschedule',
-        text: 'Перенести — после работы, в районе магазина',
+        text: 'Предложить субботу, в районе магазина — пусть видит, как живу',
         consequences: { energyDelta: 5 },
       },
       {
         id: 'cancel',
-        text: 'Не пойти — не до этого сейчас',
+        text: 'Написать «давай через пару месяцев» — не врать, что готов',
         consequences: { energyDelta: -5 },
       },
     ],
@@ -210,9 +241,9 @@ export const PERSONAL_BACKSTORY_EVENTS: EventTemplate[] = [
   // ──────────────────────────────────────────────────────────────────
   {
     id: 'PERS_FRIEND_LOAN_OFFER',
-    title: 'Димка предлагает деньги',
+    title: 'Димка предлагает ещё денег',
     description:
-      'Звонок поздно вечером. «Слушай, я тут продал гараж. Сто тысяч, мне сейчас не нужны. Возьми без процентов, на полгода. Просто помогу». Голос радостный. Деньги нужны, ты знаешь. Но это долг другу — это всегда сложнее, чем кажется.',
+      'Звонок поздно вечером. «Слушай, я тут гараж продал. Сто тысяч, мне сейчас не нужны. Возьми без процентов, на полгода». Голос радостный. Он не знает, что вы как раз пытаетесь снять его с поручительства по тому первому кредиту. Брать ещё — это надевать на него вторую верёвку.',
     trigger: {
       dayMin: 42,  // week 6
       dayMax: 175, // week 25
@@ -224,18 +255,18 @@ export const PERSONAL_BACKSTORY_EVENTS: EventTemplate[] = [
     options: [
       {
         id: 'take_it',
-        text: 'Взять — спасибо, отдам строго в срок',
-        consequences: { balanceDelta: 100000, loyaltyDelta: 5, reputationDelta: -2 },
+        text: 'Взять, не объясняя (+100 000 ₽; внутри становится тяжелее)',
+        consequences: { balanceDelta: 100000, loyaltyDelta: 5, reputationDelta: -3 },
       },
       {
-        id: 'take_with_terms',
-        text: 'Взять, но настоять на расписке и процентах — чтобы было «по-настоящему»',
-        consequences: { balanceDelta: 100000, reputationDelta: 4, loyaltyDelta: 2 },
+        id: 'tell_truth',
+        text: 'Сказать ему про банк — «прости, что молчал. Сейчас брать у тебя я не имею права»',
+        consequences: { reputationDelta: 8, loyaltyDelta: -4 },
       },
       {
         id: 'refuse',
-        text: 'Отказаться — дружба важнее, как-нибудь сам',
-        consequences: { reputationDelta: 3, loyaltyDelta: 6 },
+        text: 'Отказаться, не объясняя — он не поймёт, но так честнее',
+        consequences: { reputationDelta: 2, loyaltyDelta: 4 },
       },
     ],
   },
