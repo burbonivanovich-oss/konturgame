@@ -4,6 +4,7 @@ import type { PlayerBackstory, NPC } from '../../types/game'
 import { K } from '../design-system/tokens'
 import { buildNpcExitLines, buildGoalClosure } from '../../constants/npcExits'
 import { getNPCDefinition } from '../../constants/npcs'
+import { getMetaLesson } from '../../constants/metaLessons'
 
 interface VictoryModalProps {
   isOpen: boolean
@@ -131,8 +132,12 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
   const {
     startNewGame, currentWeek, balance, reputation, gameOverReason,
     playerBackstory, npcs, completedChainIds, totalPainLosses, personalGoal,
-    decisionLog,
+    decisionLog, newlyUnlockedLessons,
   } = useGameStore()
+
+  const newLessons = (newlyUnlockedLessons ?? [])
+    .map(id => getMetaLesson(id))
+    .filter((l): l is NonNullable<typeof l> => !!l)
 
   // Postmortem: keep only choices that mattered — moral / NPC events with
   // non-neutral impact. Take up to 8, oldest first, so the timeline reads
@@ -383,6 +388,39 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
             <p style={{ fontSize: 14, color: K.muted, marginBottom: 24, lineHeight: 1.6 }}>
               Анализируйте ошибки и попробуйте снова!
             </p>
+          )}
+
+          {/* Newly unlocked lessons — carry forward to next run */}
+          {newLessons.length > 0 && (
+            <div style={{
+              background: '#fff8e8',
+              border: `1px solid ${K.orange}`,
+              borderRadius: 12, padding: '14px 16px',
+              marginBottom: 16, textAlign: 'left',
+            }}>
+              <div style={{
+                fontSize: 11, fontWeight: 800, color: K.orange,
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+                marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+                <span>📚</span>
+                <span>Новые уроки — пойдут в следующую попытку</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {newLessons.map(l => (
+                  <div key={l.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>{l.icon}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: K.ink }}>{l.name}</div>
+                      <div style={{ fontSize: 12, color: K.ink2, marginTop: 1 }}>{l.earnedHow}.</div>
+                      <div style={{ fontSize: 12, color: K.orange, fontWeight: 600, marginTop: 2 }}>
+                        +{l.bonusText.replace(/^\+?/, '')}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
 

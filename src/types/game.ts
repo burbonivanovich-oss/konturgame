@@ -580,6 +580,33 @@ export interface GameState {
   // - 'calm':      -8% revenue, +2 energy/day
   // - 'service':   -5% revenue, +0.5 reputation/day, +1 loyalty/day
   weeklyTactic?: WeeklyTactic | null
+
+  // Lessons unlocked by THIS run (i.e. just earned at game-over). Set by
+  // setGameOver / setVictory; consumed by VictoryModal to celebrate them.
+  // Cleared on new game start.
+  newlyUnlockedLessons?: string[]
 }
 
 export type WeeklyTactic = 'aggressive' | 'calm' | 'service'
+
+/**
+ * Cross-run metaprogression (v5.5). Persists separately from the main save
+ * so it survives "new game". Each finished run can unlock "lessons" — small,
+ * permanent perks granted at the start of every future run, paid for by
+ * what the player already accomplished.
+ *
+ * The point: a death stops being a hard reset and becomes investment.
+ */
+export interface MetaProgress {
+  totalRuns: number
+  unlockedLessons: string[]      // ids of MetaLesson.id
+  bestWeek: number               // furthest week ever reached
+  totalGoalsAchieved: number     // count of personal goals achieved across runs
+}
+
+export interface MetaLessonBonus {
+  startingBalanceDelta?: number
+  startingEnergyDelta?: number
+  startingReputationDelta?: number
+  startingLoyaltyDelta?: number
+}
