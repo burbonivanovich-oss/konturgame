@@ -310,6 +310,12 @@ export interface EventTemplate {
     npcRelationshipMax?: number
     // Require the NPC to have been revealed at least once (i.e. interacted with)
     requiresNpcRevealed?: boolean
+    // Crisis-event gating (v5.5): trigger only when player is "doing well".
+    // These let us spawn high-impact destabilization events that don't
+    // overwhelm players who are already struggling.
+    balanceMin?: number
+    weekMin?: number
+    loyaltyMin?: number
   }
   options: EventOption[]
   npcId?: string
@@ -567,4 +573,13 @@ export interface GameState {
   // Used by backstory achievements + postmortem timeline. Optional for save
   // migration; new runs always populate it via markEventAsResolved.
   chosenEventOptions?: Record<string, string>
+
+  // Weekly tactic — small player-driven choice at the start of each week.
+  // Resets to null when a new week starts; player picks from 3 options.
+  // - 'aggressive': +15% revenue, -3 energy/day
+  // - 'calm':      -8% revenue, +2 energy/day
+  // - 'service':   -5% revenue, +0.5 reputation/day, +1 loyalty/day
+  weeklyTactic?: WeeklyTactic | null
 }
+
+export type WeeklyTactic = 'aggressive' | 'calm' | 'service'

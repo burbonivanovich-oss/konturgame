@@ -2,6 +2,7 @@ import type { GameState, Event, EventTemplate } from '../types/game'
 import { MORAL_DILEMMA_EVENTS } from '../constants/moralDilemmas'
 import { PERSONAL_BACKSTORY_EVENTS } from '../constants/personalEvents'
 import { NPC_ARC_EVENTS } from '../constants/npcArcs'
+import { CRISIS_EVENTS } from '../constants/crisisEvents'
 import { getChainEvent, CHAIN_FOLLOWUP_DELAY } from '../constants/eventChains'
 import { RECURRING_CUSTOMER_EVENTS } from '../constants/recurringCustomers'
 import { NPC_EVENTS } from '../constants/npcEvents'
@@ -859,6 +860,7 @@ export function generateEvent(day: number, state: GameState): Event | null {
     ...NPC_EVENTS,
     ...PERSONAL_BACKSTORY_EVENTS,
     ...NPC_ARC_EVENTS,
+    ...CRISIS_EVENTS,
   ]
 
   for (const template of allTemplates) {
@@ -902,6 +904,11 @@ export function generateEvent(day: number, state: GameState): Event | null {
       state.playerBackstory?.personal !== template.trigger.requiredPersonal
     )
       continue
+    // Crisis gating (v5.5): only fire when the player is doing well enough
+    // for the event to feel like a setback rather than a death blow.
+    if (template.trigger.balanceMin !== undefined && state.balance < template.trigger.balanceMin) continue
+    if (template.trigger.weekMin !== undefined && state.currentWeek < template.trigger.weekMin) continue
+    if (template.trigger.loyaltyMin !== undefined && state.loyalty < template.trigger.loyaltyMin) continue
     // NPC relationship gating (v5.1)
     if (template.npcId) {
       const npc = (state.npcs ?? []).find(n => n.id === template.npcId)

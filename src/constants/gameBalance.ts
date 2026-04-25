@@ -53,31 +53,46 @@ export const SERVICE_SAVINGS_RATES = {
 
 // Daily losses applied when a service is missing AND its onboarding has been
 // unlocked. These are the "pain" the player feels for skipping a service.
+//
+// Calibration philosophy (v5.5): services should make life EASIER, not be
+// mandatory taxes. Bank and OFD remain "real-life mandatory" — Bank via
+// payment ratio (40% can't pay cash), OFD by frequent fines (online-cash-
+// register law). The other five (Market / Diadoc / Fokus / Elba / Extern)
+// are softened so that a careful player can survive without them, just at
+// noticeable cost.
 export const PAIN_LOSSES = {
   MARKET: {
-    revenueRate: 0.08,
+    // Manual inventory accounting still leaks revenue, but at half the
+    // previous rate (8% → 4%). Service ROI now ~10 weeks instead of 4.
+    revenueRate: 0.04,
   },
   OFD: {
+    // Mandatory by law — kept punishing.
     dailyChance: 0.10,
     revenueRate: 0.15,
   },
   DIADOC: {
-    dailyChance: 0.10,
+    // Was already small; nudged down further.
+    dailyChance: 0.08,
     revenueRate: 0.02,
   },
   FOKUS: {
-    dailyChance: 1 / 17,
-    minBalanceRate: 0.05,
-    maxBalanceRate: 0.10,
+    // Bad-supplier risk: rarer (1/22 vs 1/17) and smaller hits (3-6% vs 5-10%).
+    dailyChance: 1 / 22,
+    minBalanceRate: 0.03,
+    maxBalanceRate: 0.06,
   },
   ELBA: {
-    dailyChance: 1 / 25,
-    profitRate: 0.15,
+    // Tax-mistake fines: rarer (1/30 vs 1/25), 10% of profit vs 15%.
+    dailyChance: 1 / 30,
+    profitRate: 0.10,
   },
   EXTERN: {
-    dailyChance: 1 / 31,
-    revenueDaysOfDamage: 2,
-    maxBalancePct: 0.25,
+    // Account block: was a 25%-of-balance one-shot kill. Now 1 day of
+    // revenue capped at 10% of balance — still painful, no longer fatal.
+    dailyChance: 1 / 35,
+    revenueDaysOfDamage: 1,
+    maxBalancePct: 0.10,
   },
 } as const
 

@@ -29,6 +29,7 @@ import { useGameStore } from '../stores/gameStore'
 import { ONBOARDING_STAGES } from '../constants/onboarding'
 import { BUSINESS_CONFIGS } from '../constants/business'
 import { getBusinessStage, STAGE_CONFIG, getNextStage } from '../constants/businessStages'
+import { WEEKLY_TACTICS, getWeeklyTacticDef } from '../constants/weeklyTactics'
 import type { BusinessType } from '../types/game'
 import { KLeftRail } from './design-system/KLeftRail'
 import { KHeaderBar } from './design-system/KHeaderBar'
@@ -69,7 +70,7 @@ function DashboardView({
     currentWeek, balance, reputation, loyalty, services,
     pendingEvent, pendingEventsQueue, lastDayResult,
     entrepreneurEnergy, npcs, stockBatches, capacity, cashRegisters,
-    businessType, qualityLevel, level,
+    businessType, qualityLevel, level, weeklyTactic, setWeeklyTactic,
   } = store
 
   const bizConfig = BUSINESS_CONFIGS[businessType]
@@ -142,6 +143,65 @@ function DashboardView({
           display: 'flex', flexDirection: 'column', gap: 14,
           overflowY: 'auto',
         }}>
+          {/* Weekly tactic — chooser card or active chip */}
+          {!weeklyTactic ? (
+            <div style={{
+              background: K.white,
+              border: `2px solid ${K.orange}`,
+              borderRadius: 14,
+              padding: '14px 16px',
+              display: 'flex', flexDirection: 'column', gap: 10,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: K.orange, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Тактика на неделю
+                  </div>
+                  <div style={{ fontSize: 13, color: K.muted, marginTop: 2 }}>
+                    Выберите фокус — он будет влиять на эту неделю
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                {WEEKLY_TACTICS.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => setWeeklyTactic(t.id)}
+                    style={{
+                      textAlign: 'left', padding: '10px 12px',
+                      background: K.bone, border: `1px solid ${K.lineSoft}`,
+                      borderRadius: 10, cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      display: 'flex', flexDirection: 'column', gap: 4,
+                      transition: 'all 0.15s',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = K.orange }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = K.lineSoft }}
+                  >
+                    <div style={{ fontSize: 18 }}>{t.icon}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: K.ink }}>{t.title}</div>
+                    <div style={{ fontSize: 11, color: K.muted, lineHeight: 1.4 }}>{t.blurb}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (() => {
+            const def = getWeeklyTacticDef(weeklyTactic)
+            return def ? (
+              <div style={{
+                background: K.bone, border: `1px solid ${K.lineSoft}`,
+                borderRadius: 10, padding: '8px 14px',
+                display: 'flex', alignItems: 'center', gap: 10,
+                fontSize: 12,
+              }}>
+                <span style={{ fontSize: 16 }}>{def.icon}</span>
+                <span style={{ fontWeight: 700, color: K.ink }}>Тактика недели:</span>
+                <span style={{ color: K.ink2 }}>{def.title}</span>
+                <span style={{ color: K.muted, marginLeft: 'auto', fontSize: 11 }}>{def.blurb}</span>
+              </div>
+            ) : null
+          })()}
+
           {/* Top KPI strip — hero balance card + 3 supporting metrics */}
           <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr', gap: 10 }}>
             {/* Hero balance card — visually dominant */}
