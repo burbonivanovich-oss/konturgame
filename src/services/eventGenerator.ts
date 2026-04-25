@@ -1,6 +1,7 @@
 import type { GameState, Event, EventTemplate } from '../types/game'
 import { MORAL_DILEMMA_EVENTS } from '../constants/moralDilemmas'
 import { PERSONAL_BACKSTORY_EVENTS } from '../constants/personalEvents'
+import { NPC_ARC_EVENTS } from '../constants/npcArcs'
 import { getChainEvent, CHAIN_FOLLOWUP_DELAY } from '../constants/eventChains'
 import { RECURRING_CUSTOMER_EVENTS } from '../constants/recurringCustomers'
 import { NPC_EVENTS } from '../constants/npcEvents'
@@ -35,15 +36,26 @@ export const EVENTS_DATABASE: EventTemplate[] = [
   },
   {
     id: 'BLOGGER01',
-    title: 'Популярный блогер',
-    description: 'Местный блогер упомянул ваш бизнес в своём посте. Поток клиентов резко вырос!',
+    title: 'Блогер привёл толпу',
+    description:
+      'Местный блогер упомянул вас в посте — на пороге очередь, какой не было никогда. Половина клиентов — впервые. Команда не справляется. Что делать?',
     npcId: 'gleb',
     trigger: { randomChance: 0.03 },
     options: [
       {
-        id: 'accept',
-        text: 'Принять всех клиентов',
-        consequences: { clientModifier: 0.3, clientModifierDays: 7, reputationDelta: 5 },
+        id: 'all_in',
+        text: 'Работать на пределе — каждый клиент важен (стресс −15 энергии, +30% клиентов на 7 дней)',
+        consequences: { clientModifier: 0.3, clientModifierDays: 7, reputationDelta: 5, energyDelta: -15 },
+      },
+      {
+        id: 'limit_quality',
+        text: 'Замедлиться, держать качество — кто-то уйдёт, но без грязи (+15% клиентов на 10 дней)',
+        consequences: { clientModifier: 0.15, clientModifierDays: 10, reputationDelta: 8 },
+      },
+      {
+        id: 'hire_temp',
+        text: 'Нанять временного помощника на 2 недели (−12 000 ₽)',
+        consequences: { balanceDelta: -12000, clientModifier: 0.25, clientModifierDays: 14, reputationDelta: 6 },
       },
     ],
   },
@@ -70,14 +82,25 @@ export const EVENTS_DATABASE: EventTemplate[] = [
   },
   {
     id: 'HOLIDAY01',
-    title: 'Праздничный ажиотаж',
-    description: 'Приближается праздник. Клиентов стало значительно больше.',
+    title: 'Праздник на носу',
+    description:
+      'До праздника три дня. Конкуренты делают акции, у вас — обычный ассортимент. Можно вложиться в подготовку, можно остаться при своих, можно сделать ставку на премиум.',
     trigger: { randomChance: 0.04 },
     options: [
       {
-        id: 'normal',
-        text: 'Работать в стандартном режиме',
-        consequences: { clientModifier: 0.2, clientModifierDays: 5 },
+        id: 'discount_push',
+        text: 'Скидки и расширенные часы (−6 000 ₽ на закупку, +25% клиентов на 7 дней)',
+        consequences: { balanceDelta: -6000, clientModifier: 0.25, clientModifierDays: 7 },
+      },
+      {
+        id: 'standard',
+        text: 'Работать как обычно — без авралов',
+        consequences: { clientModifier: 0.1, clientModifierDays: 5 },
+      },
+      {
+        id: 'premium_focus',
+        text: 'Делать ставку на чек: дорогие позиции в витрине (+15% к чеку на 10 дней)',
+        consequences: { checkModifier: 0.15, checkModifierDays: 10, reputationDelta: 2 },
       },
     ],
   },
@@ -128,19 +151,30 @@ export const EVENTS_DATABASE: EventTemplate[] = [
   },
   {
     id: 'EQUIPMENT01',
-    title: 'Поломка оборудования',
-    description: 'Вышло из строя ключевое оборудование. Требуется срочный ремонт.',
+    title: 'Сломалось ключевое оборудование',
+    description:
+      'Утром не запустилось — то ли провод, то ли электроника. Сервисный центр предлагает три варианта. У знакомого мастера — четвёртый, но без гарантии.',
     trigger: { randomChance: 0.04 },
     options: [
       {
         id: 'full-repair',
-        text: 'Полноценный ремонт (-15 000 ₽)',
+        text: 'Сервис официальный, гарантия на год (−15 000 ₽)',
         consequences: { balanceDelta: -15000 },
       },
       {
         id: 'cheap-repair',
-        text: 'Быстрый ремонт (-7 000 ₽, временные потери клиентов)',
+        text: 'Сервис эконом, без гарантии — может опять сломаться (−7 000 ₽, −10% клиентов 3 дня)',
         consequences: { balanceDelta: -7000, clientModifier: -0.1, clientModifierDays: 3 },
+      },
+      {
+        id: 'friend-master',
+        text: 'Знакомый мастер «по дружбе» — без чека, втрое дешевле (−5 000 ₽, риск повтора через месяц)',
+        consequences: { balanceDelta: -5000, reputationDelta: -1 },
+      },
+      {
+        id: 'replace',
+        text: 'Купить новое, более надёжное (−28 000 ₽, +5% к пропускной на 30 дней)',
+        consequences: { balanceDelta: -28000, clientModifier: 0.05, clientModifierDays: 30 },
       },
     ],
   },
@@ -205,50 +239,79 @@ export const EVENTS_DATABASE: EventTemplate[] = [
   },
   {
     id: 'LOYAL01',
-    title: 'Постоянный клиент',
-    description: 'Довольный постоянный клиент привёл с собой новых друзей.',
+    title: 'Постоянный привёл компанию',
+    description:
+      'Игорь — ходит к вам полгода, всегда тихо. Сегодня пришёл с пятью друзьями: «Ребята, я вам говорил — место огонь». Все смотрят. Можно встретить как обычно, можно сделать что-то особенное — для Игоря и в их глазах.',
     trigger: { randomChance: 0.04, reputationMin: 60 },
     options: [
       {
-        id: 'welcome',
-        text: 'Тепло встретить новых клиентов',
-        consequences: { reputationDelta: 3, clientModifier: 0.1, clientModifierDays: 5 },
+        id: 'standard',
+        text: 'Принять как обычных клиентов — без выделения',
+        consequences: { clientModifier: 0.1, clientModifierDays: 5 },
+      },
+      {
+        id: 'thanks_loyalty_card',
+        text: 'Подарить Игорю карту лояльности на месяц — публично (−2 500 ₽)',
+        consequences: { balanceDelta: -2500, reputationDelta: 5, loyaltyDelta: 4, clientModifier: 0.12, clientModifierDays: 7 },
+      },
+      {
+        id: 'free_round',
+        text: 'Угостить всю компанию бесплатно — щедрый жест (−5 000 ₽)',
+        consequences: { balanceDelta: -5000, reputationDelta: 8, clientModifier: 0.18, clientModifierDays: 7 },
       },
     ],
   },
   {
     id: 'RENT01',
-    title: 'Повышение аренды',
-    description: 'Арендодатель сообщил о повышении арендной ставки с следующего месяца.',
+    title: 'Арендодатель поднимает ставку',
+    description:
+      'Письмо от собственника: со следующего месяца аренда +15%. Объясняет «коммуналка, инфляция». Можно согласиться, поторговаться, поугрожать съездом — или начать искать другое помещение всерьёз.',
     trigger: { dayMin: 30, randomChance: 0.03, oneTime: true },
     options: [
       {
         id: 'agree',
-        text: 'Согласиться с повышением (-5 000 ₽)',
+        text: 'Согласиться без споров — мир дороже (−5 000 ₽)',
         consequences: { balanceDelta: -5000 },
       },
       {
         id: 'negotiate',
-        text: 'Поторговаться (-2 000 ₽)',
+        text: 'Спокойно поторговаться — «давайте +5%» (−2 000 ₽)',
         consequences: { balanceDelta: -2000 },
+      },
+      {
+        id: 'threaten',
+        text: 'Угрозой съездом сбить до нуля — но отношения испортятся',
+        consequences: { reputationDelta: -2 },
+      },
+      {
+        id: 'search_alt',
+        text: 'Параллельно искать новое помещение (−3 000 ₽ риелтор, время на поиск)',
+        consequences: { balanceDelta: -3000, energyDelta: -10 },
       },
     ],
   },
   {
     id: 'FIRE01',
-    title: 'Пожарная проверка',
-    description: 'Пожарная инспекция выявила нарушения в вашем помещении.',
+    title: 'Пожарный инспектор зашёл «на чай»',
+    description:
+      'Молодой инспектор, второй год в должности. Прошёл по залу, поморщился у щитка: «Нарушения серьёзные, по уму — закрыть до устранения». Помолчал. «Хотя... всякое бывает. Я могу написать "по результатам устных рекомендаций"». Смотрит выжидающе.',
     trigger: { randomChance: 0.02, oneTime: true },
+    isMoralDilemma: true,
     options: [
       {
         id: 'pay-fine',
-        text: 'Оплатить штраф (-10 000 ₽)',
+        text: 'Принять штраф по протоколу (−10 000 ₽)',
         consequences: { balanceDelta: -10000 },
       },
       {
         id: 'fix',
-        text: 'Устранить нарушения (-5 000 ₽)',
+        text: 'Признать, устранить за свой счёт, попросить акт «без штрафа» (−5 000 ₽, +репутация)',
         consequences: { balanceDelta: -5000, reputationDelta: 2 },
+      },
+      {
+        id: 'bribe',
+        text: '«Понимаю, спасибо за понимание» — конверт (−3 000 ₽, репутация ниже, нарушения остались)',
+        consequences: { balanceDelta: -3000, reputationDelta: -4 },
       },
     ],
   },
@@ -292,14 +355,25 @@ export const EVENTS_DATABASE: EventTemplate[] = [
   },
   {
     id: 'VIRAL01',
-    title: 'Вирусное видео',
-    description: 'Видео о вашем бизнесе стало вирусным в соцсетях!',
+    title: 'Видео залетело в топ',
+    description:
+      'Кто-то снял ваш бизнес — видео набрало 200 тысяч просмотров за ночь. Половина комментов: «надо съездить!». Половина: «жду подвоха». На пороге уже стоит первая «волна». Окно — пара недель, потом интерес упадёт.',
     trigger: { randomChance: 0.02, reputationMin: 70 },
     options: [
       {
         id: 'ride-wave',
-        text: 'Использовать момент',
-        consequences: { clientModifier: 0.5, clientModifierDays: 14, reputationDelta: 10 },
+        text: 'Бросить всё на обслуживание ажиотажа (+50% клиентов 14 дней, −20 энергии)',
+        consequences: { clientModifier: 0.5, clientModifierDays: 14, reputationDelta: 10, energyDelta: -20 },
+      },
+      {
+        id: 'capitalize',
+        text: 'Выпустить «вирусную» лимитированную позицию (−8 000 ₽, +35% клиентов, +10% к чеку 14 дней)',
+        consequences: { balanceDelta: -8000, clientModifier: 0.35, clientModifierDays: 14, checkModifier: 0.1, checkModifierDays: 14 },
+      },
+      {
+        id: 'controlled',
+        text: 'Не раздувать — пусть будет органично, без перегрева (+25% клиентов 21 день)',
+        consequences: { clientModifier: 0.25, clientModifierDays: 21, reputationDelta: 5 },
       },
     ],
   },
@@ -693,6 +767,7 @@ export function generateEvent(day: number, state: GameState): Event | null {
     ...RECURRING_CUSTOMER_EVENTS,
     ...NPC_EVENTS,
     ...PERSONAL_BACKSTORY_EVENTS,
+    ...NPC_ARC_EVENTS,
   ]
 
   for (const template of allTemplates) {
@@ -736,6 +811,15 @@ export function generateEvent(day: number, state: GameState): Event | null {
       state.playerBackstory?.personal !== template.trigger.requiredPersonal
     )
       continue
+    // NPC relationship gating (v5.1)
+    if (template.npcId) {
+      const npc = (state.npcs ?? []).find(n => n.id === template.npcId)
+      if (template.trigger.requiresNpcRevealed && (!npc || !npc.isRevealed)) continue
+      if (template.trigger.npcRelationshipMin !== undefined &&
+          (!npc || npc.relationshipLevel < template.trigger.npcRelationshipMin)) continue
+      if (template.trigger.npcRelationshipMax !== undefined &&
+          (!npc || npc.relationshipLevel > template.trigger.npcRelationshipMax)) continue
+    }
 
     candidates.push(template)
   }

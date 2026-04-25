@@ -8,6 +8,7 @@ import HelpModal from './modals/HelpModal'
 import SettingsModal from './modals/SettingsModal'
 import VictoryModal from './modals/VictoryModal'
 import AchievementsModal from './modals/AchievementsModal'
+import NPCRosterModal from './modals/NPCRosterModal'
 import CashRegisterModal from './modals/CashRegisterModal'
 import AssortmentModal from './modals/AssortmentModal'
 import PromoCodeModal from './modals/PromoCodeModal'
@@ -687,6 +688,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [showAchievementsModal, setShowAchievementsModal] = useState(false)
+  const [showNpcRosterModal, setShowNpcRosterModal] = useState(false)
   const [showCashRegisterModal, setShowCashRegisterModal] = useState(false)
   const [showPromoWalletModal, setShowPromoWalletModal] = useState(false)
   const [showHireEmployeeModal, setShowHireEmployeeModal] = useState(false)
@@ -837,12 +839,14 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
         personalGoal={personalGoal}
         pendingEventCount={pendingEventCount}
         promoCodesCount={promoCodesRevealed?.length ?? 0}
+        revealedNpcCount={(npcs ?? []).filter(n => n.isRevealed).length}
         highlightNav={highlightNav}
         onNav={handleNavClick}
         onHelp={() => setShowHelpModal(true)}
         onSettings={() => setShowSettingsModal(true)}
         onPromoWallet={() => setShowPromoWalletModal(true)}
         onAchievements={() => setShowAchievementsModal(true)}
+        onNpcRoster={() => setShowNpcRosterModal(true)}
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
@@ -897,6 +901,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
       <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} onRestart={onRestart} />
       <AchievementsModal isOpen={showAchievementsModal} onClose={() => setShowAchievementsModal(false)} />
+      <NPCRosterModal isOpen={showNpcRosterModal} onClose={() => setShowNpcRosterModal(false)} />
       <CashRegisterModal isOpen={showCashRegisterModal} onClose={() => setShowCashRegisterModal(false)} />
       <HireEmployeeModal isOpen={showHireEmployeeModal} onClose={() => setShowHireEmployeeModal(false)} />
       <OwnerInvestmentsModal isOpen={showOwnerInvestmentsModal} onClose={() => setShowOwnerInvestmentsModal(false)} />

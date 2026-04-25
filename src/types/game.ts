@@ -304,6 +304,12 @@ export interface EventTemplate {
     // this backstory. Used by personalEvents.ts to make NPC arcs feel earned.
     requiredMotivation?: BackstoryMotivation
     requiredPersonal?: BackstoryPersonal
+    // NPC relationship gating (v5.1): only fire if a specific NPC's
+    // relationship is in [min, max]. Used to branch NPC arcs by trust level.
+    npcRelationshipMin?: number
+    npcRelationshipMax?: number
+    // Require the NPC to have been revealed at least once (i.e. interacted with)
+    requiresNpcRevealed?: boolean
   }
   options: EventOption[]
   npcId?: string

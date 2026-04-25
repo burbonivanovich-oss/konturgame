@@ -54,19 +54,22 @@ interface KLeftRailProps {
   personalGoal: PersonalGoal | null | undefined
   pendingEventCount: number
   promoCodesCount: number
+  revealedNpcCount: number
   highlightNav?: NavId
   onNav: (id: NavId) => void
   onHelp: () => void
   onSettings: () => void
   onPromoWallet: () => void
   onAchievements: () => void
+  onNpcRoster: () => void
 }
 
 export function KLeftRail({
   active, businessType, currentWeek, activeServiceCount,
   savedBalance, balance, personalGoal, pendingEventCount,
-  promoCodesCount, highlightNav, onNav, onHelp, onSettings,
-  onPromoWallet, onAchievements,
+  promoCodesCount, revealedNpcCount,
+  highlightNav, onNav, onHelp, onSettings,
+  onPromoWallet, onAchievements, onNpcRoster,
 }: KLeftRailProps) {
   const season = getSeason(currentWeek)
 
@@ -178,6 +181,31 @@ export function KLeftRail({
         >
           <KIcon name="rep" size={16} color={K.muted} />
           <div style={{ flex: 1 }}>Достижения</div>
+        </button>
+
+        {/* NPC roster — opens modal */}
+        <button
+          onClick={onNpcRoster}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '8px 10px', borderRadius: 9,
+            background: 'transparent', color: K.ink,
+            fontSize: 13, fontWeight: 500, cursor: 'pointer',
+            border: 'none', fontFamily: 'inherit', width: '100%', textAlign: 'left',
+          }}
+        >
+          <span style={{ fontSize: 14, width: 16, textAlign: 'center' }}>👥</span>
+          <div style={{ flex: 1 }}>Окружение</div>
+          {revealedNpcCount > 0 && (
+            <span style={{
+              fontSize: 10, fontWeight: 700,
+              padding: '2px 7px', borderRadius: 999,
+              background: K.bone, color: K.muted,
+              letterSpacing: '0.04em',
+            }}>
+              {revealedNpcCount}
+            </span>
+          )}
         </button>
       </nav>
 
