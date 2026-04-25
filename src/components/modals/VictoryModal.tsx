@@ -2,6 +2,8 @@ import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
 import type { PlayerBackstory, NPC } from '../../types/game'
 import { K } from '../design-system/tokens'
+import { buildNpcExitLines, buildGoalClosure } from '../../constants/npcExits'
+import { getNPCDefinition } from '../../constants/npcs'
 
 interface VictoryModalProps {
   isOpen: boolean
@@ -128,7 +130,7 @@ const SERVICE_LABELS: Record<string, string> = {
 export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
   const {
     startNewGame, currentWeek, balance, reputation, gameOverReason,
-    playerBackstory, npcs, completedChainIds, totalPainLosses,
+    playerBackstory, npcs, completedChainIds, totalPainLosses, personalGoal,
   } = useGameStore()
 
   const isVictory = type === 'victory'
@@ -143,6 +145,12 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
         currentWeek,
       )
     : null
+
+  // Goal closure + per-NPC exit lines (v5.2). Shown on both victory and
+  // defeat — these are the "where everyone ended up" moments that turn a
+  // game-over into an ending.
+  const goalClosure = buildGoalClosure(personalGoal, playerBackstory ?? null, balance)
+  const npcExits = buildNpcExitLines(npcs ?? [])
 
   const handleNewGame = () => {
     startNewGame('shop')
@@ -247,6 +255,77 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
               </div>
             ) : null
           })()}
+          {/* Goal closure scene — what happened to the personal dream */}
+          {goalClosure && (
+            <div style={{
+              background: '#fdf6e3',
+              border: `1px solid #e8dfc6`,
+              borderLeft: `3px solid ${K.orange}`,
+              borderRadius: 10,
+              padding: '14px 16px',
+              marginBottom: 16,
+              textAlign: 'left',
+            }}>
+              <div style={{
+                fontSize: 10, fontWeight: 700, color: K.orange,
+                textTransform: 'uppercase', letterSpacing: '0.08em',
+                marginBottom: 6,
+              }}>
+                {goalClosure.title}
+              </div>
+              <div style={{
+                fontSize: 13, color: K.ink, lineHeight: 1.55,
+                fontStyle: 'italic', fontFamily: 'Georgia, "Times New Roman", serif',
+              }}>
+                {goalClosure.text}
+              </div>
+            </div>
+          )}
+
+          {/* NPC exit lines — where everyone ended up */}
+          {npcExits.length > 0 && (
+            <div style={{
+              background: K.bone,
+              border: `1px solid ${K.lineSoft}`,
+              borderRadius: 12, padding: '14px 16px',
+              marginBottom: 16, textAlign: 'left',
+            }}>
+              <div style={{
+                fontSize: 10, fontWeight: 700, color: K.muted,
+                textTransform: 'uppercase', letterSpacing: '0.08em',
+                marginBottom: 10,
+              }}>
+                Окружение — финал
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {npcExits.map(line => {
+                  const def = getNPCDefinition(line.npcId)
+                  if (!def) return null
+                  return (
+                    <div key={line.npcId} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                      <div style={{
+                        width: 28, height: 28, borderRadius: 999,
+                        background: K.white, border: `1px solid ${K.lineSoft}`,
+                        display: 'grid', placeItems: 'center', fontSize: 16,
+                        flexShrink: 0,
+                      }}>
+                        {def.portrait}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: K.ink }}>
+                          {def.name}
+                        </div>
+                        <div style={{ fontSize: 12, color: K.ink2, lineHeight: 1.5, marginTop: 2 }}>
+                          {line.text}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           {!isVictory && (
             <p style={{ fontSize: 14, color: K.muted, marginBottom: 24, lineHeight: 1.6 }}>
               Анализируйте ошибки и попробуйте снова!
