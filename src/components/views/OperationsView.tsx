@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { useGameStore } from '../../stores/gameStore'
 import { BUSINESS_CONFIGS } from '../../constants/business'
 import { PRODUCT_CATEGORIES, isCategoryAllowed } from '../../services/assortmentEngine'
 import { getBusinessStage, STAGE_CONFIG, getNextStage } from '../../constants/businessStages'
+import { ONBOARDING_STAGES } from '../../constants/onboarding'
+import CashRegisterModal from '../modals/CashRegisterModal'
 import { K } from '../design-system/tokens'
 
 const SERVICE_NAMES: Record<string, string> = {
@@ -23,11 +26,15 @@ interface OperationsViewProps {
 }
 
 export default function OperationsView({ onShowHireModal }: OperationsViewProps) {
+  const [showRegisterModal, setShowRegisterModal] = useState(false)
+
   const {
     businessType, enabledCategories, services,
     toggleCategory, employees,
     fireEmployee,
     currentWeek, level,
+    cashRegisters,
+    onboardingStage, onboardingStepIndex, onboardingCompleted,
   } = useGameStore()
 
   const config = BUSINESS_CONFIGS[businessType]
@@ -40,6 +47,17 @@ export default function OperationsView({ onShowHireModal }: OperationsViewProps)
   const nextStageConfig = nextStage ? STAGE_CONFIG[nextStage] : null
   const atHireLimit = employees.length >= stageConfig.maxEmployees
 
+  // Pulse the "Купить кассу" button when onboarding asks for buy_register
+  const isRegisterTargeted = (() => {
+    if (onboardingCompleted) return false
+    const stage = ONBOARDING_STAGES[onboardingStage as 0|1|2|3|4]
+    if (!stage) return false
+    const step = stage.steps[onboardingStepIndex ?? 0]
+    return step?.requiresAction === 'buy_register' && (cashRegisters?.length ?? 0) === 0
+  })()
+
+  const totalRegisters = (cashRegisters ?? []).reduce((s, r) => s + r.count, 0)
+
   return (
     <div style={{
       flex: 1, padding: '20px 24px', overflow: 'auto',
@@ -51,6 +69,56 @@ export default function OperationsView({ onShowHireModal }: OperationsViewProps)
         <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>УПРАВЛЕНИЕ</div>
         <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.025em' }}>Операции</div>
       </div>
+
+      {/* Cash registers — needed for legal POS, onboarding-targeted at stage 1 */}
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>КАССЫ</div>
+          <span style={{ fontSize: 11, color: K.muted }}>
+            {totalRegisters > 0 ? `${totalRegisters} установлено` : 'не установлено'}
+          </span>
+        </div>
+        <div style={{
+          background: K.white, border: `1px solid ${K.line}`,
+          borderRadius: 14, padding: 16,
+          display: 'flex', alignItems: 'center', gap: 14,
+        }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: 12,
+            background: K.bone, color: K.ink,
+            display: 'grid', placeItems: 'center', fontSize: 22, flexShrink: 0,
+          }}>
+            🧾
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: K.ink }}>
+              {totalRegisters === 0 ? 'Касса не установлена' : `Касс: ${totalRegisters}`}
+            </div>
+            <div style={{ fontSize: 12, color: K.muted, marginTop: 2 }}>
+              {totalRegisters === 0
+                ? 'Без кассы продажи нелегальны — штрафы ФНС'
+                : 'Хотите больше пропускной способности? Добавьте ещё.'}
+            </div>
+          </div>
+          <button
+            onClick={() => setShowRegisterModal(true)}
+            className={isRegisterTargeted ? 'nav-pulse' : undefined}
+            style={{
+              padding: '11px 18px', borderRadius: 10, border: 'none',
+              background: isRegisterTargeted ? K.orange : totalRegisters === 0 ? K.ink : K.bone,
+              color: isRegisterTargeted || totalRegisters === 0 ? K.white : K.ink,
+              fontSize: 13, fontWeight: 800, cursor: 'pointer',
+              fontFamily: 'inherit', flexShrink: 0,
+              outline: isRegisterTargeted ? `2px solid ${K.orange}` : 'none',
+              boxShadow: isRegisterTargeted ? '0 2px 8px rgba(255,107,0,0.35)' : 'none',
+            }}
+          >
+            {totalRegisters === 0 ? 'Купить кассу' : 'Купить ещё'}
+          </button>
+        </div>
+      </div>
+
+      <CashRegisterModal isOpen={showRegisterModal} onClose={() => setShowRegisterModal(false)} />
 
       {/* Assortment Categories */}
       {config.usesAssortment && categories.length > 0 && (

@@ -453,10 +453,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
         )}
 
         {activeTab === 'services' && (
-          <>
-            <OnboardingPanel onNavigate={() => setActiveTab('services')} />
-            <ServicePanel />
-          </>
+          <ServicePanel />
         )}
 
         {activeTab === 'finance' && <FinanceView />}
@@ -496,6 +493,27 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
       <NPCRosterModal isOpen={showNpcRosterModal} onClose={() => setShowNpcRosterModal(false)} />
       <HireEmployeeModal isOpen={showHireEmployeeModal} onClose={() => setShowHireEmployeeModal(false)} />
       <CashRegisterModal isOpen={showCashRegisterModal} onClose={() => setShowCashRegisterModal(false)} />
+
+      {/* Global onboarding bar — fixed positioning, visible across all tabs */}
+      <OnboardingPanel
+        onNavigate={(nav) => {
+          // Map nav id → mobile tab id (loose mapping)
+          const navToTab: Record<string, string> = {
+            ecosystem: 'services',
+            operations: 'operations',
+            dashboard: 'day',
+            warehouse: 'warehouse',
+            development: 'development',
+            finance: 'finance',
+            statistics: 'statistics',
+            journal: 'journal',
+          }
+          setActiveTab(navToTab[nav] ?? nav)
+        }}
+        onAction={(action) => {
+          if (action === 'buy_register') setShowCashRegisterModal(true)
+        }}
+      />
       <PromoCodeModal />
       <PromoWalletModal isOpen={showPromoWalletModal} onClose={() => setShowPromoWalletModal(false)} />
       <OwnerInvestmentsModal isOpen={showOwnerInvestmentsModal} onClose={() => setShowOwnerInvestmentsModal(false)} />
