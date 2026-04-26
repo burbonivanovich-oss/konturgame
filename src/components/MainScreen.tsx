@@ -35,6 +35,8 @@ import { KLeftRail } from './design-system/KLeftRail'
 import { KHeaderBar } from './design-system/KHeaderBar'
 import { K } from './design-system/tokens'
 import type { NavId } from './design-system/KLeftRail'
+import { getGroupForNav, getSubTabsForGroup } from './design-system/KLeftRail'
+import { KIcon } from './design-system/KIcon'
 import { getActiveSynergies } from '../services/synergyEngine'
 import { getBusinessHealth } from '../services/businessHealth'
 import { getTotalThroughput } from '../services/cashRegisterEngine'
@@ -950,6 +952,50 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
         />
 
         <TutorialMoments onNavigate={setActiveView} />
+
+        {/* Sub-tab bar — only shown when the active group has more than
+            one available sub-view. «Сегодня» has just one, so it never
+            shows the bar; «Дело» and «Отчёты» surface their members
+            here. Existing setActiveView('finance') etc. land on the
+            right sub-tab automatically. */}
+        {(() => {
+          const activeGroup = getGroupForNav(activeView)
+          const subTabs = getSubTabsForGroup(activeGroup, currentWeek)
+          if (subTabs.length <= 1) return null
+          return (
+            <div style={{
+              display: 'flex', gap: 4,
+              padding: '8px 18px',
+              borderBottom: `1px solid ${K.line}`,
+              background: K.white,
+              overflowX: 'auto',
+              flexShrink: 0,
+            }}>
+              {subTabs.map(tab => {
+                const isActive = tab.id === activeView
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveView(tab.id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '6px 12px', borderRadius: 8,
+                      background: isActive ? K.bone : 'transparent',
+                      color: isActive ? K.ink : K.muted,
+                      fontSize: 12, fontWeight: 700,
+                      cursor: 'pointer', border: 'none',
+                      fontFamily: 'inherit', whiteSpace: 'nowrap',
+                      letterSpacing: '0.02em',
+                    }}
+                  >
+                    <KIcon name={tab.icon} size={13} color={isActive ? K.ink2 : K.muted} />
+                    {tab.label}
+                  </button>
+                )
+              })}
+            </div>
+          )
+        })()}
 
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
