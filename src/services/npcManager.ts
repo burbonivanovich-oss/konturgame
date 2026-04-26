@@ -117,26 +117,6 @@ export function applyNPCPassiveEffects(state: GameState): void {
     // No active penalty — unmotivated employee's harm is modelled via energy cost
   }
 
-  // ── MARINA (consultant/marketer) ───────────────────────────────────────
-  const marina = npcs.find(n => n.id === 'marina')
-  if (marina?.isRevealed) {
-    if (marina.relationshipLevel >= 65) {
-      if (state.reputation < 100) state.reputation = Math.min(100, state.reputation + 1)
-    } else if (marina.relationshipLevel >= 50 && altWeek) {
-      if (state.reputation < 100) state.reputation = Math.min(100, state.reputation + 1)
-    }
-  }
-
-  // ── VIKTOR (banker) ────────────────────────────────────────────────────
-  const viktor = npcs.find(n => n.id === 'viktor')
-  if (viktor?.isRevealed) {
-    if (viktor.relationshipLevel >= 70) {
-      if (state.temporaryCheckMod === 0) state.temporaryCheckMod = 0.02
-    } else if (viktor.relationshipLevel >= 55 && altWeek) {
-      if (state.temporaryCheckMod === 0) state.temporaryCheckMod = 0.01
-    }
-  }
-
   // ── PETROV (inspector) ────────────────────────────────────────────────
   const petrov = npcs.find(n => n.id === 'petrov')
   if (petrov?.isRevealed) {
@@ -158,21 +138,6 @@ export function applyNPCPassiveEffects(state: GameState): void {
     // Declared truce: rivals occasionally send overflow customers
     if (anna.relationshipLevel >= 60 && altWeek) {
       if (state.reputation < 100) state.reputation = Math.min(100, state.reputation + 1)
-    }
-  }
-
-  // ── GLEB (blogger) ────────────────────────────────────────────────────
-  const gleb = npcs.find(n => n.id === 'gleb')
-  if (gleb?.isRevealed) {
-    if (gleb.relationshipLevel >= 65) {
-      if (state.reputation < 100) state.reputation = Math.min(100, state.reputation + 1)
-    } else if (gleb.relationshipLevel >= 50 && altWeek) {
-      if (state.reputation < 100) state.reputation = Math.min(100, state.reputation + 1)
-    } else if (gleb.relationshipLevel <= 25) {
-      // Active negative posts
-      state.reputation = Math.max(0, state.reputation - 2)
-    } else if (gleb.relationshipLevel <= 40 && altWeek) {
-      state.reputation = Math.max(0, state.reputation - 1)
     }
   }
 

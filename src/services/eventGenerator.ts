@@ -40,7 +40,6 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     title: 'Блогер привёл толпу',
     description:
       'Местный блогер упомянул вас в посте — на пороге очередь, какой не было никогда. Половина клиентов — впервые. Команда не справляется. Что делать?',
-    npcId: 'gleb',
     trigger: { randomChance: 0.03 },
     options: [
       {
