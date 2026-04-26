@@ -44,8 +44,7 @@ import {
 import { getTotalThroughput, calculateRegisterPenalty, checkRegisterBreakdown } from './cashRegisterEngine'
 import { calculateCategoryRevenue } from './assortmentEngine'
 import { initializeEmployees, getWeeklySalaryCost, getWeeklyEnergyCost, getEmployeeCapacityBonus, getUpgradeEnergyBonus } from './employeeManager'
-import { initializeQuality, updateQualityWeekly, getQualityReputationBonus, getQualityLoyaltyBonus, getQualityPricePremium } from './qualityManager'
-import { getQualityClientModifier, getBrandEffect } from './qualityModifier'
+import { initializeQuality, updateQualityWeekly, getQualityReputationBonus, getQualityLoyaltyBonus, getQualityPricePremium, getQualityClientModifier, getBrandEffect } from './qualityManager'
 
 export function checkWeekBlocked(state: GameState): { blocked: boolean; reason?: string } {
   if (state.pendingEvent) {
@@ -658,39 +657,20 @@ export function processWeek(state: GameState): DayResult {
   // Pick 1 micro event per week (passive, no modal — shown in WeekResults)
   applyWeeklyMicroEvent(state)
 
-  // Generate 1-2 events every week (crisis weeks always get 2)
+  // STRICT 1 event per week (was: 1-2 from main pool + independent crisis
+  // roll → up to 3 events stacking). On scheduled crisis weeks (10/20/30/40)
+  // a crisis fires INSTEAD of a regular event. Otherwise, regular pool only.
+  // Single event per week keeps the cadence legible — the player decides one
+  // thing, sees its consequence, moves on.
   if (!state.isGameOver && !state.isVictory && !state.pendingEvent) {
-    const firstEvent = generateEvent(state.currentWeek * 7, state)
-    if (firstEvent) {
-      state.pendingEvent = firstEvent
-      const isCrisisWeek = state.currentWeek % 9 === 0
-      // Crisis weeks always add a 2nd event; normal weeks 50% chance
-      const addSecond = isCrisisWeek || Math.random() < 0.5
-      if (addSecond) {
-        const usedIds = new Set([firstEvent.id])
-        const queue: typeof firstEvent[] = []
-        for (let attempt = 0; attempt < 10 && queue.length < 1; attempt++) {
-          const extra = generateEvent(state.currentWeek * 7, state)
-          if (extra && !usedIds.has(extra.id)) {
-            usedIds.add(extra.id)
-            queue.push(extra)
-          }
-        }
-        state.pendingEventsQueue = queue
-      }
+    const isCrisisWeek = [10, 20, 30, 40].includes(state.currentWeek)
+    let chosen = isCrisisWeek ? generateCrisisEvent(state) : null
+    if (!chosen) {
+      chosen = generateEvent(state.currentWeek * 7, state)
     }
-  }
-
-  // Crisis events get their own independent roll — they must not compete with the
-  // regular event pool or they'd almost never fire when the main pool is crowded.
-  if (!state.isGameOver && !state.isVictory) {
-    const crisisEvent = generateCrisisEvent(state)
-    if (crisisEvent) {
-      if (state.pendingEvent === null) {
-        state.pendingEvent = crisisEvent
-      } else {
-        state.pendingEventsQueue = [...(state.pendingEventsQueue ?? []), crisisEvent]
-      }
+    if (chosen) {
+      state.pendingEvent = chosen
+      state.pendingEventsQueue = []
     }
   }
 
@@ -900,11 +880,12 @@ function autoResolveExpiredDecisions(state: GameState): void {
 }
 
 function queueChainEvent(state: GameState, event: ReturnType<typeof templateToEvent>): void {
-  if (state.pendingEvent === null) {
-    state.pendingEvent = event
-  } else {
-    state.pendingEventsQueue = [...(state.pendingEventsQueue ?? []), event]
-  }
+  // Chain events take priority over generic events. If a generic event
+  // is already pending, replace it with the chain event (chains are
+  // narrative spine — random pool is filler). Maintains the 1-event-per-week
+  // cap.
+  state.pendingEvent = event
+  state.pendingEventsQueue = []
 }
 
 export function getCampaignStats(state: GameState) {

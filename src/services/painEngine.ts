@@ -1,71 +1,31 @@
-import type { GameState, PainLossRecord, ServiceType } from '../types/game'
-import { PAIN_LOSSES, BANK_PAYMENT_RATIO } from '../constants/gameBalance'
+import type { GameState, PainLossRecord } from '../types/game'
+import { BANK_PAYMENT_RATIO } from '../constants/gameBalance'
+
+// Pain engine zeroed-out (was: invisible daily fines for missing services).
+// The "without service X you silently lose money" model was opaque — the
+// player saw "−15K from missing Market" in the week summary but never knew
+// when/why it triggered. Replaced by:
+//   1. Bundle bonus (3+/5+/7 services = visible revenue %)
+//   2. Categories that REQUIRE specific services + equipment to unlock
+//   3. Direct service effects (Market = +20% capacity, etc.) shown on activation
+// Plus discrete events ("внеплановая проверка ФНС") that simulate concrete
+// risks of missing OFD/Extern as visible negative consequences.
+//
+// File kept (and function signature preserved) for save compat and analytics
+// wiring. All values return 0 now.
 
 export function calculatePainLosses(
-  state: GameState,
-  revenue: number,
-  profit: number,
-  totalCategoryRevenue: number,
+  _state: GameState,
+  _revenue: number,
+  _profit: number,
+  _totalCategoryRevenue: number,
 ): PainLossRecord {
-  const hasMarket = state.services?.market?.isActive ?? false
-  const hasOfd = state.services?.ofd?.isActive ?? false
-  const hasDiadoc = state.services?.diadoc?.isActive ?? false
-  const hasFokus = state.services?.fokus?.isActive ?? false
-  const hasElba = state.services?.elba?.isActive ?? false
-  const hasExtern = state.services?.extern?.isActive ?? false
-
-  // Only penalise for services the player already knows about (in unlockedServices).
-  // A service that hasn't appeared in onboarding yet can't cause "mysterious" losses.
-  const unlocked = new Set<ServiceType>(
-    state.onboardingCompleted
-      ? ['market', 'bank', 'ofd', 'diadoc', 'fokus', 'elba', 'extern']
-      : (state.unlockedServices ?? []),
-  )
-
-  // Bank: 40% клиентов не могут платить без безнала — учтено в bankPaymentRatio
-  const bank = 0
-
-  // Market: потери от ошибок ручного учёта
-  const market = hasMarket || !unlocked.has('market')
-    ? 0
-    : Math.round(totalCategoryRevenue * PAIN_LOSSES.MARKET.revenueRate)
-
-  // OFD: шанс штрафа в день
-  let ofd = 0
-  if (!hasOfd && unlocked.has('ofd') && Math.random() < PAIN_LOSSES.OFD.dailyChance) {
-    ofd = Math.round(revenue * PAIN_LOSSES.OFD.revenueRate)
-  }
-
-  // Diadoc: шанс задержки поставки
-  const diadoc = !hasDiadoc && unlocked.has('diadoc') && Math.random() < PAIN_LOSSES.DIADOC.dailyChance
-    ? Math.round(revenue * PAIN_LOSSES.DIADOC.revenueRate)
-    : 0
-
-  // Fokus: шанс плохого поставщика — % от баланса
-  let fokus = 0
-  if (!hasFokus && unlocked.has('fokus') && Math.random() < PAIN_LOSSES.FOKUS.dailyChance) {
-    const range = PAIN_LOSSES.FOKUS.maxBalanceRate - PAIN_LOSSES.FOKUS.minBalanceRate
-    const riskPct = PAIN_LOSSES.FOKUS.minBalanceRate + Math.random() * range
-    fokus = Math.round(state.balance * riskPct)
-  }
-
-  // Elba: шанс штрафа за декларацию (только если есть прибыль)
-  const elba = !hasElba && unlocked.has('elba') && Math.random() < PAIN_LOSSES.ELBA.dailyChance && profit > 0
-    ? Math.round(profit * PAIN_LOSSES.ELBA.profitRate)
-    : 0
-
-  // Extern: шанс блокировки счёта — N дней выручки, но не больше X% баланса
-  let extern = 0
-  if (!hasExtern && unlocked.has('extern') && Math.random() < PAIN_LOSSES.EXTERN.dailyChance) {
-    const rawDamage = Math.round(revenue * PAIN_LOSSES.EXTERN.revenueDaysOfDamage)
-    extern = Math.min(rawDamage, Math.round(state.balance * PAIN_LOSSES.EXTERN.maxBalancePct))
-  }
-
-  const total = bank + market + ofd + diadoc + fokus + elba + extern
-
-  return { bank, market, ofd, diadoc, fokus, elba, extern, total }
+  return { bank: 0, market: 0, ofd: 0, diadoc: 0, fokus: 0, elba: 0, extern: 0, total: 0 }
 }
 
+// This one stays — it's the legitimate "no bank → 40% of clients can't pay
+// cashless" math, which is the visible Bank service value (a percentage of
+// served clients pays via the bank channel). Kept distinct from pain.
 export function getBankPaymentRatio(state: GameState): number {
   return state.services?.bank?.isActive
     ? BANK_PAYMENT_RATIO.WITH_BANK

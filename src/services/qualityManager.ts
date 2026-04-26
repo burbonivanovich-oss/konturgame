@@ -1,74 +1,59 @@
 import type { GameState } from '../types/game'
 import { getEmployeeCapacityBonus } from './employeeManager'
 
-/**
- * Initialize quality level for a new game
- */
+// Quality system — consolidated from qualityManager + qualityModifier.
+// One number 0-100 representing how well the business runs (kept in
+// state.qualityLevel). All quality- and brand-related effects live here.
+
 export function initializeQuality(): number {
-  return 50  // Start at average quality
+  return 50  // average baseline
 }
 
-/**
- * Calculate quality level based on all factors
- */
+const QUALITY_GRACE_WEEKS = 3  // no penalties while business is getting started
+
+// Quality is computed from inputs (services, employees, upgrades) on demand.
+// state.qualityLevel is the persistent baseline that drifts weekly via
+// updateQualityWeekly; the daily computed value adds context-specific bonuses.
 export function calculateQualityLevel(state: GameState): number {
   let quality = state.qualityLevel ?? 50
-  
-  // Factor 1: Supplier quality modifier (+/- 20 points)
-  const supplierMod = 0  // supplier system removed; placeholder for now
-  quality += supplierMod
-  
-  // Factor 2: Employee efficiency bonus
+
+  // Employee efficiency bonus (efficient team raises quality)
   if (state.employees.length > 0) {
     const empBonus = (getEmployeeCapacityBonus(state) - state.employees.length) * 10
     quality += empBonus
   }
-  
-  // Factor 3: Service bonuses
+
+  // Service bonuses
   if (state.services?.fokus?.isActive) {
     quality += state.services.fokus.effects.reputationBonus ?? 0
   }
   if (state.services?.market?.isActive) {
     quality += 5  // Market helps with inventory quality
   }
-  
-  // Factor 4: Upgrades
-  const hasQualityUpgrades = state.purchasedUpgrades?.some(id => 
+
+  // Upgrades that explicitly target quality
+  const hasQualityUpgrades = state.purchasedUpgrades?.some(id =>
     id.includes('quality') || id.includes('premium') || id.includes('interior')
   )
   if (hasQualityUpgrades) {
     quality += 10
   }
-  
-  // Clamp to 0-100
+
   return Math.max(0, Math.min(100, Math.round(quality)))
 }
 
-const QUALITY_GRACE_WEEKS = 3  // no penalties while business is getting started
-
-/**
- * Get reputation bonus/penalty based on quality
- */
 export function getQualityReputationBonus(state: GameState): number {
   const quality = calculateQualityLevel(state)
-
   if (quality >= 80) return 2
   if (quality >= 60) return 1
-  // No penalties during the grace period
   if ((state.currentWeek ?? 0) <= QUALITY_GRACE_WEEKS) return 0
   if (quality <= 30) return -2
   if (quality <= 45) return -1
   return 0
 }
 
-/**
- * Get loyalty bonus/penalty based on quality
- */
 export function getQualityLoyaltyBonus(state: GameState): number {
-  // Halved daily contributions — quality is one of several inputs and was
-  // letting loyalty pin to 100 by week 5 for any committed player.
   const quality = calculateQualityLevel(state)
-
   if (quality >= 80) return 1
   if (quality >= 60) return 0.5
   if ((state.currentWeek ?? 0) <= QUALITY_GRACE_WEEKS) return 0
@@ -77,12 +62,8 @@ export function getQualityLoyaltyBonus(state: GameState): number {
   return 0
 }
 
-/**
- * Get price premium based on quality (customers pay more for quality)
- */
 export function getQualityPricePremium(state: GameState): number {
   const quality = calculateQualityLevel(state)
-
   if (quality >= 80) return 0.15
   if (quality >= 60) return 0.08
   if ((state.currentWeek ?? 0) <= QUALITY_GRACE_WEEKS) return 0
@@ -91,23 +72,45 @@ export function getQualityPricePremium(state: GameState): number {
   return 0
 }
 
-/**
- * Update quality based on weekly events
- */
+// Client-side modifier from quality level (formerly in qualityModifier.ts)
+export function getQualityClientModifier(qualityLevel: number): number {
+  if (qualityLevel < 40) return -0.3
+  if (qualityLevel < 70) return -0.1
+  return 0.2
+}
+
+// Brand effect — combined rep+loy bonus. Was a hidden compound multiplier
+// (rep>80 AND loy>80 → +40% clients +30% revenue +10% price = ×2 at top).
+// Simplified to a smooth function of the average and capped at moderate
+// numbers so it stops compounding into "everything goes infinite for the
+// best player". Single visible field per UI.
+export function getBrandEffect(reputation: number, loyalty: number): {
+  clientMod: number
+  revenueMod: number
+  priceMod: number
+  isBrand: boolean
+} {
+  const avg = (reputation + loyalty) / 2
+  if (avg >= 80) {
+    return { clientMod: 0.20, revenueMod: 0.05, priceMod: 0.05, isBrand: true }
+  }
+  if (avg >= 60) {
+    return { clientMod: 0.10, revenueMod: 0, priceMod: 0.02, isBrand: false }
+  }
+  return { clientMod: 0, revenueMod: 0, priceMod: 0, isBrand: false }
+}
+
+// Seasonality modifier (was in qualityModifier.ts; moved for consolidation)
+export function getSeasonalityModifier(currentWeek: number, seasonality: Record<string, number>): number {
+  const monthOfYear = (((currentWeek - 1) % 52) / 4.33)
+  const month = Math.floor(monthOfYear) + 1
+  return seasonality[month.toString()] ?? 0
+}
+
 export function updateQualityWeekly(state: GameState): void {
   const currentQuality = state.qualityLevel ?? 50
-  
-  // Natural decay towards baseline (50) if no active management
   let newQuality = currentQuality
-  
-  // If using premium supplier, quality slowly increases
-  const supplierMod = 0
-  if (supplierMod > 0) {
-    newQuality += 1
-  } else if (supplierMod < 0) {
-    newQuality -= 1
-  }
-  
+
   // Employee impact
   if (state.employees.length > 0) {
     const avgEfficiency = getEmployeeCapacityBonus(state) / state.employees.length
@@ -117,26 +120,13 @@ export function updateQualityWeekly(state: GameState): void {
       newQuality -= 1
     }
   }
-  
-  // Clamp and update
+
   state.qualityLevel = Math.max(0, Math.min(100, newQuality))
 }
 
-/**
- * Quality-based event triggers
- */
 export function checkQualityEvent(state: GameState): { type: string; effect: number } | null {
   const quality = calculateQualityLevel(state)
-  
-  // Very high quality: positive review event
-  if (quality >= 85 && Math.random() < 0.1) {
-    return { type: 'positive_review', effect: 5 }
-  }
-  
-  // Very low quality: complaint event
-  if (quality <= 25 && Math.random() < 0.15) {
-    return { type: 'customer_complaint', effect: -5 }
-  }
-  
+  if (quality >= 85 && Math.random() < 0.1) return { type: 'positive_review', effect: 5 }
+  if (quality <= 25 && Math.random() < 0.15) return { type: 'customer_complaint', effect: -5 }
   return null
 }
