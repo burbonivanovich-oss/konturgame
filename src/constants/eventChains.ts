@@ -628,7 +628,7 @@ export const CHAIN_EVENTS: EventTemplate[] = [
     options: [
       {
         id: 'visit',
-        text: 'Закрыть пораньше, заехать с пакетом мандаринов (−5 энергии)',
+        text: 'Закрыть пораньше, заехать с пакетом мандаринов',
         consequences: { energyDelta: -5 },
         npcRelationshipDelta: 8,
         chainFollowUpId: 'tamara_arc_3a',
