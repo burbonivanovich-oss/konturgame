@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useGameStore } from '../../stores/gameStore'
 import { BUSINESS_CONFIGS, UPGRADES_CONFIG } from '../../constants/business'
 import { PRODUCT_CATEGORIES, isCategoryAllowed } from '../../services/assortmentEngine'
-import { getBusinessStage, STAGE_CONFIG, getNextStage } from '../../constants/businessStages'
+import { getCurrentTier, getNextTier } from '../../services/economyEngine'
 import { ONBOARDING_STAGES } from '../../constants/onboarding'
 import CashRegisterModal from '../modals/CashRegisterModal'
 import { K } from '../design-system/tokens'
@@ -41,10 +41,8 @@ export default function OperationsView({ onShowHireModal }: OperationsViewProps)
   const categories = PRODUCT_CATEGORIES[businessType] ?? []
   const state = useGameStore.getState()
 
-  const stage = getBusinessStage(currentWeek, level)
-  const stageConfig = STAGE_CONFIG[stage]
-  const nextStage = getNextStage(stage)
-  const nextStageConfig = nextStage ? STAGE_CONFIG[nextStage] : null
+  const stageConfig = getCurrentTier(state)
+  const nextStageConfig = getNextTier(state)
   const atHireLimit = employees.length >= stageConfig.maxEmployees
 
   // Pulse the "Купить кассу" button when onboarding asks for buy_register
@@ -332,7 +330,7 @@ export default function OperationsView({ onShowHireModal }: OperationsViewProps)
 
         {atHireLimit && (
           <div style={{ fontSize: 11, color: K.bad, marginBottom: 8, fontWeight: 600 }}>
-            Лимит найма для стадии «{stageConfig.label}». Развивайте бизнес до «{nextStageConfig?.label ?? '—'}» для расширения команды.
+            Лимит найма для уровня «{stageConfig.name}». Перейдите на «{nextStageConfig?.name ?? '—'}» для расширения команды.
           </div>
         )}
         <button

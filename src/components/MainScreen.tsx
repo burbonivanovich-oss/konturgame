@@ -28,7 +28,7 @@ import { DevelopmentView } from './views/DevelopmentView'
 import { useGameStore } from '../stores/gameStore'
 import { ONBOARDING_STAGES } from '../constants/onboarding'
 import { BUSINESS_CONFIGS } from '../constants/business'
-import { getBusinessStage, STAGE_CONFIG, getNextStage } from '../constants/businessStages'
+import { getCurrentTier, getNextTier } from '../services/economyEngine'
 import { WEEKLY_TACTICS, getWeeklyTacticDef } from '../constants/weeklyTactics'
 import type { BusinessType } from '../types/game'
 import { KLeftRail } from './design-system/KLeftRail'
@@ -121,11 +121,9 @@ function DashboardView({
   }
   const serviceOrder: ServiceType[] = ['market', 'bank', 'ofd', 'extern', 'diadoc', 'fokus', 'elba']
 
-  // Business stage (from main)
-  const stage = getBusinessStage(currentWeek, level)
-  const stageCfg = STAGE_CONFIG[stage]
-  const nextStage = getNextStage(stage)
-  const nextCfg = nextStage ? STAGE_CONFIG[nextStage] : null
+  // Business tier — single progression metric (replaced BusinessStage)
+  const stageCfg = getCurrentTier(store)
+  const nextCfg = getNextTier(store)
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: K.paper }}>
@@ -670,10 +668,10 @@ function DashboardView({
               <div style={{ fontSize: 10, color: K.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
                 Стадия
               </div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: K.ink }}>{stageCfg.label}</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: K.ink }}>{stageCfg.name}</div>
               {nextCfg && (
                 <div style={{ fontSize: 10, color: K.muted, marginTop: 2 }}>
-                  далее: {nextCfg.label}
+                  далее: {nextCfg.name}
                 </div>
               )}
             </div>

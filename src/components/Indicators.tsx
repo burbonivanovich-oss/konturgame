@@ -1,7 +1,7 @@
 import { useGameStore } from '../stores/gameStore'
 import { useMemo } from 'react'
 import { ECONOMY_CONSTANTS } from '../constants/business'
-import { getBusinessStage, STAGE_CONFIG, getNextStage } from '../constants/businessStages'
+import { getCurrentTier, getNextTier } from '../services/economyEngine'
 import { K } from './design-system/tokens'
 
 function getStatusColor(value: number): { color: string; icon: string } {
@@ -36,10 +36,9 @@ export default function Indicators() {
   const stockColor = getStatusColor(stockLevel)
   const energyColor = getStatusColor(entrepreneurEnergy)
   const qualityColor = getStatusColor(qualityLevel)
-  const stage = getBusinessStage(currentWeek, level)
-  const stageConfig = STAGE_CONFIG[stage]
-  const nextStage = getNextStage(stage)
-  const nextStageConfig = nextStage ? STAGE_CONFIG[nextStage] : null
+  const fullState = useGameStore.getState()
+  const stageConfig = getCurrentTier(fullState)
+  const nextStageConfig = getNextTier(fullState)
 
   const servedPct = lastDayResult && lastDayResult.clients > 0
     ? Math.round((lastDayResult.served / lastDayResult.clients) * 100)
@@ -179,11 +178,11 @@ export default function Indicators() {
         display: 'flex', flexDirection: 'column', gap: 4,
       }}>
         <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em' }}>🏢 СТАДИЯ</div>
-        <div style={{ fontSize: 14, fontWeight: 800 }}>{stageConfig.label}</div>
+        <div style={{ fontSize: 14, fontWeight: 800 }}>{stageConfig.name}</div>
         <div style={{ fontSize: 11, opacity: 0.7, lineHeight: 1.3 }}>{stageConfig.description}</div>
         {nextStageConfig && (
           <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2 }}>
-            Далее: {nextStageConfig.label} · нед. {nextStageConfig.weeksMin} · ур. {nextStageConfig.levelMin}
+            Далее: {nextStageConfig.name} · нед. {nextStageConfig.unlockWeek}
           </div>
         )}
       </div>

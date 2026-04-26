@@ -11,14 +11,13 @@ import { CASH_REGISTER_CONFIGS, REGISTER_COMBO_DISCOUNTS } from '../constants/ca
 import { getDefaultCategories } from '../services/assortmentEngine'
 import { createEmployee } from '../constants/employees'
 import { checkWeekBlocked, processWeek } from '../services/weekCalculator'
-import { getBusinessStage, STAGE_CONFIG } from '../constants/businessStages'
 import { OWNER_INVESTMENTS_MAP } from '../constants/ownerInvestments'
 import type { OwnerInvestmentId } from '../constants/ownerInvestments'
 import { createInitialNPCs } from '../constants/npcs'
 import { createPersonalGoal } from '../constants/personalGoals'
 import { loadMetaProgress, saveMetaProgress, evaluateRun, getAggregateBonus } from '../services/metaProgress'
 import { updateNPCRelationship, recordNPCMemory } from '../services/npcManager'
-import { canUpgradeTier, getNextTier } from '../services/economyEngine'
+import { canUpgradeTier, getNextTier, getCurrentTier } from '../services/economyEngine'
 
 const STORAGE_KEY = 'konturgame_state'
 const ROLLBACK_STORAGE_KEY = 'konturgame_rollback'
@@ -133,9 +132,6 @@ const createInitialState = (businessType: BusinessType): GameState => {
     // Weekly micro event (passive feed)
     lastWeekMicroEvent: null,
 
-    // Suppliers system (NEW v2.0)
-    suppliers: [],
-    activeSupplierId: null,
 
     // Employees system (NEW v2.0)
     employees: [],
@@ -324,8 +320,6 @@ interface GameStoreActions {
   // Owner investments (v2.3)
   purchaseOwnerInvestment: (id: OwnerInvestmentId) => boolean
 
-  // Business stage helper
-  getBusinessStage: () => import('../types/game').BusinessStage
 
   // NPC system (v3.0)
   updateNPCRelationship: (npcId: string, delta: number) => void
@@ -1102,9 +1096,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Employees
     hireEmployee: (position: EmployeePosition, _name: string, _salary: number) => {
       const state = get()
-      const stage = getBusinessStage(state.currentWeek, state.level)
-      const maxEmployees = STAGE_CONFIG[stage].maxEmployees
-      if ((state.employees ?? []).length >= maxEmployees) return
+      const tier = getCurrentTier(state)
+      if ((state.employees ?? []).length >= tier.maxEmployees) return
       get().spendEnergy(ECONOMY_CONSTANTS.ENERGY_COST_BASE_OPERATION)
       const employee = createEmployee(position, state.currentWeek)
       set((s) => ({
@@ -1259,11 +1252,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return true
     },
 
-    // Business stage helper
-    getBusinessStage: () => {
-      const state = get()
-      return getBusinessStage(state.currentWeek, state.level)
-    },
 
     // NPC system (v3.0)
     updateNPCRelationship: (npcId: string, delta: number) => {
@@ -1380,7 +1368,7 @@ function extractState(state: any): GameState {
     cashRegisters, enabledCategories, promoCodesRevealed,
     daysBalanceNegative, competitorEventTriggered, lastDayPainLosses, bundlePromoShown,
     // v2.0 new fields
-    suppliers, activeSupplierId, employees, qualityLevel, weeksSinceCompetitorEvent,
+    employees, qualityLevel, weeksSinceCompetitorEvent,
     // v2.1 new fields
     loans,
     // v2.2 new fields
@@ -1436,8 +1424,6 @@ function extractState(state: any): GameState {
     bundlePromoShown: bundlePromoShown ?? false,
     lastWeekMicroEvent: null,
     // v2.0 fields with defaults for save compatibility
-    suppliers: suppliers ?? [],
-    activeSupplierId: activeSupplierId ?? null,
     employees: employees ?? [],
     qualityLevel: qualityLevel ?? 50,
     weeksSinceCompetitorEvent: weeksSinceCompetitorEvent ?? 0,

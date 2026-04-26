@@ -15,6 +15,9 @@ export interface BusinessTierConfig {
   // One-time price to upgrade INTO this tier (paid from balance)
   upgradeCost: number
 
+  // Maximum employees this tier supports (replaces BusinessStage)
+  maxEmployees: number
+
   // Multipliers applied to baseline (tier 1) values everywhere those numbers
   // are read. Tier 1 is always 1.0× to keep the math simple.
   multipliers: {
@@ -37,6 +40,7 @@ export const BUSINESS_TIERS: Record<BusinessType, BusinessTierConfig[]> = {
       unlockBalance: 0,
       unlockReputation: 0,
       upgradeCost: 0,
+      maxEmployees: 2,
       multipliers: { clients: 1.0, check: 1.0, rent: 1.0, baseSalary: 1.0, capacity: 1.0 },
     },
     {
@@ -48,6 +52,7 @@ export const BUSINESS_TIERS: Record<BusinessType, BusinessTierConfig[]> = {
       unlockBalance: 200_000,
       unlockReputation: 60,
       upgradeCost: 150_000,
+      maxEmployees: 5,
       multipliers: { clients: 1.5, check: 1.2, rent: 1.4, baseSalary: 1.3, capacity: 1.4 },
     },
     {
@@ -59,6 +64,7 @@ export const BUSINESS_TIERS: Record<BusinessType, BusinessTierConfig[]> = {
       unlockBalance: 700_000,
       unlockReputation: 75,
       upgradeCost: 450_000,
+      maxEmployees: 12,
       multipliers: { clients: 2.5, check: 1.4, rent: 2.5, baseSalary: 2.0, capacity: 2.0 },
     },
   ],
@@ -72,6 +78,7 @@ export const BUSINESS_TIERS: Record<BusinessType, BusinessTierConfig[]> = {
       unlockBalance: 0,
       unlockReputation: 0,
       upgradeCost: 0,
+      maxEmployees: 2,
       multipliers: { clients: 1.0, check: 1.0, rent: 1.0, baseSalary: 1.0, capacity: 1.0 },
     },
     {
@@ -84,6 +91,7 @@ export const BUSINESS_TIERS: Record<BusinessType, BusinessTierConfig[]> = {
       unlockReputation: 60,
       unlockQuality: 60,
       upgradeCost: 150_000,
+      maxEmployees: 5,
       multipliers: { clients: 1.4, check: 1.5, rent: 1.5, baseSalary: 1.4, capacity: 1.3 },
     },
     {
@@ -96,6 +104,7 @@ export const BUSINESS_TIERS: Record<BusinessType, BusinessTierConfig[]> = {
       unlockReputation: 75,
       unlockQuality: 75,
       upgradeCost: 400_000,
+      maxEmployees: 10,
       multipliers: { clients: 1.8, check: 2.5, rent: 2.5, baseSalary: 2.0, capacity: 1.5 },
     },
   ],
@@ -109,6 +118,7 @@ export const BUSINESS_TIERS: Record<BusinessType, BusinessTierConfig[]> = {
       unlockBalance: 0,
       unlockReputation: 0,
       upgradeCost: 0,
+      maxEmployees: 2,
       multipliers: { clients: 1.0, check: 1.0, rent: 1.0, baseSalary: 1.0, capacity: 1.0 },
     },
     {
@@ -120,6 +130,7 @@ export const BUSINESS_TIERS: Record<BusinessType, BusinessTierConfig[]> = {
       unlockBalance: 180_000,
       unlockReputation: 60,
       upgradeCost: 150_000,
+      maxEmployees: 4,
       multipliers: { clients: 1.5, check: 1.4, rent: 1.4, baseSalary: 1.4, capacity: 1.3 },
     },
     {
@@ -131,6 +142,7 @@ export const BUSINESS_TIERS: Record<BusinessType, BusinessTierConfig[]> = {
       unlockBalance: 600_000,
       unlockReputation: 75,
       upgradeCost: 400_000,
+      maxEmployees: 8,
       multipliers: { clients: 2.0, check: 2.0, rent: 2.0, baseSalary: 1.8, capacity: 1.5 },
     },
   ],

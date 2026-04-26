@@ -1,5 +1,4 @@
 import type { GameState } from '../types/game'
-import { getQualityModifier } from './supplierManager'
 import { getEmployeeCapacityBonus } from './employeeManager'
 
 /**
@@ -16,7 +15,7 @@ export function calculateQualityLevel(state: GameState): number {
   let quality = state.qualityLevel ?? 50
   
   // Factor 1: Supplier quality modifier (+/- 20 points)
-  const supplierMod = getQualityModifier(state) * 100
+  const supplierMod = 0  // supplier system removed; placeholder for now
   quality += supplierMod
   
   // Factor 2: Employee efficiency bonus
@@ -102,7 +101,7 @@ export function updateQualityWeekly(state: GameState): void {
   let newQuality = currentQuality
   
   // If using premium supplier, quality slowly increases
-  const supplierMod = getQualityModifier(state)
+  const supplierMod = 0
   if (supplierMod > 0) {
     newQuality += 1
   } else if (supplierMod < 0) {
