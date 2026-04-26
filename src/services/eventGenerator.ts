@@ -3,6 +3,7 @@ import { MORAL_DILEMMA_EVENTS } from '../constants/moralDilemmas'
 import { PERSONAL_BACKSTORY_EVENTS } from '../constants/personalEvents'
 import { NPC_ARC_EVENTS } from '../constants/npcArcs'
 import { CRISIS_EVENTS } from '../constants/crisisEvents'
+import { FIRST_ENCOUNTER_EVENTS } from '../constants/firstEncounters'
 import { getChainEvent, CHAIN_FOLLOWUP_DELAY } from '../constants/eventChains'
 import { RECURRING_CUSTOMER_EVENTS } from '../constants/recurringCustomers'
 import { NPC_EVENTS } from '../constants/npcEvents'
@@ -854,6 +855,7 @@ export function generateEvent(day: number, state: GameState): Event | null {
 
   const allTemplates = [
     ...EVENTS_DATABASE,
+    ...FIRST_ENCOUNTER_EVENTS,
     ...MORAL_DILEMMA_EVENTS,
     ...RECURRING_CUSTOMER_EVENTS,
     ...NPC_EVENTS,

@@ -588,9 +588,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     activateService: (serviceId) => {
       const state = get()
-      // Check if service is unlocked before allowing activation
+      // Auto-unlock when activated through an event option. Onboarding
+      // tutorials still drive the SERVICE_UNLOCK_MAP path; this lets
+      // first-encounter narrative events activate organically without
+      // requiring the player to have hit the matching onboarding stage.
       if (!(state.unlockedServices ?? []).includes(serviceId)) {
-        return
+        set((s) => ({
+          unlockedServices: [...(s.unlockedServices ?? []), serviceId],
+        }))
       }
       if (!state.services[serviceId]?.isActive) {
         get().revealPromoCode(serviceId)
