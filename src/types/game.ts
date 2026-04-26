@@ -67,8 +67,6 @@ export type OnboardingStage = 0 | 1 | 2 | 3 | 4
 
 export type CashRegisterType = 'mobile' | 'reliable' | 'fast'
 
-export type SupplierTier = 'economy' | 'standard' | 'premium'
-
 export type EmployeePosition = 'cashier' | 'assistant' | 'manager' | 'specialist' | 'supervisor' | 'trainer'
 
 export type WeekPhase = 'summary' | 'actions' | 'events' | 'results'
@@ -79,17 +77,6 @@ export interface CashRegister {
   type: CashRegisterType
   count: number
   purchaseDay: number
-}
-
-export interface Supplier {
-  id: string
-  name: string
-  tier: SupplierTier
-  qualityModifier: number  // -0.2 to +0.2
-  priceModifier: number    // -0.15 to +0.25
-  reliability: number      // 0.7 to 1.0 (chance of on-time delivery)
-  isActive: boolean
-  unlockedDay: number
 }
 
 export interface Employee {
@@ -510,10 +497,6 @@ export interface GameState {
   lastDiaryEntry?: { header: string; body: string } | null
   // Weeks at which a diary entry has been picked (prevents double-firing)
   diaryEntryWeeks?: number[]
-
-  // Suppliers system (NEW v2.0)
-  suppliers: Supplier[]
-  activeSupplierId: string | null
 
   // Employees system (NEW v2.0)
   employees: Employee[]

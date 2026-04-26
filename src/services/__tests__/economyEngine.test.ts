@@ -57,8 +57,6 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     lastDayPainLosses: null,
     bundlePromoShown: false,
     weeklyEnergyRestored: false,
-    suppliers: [],
-    activeSupplierId: null,
     employees: [],
     qualityLevel: 50,
     weeksSinceCompetitorEvent: 0,

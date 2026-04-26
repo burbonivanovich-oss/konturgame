@@ -18,7 +18,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'ecosystem',   label: 'Экосистема',   icon: 'eco'                     },
   { id: 'finance',     label: 'Финансы',      icon: 'finance'                 },
   { id: 'warehouse',   label: 'Склад',        icon: 'warehouse', unlocksAtWeek: 2  },
-  { id: 'operations',  label: 'Управление',   icon: 'ops'                          },
+  { id: 'operations',  label: 'Состав',       icon: 'ops'                          },
   { id: 'development', label: 'Развитие',     icon: 'upgrade',   unlocksAtWeek: 2  },
   { id: 'statistics',  label: 'Статистика',   icon: 'stats',     unlocksAtWeek: 7  },
   { id: 'journal',     label: 'Журнал',       icon: 'log',       unlocksAtWeek: 10 },
