@@ -566,39 +566,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
     },
 
     // Services
+    // toggleService is activation-only: once a service is on, it stays on
+    // for the run. Players don't bargain with themselves every week about
+    // whether to unsub — they just commit and use it. Manual deactivation
+    // is no longer exposed via UI; the deactivateService store action
+    // is kept for tests/admin use only.
     toggleService: (serviceId) => {
       const state = get()
       if (!(state.unlockedServices ?? []).includes(serviceId)) return
+      if (state.services[serviceId]?.isActive) return  // already on, no-op
 
-      const isCurrentlyActive = state.services[serviceId]?.isActive ?? false
-
-      if (isCurrentlyActive) {
-        // Deactivation: block if within 2-week cooldown from last deactivation
-        const deactivatedWeek = (state.serviceDeactivatedWeeks ?? {})[serviceId] ?? -99
-        if (state.currentWeek < deactivatedWeek + 2) return
-
-        set((s) => ({
-          services: {
-            ...s.services,
-            [serviceId]: { ...s.services[serviceId], isActive: false },
-          },
-          serviceDeactivatedWeeks: {
-            ...(s.serviceDeactivatedWeeks ?? {}),
-            [serviceId]: s.currentWeek,
-          },
-          lastUpdated: Date.now(),
-        }))
-      } else {
-        // Activation: always allowed, reveal promo code
-        get().revealPromoCode(serviceId)
-        set((s) => ({
-          services: {
-            ...s.services,
-            [serviceId]: { ...s.services[serviceId], isActive: true },
-          },
-          lastUpdated: Date.now(),
-        }))
-      }
+      get().revealPromoCode(serviceId)
+      set((s) => ({
+        services: {
+          ...s.services,
+          [serviceId]: { ...s.services[serviceId], isActive: true },
+        },
+        lastUpdated: Date.now(),
+      }))
     },
 
     activateService: (serviceId) => {

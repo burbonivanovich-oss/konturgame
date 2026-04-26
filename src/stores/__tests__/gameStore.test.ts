@@ -118,7 +118,10 @@ describe('GameStore', () => {
   })
 
   describe('Services Management', () => {
-    it('should toggle service activation', () => {
+    it('toggleService is activation-only — calling it twice keeps service on', () => {
+      // Once a service is on, it stays on for the run. Players don't bargain
+      // weekly about whether to unsub. The deactivateService store action
+      // is kept for tests/admin only; toggleService is one-way.
       const { toggleService, advanceOnboardingStage } = useGameStore.getState()
       advanceOnboardingStage() // Stage 1: unlocks bank, ofd
       advanceOnboardingStage() // Stage 2: unlocks market
@@ -126,7 +129,7 @@ describe('GameStore', () => {
       expect(useGameStore.getState().services.market.isActive).toBe(true)
 
       toggleService('market')
-      expect(useGameStore.getState().services.market.isActive).toBe(false)
+      expect(useGameStore.getState().services.market.isActive).toBe(true)
     })
 
     it('should activate service', () => {

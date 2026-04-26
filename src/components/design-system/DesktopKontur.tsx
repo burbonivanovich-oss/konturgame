@@ -299,36 +299,47 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
               </div>
               <div style={{ flex: 1 }}/>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.6 }}>ЦЕНА</div>
-                  <div style={{ fontSize: 14, fontWeight: 800 }} className="k-num">
-                    {s.annualPrice.toLocaleString('ru-RU')} ₽<span style={{ fontSize: 10, opacity: 0.7 }}>/год</span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleToggle(s.id, s.isActive)}
-                  disabled={!s.isActive && balance < s.annualPrice}
-                  style={{
-                    border: 'none', cursor: !s.isActive && balance < s.annualPrice ? 'not-allowed' : 'pointer',
-                    fontFamily: 'inherit',
+                {!s.isActive ? (
+                  <>
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.6 }}>ЦЕНА</div>
+                      <div style={{ fontSize: 14, fontWeight: 800 }} className="k-num">
+                        {s.annualPrice.toLocaleString('ru-RU')} ₽<span style={{ fontSize: 10, opacity: 0.7 }}>/год</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleToggle(s.id, false)}
+                      disabled={balance < s.annualPrice}
+                      style={{
+                        border: 'none',
+                        cursor: balance < s.annualPrice ? 'not-allowed' : 'pointer',
+                        fontFamily: 'inherit',
+                        padding: '6px 12px', borderRadius: 999,
+                        background: balance >= s.annualPrice ? K.ink : 'rgba(0,0,0,0.1)',
+                        color: balance >= s.annualPrice ? '#fff' : K.muted,
+                        fontSize: 11, fontWeight: 700,
+                        opacity: balance >= s.annualPrice ? 1 : 0.6,
+                        transition: 'opacity 0.2s',
+                      }}
+                    >
+                      Подключить
+                    </button>
+                  </>
+                ) : (
+                  // Once on, the service stays on for the run. No "unsub" path —
+                  // players don't waste decisions weighing weekly cost against
+                  // weekly value. Cost runs in the background as a fixed
+                  // monthly line in the financial summary.
+                  <div style={{
+                    fontSize: 11, fontWeight: 700, letterSpacing: '0.02em',
                     padding: '6px 12px', borderRadius: 999,
-                    background: s.isActive
-                      ? 'rgba(0,0,0,0.2)'
-                      : balance >= s.annualPrice
-                      ? K.ink
-                      : 'rgba(0,0,0,0.1)',
-                    color: s.isActive
-                      ? 'currentColor'
-                      : balance >= s.annualPrice
-                      ? '#fff'
-                      : K.muted,
-                    fontSize: 11, fontWeight: 700,
-                    opacity: s.isActive || balance >= s.annualPrice ? 1 : 0.6,
-                    transition: 'opacity 0.2s',
-                  }}
-                >
-                  {s.isActive ? 'Отключить' : 'Подключить'}
-                </button>
+                    background: 'rgba(0,0,0,0.18)',
+                    color: 'currentColor',
+                    width: '100%', textAlign: 'center',
+                  }}>
+                    Подключено · до конца года
+                  </div>
+                )}
               </div>
             </div>
           )})}
