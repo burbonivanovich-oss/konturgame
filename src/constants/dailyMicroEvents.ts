@@ -30,7 +30,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     options: [
       {
         id: 'accept_motivation',
-        text: 'Зарядиться энергией (+10%)',
+        text: 'Зарядиться энергией',
         effects: { energyDelta: 10, clientModifierPercent: 0.05, clientModifierDays: 7 },
       },
       {
@@ -54,7 +54,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
       },
       {
         id: 'work_through',
-        text: 'Работать дальше (-20% энергии)',
+        text: 'Работать дальше',
         effects: { energyDelta: -20, balanceDelta: 1000 },
       },
     ],
@@ -148,12 +148,12 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     options: [
       {
         id: 'refund',
-        text: 'Вернуть деньги (-1000₽, +репутация)',
+        text: 'Вернуть деньги (-1000₽)',
         effects: { balanceDelta: -1000, reputationDelta: 3 },
       },
       {
         id: 'refuse',
-        text: 'Отказать (-репутация)',
+        text: 'Отказать',
         effects: { reputationDelta: -5, balanceDelta: 1000 },
       },
     ],
@@ -250,7 +250,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
       },
       {
         id: 'leave_it',
-        text: 'Оставить как есть (-1% клиентов)',
+        text: 'Оставить как есть',
         effects: { clientModifierPercent: -0.01, clientModifierDays: 7 },
       },
     ],
@@ -271,7 +271,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
       },
       {
         id: 'decline_big_order',
-        text: 'Отказать (не хватает энергии)',
+        text: 'Отказать',
         effects: { reputationDelta: -2 },
       },
     ],
@@ -309,7 +309,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
       },
       {
         id: 'delay_payment',
-        text: 'Отложить на несколько дней (-репутация)',
+        text: 'Отложить на несколько дней',
         effects: { reputationDelta: -5, balanceDelta: 0 },
       },
     ],
@@ -344,12 +344,12 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     options: [
       {
         id: 'open_emergency',
-        text: 'Открыть магазин (+3000₽, -30% энергии)',
+        text: 'Открыть магазин (+3000₽)',
         effects: { balanceDelta: 3000, energyDelta: -30, reputationDelta: 2 },
       },
       {
         id: 'refuse_emergency',
-        text: 'Отказать (-репутация)',
+        text: 'Отказать',
         effects: { reputationDelta: -3 },
       },
     ],
@@ -422,7 +422,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     options: [
       {
         id: 'embrace_change',
-        text: 'Встретить перемены (мотивация +10%)',
+        text: 'Встретить перемены',
         effects: { energyDelta: 10, clientModifierPercent: 0.05, clientModifierDays: 7 },
       },
       {

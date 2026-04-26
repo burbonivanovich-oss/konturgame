@@ -6,7 +6,7 @@ import type { BusinessType, PersonalGoal } from '../../types/game'
 type NavId = 'dashboard' | 'ecosystem' | 'finance' | 'development' | 'operations' |
              'warehouse' | 'statistics' | 'journal'
 
-interface NavItem {
+export interface NavItem {
   id: NavId
   label: string
   icon: string
@@ -23,6 +23,53 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'statistics',  label: 'Статистика',   icon: 'stats',     unlocksAtWeek: 7  },
   { id: 'journal',     label: 'Журнал',       icon: 'log',       unlocksAtWeek: 10 },
 ]
+
+// Top-level nav collapses 8 views into 3 groups. Sub-tabs inside each group
+// give granular access. Existing setActiveView('finance') etc. still work —
+// they auto-resolve to the correct group via NAV_ITEM_TO_GROUP below.
+export type NavGroupId = 'today' | 'business' | 'reports'
+
+interface NavGroup {
+  id: NavGroupId
+  label: string
+  icon: string
+  members: NavId[]  // sub-tabs in display order
+}
+
+export const NAV_GROUPS: NavGroup[] = [
+  { id: 'today',    label: 'Сегодня', icon: 'dashboard', members: ['dashboard'] },
+  { id: 'business', label: 'Дело',    icon: 'ops',       members: ['ecosystem', 'warehouse', 'operations', 'development'] },
+  { id: 'reports',  label: 'Отчёты',  icon: 'finance',   members: ['finance', 'statistics', 'journal'] },
+]
+
+export function getGroupForNav(navId: NavId): NavGroupId {
+  for (const g of NAV_GROUPS) {
+    if (g.members.includes(navId)) return g.id
+  }
+  return 'today'
+}
+
+// Returns the first unlocked member of a group at the current week.
+// Used when the player clicks a group tab — we land them on the first
+// available sub-view rather than asking them to pick a sub-tab.
+export function firstUnlockedMember(groupId: NavGroupId, currentWeek: number): NavId {
+  const group = NAV_GROUPS.find(g => g.id === groupId)
+  if (!group) return 'dashboard'
+  for (const memberId of group.members) {
+    const item = NAV_ITEMS.find(it => it.id === memberId)
+    if (!item) continue
+    if (!item.unlocksAtWeek || currentWeek >= item.unlocksAtWeek) return memberId
+  }
+  return group.members[0]  // fallback even if locked
+}
+
+export function getSubTabsForGroup(groupId: NavGroupId, currentWeek: number): NavItem[] {
+  const group = NAV_GROUPS.find(g => g.id === groupId)
+  if (!group) return []
+  return group.members
+    .map(id => NAV_ITEMS.find(it => it.id === id))
+    .filter((it): it is NavItem => !!it && (!it.unlocksAtWeek || currentWeek >= it.unlocksAtWeek))
+}
 
 const BIZ_ICON: Record<BusinessType, string> = {
   shop:           'shop',
@@ -92,7 +139,8 @@ export function KLeftRail({
         </div>
       </Row>
 
-      {/* Business status card */}
+      {/* Business status card — week N/52 + progress bar makes the year-as-finale
+          visible at all times, not just at the end. */}
       <Card pad={12} radius={12} bg={K.bone} border={K.lineSoft}>
         <Row gap={8}>
           <div style={{
@@ -102,74 +150,75 @@ export function KLeftRail({
           }}>
             <KIcon name={BIZ_ICON[businessType]} size={16} color={K.ink2} />
           </div>
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 700 }}>{BIZ_LABEL[businessType]}</div>
-            <div style={{ fontSize: 11, color: K.muted }}>Неделя {currentWeek} · {season}</div>
+            <div style={{ fontSize: 11, color: K.muted, fontVariantNumeric: 'tabular-nums' }}>
+              Неделя {currentWeek} / 52 · {season}
+            </div>
           </div>
         </Row>
+        <div style={{
+          marginTop: 8, height: 3, background: K.lineSoft,
+          borderRadius: 999, overflow: 'hidden',
+        }}>
+          <div style={{
+            width: `${Math.min(100, (currentWeek / 52) * 100)}%`,
+            height: '100%',
+            background: currentWeek >= 49 ? K.orange : K.ink2,
+            transition: 'width 0.3s',
+          }} />
+        </div>
       </Card>
 
-      {/* Navigation — only currently-unlocked items, plus a single peek
-          showing what unlocks next. Hidden-until-earned reads as progress;
-          a long list of disabled items reads as friction. */}
+      {/* Navigation — 3 top-level groups (Сегодня / Дело / Отчёты).
+          Sub-tabs surface inside the content area when a group has more
+          than one available view. Achievements and NPC roster stay as
+          modal-style buttons below. */}
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {(() => {
-          const unlockedItems = NAV_ITEMS.filter(
-            it => !it.unlocksAtWeek || currentWeek >= it.unlocksAtWeek
-          )
-          // The next-to-unlock item (smallest unlocksAtWeek > currentWeek)
-          const nextLocked = NAV_ITEMS
-            .filter(it => it.unlocksAtWeek && currentWeek < it.unlocksAtWeek)
-            .sort((a, b) => (a.unlocksAtWeek ?? 0) - (b.unlocksAtWeek ?? 0))[0]
+          const activeGroup = getGroupForNav(active)
+          const groupHighlight = highlightNav ? getGroupForNav(highlightNav) : undefined
+          return NAV_GROUPS.map(group => {
+            const isActive = group.id === activeGroup
+            const subTabs = getSubTabsForGroup(group.id, currentWeek)
+            // Group is "locked" only if every member is locked. With the
+            // current set, only 'today' is always-on; 'business' is on
+            // from week 1 (ecosystem + operations); 'reports' is on from
+            // week 1 (finance always available).
+            const isLocked = subTabs.length === 0
+            // Badge: dashboard has pending events; business shows
+            // service count; reports has no badge.
+            let badge: string | undefined
+            if (group.id === 'today' && pendingEventCount > 0) badge = String(pendingEventCount)
+            else if (group.id === 'business') badge = `${activeServiceCount}/7`
 
-          return [...unlockedItems, ...(nextLocked ? [nextLocked] : [])].map(item => {
-            const isActive = item.id === active
-            const isLocked = !!item.unlocksAtWeek && currentWeek < item.unlocksAtWeek
-            const badge =
-              item.id === 'dashboard' && pendingEventCount > 0 ? String(pendingEventCount) :
-              item.id === 'ecosystem' ? `${activeServiceCount}/7` :
-              undefined
-
-            const isPulsing = item.id === highlightNav && !isActive && !isLocked
+            const isPulsing = groupHighlight === group.id && !isActive && !isLocked
             return (
               <button
-                key={item.id}
-                onClick={() => !isLocked && onNav(item.id)}
+                key={group.id}
+                onClick={() => !isLocked && onNav(firstUnlockedMember(group.id, currentWeek))}
                 disabled={isLocked}
-                title={isLocked ? `Откроется на неделе ${item.unlocksAtWeek}` : undefined}
                 className={isPulsing ? 'nav-pulse' : undefined}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '8px 10px', borderRadius: 9,
+                  padding: '10px 12px', borderRadius: 9,
                   background: isActive ? K.ink : 'transparent',
                   color: isActive ? K.white : K.ink,
-                  fontSize: 13, fontWeight: 500,
+                  fontSize: 14, fontWeight: 600,
                   cursor: isLocked ? 'not-allowed' : 'pointer',
                   opacity: isLocked ? 0.45 : 1,
                   border: 'none', fontFamily: 'inherit', width: '100%', textAlign: 'left',
                   outline: isPulsing ? `2px solid ${K.orange}` : 'none',
                 }}
               >
-                <KIcon name={item.icon} size={16} color={isActive ? K.white : K.ink2} />
-                <div style={{ flex: 1 }}>{item.label}</div>
-                {isLocked ? (
-                  <span style={{
-                    fontSize: 10, fontWeight: 600,
-                    color: K.muted,
-                    display: 'inline-flex', alignItems: 'center', gap: 3,
-                  }}>
-                    🔒 нед.{item.unlocksAtWeek}
-                  </span>
-                ) : badge && (
+                <KIcon name={group.icon} size={17} color={isActive ? K.white : K.ink2} />
+                <div style={{ flex: 1 }}>{group.label}</div>
+                {badge && (
                   <span style={{
                     fontSize: 10, fontWeight: 700,
                     padding: '2px 7px', borderRadius: 999,
-                    background: badge === 'NEW'
-                      ? K.violet
-                      : isActive ? 'rgba(255,255,255,0.15)' : K.bone,
-                    color: badge === 'NEW'
-                      ? K.white
-                      : isActive ? K.white : K.muted,
+                    background: isActive ? 'rgba(255,255,255,0.15)' : K.bone,
+                    color: isActive ? K.white : K.muted,
                     letterSpacing: '0.04em',
                   }}>
                     {badge}

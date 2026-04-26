@@ -17,23 +17,26 @@ export interface ExitLine {
 
 /**
  * Returns exit lines for all revealed NPCs, picked by relationship level.
- * Order matches NPC_DEFINITIONS for stable layout.
+ * Order matches NPC_DEFINITIONS for stable layout. `triggeredEventIds` is
+ * passed through so episodic NPCs (e.g. Tamara) can select an exit line
+ * by which terminal episode fired, rather than by relationship level —
+ * useful when the chain spans long enough that decay homogenises the level.
  */
-export function buildNpcExitLines(npcs: NPC[]): ExitLine[] {
+export function buildNpcExitLines(npcs: NPC[], triggeredEventIds: string[] = []): ExitLine[] {
   const lines: ExitLine[] = []
 
   for (const def of NPC_DEFINITIONS) {
     const npc = npcs.find(n => n.id === def.id)
     if (!npc?.isRevealed) continue
     const r = npc.relationshipLevel
-    const text = pickExitLine(def.id, r)
+    const text = pickExitLine(def.id, r, triggeredEventIds)
     if (text) lines.push({ npcId: def.id, text })
   }
 
   return lines
 }
 
-function pickExitLine(npcId: string, r: number): string | null {
+function pickExitLine(npcId: string, r: number, triggeredEventIds: string[] = []): string | null {
   switch (npcId) {
     case 'mikhail':
       if (r >= 70) return 'Михаил пишет из Краснодара. Внуки, веранда, рыбалка по выходным. В декабре прислал ящик мандаринов — без повода, «просто чтоб не забывали».'
@@ -57,21 +60,33 @@ function pickExitLine(npcId: string, r: number): string | null {
       if (r >= 20) return 'Анна закрылась через год после того кризиса. Помещение пустует. Иногда странно тихо без её листовок.'
       return 'Анна выиграла войну, которую вы не хотели вести. Её магазин на месте, ваш — закрыт. Но это другая история.'
 
-    case 'marina':
-      if (r >= 65) return 'Марина вернулась из декрета через год. Сделала вам стратегию на следующий сезон — как обещала. Приходит с дочкой в коляске.'
-      if (r >= 40) return 'Марина в декрете. Иногда пишет совет — короткий, по делу. Связь не оборвалась.'
-      return 'Марина исчезла после декрета. Поняли только потом, что её обещания и были её способом честно прощаться.'
+    case 'tamara':
+      // Pinned to which terminal episode fired, not relationship level —
+      // the chain spans 30+ weeks and weekly decay would otherwise blur
+      // the visit-vs-pass branches into the same neutral 50.
+      if (triggeredEventIds.includes('tamara_arc_3a')) {
+        return 'Бабушка Тамара ходит до сих пор — медленнее, с палочкой, но раз в неделю. Иногда забывает кошелёк, тогда расплачивается анекдотом про мужа. Платок у неё всегда чистый.'
+      }
+      if (triggeredEventIds.includes('tamara_arc_3b')) {
+        return 'Бабушку Тамару похоронили в Твери. Её записку вы так и не выбросили — лежит в ящике под кассой, между квитанциями. Иногда натыкаетесь.'
+      }
+      // First episode fired but no terminal — she vanished from view.
+      return 'Бабушка Тамара перестала заходить в какой-то момент. Вы так и не узнали — переехала, заболела, забыла. Просто однажды поняли: её нет уже давно.'
 
-    case 'viktor':
-      if (r >= 60) return 'Виктор работает в центральном офисе. Когда вам понадобилась лицензия на эквайринг — оформил за два дня вместо двух недель. «Земляческое».'
-      if (r >= 35) return 'Виктор передал ваш счёт коллеге. Новая менеджер — Оксана. Корректная, но без той лёгкости. Бывает.'
-      return 'Виктор ушёл, не попрощавшись. Возможно, был обижен. Возможно, не до того было. Никогда не узнаете.'
-
-    case 'gleb':
-      if (r >= 65) return 'Глеб набрал 80 тысяч подписчиков. Ваш бизнес — постоянный герой его контента. Платный контракт, но рамки честные.'
-      if (r >= 40) return 'Глеб делает контент по району. Вас упоминает иногда — нейтрально. Это и есть отношения.'
-      if (r >= 15) return 'Глеб переключился на скандалы про другие места. У вас — затишье. И слава богу.'
-      return 'После того скандала Глеб развернул войну. Снимает раз в месяц новый «разоблачающий» материал. Просмотры есть, конверсии нет — но осадок остаётся.'
+    case 'gena':
+      // Three terminal variants from gena_arc_5; relationship level is
+      // inconsistent across them so we key off the triggered event.
+      if (triggeredEventIds.includes('gena_arc_5_jackpot')) {
+        return 'Гена пишет из Дубая. На фотках — балкон, пальма, тарелка с морепродуктами. «Брат, помнишь я говорил? Я всегда говорил». Раз в месяц предлагает новую тему. Вы вежливо игнорируете.'
+      }
+      if (triggeredEventIds.includes('gena_arc_5_burned')) {
+        return 'Гена в районе. Тема теперь — солнечные панели на даче, потом, наверное, что-то про водород. Деньги его не научили ничему. Ваши, к сожалению, тоже.'
+      }
+      if (triggeredEventIds.includes('gena_arc_5_told_you_so')) {
+        return 'Гена больше не заходит. Видимо, обиделся. Иногда мелькает в чате района — там у него уже какая-то новая тема, пишет про неё много восклицательных знаков.'
+      }
+      // Met him but never reached the finale.
+      return 'Гена пропал после третьей или четвёртой темы. Не звонит, не пишет. Может, наконец нашёл того, кто согласился.'
   }
   return null
 }

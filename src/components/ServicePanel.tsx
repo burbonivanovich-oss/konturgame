@@ -168,11 +168,12 @@ export default function ServicePanel() {
             </div>
             <div style={{ fontSize: 11, opacity: 0.8, lineHeight: 1.3 }}>{service.description}</div>
             <button
-              onClick={() => isUnlocked && toggleService(service.id)}
-              disabled={!isUnlocked}
+              onClick={() => isUnlocked && !service.isActive && toggleService(service.id)}
+              disabled={!isUnlocked || service.isActive}
               style={{
                 width: '100%', padding: '8px', borderRadius: 8, fontSize: 11, fontWeight: 700,
-                border: 'none', cursor: 'pointer',
+                border: 'none',
+                cursor: !isUnlocked || service.isActive ? 'default' : 'pointer',
                 background: service.isActive
                   ? 'rgba(0,0,0,0.2)'
                   : 'rgba(0,0,0,0.15)',
@@ -180,10 +181,10 @@ export default function ServicePanel() {
                 color: 'inherit',
                 transition: 'opacity 0.2s',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.8' }}
+              onMouseEnter={(e) => { if (!service.isActive && isUnlocked) e.currentTarget.style.opacity = '0.8' }}
               onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
             >
-              {service.isActive ? '✓ Подключено' : `Подключить`}
+              {service.isActive ? '✓ Подключено · до конца года' : 'Подключить'}
             </button>
           </div>
         )

@@ -1,7 +1,7 @@
 import type { GameState, DayResult } from '../types/game'
 import { DAILY_MICRO_EVENTS } from '../constants/dailyMicroEvents'
 import { BUSINESS_CONFIGS, ECONOMY_CONSTANTS, CAMPAIGN_DIMINISHING_FACTORS } from '../constants/business'
-import { ensureNPCsInitialized, applyNPCPassiveEffects, getInspectorChain2EventId } from './npcManager'
+import { ensureNPCsInitialized, applyNPCPassiveEffects, getInspectorChain2EventId, getGenaFinalEventId } from './npcManager'
 import { getChainEvent, getChainStartEvent, CHAIN_TRIGGER_WEEKS, type ChainId } from '../constants/eventChains'
 import { templateToEvent, applyEventConsequence, generateCrisisEvent } from './eventGenerator'
 import { pickDiaryEntry } from '../constants/diary'
@@ -566,6 +566,21 @@ export function processWeek(state: GameState): DayResult {
     state.victoryType = resolveVictoryType(state)
   }
 
+  // Year-end: at week 52 the run ALWAYS ends. If no win/loss has fired by
+  // now, the player neither broke through nor broke down — they just lived
+  // the year. That's its own ending ("Год прошёл"), distinct from victory
+  // and from bankruptcy. Without this guard, edge cases (balance=0 exactly,
+  // reputation=0 but not yet at zero-streak) would let the game limp into
+  // week 53+, which contradicts the year-as-finale design.
+  if (
+    !state.isGameOver &&
+    !state.isVictory &&
+    state.currentWeek >= ECONOMY_CONSTANTS.TOTAL_WEEKS_PER_YEAR
+  ) {
+    state.isGameOver = true
+    state.gameOverReason = 'year_end'
+  }
+
   // Check milestone achievements
   if (!state.milestoneStatus) {
     state.milestoneStatus = { week10: false, week20: false, week30: false }
@@ -824,10 +839,14 @@ function triggerDueChainEvents(state: GameState): void {
   if (due.length === 0) return
 
   for (const followUp of due) {
-    // inspector_chain step 2 branches depending on Petrov relationship
-    const eventId = followUp.chainEventId.startsWith('inspector_chain_2')
-      ? getInspectorChain2EventId(state)
-      : followUp.chainEventId
+    // inspector_chain step 2 branches depending on Petrov relationship.
+    // gena_arc step 5 branches on whether player ever invested + a 10% RNG roll.
+    let eventId = followUp.chainEventId
+    if (eventId.startsWith('inspector_chain_2')) {
+      eventId = getInspectorChain2EventId(state)
+    } else if (eventId === 'gena_arc_5') {
+      eventId = getGenaFinalEventId(state)
+    }
 
     const template = getChainEvent(eventId)
     if (!template) continue

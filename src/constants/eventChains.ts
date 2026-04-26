@@ -252,7 +252,7 @@ export const CHAIN_EVENTS: EventTemplate[] = [
     options: [
       {
         id: 'fight_back',
-        text: 'Ответить своей акцией (−10 000 ₽, вернуть клиентов)',
+        text: 'Ответить своей акцией (−10 000 ₽)',
         consequences: { balanceDelta: -10000, clientModifier: 0.1, clientModifierDays: 14 },
         npcRelationshipDelta: -15,
       },
@@ -297,7 +297,7 @@ export const CHAIN_EVENTS: EventTemplate[] = [
     options: [
       {
         id: 'agree',
-        text: 'Согласиться (−5 энергии/неделю на 5 недель)',
+        text: 'Согласиться',
         consequences: { energyDelta: -5 },
         chainFollowUpId: 'legacy_2a',
       },
@@ -338,241 +338,319 @@ export const CHAIN_EVENTS: EventTemplate[] = [
     ],
   },
 
-  // ── CHAIN 6: Марина и рекламная кампания (marina_promo) ────────────────────
-  // Trigger: week 5–8. Маркетолог предлагает продвижение.
+  // ── CHAIN 9: Бабушка Тамара (tamara_arc) ───────────────────────────────────
+  // Пасс на тон, не на механику. 3 эпизода, маленькие дельты,
+  // эмоциональный якорь. Без opinion-stack — игрок не выбирает между
+  // «помочь» и «потерять 50K», только между «увидеть человека» и «забить».
   {
-    id: 'marina_promo_1',
-    title: 'Марина Воронова с предложением',
-    description: 'Женщина лет тридцати, с ноутбуком и уверенной улыбкой, представляется: "Марина Воронова, маркетинг и digital. Я изучила ваш бизнес — есть потенциал. За 20 000 ₽ в месяц я запущу рекламу в соцсетях, сделаю контент и приведу новых клиентов. Два месяца — и вы увидите результат."',
-    trigger: { dayMin: 35, dayMax: 56, randomChance: 1.0, oneTime: true, chainId: 'marina_promo', chainStep: 1 },
-    npcId: 'marina',
-    decisionDeadlineWeeks: 1,
+    id: 'tamara_arc_1',
+    title: 'Бабушка Тамара зашла за хлебом',
+    description: 'Невысокая женщина в платке, лет за семьдесят, выкладывает на прилавок сдачу — копейка к копейке. Пока считаете, она тихо: «Я тут к вам уже месяц захожу. Знаете, муж осенью умер, я теперь почти не выхожу. А у вас тут — люди. Хорошо у вас». Улыбается в полпальца. Достаёт из сумки печенье — «вам, к чаю». Уходит.',
+    trigger: {
+      dayMin: 56, // ~week 8
+      dayMax: 84, // ~week 12
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'tamara_arc',
+      chainStep: 1,
+    },
+    npcId: 'tamara',
     options: [
       {
-        id: 'hire',
-        text: 'Нанять Марину (−20 000 ₽)',
-        consequences: { balanceDelta: -20000 },
-        npcRelationshipDelta: 15,
-        chainFollowUpId: 'marina_promo_2a',
-      },
-      {
-        id: 'hire_with_market',
-        text: 'Нанять + дать доступ к аналитике Контур.Маркета',
-        consequences: { balanceDelta: -20000 },
-        npcRelationshipDelta: 15,
-        chainFollowUpId: 'marina_promo_2b',
-        requiredService: 'market',
-        isContourOption: true,
-      },
-      {
-        id: 'refuse',
-        text: 'Отказать — обойдёмся своими силами',
+        id: 'thank_warm',
+        text: 'Поблагодарить и сказать, чтоб заходила почаще',
         consequences: {},
-        npcRelationshipDelta: -5,
-      },
-    ],
-  },
-
-  {
-    id: 'marina_promo_2a',
-    title: 'Кампания Марины — результаты',
-    description: 'Марина прислала отчёт: охваты выросли, несколько новых клиентов пришли по рекламе. "Без глубокой аналитики по вашей аудитории сложно было целиться точно, но в целом — плюс." Она права: эффект есть, но мог быть больше.',
-    trigger: { dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true, chainId: 'marina_promo', chainStep: 2 },
-    npcId: 'marina',
-    options: [
-      {
-        id: 'accept',
-        text: 'Принять результаты и продолжить работу',
-        consequences: { clientModifier: 0.08, clientModifierDays: 30, reputationDelta: 2 },
-        npcRelationshipDelta: 5,
-      },
-    ],
-  },
-
-  {
-    id: 'marina_promo_2b',
-    title: 'Кампания Марины — отличные результаты',
-    description: 'Марина сияет: "С данными по аудитории из Контур.Маркета я смогла точно настроить таргетинг. Конверсия в три раза выше, чем обычно." Новые лица в очереди, несколько отзывов в соцсетях — люди говорят, что нашли вас через рекламу.',
-    trigger: { dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true, chainId: 'marina_promo', chainStep: 2 },
-    npcId: 'marina',
-    options: [
-      {
-        id: 'celebrate',
-        text: 'Поблагодарить и обсудить следующий этап',
-        consequences: { clientModifier: 0.15, clientModifierDays: 45, reputationDelta: 5, loyaltyDelta: 4 },
-        npcRelationshipDelta: 12,
-      },
-    ],
-  },
-
-  // ── CHAIN 7: Виктор и кредитная линия (viktor_loan) ────────────────────────
-  // Trigger: week 12–16. Банк предлагает кредит на развитие.
-  {
-    id: 'viktor_loan_1',
-    title: 'Виктор Семёнов из банка',
-    description: 'Звонит вежливый голос: "Виктор Семёнов, местное отделение банка. Мы видим ваш бизнес — стабильный, перспективный. Хочу лично познакомиться и предложить кредитную линию до 200 000 ₽ на развитие. Встретимся?" На встрече он раскладывает по-деловому: стандартная ставка 18% годовых.',
-    trigger: { dayMin: 84, dayMax: 112, randomChance: 1.0, oneTime: true, chainId: 'viktor_loan', chainStep: 1 },
-    npcId: 'viktor',
-    decisionDeadlineWeeks: 2,
-    options: [
-      {
-        id: 'take_loan',
-        text: 'Взять кредит 100 000 ₽ под 18% годовых',
-        consequences: { balanceDelta: 100000 },
-        npcRelationshipDelta: 10,
-        chainFollowUpId: 'viktor_loan_2a',
+        npcRelationshipDelta: 4,
+        chainFollowUpId: 'tamara_arc_2',
       },
       {
-        id: 'kontour_bank',
-        text: 'Оформить через Контур.Банк — ставка 5%',
-        consequences: { balanceDelta: 100000 },
-        npcRelationshipDelta: 15,
-        chainFollowUpId: 'viktor_loan_2b',
-        requiredService: 'bank',
-        isContourOption: true,
-      },
-      {
-        id: 'refuse',
-        text: 'Отказаться — не хочу кредитов',
+        id: 'just_nod',
+        text: 'Кивнуть и пробить чек — дел много',
         consequences: {},
-        npcRelationshipDelta: -5,
-        chainFollowUpId: 'viktor_loan_2c',
+        npcRelationshipDelta: 0,
+        chainFollowUpId: 'tamara_arc_2',
       },
     ],
   },
 
   {
-    id: 'viktor_loan_2a',
-    title: 'Кредит работает — но давит',
-    description: 'Деньги пошли в дело: закупки, реклама, небольшой ремонт. Бизнес чуть подрос. Но каждый месяц — выплата с процентами. Виктор звонит: "Как дела? Если нужна реструктуризация — обращайтесь." В его голосе звучит профессиональная забота.',
-    trigger: { dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true, chainId: 'viktor_loan', chainStep: 2 },
-    npcId: 'viktor',
+    id: 'tamara_arc_2',
+    title: 'Бабушка Тамара не приходит уже три недели',
+    description: 'Только сейчас заметили: бабушки Тамары нет давно. Спросили у соседки, та машет рукой: «Слегла. Воспаление лёгких, тяжело. Дочка из Твери приехала, ходит за ней. Адрес я знаю — если что». Молчит. «Она вас вспоминала, кстати. Говорила — там хорошие люди».',
+    trigger: {
+      dayMin: 0,
+      dayMax: 9999,
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'tamara_arc',
+      chainStep: 2,
+    },
+    npcId: 'tamara',
     options: [
       {
-        id: 'manage',
-        text: 'Платить по графику — справляемся',
-        consequences: { balanceDelta: -18000, clientModifier: 0.06, clientModifierDays: 28 },
-        npcRelationshipDelta: 5,
-      },
-    ],
-  },
-
-  {
-    id: 'viktor_loan_2b',
-    title: 'Кредит через Контур.Банк — выгодно',
-    description: 'Пять процентов годовых — это почти вдвое меньше, чем предлагал Виктор напрямую. Деньги пошли на расширение: новый стеллаж, запас, небольшая акция. Виктор при встрече говорит с уважением: "Грамотно выбрали инструмент. Такие клиенты нам нравятся."',
-    trigger: { dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true, chainId: 'viktor_loan', chainStep: 2 },
-    npcId: 'viktor',
-    options: [
-      {
-        id: 'great',
-        text: 'Спокойно развиваться с выгодными условиями',
-        consequences: { balanceDelta: -5000, clientModifier: 0.1, clientModifierDays: 35, reputationDelta: 3 },
-        npcRelationshipDelta: 10,
-      },
-    ],
-  },
-
-  {
-    id: 'viktor_loan_2c',
-    title: 'Без кредита — своим ходом',
-    description: 'Через месяц Виктор пишет: "Предложение остаётся в силе — если понадобится." Вы обошлись без займа. Это потребовало осторожности: пришлось отложить несколько закупок и урезать рекламный бюджет. Зато никаких долгов.',
-    trigger: { dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true, chainId: 'viktor_loan', chainStep: 2 },
-    npcId: 'viktor',
-    options: [
-      {
-        id: 'accept',
-        text: 'Продолжать работать без кредита',
-        consequences: { clientModifier: -0.05, clientModifierDays: 14 },
-        npcRelationshipDelta: 3,
-      },
-    ],
-  },
-
-  // ── CHAIN 8: Глеб и обзор (gleb_review) ────────────────────────────────────
-  // Trigger: week 4–10. Блогер хочет написать про ваш бизнес.
-  {
-    id: 'gleb_review_1',
-    title: 'Блогер Глеб хочет сделать обзор',
-    description: 'Молодой парень с телефоном на подставке снимает что-то у входа. Потом подходит: "Я Глеб Котов, пишу про районный бизнес. 18 тысяч подписчиков. Хочу снять честный обзор вашего места. Можете угостить кофе и дать товар на пробу — или я куплю сам и напишу как есть."',
-    trigger: { dayMin: 28, dayMax: 70, randomChance: 1.0, oneTime: true, chainId: 'gleb_review', chainStep: 1 },
-    npcId: 'gleb',
-    decisionDeadlineWeeks: 1,
-    options: [
-      {
-        id: 'gift',
-        text: 'Угостить и дать товар бесплатно (−2 000 ₽)',
-        consequences: { balanceDelta: -2000 },
-        npcRelationshipDelta: 15,
-        chainFollowUpId: 'gleb_review_2a',
-      },
-      {
-        id: 'discount',
-        text: 'Предложить скидку 30% (−700 ₽)',
-        consequences: { balanceDelta: -700 },
+        id: 'visit',
+        text: 'Закрыть пораньше, заехать с пакетом мандаринов',
+        consequences: { energyDelta: -5 },
         npcRelationshipDelta: 8,
-        chainFollowUpId: 'gleb_review_2b',
+        chainFollowUpId: 'tamara_arc_3a',
+      },
+      {
+        id: 'pass',
+        text: 'Пожалеть мысленно — но это просто бабушка, не до того',
+        consequences: {},
+        npcRelationshipDelta: -6,
+        chainFollowUpId: 'tamara_arc_3b',
+      },
+    ],
+  },
+
+  {
+    id: 'tamara_arc_3a',
+    title: 'Бабушка Тамара вернулась',
+    description: 'Дверь открывается медленнее обычного. На пороге — Тамара. Похудевшая, в новом платке, с палочкой. «Здравствуйте. Я ненадолго — за хлебом и сказать. Спасибо, что приехали тогда. Дочка говорит — я после вашего визита на поправку и пошла». Долго молчит у прилавка. «Я ещё похожу к вам, ладно?» Уходит, держась за стену.',
+    trigger: {
+      dayMin: 0,
+      dayMax: 9999,
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'tamara_arc',
+      chainStep: 3,
+    },
+    npcId: 'tamara',
+    options: [
+      {
+        id: 'see_her_out',
+        text: 'Проводить до выхода',
+        consequences: { reputationDelta: 2 },
+        npcRelationshipDelta: 6,
+      },
+    ],
+  },
+
+  {
+    id: 'tamara_arc_3b',
+    title: 'Записка от соседки',
+    description: 'На прилавке — сложенный вчетверо листок. Соседка занесла утром, не дождалась. «Тамара Ивановна ушла в среду. Тихо, во сне. Дочка просила передать спасибо всем, кто её знал — вы у неё в записях были. Похороны в субботу, в Твери». Внизу — телефон. Печенья сегодня к чаю не будет.',
+    trigger: {
+      dayMin: 0,
+      dayMax: 9999,
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'tamara_arc',
+      chainStep: 3,
+    },
+    npcId: 'tamara',
+    options: [
+      {
+        id: 'fold_it',
+        text: 'Сложить записку и положить в ящик',
+        consequences: {},
+        npcRelationshipDelta: 0,
+      },
+    ],
+  },
+
+  // ── CHAIN 10: Гена-инвестор (gena_arc) ─────────────────────────────────────
+  // Комический рефрен. 5 эпизодов, повторяющийся персонаж — каждый раз
+  // приходит с новой «темой века». Все промежуточные вложения уходят в
+  // минус. Финал на нед. 47-49: если хоть раз вкладывался — 10% шанс
+  // лотереи (+500 000 ₽). Если всегда отказывал — он просто смеётся
+  // «А я же говорил». Лотерея — единственное место с RNG в пользу игрока.
+  {
+    id: 'gena_arc_1',
+    title: 'Гена с темой века',
+    description: 'В магазин заходит мужик в спортивных штанах: «Брат! Помнишь меня? Гена! Двоюродный твой шурина брат через тётю. Слушай, у меня тут тема — крипто-ферма в гараже у Толика. Тридцать вкладываешь — через месяц девяносто. Зуб даю». Достаёт телефон с какими-то графиками. Графики действительно растут.',
+    trigger: {
+      dayMin: 56,
+      dayMax: 84,
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'gena_arc',
+      chainStep: 1,
+    },
+    npcId: 'gena',
+    options: [
+      {
+        id: 'invest',
+        text: 'Дать 30 000 ₽ — крипта так крипта',
+        consequences: { balanceDelta: -30000 },
+        npcRelationshipDelta: 6,
+        chainFollowUpId: 'gena_arc_2',
+      },
+      {
+        id: 'decline',
+        text: '«Гена, нет»',
+        consequences: {},
+        npcRelationshipDelta: -2,
+        chainFollowUpId: 'gena_arc_2',
+      },
+    ],
+  },
+
+  {
+    id: 'gena_arc_2',
+    title: 'Гена с новой темой',
+    description: 'Гена снова в дверях, но уже без графиков — теперь с iPad. «Слушай, забудь про крипту, тема была сырая. Сейчас другое — NFT-маркетплейс для малого бизнеса. Я уже договорился с разработчиком, нужно пятнадцать на старт. Это вообще будущее, не пожалеешь». Тыкает пальцем в какую-то картинку обезьяны.',
+    trigger: {
+      dayMin: 0,
+      dayMax: 9999,
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'gena_arc',
+      chainStep: 2,
+    },
+    npcId: 'gena',
+    options: [
+      {
+        id: 'invest',
+        text: 'Дать 15 000 ₽ — обезьяна так обезьяна',
+        consequences: { balanceDelta: -15000 },
+        npcRelationshipDelta: 6,
+        chainFollowUpId: 'gena_arc_3',
+      },
+      {
+        id: 'decline',
+        text: 'Объяснить, что NFT уже не модно',
+        consequences: {},
+        npcRelationshipDelta: -2,
+        chainFollowUpId: 'gena_arc_3',
+      },
+    ],
+  },
+
+  {
+    id: 'gena_arc_3',
+    title: 'Гена зовёт сниматься',
+    description: 'На этот раз без iPad, зато с микрофоном-петличкой и видеокамерой на штативе: «Брат, мы с тобой запишем курс по предпринимательству. Я буду брать интервью у успешных. Ты успешный, у тебя бизнес. По-братски — пять тысяч на монтаж, выручка 50 на 50». На записи он перебивает каждое слово.',
+    trigger: {
+      dayMin: 0,
+      dayMax: 9999,
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'gena_arc',
+      chainStep: 3,
+    },
+    npcId: 'gena',
+    options: [
+      {
+        id: 'agree',
+        text: 'Дать 5 000 ₽ — будет о чём вспомнить',
+        consequences: { balanceDelta: -5000 },
+        npcRelationshipDelta: 4,
+        chainFollowUpId: 'gena_arc_4',
       },
       {
         id: 'refuse',
-        text: 'Отказать — пусть платит как все',
+        text: 'Сослаться на занятость',
         consequences: {},
-        npcRelationshipDelta: -15,
-        chainFollowUpId: 'gleb_review_2c',
+        npcRelationshipDelta: -3,
+        chainFollowUpId: 'gena_arc_4',
       },
     ],
   },
 
   {
-    id: 'gleb_review_2a',
-    title: 'Глеб опубликовал отличный обзор',
-    description: 'Пост вышел вчера — и уже 340 лайков. Глеб написал тепло и подробно: про атмосферу, про ассортимент, про то, как с ним поговорили как с человеком. В комментариях: "Надо зайти!", "Знаю это место, подтверждаю". Несколько новых лиц уже у вас.',
-    trigger: { dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true, chainId: 'gleb_review', chainStep: 2 },
-    npcId: 'gleb',
+    id: 'gena_arc_4',
+    title: 'Гена и нейросети',
+    description: 'Гена влетает с горящими глазами: «Это всё. Это последняя тема. Дальше — пенсия. Нейросети для малого бизнеса, у меня знакомый из Сколково, нужно двадцать пять на лицензию OpenAI и сервер. Через два месяца возвращаешь полтора". Слово "Сколково" он произносит с особым вкусом.',
+    trigger: {
+      dayMin: 0,
+      dayMax: 9999,
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'gena_arc',
+      chainStep: 4,
+    },
+    npcId: 'gena',
     options: [
       {
-        id: 'share',
-        text: 'Сделать репост и поблагодарить Глеба',
-        consequences: { clientModifier: 0.2, clientModifierDays: 14, reputationDelta: 6, loyaltyDelta: 3 },
-        npcRelationshipDelta: 8,
+        id: 'invest',
+        text: 'Дать 25 000 ₽ — это же будущее',
+        consequences: { balanceDelta: -25000 },
+        npcRelationshipDelta: 6,
+        chainFollowUpId: 'gena_arc_5',
+      },
+      {
+        id: 'decline',
+        text: '«Гена. Хватит».',
+        consequences: {},
+        npcRelationshipDelta: -3,
+        chainFollowUpId: 'gena_arc_5',
       },
     ],
   },
 
+  // Final variant 1: jackpot — one of his old schemes actually took off
+  // and the player gets a windfall. 10% roll for those who invested.
   {
-    id: 'gleb_review_2b',
-    title: 'Глеб написал нейтральный обзор',
-    description: 'Пост вышел. Без восторга, но и без критики: "Обычное место, нормальные цены, можно зайти." 87 лайков, несколько вопросов в комментариях. Глеб в личке: "Если дадите что-то интересное для контента — приду ещё."',
-    trigger: { dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true, chainId: 'gleb_review', chainStep: 2 },
-    npcId: 'gleb',
+    id: 'gena_arc_5_jackpot',
+    title: 'Гена с конвертом',
+    description: 'Гена заходит в костюме. В костюме! «Брат. Помнишь крипто-ферму у Толика? Помнишь нейросети? Так вот — одна из тем выстрелила. Я не уточняю какая. Это твоя доля». Кладёт на прилавок конверт. Сам уходит — в первый раз без новой темы. Может, и правда последняя.',
+    trigger: {
+      dayMin: 0,
+      dayMax: 9999,
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'gena_arc',
+      chainStep: 5,
+    },
+    npcId: 'gena',
     options: [
       {
-        id: 'accept',
-        text: 'Принять результат — хоть какое-то упоминание',
-        consequences: { clientModifier: 0.06, clientModifierDays: 7, reputationDelta: 1 },
-        npcRelationshipDelta: 2,
+        id: 'open',
+        text: 'Открыть конверт (+500 000 ₽)',
+        consequences: { balanceDelta: 500000 },
+        npcRelationshipDelta: 30,
       },
     ],
   },
 
+  // Final variant 2: burned — invested but lottery missed. The whole
+  // arc was just a slow drain. Gena is undeterred, of course.
   {
-    id: 'gleb_review_2c',
-    title: 'Глеб написал критичный обзор',
-    description: 'Пост вышел. Заголовок: "Зашёл в магазин — меня послали." Тон обиженный, но аудитория реагирует активно: 210 лайков, масса комментариев. "Типичное хамство", "поддерживаю малый бизнес, но не такой". Несколько клиентов пишут, что не придут.',
-    trigger: { dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true, chainId: 'gleb_review', chainStep: 2 },
-    npcId: 'gleb',
+    id: 'gena_arc_5_burned',
+    title: 'Гена с новой темой (опять)',
+    description: 'Гена в дверях. На лице — то же выражение, что и в первый раз. «Брат! Слушай, забудь всё что было, это была разведка. Сейчас настоящая тема — солнечные панели на дачах. Я уже почти договорился с одним поставщиком». Делает паузу. «Сорок тысяч». На улице между прочим январь.',
+    trigger: {
+      dayMin: 0,
+      dayMax: 9999,
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'gena_arc',
+      chainStep: 5,
+    },
+    npcId: 'gena',
     options: [
       {
-        id: 'apologize_public',
-        text: 'Написать публичный ответ и пригласить Глеба снова (−1 000 ₽)',
-        consequences: { balanceDelta: -1000, reputationDelta: -2, loyaltyDelta: -3 },
-        npcRelationshipDelta: 10,
-      },
-      {
-        id: 'ignore',
-        text: 'Игнорировать — само утихнет',
-        consequences: { clientModifier: -0.15, clientModifierDays: 14, reputationDelta: -5 },
+        id: 'show_door',
+        text: 'Молча показать на дверь',
+        consequences: {},
         npcRelationshipDelta: -5,
+      },
+    ],
+  },
+
+  // Final variant 3: never invested — Gena drops by, mock-laughs,
+  // declares his own success in the abstract, leaves.
+  {
+    id: 'gena_arc_5_told_you_so',
+    title: 'Гена с самодовольством',
+    description: 'Гена заходит. В руках — пакет из дорогого магазина. «Брат, я что хотел сказать. Помнишь, я тебе тогда про крипту говорил? Так вот. Я был прав. Я не буду злорадствовать, ну ты понимаешь». Злорадствует молча, всем видом. «Ладно, побежал. Дела». Пакет — пустой, видно по тому как он его несёт.',
+    trigger: {
+      dayMin: 0,
+      dayMax: 9999,
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'gena_arc',
+      chainStep: 5,
+    },
+    npcId: 'gena',
+    options: [
+      {
+        id: 'nod',
+        text: 'Кивнуть и проводить взглядом',
+        consequences: {},
+        npcRelationshipDelta: 0,
       },
     ],
   },
@@ -580,7 +658,7 @@ export const CHAIN_EVENTS: EventTemplate[] = [
 
 export const CHAIN_IDS = [
   'mikhail_crisis', 'svetlana_growth', 'inspector_chain', 'anna_war', 'legacy',
-  'marina_promo', 'viktor_loan', 'gleb_review',
+  'tamara_arc', 'gena_arc',
 ] as const
 export type ChainId = typeof CHAIN_IDS[number]
 
@@ -591,9 +669,8 @@ export const CHAIN_TRIGGER_WEEKS: Record<ChainId, number> = {
   inspector_chain: 8,
   anna_war: 10,
   legacy: 15,
-  marina_promo: 5,
-  viktor_loan: 12,
-  gleb_review: 4,
+  tamara_arc: 8,
+  gena_arc: 8,
 }
 
 // Delay in weeks before the follow-up fires after the triggering choice
@@ -609,14 +686,20 @@ export const CHAIN_FOLLOWUP_DELAY: Record<string, number> = {
   anna_war_2b: 5,
   legacy_2a: 5,
   legacy_2b: 8,
-  marina_promo_2a: 8,
-  marina_promo_2b: 8,
-  viktor_loan_2a: 4,
-  viktor_loan_2b: 4,
-  viktor_loan_2c: 4,
-  gleb_review_2a: 1,
-  gleb_review_2b: 1,
-  gleb_review_2c: 1,
+  // Долгие промежутки: между знакомством и болезнью ~17 недель,
+  // между развязкой ~15 недель. Эпизоды должны казаться случайными.
+  tamara_arc_2: 17,
+  tamara_arc_3a: 15,
+  tamara_arc_3b: 15,
+  // Гена: появляется примерно раз в 8 недель, финал ~13 недель
+  // после 4-го эпизода — лотерея ложится на нед. 47-49.
+  gena_arc_2: 8,
+  gena_arc_3: 8,
+  gena_arc_4: 8,
+  gena_arc_5: 13,
+  gena_arc_5_jackpot: 13,
+  gena_arc_5_burned: 13,
+  gena_arc_5_told_you_so: 13,
 }
 
 export function getChainEvent(id: string): EventTemplate | undefined {

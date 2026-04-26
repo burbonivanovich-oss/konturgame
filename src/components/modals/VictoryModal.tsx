@@ -16,26 +16,32 @@ function getGameOverMessage(reason?: string): { emoji: string; title: string; de
     case 'bankruptcy':
       return {
         emoji: '💸',
-        title: 'Банкротство',
-        description: 'Ваш баланс упал ниже нуля. Вы не смогли управлять расходами и потеряли все деньги.',
+        title: 'Год не дотянул',
+        description: 'Деньги кончились раньше года. Можно сказать «не повезло», можно сказать «не угадал». В реальности — и то, и другое.',
       }
     case 'burnout':
       return {
         emoji: '🔥',
-        title: 'Выгорание',
-        description: 'Вы потратили все свою энергию управлением бизнесом. Владелец полностью истощен.',
+        title: 'Год не дотянул',
+        description: 'Сил больше не было. Бизнес шёл, но шёл уже без вас. Когда-то надо было остановиться и не остановились.',
       }
     case 'reputation':
       return {
         emoji: '📉',
-        title: 'Потеря репутации',
-        description: 'Репутация вашего бизнеса упала настолько, что клиенты перестали вас посещать.',
+        title: 'Год не дотянул',
+        description: 'К вам перестали приходить. Тихо, без скандала. Просто однажды утром на пороге не было никого — и так каждое утро.',
+      }
+    case 'year_end':
+      return {
+        emoji: '📆',
+        title: 'Год прошёл',
+        description: 'Вы прожили год в этом бизнесе. Не ракета и не катастрофа — просто год, в котором было всё, как в любом году у любого человека.',
       }
     default:
       return {
-        emoji: '❌',
-        title: 'Игра окончена',
-        description: 'Ваш бизнес не смог пережить трудные времена. Попробуйте еще раз!',
+        emoji: '📆',
+        title: 'Год закрыт',
+        description: '',
       }
   }
 }
@@ -132,7 +138,7 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
   const {
     startNewGame, currentWeek, balance, reputation, gameOverReason,
     playerBackstory, npcs, completedChainIds, totalPainLosses, personalGoal,
-    decisionLog, newlyUnlockedLessons,
+    decisionLog, newlyUnlockedLessons, triggeredEventIds, victoryType,
   } = useGameStore()
 
   const newLessons = (newlyUnlockedLessons ?? [])
@@ -149,6 +155,21 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
   const isVictory = type === 'victory'
   const gameOverMsg = getGameOverMessage(gameOverReason)
 
+  // Title shifts the frame from win/lose to "the year ended". 'combined' is
+  // the rare exceptional run; 'year_one' is the normal "you survived" win;
+  // gameOverReason carries everything else (year_end, bankruptcy, ...).
+  const headerTitle = isVictory
+    ? (victoryType === 'combined' ? '🏆 Год сделан' : '📆 Год прожит')
+    : `${gameOverMsg.emoji} ${gameOverMsg.title}`
+
+  // Colour code: green for the rare combined win, neutral for "you lived
+  // the year" outcomes (year_one survival win, year_end no-victory), red
+  // only for actual collapse (bankruptcy / burnout / reputation).
+  const isCombinedWin = isVictory && victoryType === 'combined'
+  const isHardLoss = !isVictory && gameOverReason !== 'year_end'
+  const accentColor = isCombinedWin ? K.mint : isHardLoss ? K.bad : K.ink2
+  const accentBg = isCombinedWin ? K.mintSoft : isHardLoss ? 'rgba(180,47,35,0.06)' : K.bone
+
   const narrativeEnding = isVictory
     ? getNarrativeEnding(
         playerBackstory ?? null,
@@ -163,7 +184,7 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
   // defeat — these are the "where everyone ended up" moments that turn a
   // game-over into an ending.
   const goalClosure = buildGoalClosure(personalGoal, playerBackstory ?? null, balance)
-  const npcExits = buildNpcExitLines(npcs ?? [])
+  const npcExits = buildNpcExitLines(npcs ?? [], triggeredEventIds ?? [])
 
   const handleNewGame = () => {
     startNewGame('shop')
@@ -172,14 +193,14 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
   return (
     <Modal
       isOpen={isOpen}
-      title={isVictory ? '🎉 Победа!' : '💀 Поражение'}
+      title={headerTitle}
       onClose={() => {}}
       closeButton={false}
       size="md"
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24, textAlign: 'center' }}>
         <div style={{ fontSize: 56 }}>
-          {isVictory ? '🏆' : gameOverMsg.emoji}
+          {isVictory ? (victoryType === 'combined' ? '🏆' : '📆') : gameOverMsg.emoji}
         </div>
 
         <div>
@@ -188,7 +209,7 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
             fontWeight: 700,
             letterSpacing: '-0.02em',
             marginBottom: 8,
-            color: isVictory ? K.mint : K.bad,
+            color: accentColor,
           }}>
             {isVictory ? (narrativeEnding?.title ?? 'Вы выиграли!') : gameOverMsg.title}
           </h2>
@@ -215,8 +236,8 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
             padding: 20,
             borderRadius: 12,
             marginBottom: 24,
-            background: isVictory ? K.mintSoft : 'rgba(180,47,35,0.06)',
-            border: isVictory ? `1px solid ${K.mint}` : `1px solid ${K.bad}`,
+            background: accentBg,
+            border: `1px solid ${accentColor}`,
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 12 }}>
               <span style={{ color: K.muted }}>Неделя:</span>

@@ -3,6 +3,7 @@ import { MORAL_DILEMMA_EVENTS } from '../constants/moralDilemmas'
 import { PERSONAL_BACKSTORY_EVENTS } from '../constants/personalEvents'
 import { NPC_ARC_EVENTS } from '../constants/npcArcs'
 import { CRISIS_EVENTS } from '../constants/crisisEvents'
+import { FIRST_ENCOUNTER_EVENTS } from '../constants/firstEncounters'
 import { getChainEvent, CHAIN_FOLLOWUP_DELAY } from '../constants/eventChains'
 import { RECURRING_CUSTOMER_EVENTS } from '../constants/recurringCustomers'
 import { NPC_EVENTS } from '../constants/npcEvents'
@@ -40,17 +41,16 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     title: 'Блогер привёл толпу',
     description:
       'Местный блогер упомянул вас в посте — на пороге очередь, какой не было никогда. Половина клиентов — впервые. Команда не справляется. Что делать?',
-    npcId: 'gleb',
     trigger: { randomChance: 0.03 },
     options: [
       {
         id: 'all_in',
-        text: 'Работать на пределе — каждый клиент важен (стресс −15 энергии, +30% клиентов на 7 дней)',
+        text: 'Работать на пределе — каждый клиент важен',
         consequences: { clientModifier: 0.3, clientModifierDays: 7, reputationDelta: 5, energyDelta: -15 },
       },
       {
         id: 'limit_quality',
-        text: 'Замедлиться, держать качество — кто-то уйдёт, но без грязи (+15% клиентов на 10 дней)',
+        text: 'Замедлиться, держать качество — кто-то уйдёт, но без грязи',
         consequences: { clientModifier: 0.15, clientModifierDays: 10, reputationDelta: 8 },
       },
       {
@@ -69,7 +69,7 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     options: [
       {
         id: 'wait',
-        text: 'Судорожно искать нового поставщика (−35 000 ₽ + −30% клиентов на 3 дня)',
+        text: 'Судорожно искать нового поставщика (−35 000 ₽)',
         consequences: { balanceDelta: -35000, clientModifier: -0.3, clientModifierDays: 3 },
       },
       {
@@ -90,7 +90,7 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     options: [
       {
         id: 'discount_push',
-        text: 'Скидки и расширенные часы (−6 000 ₽ на закупку, +25% клиентов на 7 дней)',
+        text: 'Скидки и расширенные часы (−6 000 ₽ на закупку)',
         consequences: { balanceDelta: -6000, clientModifier: 0.25, clientModifierDays: 7 },
       },
       {
@@ -100,7 +100,7 @@ export const EVENTS_DATABASE: EventTemplate[] = [
       },
       {
         id: 'premium_focus',
-        text: 'Делать ставку на чек: дорогие позиции в витрине (+15% к чеку на 10 дней)',
+        text: 'Делать ставку на чек: дорогие позиции в витрине',
         consequences: { checkModifier: 0.15, checkModifierDays: 10, reputationDelta: 2 },
       },
     ],
@@ -114,17 +114,17 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     options: [
       {
         id: 'ignore',
-        text: 'Дать уйти. Нанять новых (−25 000 ₽ + лояльность −30)',
+        text: 'Дать уйти. Нанять новых (−25 000 ₽)',
         consequences: { balanceDelta: -25000, loyaltyDelta: -30 },
       },
       {
         id: 'bonus',
-        text: 'Пойти на уступки (−12 000 ₽ доп. расходы, лояльность +5)',
+        text: 'Пойти на уступки (−12 000 ₽ доп. расходы)',
         consequences: { balanceDelta: -12000, loyaltyDelta: 5 },
       },
       {
         id: 'elba-manage',
-        text: 'Оптимизировать графики через Контур.Эльба (лояльность +10)',
+        text: 'Оптимизировать графики через Контур.Эльба',
         consequences: { loyaltyDelta: 10 },
         requiredService: 'elba',
         isContourOption: true,
@@ -141,12 +141,12 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     options: [
       {
         id: 'promo',
-        text: 'Запустить агрессивную акцию — отбить трафик (−3 000 ₽, +10% клиентов 10 дней)',
+        text: 'Запустить агрессивную акцию — отбить трафик (−3 000 ₽)',
         consequences: { balanceDelta: -3000, clientModifier: 0.1, clientModifierDays: 10 },
       },
       {
         id: 'quality',
-        text: 'Не реагировать на цену — делать ставку на качество (+5 репутации, +10% к чеку 10 дней)',
+        text: 'Не реагировать на цену — делать ставку на качество',
         consequences: { reputationDelta: 5, checkModifier: 0.1, checkModifierDays: 10 },
       },
       {
@@ -176,7 +176,7 @@ export const EVENTS_DATABASE: EventTemplate[] = [
       },
       {
         id: 'cheap-repair',
-        text: 'Сервис эконом, без гарантии — может опять сломаться (−7 000 ₽, −10% клиентов 3 дня)',
+        text: 'Сервис эконом, без гарантии — может опять сломаться (−7 000 ₽)',
         consequences: { balanceDelta: -7000, clientModifier: -0.1, clientModifierDays: 3 },
       },
       {
@@ -186,7 +186,7 @@ export const EVENTS_DATABASE: EventTemplate[] = [
       },
       {
         id: 'replace',
-        text: 'Купить новое, более надёжное (−28 000 ₽, +5% к пропускной на 30 дней)',
+        text: 'Купить новое, более надёжное (−28 000 ₽)',
         consequences: { balanceDelta: -28000, clientModifier: 0.05, clientModifierDays: 30 },
       },
     ],
@@ -200,7 +200,7 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     options: [
       {
         id: 'trust',
-        text: 'Разбираться через суд (−55 000 ₽ + репутация −10)',
+        text: 'Разбираться через суд (−55 000 ₽)',
         consequences: { balanceDelta: -55000, reputationDelta: -10 },
       },
       {
@@ -221,7 +221,7 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     options: [
       {
         id: 'respond-defend',
-        text: 'Публично ответить, защитить кассира (−3 репутации)',
+        text: 'Публично ответить, защитить кассира',
         consequences: { reputationDelta: -3 },
       },
       {
@@ -231,12 +231,12 @@ export const EVENTS_DATABASE: EventTemplate[] = [
       },
       {
         id: 'resolve',
-        text: 'Найти клиента в личке, решить офлайн (−5 000 ₽, +5 репутации)',
+        text: 'Найти клиента в личке, решить офлайн (−5 000 ₽)',
         consequences: { balanceDelta: -5000, reputationDelta: 5 },
       },
       {
         id: 'ignore',
-        text: 'Не реагировать — забудут (−1 репутации, риск ухудшения)',
+        text: 'Не реагировать — забудут (риск ухудшения)',
         consequences: { reputationDelta: -1 },
       },
     ],
@@ -329,12 +329,12 @@ export const EVENTS_DATABASE: EventTemplate[] = [
       },
       {
         id: 'fix',
-        text: 'Признать, устранить за свой счёт, попросить акт «без штрафа» (−5 000 ₽, +репутация)',
+        text: 'Признать, устранить за свой счёт, попросить акт «без штрафа» (−5 000 ₽)',
         consequences: { balanceDelta: -5000, reputationDelta: 2 },
       },
       {
         id: 'bribe',
-        text: '«Понимаю, спасибо за понимание» — конверт (−3 000 ₽, репутация ниже, нарушения остались)',
+        text: '«Понимаю, спасибо за понимание» — конверт (−3 000 ₽, нарушения остались)',
         consequences: { balanceDelta: -3000, reputationDelta: -4 },
       },
     ],
@@ -386,17 +386,17 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     options: [
       {
         id: 'ride-wave',
-        text: 'Бросить всё на обслуживание ажиотажа (+50% клиентов 14 дней, −20 энергии)',
+        text: 'Бросить всё на обслуживание ажиотажа',
         consequences: { clientModifier: 0.5, clientModifierDays: 14, reputationDelta: 10, energyDelta: -20 },
       },
       {
         id: 'capitalize',
-        text: 'Выпустить «вирусную» лимитированную позицию (−8 000 ₽, +35% клиентов, +10% к чеку 14 дней)',
+        text: 'Выпустить «вирусную» лимитированную позицию (−8 000 ₽)',
         consequences: { balanceDelta: -8000, clientModifier: 0.35, clientModifierDays: 14, checkModifier: 0.1, checkModifierDays: 14 },
       },
       {
         id: 'controlled',
-        text: 'Не раздувать — пусть будет органично, без перегрева (+25% клиентов 21 день)',
+        text: 'Не раздувать — пусть будет органично, без перегрева',
         consequences: { clientModifier: 0.25, clientModifierDays: 21, reputationDelta: 5 },
       },
     ],
@@ -415,12 +415,12 @@ export const EVENTS_DATABASE: EventTemplate[] = [
       },
       {
         id: 'fix-now',
-        text: 'Купить шаблоны, всё оформить за день (−4 000 ₽, +3 репутации)',
+        text: 'Купить шаблоны, всё оформить за день (−4 000 ₽)',
         consequences: { balanceDelta: -4000, reputationDelta: 3 },
       },
       {
         id: 'systemic',
-        text: 'Нанять разовый аудит и сертификат на год (−18 000 ₽, +6 репутации, −риск повтора)',
+        text: 'Нанять разовый аудит и сертификат на год (−18 000 ₽)',
         consequences: { balanceDelta: -18000, reputationDelta: 6 },
       },
     ],
@@ -434,12 +434,12 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     options: [
       {
         id: 'buy',
-        text: 'Взять всю партию — деньги связаны на месяц (−10 000 ₽, +5% к чеку 30 дней)',
+        text: 'Взять всю партию — деньги связаны на месяц (−10 000 ₽)',
         consequences: { balanceDelta: -10000, checkModifier: 0.05, checkModifierDays: 30 },
       },
       {
         id: 'half',
-        text: 'Взять половину — попроще для бюджета (−5 000 ₽, +3% к чеку 14 дней)',
+        text: 'Взять половину — попроще для бюджета (−5 000 ₽)',
         consequences: { balanceDelta: -5000, checkModifier: 0.03, checkModifierDays: 14 },
       },
       {
@@ -458,17 +458,17 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     options: [
       {
         id: 'family-time',
-        text: 'Закрыть на воскресенье — поехать (−8 000 ₽ выручки, +40 энергии)',
+        text: 'Закрыть на воскресенье — поехать (−8 000 ₽)',
         consequences: { balanceDelta: -8000, energyDelta: 40, loyaltyDelta: 1 },
       },
       {
         id: 'short-visit',
-        text: 'Заехать на 2 часа после смены — компромисс (+15 энергии)',
+        text: 'Заехать на 2 часа после смены — компромисс',
         consequences: { energyDelta: 15 },
       },
       {
         id: 'work-again',
-        text: 'Не поехать — работать. Виноваты перед родными (−5 репутации, −10 энергии)',
+        text: 'Не поехать — работать. Виноваты перед родными',
         consequences: { reputationDelta: -5, energyDelta: -10 },
       },
     ],
@@ -482,22 +482,22 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     options: [
       {
         id: 'full-vacation',
-        text: 'Уехать на неделю — закрыть бизнес (−15 000 ₽, +70 энергии)',
+        text: 'Уехать на неделю — закрыть бизнес (−15 000 ₽)',
         consequences: { balanceDelta: -15000, energyDelta: 70 },
       },
       {
         id: 'staycation',
-        text: 'Взять три выходных, остаться в городе — без поездки (−4 000 ₽, +35 энергии)',
+        text: 'Взять три выходных, остаться в городе — без поездки (−4 000 ₽)',
         consequences: { balanceDelta: -4000, energyDelta: 35 },
       },
       {
         id: 'delegate',
-        text: 'Уехать, оставить смену на сотруднике — рисковать качеством (−15 000 ₽, +60 энергии, −3 репутации)',
+        text: 'Уехать, оставить смену на сотруднике — рисковать качеством (−15 000 ₽)',
         consequences: { balanceDelta: -15000, energyDelta: 60, reputationDelta: -3 },
       },
       {
         id: 'no-vacation',
-        text: 'Сдать путёвку, остаться — вы нужны бизнесу (−20 энергии, −2 лояльности дома)',
+        text: 'Сдать путёвку, остаться — вы нужны бизнесу',
         consequences: { energyDelta: -20, loyaltyDelta: -2 },
       },
     ],
@@ -511,22 +511,22 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     options: [
       {
         id: 'doctor-full',
-        text: 'Полное обследование + абонемент в зал на квартал (−12 000 ₽, +40 энергии)',
+        text: 'Полное обследование + абонемент в зал на квартал (−12 000 ₽)',
         consequences: { balanceDelta: -12000, energyDelta: 40 },
       },
       {
         id: 'doctor-quick',
-        text: 'Только консультация + таблетки (−5 000 ₽, +25 энергии)',
+        text: 'Только консультация + таблетки (−5 000 ₽)',
         consequences: { balanceDelta: -5000, energyDelta: 25 },
       },
       {
         id: 'self-treat',
-        text: 'Купить в аптеке без рецепта — «сам разберусь» (−1 000 ₽, +10 энергии)',
+        text: 'Купить в аптеке без рецепта — «сам разберусь» (−1 000 ₽)',
         consequences: { balanceDelta: -1000, energyDelta: 10 },
       },
       {
         id: 'ignore-health',
-        text: 'Игнорировать — само пройдёт (−15 энергии, риск повтора)',
+        text: 'Игнорировать — само пройдёт (риск повтора)',
         consequences: { energyDelta: -15 },
       },
     ],
@@ -540,17 +540,17 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     options: [
       {
         id: 'go-with-others',
-        text: 'Поехать с друзьями — настоящее переключение (−4 000 ₽, +30 энергии, +1 лояльность)',
+        text: 'Поехать с друзьями — настоящее переключение (−4 000 ₽)',
         consequences: { balanceDelta: -4000, energyDelta: 30, loyaltyDelta: 1 },
       },
       {
         id: 'solo-hour',
-        text: 'Час дома — наедине с любимым делом (бесплатно, +15 энергии)',
+        text: 'Час дома — наедине с любимым делом (бесплатно)',
         consequences: { energyDelta: 15 },
       },
       {
         id: 'skip-hobby',
-        text: 'Не сейчас — работы много (нет эффекта)',
+        text: 'Не сейчас — работы много',
         consequences: {},
       },
     ],
@@ -564,22 +564,22 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     options: [
       {
         id: 'meet-friends',
-        text: 'Пойти, не оглядываясь на дела (−4 000 ₽, +35 энергии, +2 репутации)',
+        text: 'Пойти, не оглядываясь на дела (−4 000 ₽)',
         consequences: { balanceDelta: -4000, energyDelta: 35, reputationDelta: 2 },
       },
       {
         id: 'half-meet',
-        text: 'Заскочить на час — потом вернуться (−2 000 ₽, +15 энергии)',
+        text: 'Заскочить на час — потом вернуться (−2 000 ₽)',
         consequences: { balanceDelta: -2000, energyDelta: 15 },
       },
       {
         id: 'invite-here',
-        text: 'Пригласить их к себе на смену — пусть видят (+10 энергии, +1 репутация)',
+        text: 'Пригласить их к себе на смену — пусть видят',
         consequences: { energyDelta: 10, reputationDelta: 1 },
       },
       {
         id: 'decline',
-        text: 'Отказаться — не до этого (нет эффекта; но они отдалятся)',
+        text: 'Отказаться — не до этого',
         consequences: { reputationDelta: -1 },
       },
     ],
@@ -593,22 +593,22 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     options: [
       {
         id: 'paid-program',
-        text: 'Курс с психологом, 8 сессий (−20 000 ₽, +50 энергии, длится дольше)',
+        text: 'Курс с психологом, 8 сессий (−20 000 ₽)',
         consequences: { balanceDelta: -20000, energyDelta: 50 },
       },
       {
         id: 'yoga-pass',
-        text: 'Абонемент в студию йоги на месяц (−6 000 ₽, +25 энергии)',
+        text: 'Абонемент в студию йоги на месяц (−6 000 ₽)',
         consequences: { balanceDelta: -6000, energyDelta: 25 },
       },
       {
         id: 'free-meditate',
-        text: 'Час медитации дома — без вложений (+15 энергии)',
+        text: 'Час медитации дома — без вложений',
         consequences: { energyDelta: 15 },
       },
       {
         id: 'no-meditate',
-        text: 'Продолжать как есть — потом будет легче (нет эффекта)',
+        text: 'Продолжать как есть — потом будет легче',
         consequences: {},
       },
     ],
@@ -622,12 +622,12 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     options: [
       {
         id: 'price-war',
-        text: 'Снизить цены (-5 000 ₽, вернуть клиентов)',
+        text: 'Снизить цены (-5 000 ₽)',
         consequences: { balanceDelta: -5000, clientModifier: 0.2, clientModifierDays: 7 },
       },
       {
         id: 'quality-push',
-        text: 'Улучшить качество (+1 репутация каждый день)',
+        text: 'Улучшить качество',
         consequences: { reputationDelta: 5 },
       },
       {
@@ -655,7 +655,7 @@ export const EVENTS_DATABASE: EventTemplate[] = [
       },
       {
         id: 'accept',
-        text: 'Продолжать работу (-5% лояльность)',
+        text: 'Продолжать работу',
         consequences: { loyaltyDelta: -5 },
       },
     ],
@@ -668,12 +668,12 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     options: [
       {
         id: 'capitalize',
-        text: 'Максимально использовать тренд (+40% выручка на 6 дней)',
+        text: 'Максимально использовать тренд',
         consequences: { checkModifier: 0.4, checkModifierDays: 6 },
       },
       {
         id: 'steady',
-        text: 'Работать в обычном режиме (+20% выручка на 4 дня)',
+        text: 'Работать в обычном режиме',
         consequences: { checkModifier: 0.2, checkModifierDays: 4 },
       },
     ],
@@ -686,12 +686,12 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     options: [
       {
         id: 'diversify',
-        text: 'Быстро перестроить ассортимент (-8 000 ₽, восстановление)',
+        text: 'Быстро перестроить ассортимент (-8 000 ₽)',
         consequences: { balanceDelta: -8000, checkModifier: 0.15, checkModifierDays: 5 },
       },
       {
         id: 'wait',
-        text: 'Ждать, пока тренд вернётся (-15% клиентов на 7 дней)',
+        text: 'Ждать, пока тренд вернётся',
         consequences: { clientModifier: -0.15, clientModifierDays: 7 },
       },
     ],
@@ -709,12 +709,12 @@ export const EVENTS_DATABASE: EventTemplate[] = [
       },
       {
         id: 'promote',
-        text: 'Повысить в должности (+1 репутация)',
+        text: 'Повысить в должности',
         consequences: { reputationDelta: 5 },
       },
       {
         id: 'let-go',
-        text: 'Отпустить с миром (-10 клиентов от потери таланта)',
+        text: 'Отпустить с миром',
         consequences: { clientModifier: -0.15, clientModifierDays: 8 },
       },
     ],
@@ -737,7 +737,7 @@ export const EVENTS_DATABASE: EventTemplate[] = [
       },
       {
         id: 'ignore-conflict',
-        text: 'Игнорировать конфликт (-8% качество)',
+        text: 'Игнорировать конфликт',
         consequences: { reputationDelta: -8 },
       },
     ],
@@ -750,17 +750,17 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     options: [
       {
         id: 'hire-replacement',
-        text: 'Нанять замену вдвое дороже (-более высокая зарплата)',
+        text: 'Нанять замену вдвое дороже (более высокая зарплата)',
         consequences: { balanceDelta: -2000 },
       },
       {
         id: 'promote-internal',
-        text: 'Повысить внутреннего кандидата (+2 репутация)',
+        text: 'Повысить внутреннего кандидата',
         consequences: { reputationDelta: 5 },
       },
       {
         id: 'accept-loss',
-        text: 'Остаться в недостатке (-30% пропускная способность)',
+        text: 'Остаться в недостатке',
         consequences: { checkModifier: -0.3, checkModifierDays: 14 },
       },
     ],
@@ -773,17 +773,17 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     options: [
       {
         id: 'celebrate',
-        text: 'Устроить празднование (-1 000 ₽, +7 лояльности)',
+        text: 'Устроить празднование (-1 000 ₽)',
         consequences: { balanceDelta: -1000, loyaltyDelta: 7 },
       },
       {
         id: 'bonus',
-        text: 'Выплатить премию (-2 000 ₽, +12 лояльности)',
+        text: 'Выплатить премию (-2 000 ₽)',
         consequences: { balanceDelta: -2000, loyaltyDelta: 12 },
       },
       {
         id: 'acknowledge',
-        text: 'Просто поблагодарить (+3 лояльности)',
+        text: 'Просто поблагодарить',
         consequences: { loyaltyDelta: 3 },
       },
     ],
@@ -801,7 +801,7 @@ export const EVENTS_DATABASE: EventTemplate[] = [
       },
       {
         id: 'wait-suffer',
-        text: 'Ждать (-20% выручка на 3 дня)',
+        text: 'Ждать',
         consequences: { checkModifier: -0.2, checkModifierDays: 3 },
       },
       {
@@ -819,12 +819,12 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     options: [
       {
         id: 'pay-fine',
-        text: 'Оплатить штраф ФНС (−60 000 ₽ + репутация −15)',
+        text: 'Оплатить штраф ФНС (−60 000 ₽)',
         consequences: { balanceDelta: -60000, reputationDelta: -15 },
       },
       {
         id: 'dispute',
-        text: 'Оспорить через юриста (−30 000 ₽ + репутация −5)',
+        text: 'Оспорить через юриста (−30 000 ₽)',
         consequences: { balanceDelta: -30000, reputationDelta: -5 },
       },
     ],
@@ -837,12 +837,12 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     options: [
       {
         id: 'emergency-buy',
-        text: 'Экстренная закупка по завышенной цене (−45 000 ₽ + репутация −5)',
+        text: 'Экстренная закупка по завышенной цене (−45 000 ₽)',
         consequences: { balanceDelta: -45000, reputationDelta: -5 },
       },
       {
         id: 'wait-restock',
-        text: 'Ждать обычную поставку (−40% клиентов на 4 дня)',
+        text: 'Ждать обычную поставку',
         consequences: { clientModifier: -0.4, clientModifierDays: 4 },
       },
     ],
@@ -855,6 +855,7 @@ export function generateEvent(day: number, state: GameState): Event | null {
 
   const allTemplates = [
     ...EVENTS_DATABASE,
+    ...FIRST_ENCOUNTER_EVENTS,
     ...MORAL_DILEMMA_EVENTS,
     ...RECURRING_CUSTOMER_EVENTS,
     ...NPC_EVENTS,

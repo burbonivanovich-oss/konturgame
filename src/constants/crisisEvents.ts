@@ -33,7 +33,7 @@ export const CRISIS_EVENTS: EventTemplate[] = [
       },
       {
         id: 'use_diadoc',
-        text: 'Через Контур.Диадок переоформить контракт за день — поставщик подождёт (требует Диадок)',
+        text: 'Через Контур.Диадок переоформить контракт за день — поставщик подождёт',
         requiredService: 'diadoc',
         consequences: { balanceDelta: -15000, reputationDelta: 2 },
       },
@@ -60,12 +60,12 @@ export const CRISIS_EVENTS: EventTemplate[] = [
     options: [
       {
         id: 'match_offer',
-        text: 'Поднять зарплату до их уровня (−40 000 ₽ единоразово, +лояльность)',
+        text: 'Поднять зарплату до их уровня (−40 000 ₽ единоразово)',
         consequences: { balanceDelta: -40000, loyaltyDelta: 8 },
       },
       {
         id: 'use_elba',
-        text: 'Через Контур.Эльбу оформить долю в прибыли — она остаётся партнёром (требует Эльба)',
+        text: 'Через Контур.Эльбу оформить долю в прибыли — она остаётся партнёром',
         requiredService: 'elba',
         consequences: { balanceDelta: -5000, loyaltyDelta: 12, reputationDelta: 2 },
       },
@@ -96,7 +96,7 @@ export const CRISIS_EVENTS: EventTemplate[] = [
       },
       {
         id: 'use_extern',
-        text: 'Через Контур.Экстерн отчёт уже готов — отправить за час (требует Экстерн)',
+        text: 'Через Контур.Экстерн отчёт уже готов — отправить за час',
         requiredService: 'extern',
         consequences: { balanceDelta: 0, reputationDelta: 1 },
       },
