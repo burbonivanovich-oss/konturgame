@@ -566,6 +566,21 @@ export function processWeek(state: GameState): DayResult {
     state.victoryType = resolveVictoryType(state)
   }
 
+  // Year-end: at week 52 the run ALWAYS ends. If no win/loss has fired by
+  // now, the player neither broke through nor broke down — they just lived
+  // the year. That's its own ending ("Год прошёл"), distinct from victory
+  // and from bankruptcy. Without this guard, edge cases (balance=0 exactly,
+  // reputation=0 but not yet at zero-streak) would let the game limp into
+  // week 53+, which contradicts the year-as-finale design.
+  if (
+    !state.isGameOver &&
+    !state.isVictory &&
+    state.currentWeek >= ECONOMY_CONSTANTS.TOTAL_WEEKS_PER_YEAR
+  ) {
+    state.isGameOver = true
+    state.gameOverReason = 'year_end'
+  }
+
   // Check milestone achievements
   if (!state.milestoneStatus) {
     state.milestoneStatus = { week10: false, week20: false, week30: false }

@@ -92,7 +92,8 @@ export function KLeftRail({
         </div>
       </Row>
 
-      {/* Business status card */}
+      {/* Business status card — week N/52 + progress bar makes the year-as-finale
+          visible at all times, not just at the end. */}
       <Card pad={12} radius={12} bg={K.bone} border={K.lineSoft}>
         <Row gap={8}>
           <div style={{
@@ -102,11 +103,24 @@ export function KLeftRail({
           }}>
             <KIcon name={BIZ_ICON[businessType]} size={16} color={K.ink2} />
           </div>
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 700 }}>{BIZ_LABEL[businessType]}</div>
-            <div style={{ fontSize: 11, color: K.muted }}>Неделя {currentWeek} · {season}</div>
+            <div style={{ fontSize: 11, color: K.muted, fontVariantNumeric: 'tabular-nums' }}>
+              Неделя {currentWeek} / 52 · {season}
+            </div>
           </div>
         </Row>
+        <div style={{
+          marginTop: 8, height: 3, background: K.lineSoft,
+          borderRadius: 999, overflow: 'hidden',
+        }}>
+          <div style={{
+            width: `${Math.min(100, (currentWeek / 52) * 100)}%`,
+            height: '100%',
+            background: currentWeek >= 49 ? K.orange : K.ink2,
+            transition: 'width 0.3s',
+          }} />
+        </div>
       </Card>
 
       {/* Navigation — only currently-unlocked items, plus a single peek

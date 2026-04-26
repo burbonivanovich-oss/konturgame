@@ -277,6 +277,21 @@ export const DIARY_ENTRIES: DiaryEntry[] = [
       loyaltyDelta: 1,
     }),
   },
+
+  // ── Year ending ────────────────────────────────────────────────────
+  // Lands on the week-50 diary slot; signals to the player that the run
+  // is wrapping and that what they do in the final two weeks is what
+  // they'll remember. Higher specificity than goal-related entries so
+  // it always wins at this point in the run.
+  {
+    id: 'diary_year_ending',
+    specificity: 9,
+    matches: (s) => s.currentWeek >= 49 && s.currentWeek <= 51,
+    compose: (s) => ({
+      header: `Дневник · Неделя ${s.currentWeek}`,
+      body: 'Год почти. Странное ощущение — ещё ничего не закончилось, но уже хочется собраться, оглянуться, доделать. Что в декабре будет важно — неважно сейчас. И наоборот.',
+    }),
+  },
 ]
 
 /**
