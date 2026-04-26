@@ -4,6 +4,7 @@ import Indicators from './Indicators'
 import NextDayButton from './NextDayButton'
 import ServicePanel from './ServicePanel'
 import { OnboardingPanel } from './OnboardingPanel'
+import { TutorialMoments } from './TutorialMoments'
 import EventModal from './modals/EventModal'
 import HelpModal from './modals/HelpModal'
 import SettingsModal from './modals/SettingsModal'
@@ -512,6 +513,21 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
         }}
         onAction={(action) => {
           if (action === 'buy_register') setShowCashRegisterModal(true)
+        }}
+      />
+      <TutorialMoments
+        onNavigate={(nav) => {
+          const navToTab: Record<string, string> = {
+            ecosystem: 'services',
+            operations: 'operations',
+            dashboard: 'day',
+            warehouse: 'warehouse',
+            development: 'development',
+            finance: 'finance',
+            statistics: 'statistics',
+            journal: 'journal',
+          }
+          setActiveTab(navToTab[nav] ?? nav)
         }}
       />
       <PromoCodeModal />

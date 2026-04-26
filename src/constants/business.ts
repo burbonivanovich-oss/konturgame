@@ -300,8 +300,10 @@ export const ECONOMY_CONSTANTS = {
   EXPERIENCE_PER_WEEK: 7,
   EXPERIENCE_PER_10K_PROFIT: 2,
 
-  DAILY_UTILITIES: 800,  // ↑ Было 500
-  DAILY_REGISTER_MAINTENANCE: 500,  // ↑ Было 300
+  // Reverted to pre-tier values: were bumped during the 90% margin era.
+  // With realistic 15-40% margins, these were eating tier-1 income.
+  DAILY_UTILITIES: 500,
+  DAILY_REGISTER_MAINTENANCE: 300,
   WEEKS_BALANCE_NEGATIVE_FOR_GAMEOVER: 3,
 
   ENERGY_COST_BASE_OPERATION: 15,
@@ -338,11 +340,14 @@ export const LEVEL_TABLE: Array<{ level: number; expRequired: number }> = [
   { level: 10, expRequired: 2500 },  // ↑ Было 1000
 ]
 
+// Tier-1 baseline. Tier upgrades multiply these via getEffectiveRent/Salary.
+// Reduced from earlier values: at original 50K/40K shop the player was just
+// breaking even with 3 services + all categories — felt like treading water.
+// Now there's headroom for early-game without forcing all 7 services.
 export const MONTHLY_EXPENSES: Record<BusinessType, { rent: number; baseSalary: number }> = {
-  shop: { rent: 50000, baseSalary: 40000 },
-  cafe: { rent: 60000, baseSalary: 50000 },
-  // Salon: lowered to match BUSINESS_CONFIGS — was unwinnable at 55k+60k.
-  'beauty-salon': { rent: 45000, baseSalary: 50000 },
+  shop: { rent: 30000, baseSalary: 20000 },
+  cafe: { rent: 50000, baseSalary: 32000 },
+  'beauty-salon': { rent: 40000, baseSalary: 40000 },
 }
 
 export const AD_CAMPAIGNS_CONFIG = [
@@ -379,28 +384,42 @@ export const UPGRADES_CONFIG: Record<BusinessType, Array<{
   energyBonus?: number
 }>> = {
   shop: [
-    { id: 'cold-case', name: '❄️ Холодильная витрина', cost: 80000, effect: '+3 лояльности/день, расширение ассортимента', loyaltyBonus: 3, capacityBonus: 0.2 },
-    { id: 'cctv', name: '📹 Система видеонаблюдения', cost: 65000, effect: '+2% выручка, защита от краж, спокойствие', checkBonus: 0.02, loyaltyBonus: 1, energyBonus: 5 },
-    { id: 'pos-terminal', name: '💳 POS-терминал', cost: 75000, effect: '+25% клиентов, приём карт, упрощение работы', clientBonus: 0.25, checkBonus: 0.05, energyBonus: 4 },
-    { id: 'hire-cashier', name: '👥 Наём кассира', cost: 60000, effect: '+50% пропускная способность, помощь в работе', capacityBonus: 0.5, monthlySalaryIncrease: 12000, energyBonus: 12 },
-    { id: 'hall-expansion', name: '📏 Расширение зала', cost: 120000, effect: '+60% вместимость, удобнее для работы', capacityBonus: 0.6, monthlyRentIncrease: 15000, energyBonus: 8 },
-    { id: 'premium-categories', name: '⭐ Премиум-категории', cost: 70000, effect: '+20% маржа на премиум товарах', checkBonus: 0.15 },
+    // Equipment that gates categories
+    { id: 'cold-case', name: '❄️ Холодильная витрина', cost: 40000, effect: 'Открывает молочку. +3 лояльности/день', loyaltyBonus: 3, capacityBonus: 0.1 },
+    { id: 'freezer', name: '🧊 Морозильник', cost: 60000, effect: 'Открывает мясо/рыбу при наличии холодильной витрины', capacityBonus: 0.05 },
+    { id: 'liquor-cabinet', name: '🍷 Алкошкаф с замком', cost: 50000, effect: 'Открывает алкогольную лицензию (нужен ОФД+Экстерн)', loyaltyBonus: 1 },
+    { id: 'tobacco-display', name: '🚬 Витрина для табака', cost: 35000, effect: 'Открывает табачку (закрытый шкаф по закону)', loyaltyBonus: 0 },
+    // General upgrades
+    { id: 'cctv', name: '📹 Видеонаблюдение', cost: 65000, effect: '+2% выручка, защита от краж', checkBonus: 0.02, loyaltyBonus: 1, energyBonus: 5 },
+    { id: 'pos-terminal', name: '💳 POS-терминал', cost: 75000, effect: '+25% клиентов, удобнее работа', clientBonus: 0.25, checkBonus: 0.05, energyBonus: 4 },
+    { id: 'hire-cashier', name: '👥 Наём кассира', cost: 60000, effect: '+50% пропускная способность', capacityBonus: 0.5, monthlySalaryIncrease: 12000, energyBonus: 12 },
+    { id: 'hall-expansion', name: '📏 Расширение зала', cost: 120000, effect: '+60% вместимость', capacityBonus: 0.6, monthlyRentIncrease: 15000, energyBonus: 8 },
+    { id: 'premium-categories', name: '⭐ Премиум-полка', cost: 70000, effect: '+20% маржа на премиум товарах', checkBonus: 0.15 },
   ],
   cafe: [
-    { id: 'espresso-machine', name: '☕ Кофемашина эспрессо', cost: 100000, effect: '+5% выручка, новая позиция в меню, автоматизация', checkBonus: 0.05, loyaltyBonus: 2, energyBonus: 6 },
-    { id: 'cooler', name: '❄️ Холодильник торговый', cost: 80000, effect: '+2 лояльности, больше ассортимента', loyaltyBonus: 2, capacityBonus: 0.15 },
+    // Equipment that gates categories
+    { id: 'espresso-machine', name: '☕ Кофемашина эспрессо', cost: 60000, effect: 'База кафе — без неё не варят кофе. +5% выручка', checkBonus: 0.05, loyaltyBonus: 2, energyBonus: 6 },
+    { id: 'oven', name: '🥐 Печь / духовка', cost: 50000, effect: 'Открывает десерты и выпечку', capacityBonus: 0.05 },
+    { id: 'kitchen', name: '🍳 Полноценная кухня', cost: 90000, effect: 'Открывает готовую еду (нужен Маркет)', capacityBonus: 0.1, energyBonus: 4 },
+    { id: 'bar-counter', name: '🍹 Барная стойка', cost: 75000, effect: 'Открывает барную карту (нужны ОФД+Экстерн)', loyaltyBonus: 2 },
+    // General upgrades
+    { id: 'cooler', name: '❄️ Холодильник', cost: 40000, effect: '+2 лояльности', loyaltyBonus: 2, capacityBonus: 0.05 },
     { id: 'seasonal-menu', name: '🍽️ Сезонное меню', cost: 50000, effect: '+25% выручка летом/весной', checkBonus: 0.1 },
-    { id: 'hire-barista', name: '👨‍💼 Наём баристы', cost: 70000, effect: '+40% пропускная способность, помощь в работе', capacityBonus: 0.4, monthlySalaryIncrease: 15000, energyBonus: 14 },
-    { id: 'summer-terrace', name: '🏕️ Летняя веранда', cost: 110000, effect: '+40% мест летом, удобнее для работы', capacityBonus: 0.4, monthlyRentIncrease: 12000, energyBonus: 10 },
-    { id: 'dessert-bar', name: '🧁 Десертная стойка', cost: 60000, effect: '+15% среднего чека, упрощение работы', checkBonus: 0.12, energyBonus: 3 },
+    { id: 'hire-barista', name: '👨‍💼 Наём баристы', cost: 70000, effect: '+40% пропускная способность', capacityBonus: 0.4, monthlySalaryIncrease: 15000, energyBonus: 14 },
+    { id: 'summer-terrace', name: '🏕️ Летняя веранда', cost: 110000, effect: '+40% мест летом', capacityBonus: 0.4, monthlyRentIncrease: 12000, energyBonus: 10 },
   ],
   'beauty-salon': [
-    { id: 'massage-chair', name: '💆 Массажное кресло', cost: 120000, effect: '+25% клиентов, услуга релаксации и восстановления', clientBonus: 0.25, loyaltyBonus: 3, energyBonus: 16 },
-    { id: 'manicure-station', name: '💅 Станция маникюра', cost: 90000, effect: '+20% клиентов, +15% маржа', clientBonus: 0.2, checkBonus: 0.15 },
-    { id: 'uv-lamps', name: '💡 УФ-лампы и стерилизация', cost: 70000, effect: '+4 лояльности, безопасность и спокойствие', loyaltyBonus: 4, clientBonus: 0.1, energyBonus: 4 },
-    { id: 'crm-system', name: '📊 CRM и управление клиентами', cost: 60000, effect: '+3 лояльности, аналитика, автоматизация', loyaltyBonus: 3, checkBonus: 0.03, energyBonus: 8 },
-    { id: 'hire-master', name: '👨‍🎓 Наём мастера', cost: 100000, effect: '+50% пропускная способность, помощь в работе', capacityBonus: 0.5, monthlySalaryIncrease: 25000, energyBonus: 15 },
-    { id: 'vip-room', name: '👑 VIP-кабинет', cost: 140000, effect: '+30% среднего чека, место для отдыха владельца', checkBonus: 0.3, monthlyRentIncrease: 15000, energyBonus: 12 },
+    // Equipment that gates categories
+    { id: 'manicure-station', name: '💅 Станция маникюра', cost: 50000, effect: 'База — открывает базовые услуги полностью. +20% клиентов, +15% маржа', clientBonus: 0.2, checkBonus: 0.15 },
+    { id: 'coloring-station', name: '💇 Окрасочная станция', cost: 80000, effect: 'Открывает премиум-услуги (нужен Маркет)', checkBonus: 0.05 },
+    { id: 'cosmetics-shelf', name: '🛍️ Витрина косметики', cost: 45000, effect: 'Открывает продажу косметики (нужны Маркет+ОФД)', loyaltyBonus: 1 },
+    { id: 'spa-room', name: '🧖 SPA-комната', cost: 110000, effect: 'Открывает SPA-процедуры', capacityBonus: 0.1, monthlyRentIncrease: 8000 },
+    // General upgrades
+    { id: 'massage-chair', name: '💆 Массажное кресло', cost: 70000, effect: '+25% клиентов, релаксация', clientBonus: 0.25, loyaltyBonus: 3, energyBonus: 16 },
+    { id: 'uv-lamps', name: '💡 УФ-лампы', cost: 55000, effect: '+4 лояльности, безопасность', loyaltyBonus: 4, clientBonus: 0.1, energyBonus: 4 },
+    { id: 'crm-system', name: '📊 CRM-система', cost: 60000, effect: '+3 лояльности, аналитика', loyaltyBonus: 3, checkBonus: 0.03, energyBonus: 8 },
+    { id: 'hire-master', name: '👨‍🎓 Наём мастера', cost: 100000, effect: '+50% пропускная способность', capacityBonus: 0.5, monthlySalaryIncrease: 25000, energyBonus: 15 },
+    { id: 'vip-room', name: '👑 VIP-кабинет', cost: 140000, effect: '+30% среднего чека', checkBonus: 0.3, monthlyRentIncrease: 15000, energyBonus: 12 },
   ],
 }
 

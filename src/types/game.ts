@@ -110,6 +110,9 @@ export interface ProductCategory {
   dailyCost: number
   baseRevenue: number
   requiredServices: ServiceType[]
+  // Equipment/upgrade IDs that must be purchased before this category opens.
+  // Player sees the category greyed out with "нужен <upgrade>" until satisfied.
+  requiredUpgradeIds?: string[]
   requiresEgais?: boolean
   requiresVetCert?: boolean
   icon: string
@@ -547,6 +550,11 @@ export interface GameState {
   // Narrative systems (v3.1)
   decisionLog: DecisionLogEntry[]
   seenNewspaperWeeks: number[]
+
+  // Just-in-time tutorial moments (v6) — IDs of moments the player has dismissed.
+  // Distinct from main onboarding stages; these fire contextually as the player
+  // hits new features (upgrades available, marketing, tier upgrade, etc.).
+  seenTutorialMoments?: string[]
 
   // Pain loss tracking (v4.1)
   lastWeekPainLosses?: PainLossRecord | null   // accumulated over the last 7 days

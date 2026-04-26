@@ -4,6 +4,7 @@ import { getNPCDefinition } from '../constants/npcs'
 import ResponsiveLayout from './ResponsiveLayout'
 import MobileMainScreen from './MobileMainScreen'
 import { OnboardingPanel } from './OnboardingPanel'
+import { TutorialMoments } from './TutorialMoments'
 import HelpModal from './modals/HelpModal'
 import SettingsModal from './modals/SettingsModal'
 import VictoryModal from './modals/VictoryModal'
@@ -955,6 +956,8 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
             if (action === 'buy_register') setShowCashRegisterModal(true)
           }}
         />
+
+        <TutorialMoments onNavigate={setActiveView} />
 
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 

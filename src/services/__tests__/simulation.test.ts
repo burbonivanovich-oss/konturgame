@@ -141,7 +141,7 @@ describe('Economy Simulation (informational)', () => {
   it('shop: bank only (no expansion)', () => {
     const state = makeGameState({
       businessType: 'shop',
-      balance: 80000 - 8000,  // bought mobile register
+      balance: 80000 - 8000,
       services: makeServices(['bank']),
       enabledCategories: ['basic'],
     })
@@ -154,6 +154,7 @@ describe('Economy Simulation (informational)', () => {
       balance: 80000 - 8000,
       services: makeServices(['bank', 'ofd', 'market']),
       enabledCategories: ['basic', 'dairy', 'meat', 'tobacco'],
+      purchasedUpgrades: ['cold-case', 'freezer', 'tobacco-display'],
     })
     runScenario({ name: 'SHOP – bank+ofd+market, all categories', state }, 20)
   })
@@ -164,6 +165,7 @@ describe('Economy Simulation (informational)', () => {
       balance: 80000 - 8000,
       services: makeServices(['bank', 'ofd', 'market', 'diadoc', 'fokus', 'elba', 'extern']),
       enabledCategories: ['basic', 'dairy', 'meat', 'tobacco', 'alcohol'],
+      purchasedUpgrades: ['cold-case', 'freezer', 'tobacco-display', 'liquor-cabinet'],
     })
     runScenario({ name: 'SHOP – all services, all categories', state }, 20)
   })
@@ -174,6 +176,7 @@ describe('Economy Simulation (informational)', () => {
       balance: 80000 - 8000,
       services: makeServices(['bank']),
       enabledCategories: ['beverages', 'desserts'],
+      purchasedUpgrades: ['oven'],
     })
     runScenario({ name: 'CAFE – bank only, beverages+desserts', state }, 20)
   })
@@ -184,6 +187,7 @@ describe('Economy Simulation (informational)', () => {
       balance: 80000 - 8000,
       services: makeServices(['bank', 'ofd', 'market']),
       enabledCategories: ['beverages', 'ready-food', 'desserts'],
+      purchasedUpgrades: ['kitchen', 'oven'],
     })
     runScenario({ name: 'CAFE – bank+ofd+market', state }, 20)
   })
@@ -194,6 +198,7 @@ describe('Economy Simulation (informational)', () => {
       balance: 80000 - 8000,
       services: makeServices(['bank']),
       enabledCategories: ['basic-services', 'spa'],
+      purchasedUpgrades: ['spa-room'],
     })
     runScenario({ name: 'BEAUTY SALON – bank only, basic+spa', state }, 20)
   })
@@ -204,6 +209,7 @@ describe('Economy Simulation (informational)', () => {
       balance: 80000 - 8000,
       services: makeServices(['bank', 'ofd', 'market']),
       enabledCategories: ['basic-services', 'spa', 'premium-services', 'cosmetics'],
+      purchasedUpgrades: ['spa-room', 'coloring-station', 'cosmetics-shelf'],
     })
     runScenario({ name: 'BEAUTY SALON – bank+ofd+market', state }, 20)
   })
