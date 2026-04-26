@@ -1,6 +1,4 @@
 import type { BusinessType, GameState, ProductCategory } from '../types/game'
-import { getTotalStock, predictedDemand } from './stockManager'
-import { BUSINESS_CONFIGS } from '../constants/business'
 
 export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
   shop: [
@@ -8,8 +6,8 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
       id: 'basic',
       name: 'Бакалея',
       description: 'Крупы, консервы, макароны. Простой старт без требований.',
-      margin: 0.15,
-      dailyCost: 500,
+      margin: 0.25,
+      dailyCost: 4125,
       baseRevenue: 5500,
       requiredServices: [],
       icon: '🏪',
@@ -18,8 +16,8 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
       id: 'dairy',
       name: 'Молочная продукция',
       description: 'Маркированный товар. Требует Маркет для учёта Честного знака.',
-      margin: 0.2,
-      dailyCost: 800,
+      margin: 0.25,
+      dailyCost: 3750,
       baseRevenue: 5000,
       requiredServices: ['market', 'ofd'],
       icon: '🥛',
@@ -29,7 +27,7 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
       name: 'Мясо и рыба',
       description: 'Ветеринарные сертификаты + Меркурий. Высокая маржа.',
       margin: 0.3,
-      dailyCost: 1200,
+      dailyCost: 4900,
       baseRevenue: 7000,
       requiredServices: ['market', 'ofd'],
       requiresVetCert: true,
@@ -40,7 +38,7 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
       name: 'Алкоголь',
       description: 'Лицензия + ЕГАИС + ОФД + Экстерн. Самая высокая маржа.',
       margin: 0.4,
-      dailyCost: 2000,
+      dailyCost: 6000,
       baseRevenue: 10000,
       requiredServices: ['ofd', 'extern'],
       requiresEgais: true,
@@ -50,8 +48,8 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
       id: 'tobacco',
       name: 'Табак и вейп',
       description: 'Маркированная продукция. Стабильный спрос.',
-      margin: 0.35,
-      dailyCost: 1000,
+      margin: 0.4,
+      dailyCost: 3300,
       baseRevenue: 5500,
       requiredServices: ['market', 'ofd'],
       icon: '🚬',
@@ -63,7 +61,7 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
       name: 'Напитки',
       description: 'Кофе, чай, соки. Быстрый оборот, хорошая маржа.',
       margin: 0.65,
-      dailyCost: 600,
+      dailyCost: 1750,
       baseRevenue: 5000,
       requiredServices: [],
       icon: '☕',
@@ -73,7 +71,7 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
       name: 'Готовая еда',
       description: 'Блюда по техкартам. Маркет снижает себестоимость на 10%.',
       margin: 0.5,
-      dailyCost: 1000,
+      dailyCost: 3500,
       baseRevenue: 7000,
       requiredServices: ['market'],
       icon: '🍽️',
@@ -83,7 +81,7 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
       name: 'Десерты и выпечка',
       description: 'Высокий средний чек. Маркировка не нужна.',
       margin: 0.55,
-      dailyCost: 700,
+      dailyCost: 2025,
       baseRevenue: 4500,
       requiredServices: [],
       icon: '🧁',
@@ -93,7 +91,7 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
       name: 'Барная карта',
       description: 'Пиво, вино, коктейли. Лицензия + ОФД + Экстерн.',
       margin: 0.45,
-      dailyCost: 1500,
+      dailyCost: 4400,
       baseRevenue: 8000,
       requiredServices: ['ofd', 'extern'],
       requiresEgais: true,
@@ -105,8 +103,8 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
       id: 'basic-services',
       name: 'Базовые услуги',
       description: 'Стрижки, укладки, маникюр. Основной доход.',
-      margin: 0.7,
-      dailyCost: 400,
+      margin: 0.6,
+      dailyCost: 2400,
       baseRevenue: 6000,
       requiredServices: [],
       icon: '✂️',
@@ -116,7 +114,7 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
       name: 'Премиум-услуги',
       description: 'Окрашивание, ламинирование. Маркет помогает с учётом материалов.',
       margin: 0.6,
-      dailyCost: 800,
+      dailyCost: 3600,
       baseRevenue: 9000,
       requiredServices: ['market'],
       icon: '💎',
@@ -126,7 +124,7 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
       name: 'Продажа косметики',
       description: 'Маркированная продукция. Дополнительный доход.',
       margin: 0.3,
-      dailyCost: 600,
+      dailyCost: 2800,
       baseRevenue: 4000,
       requiredServices: ['market', 'ofd'],
       icon: '💄',
@@ -135,8 +133,8 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
       id: 'spa',
       name: 'SPA-процедуры',
       description: 'Массаж, обёртывания. Высокий чек, стабильный спрос.',
-      margin: 0.65,
-      dailyCost: 500,
+      margin: 0.55,
+      dailyCost: 3150,
       baseRevenue: 7000,
       requiredServices: [],
       icon: '🧖',
@@ -157,16 +155,6 @@ export function isCategoryAllowed(category: ProductCategory, state: GameState): 
 export function calculateCategoryRevenue(state: GameState): CategoryRevenueResult {
   const categories = PRODUCT_CATEGORIES[state.businessType] ?? []
   const enabledIds = state.enabledCategories ?? []
-  const config = BUSINESS_CONFIGS[state.businessType]
-
-  // If the business tracks physical stock, scale revenue by stock availability.
-  // Beauty salon has no stock (services), so stockRatio stays 1.
-  let stockRatio = 1
-  if (config?.hasStock) {
-    const weekDemand = predictedDemand(state, 7)
-    const currentStock = getTotalStock(state)
-    stockRatio = weekDemand > 0 ? Math.min(1, currentStock / weekDemand) : 1
-  }
 
   let totalRevenue = 0
   let totalDailyCost = 0
@@ -178,9 +166,7 @@ export function calculateCategoryRevenue(state: GameState): CategoryRevenueResul
     const allowed = isCategoryAllowed(cat, state)
     const cost = cat.dailyCost
     const fine = allowed ? 0 : Math.round(cat.baseRevenue * 0.1)
-    const baseRev = allowed ? cat.baseRevenue : Math.round(cat.baseRevenue * 0.5)
-    // Apply stock constraint: if shelves are half-empty, revenue drops proportionally
-    const revenue = Math.round(baseRev * stockRatio)
+    const revenue = allowed ? cat.baseRevenue : Math.round(cat.baseRevenue * 0.5)
 
     breakdown[cat.id] = { revenue, cost, fine, allowed }
     totalRevenue += revenue

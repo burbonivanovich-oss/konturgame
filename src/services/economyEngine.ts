@@ -1,7 +1,65 @@
 import type { GameState, Modifiers } from '../types/game'
 import { BUSINESS_CONFIGS, MONTHLY_EXPENSES, UPGRADES_CONFIG, CAMPAIGN_DIMINISHING_FACTORS, SERVICES_CONFIG } from '../constants/business'
+import { BUSINESS_TIERS, type BusinessTierConfig } from '../constants/businessTiers'
 import { LOYALTY_CAPACITY_THRESHOLDS, LOYALTY_CAPACITY_MODIFIER } from '../constants/gameBalance'
 import { calculateSynergyModifiers } from './synergyEngine'
+
+// ── Business tier (level) helpers ────────────────────────────────────────────
+// Tier multipliers scale every "size" number (clients, check, rent, salary,
+// capacity). Existing saves without `businessTier` default to tier 1.
+
+export function getCurrentTier(state: GameState): BusinessTierConfig {
+  const tiers = BUSINESS_TIERS[state.businessType]
+  const level = state.businessTier ?? 1
+  return tiers.find(t => t.level === level) ?? tiers[0]
+}
+
+export function getNextTier(state: GameState): BusinessTierConfig | null {
+  const tiers = BUSINESS_TIERS[state.businessType]
+  const currentLevel = state.businessTier ?? 1
+  return tiers.find(t => t.level === currentLevel + 1) ?? null
+}
+
+export function canUpgradeTier(state: GameState): { ok: boolean; reason?: string } {
+  const next = getNextTier(state)
+  if (!next) return { ok: false, reason: 'Достигнут максимальный уровень' }
+  if (state.currentWeek < next.unlockWeek) {
+    return { ok: false, reason: `Доступно с ${next.unlockWeek}-й недели` }
+  }
+  if (state.balance < next.upgradeCost) {
+    return { ok: false, reason: `Недостаточно средств (нужно ${next.upgradeCost.toLocaleString('ru-RU')} ₽)` }
+  }
+  if (state.balance < next.unlockBalance) {
+    return { ok: false, reason: `Нужен оборотный баланс от ${next.unlockBalance.toLocaleString('ru-RU')} ₽` }
+  }
+  if (state.reputation < next.unlockReputation) {
+    return { ok: false, reason: `Нужна репутация от ${next.unlockReputation}` }
+  }
+  if (next.unlockQuality !== undefined && (state.qualityLevel ?? 0) < next.unlockQuality) {
+    return { ok: false, reason: `Нужно качество от ${next.unlockQuality}` }
+  }
+  return { ok: true }
+}
+
+export function getEffectiveBaseClients(state: GameState): number {
+  return Math.round(BUSINESS_CONFIGS[state.businessType].baseClients * getCurrentTier(state).multipliers.clients)
+}
+
+export function getEffectiveAvgCheck(state: GameState): number {
+  return Math.round(BUSINESS_CONFIGS[state.businessType].avgCheck * getCurrentTier(state).multipliers.check)
+}
+
+export function getEffectiveCapacity(state: GameState): number {
+  return Math.round(BUSINESS_CONFIGS[state.businessType].capacity * getCurrentTier(state).multipliers.capacity)
+}
+
+export function getEffectiveRent(state: GameState): number {
+  return Math.round(MONTHLY_EXPENSES[state.businessType].rent * getCurrentTier(state).multipliers.rent)
+}
+
+export function getEffectiveBaseSalary(state: GameState): number {
+  return Math.round(MONTHLY_EXPENSES[state.businessType].baseSalary * getCurrentTier(state).multipliers.baseSalary)
+}
 
 function getPurchasedUpgradeConfigs(state: GameState) {
   if (!state.purchasedUpgrades?.length) return []
@@ -32,8 +90,7 @@ export function calculateClients(baseClients: number, modifiers: Modifiers): num
 }
 
 export function calculateCapacity(state: GameState): number {
-  const config = BUSINESS_CONFIGS[state.businessType]
-  const baseCapacity = config.capacity
+  const baseCapacity = getEffectiveCapacity(state)
 
   let capacityMod = 1.0
   if (state.services?.market?.isActive) {
@@ -111,9 +168,8 @@ export function calculateDailySubscriptions(state: GameState): number {
 }
 
 export function calculateMonthlyExpenses(state: GameState): number {
-  const base = MONTHLY_EXPENSES[state.businessType]
-  let rent = base.rent
-  let salary = base.baseSalary
+  let rent = getEffectiveRent(state)
+  let salary = getEffectiveBaseSalary(state)
 
   for (const u of getPurchasedUpgradeConfigs(state)) {
     rent += u.monthlyRentIncrease ?? 0

@@ -38,10 +38,11 @@ export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
   'beauty-salon': {
     type: 'beauty-salon',
     startBalance: 80000,
-    // Salon was unwinnable: 6 clients × 400₽ × 7 days = 16.8k weekly revenue vs
-    // ~35k weekly expenses → −18.5k/week, bankrupt in 4-5 weeks. Bumping clients
-    // to 11 brings weekly revenue to ~30.8k, leaving room to break even.
-    baseClients: 11,
+    // 9 clients × 400₽ × 7 = 25.2k weekly base. Was 11 — but with margin fix
+    // and smoothed monthly bill, salon was running at +30K/wk on bank-only
+    // (richest of the three businesses by far). Pulled back so salon and cafe
+    // are roughly equally profitable on tier 1.
+    baseClients: 9,
     avgCheck: 400,
     capacity: 20,
     hasStock: false,

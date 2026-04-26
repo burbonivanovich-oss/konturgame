@@ -15,6 +15,8 @@ import {
   calculateDailySubscriptions,
   calculateMonthlyExpenses,
   getLoyaltyUpgradesBonus,
+  getEffectiveBaseClients,
+  getEffectiveAvgCheck,
 } from './economyEngine'
 import { getTotalStock, checkExpiry } from './stockManager'
 import { generateEvent } from './eventGenerator'
@@ -130,7 +132,7 @@ export function processWeek(state: GameState): DayResult {
     const { loss: expiredLoss } = checkExpiry(state)
 
     // 3. Calculate daily metrics
-    let totalClients = calculateClients(config.baseClients, modifiers)
+    let totalClients = calculateClients(getEffectiveBaseClients(state), modifiers)
 
     // Apply quality modifier (affects client acquisition)
     const qualityClientMod = getQualityClientModifier(state.qualityLevel)
@@ -167,7 +169,7 @@ export function processWeek(state: GameState): DayResult {
     const effectiveServed = Math.floor(served * bankPaymentRatio)
 
     // 5. Average check with quality and brand premiums
-    let avgCheck = calculateAverageCheck(config.avgCheck, modifiers)
+    let avgCheck = calculateAverageCheck(getEffectiveAvgCheck(state), modifiers)
 
     // Add quality price premium + brand effect (skip getQualityPriceModifier to avoid double-counting)
     const totalPriceModifier = qualityPricePremium + brandEffect.priceMod
@@ -238,13 +240,25 @@ export function processWeek(state: GameState): DayResult {
     const dailyRegisterMaintenance = totalRegisters * ECONOMY_CONSTANTS.DAILY_REGISTER_MAINTENANCE
     const dailyFixedCosts = dailyUtilities + dailyRegisterMaintenance
 
-    // 12. Monthly expenses (every week 4, approximate every 28 days)
-    // Note: daysSinceMonthly is checked and updated inside the loop
-    let monthlyExpense = 0
+    // 12. Monthly fixed costs (rent + owner's base salary) — spread evenly
+    // across the 28-day cycle so the player doesn't get one brutal hit per
+    // month. First 28 days are a grace period so a fresh business has time
+    // to find its feet (matches the previous lump-sum behaviour where the
+    // first bill fired only on day 29).
+    const daysAlive = state.daysSinceLastMonthly ?? 0
+    const monthlyExpense = daysAlive >= ECONOMY_CONSTANTS.MONTHLY_CYCLE_WEEKS * 7
+      ? Math.round(calculateMonthlyExpenses(state) / (ECONOMY_CONSTANTS.MONTHLY_CYCLE_WEEKS * 7))
+      : 0
+    state.daysSinceLastMonthly = daysAlive + 1
+
+    // 12b. Employee salary spread across the week (was previously folded into
+    // the monthly bill which under-charged it by 75%: the weekly amount only
+    // hit once per 28 days instead of every week).
+    const dailyEmployeeSalary = Math.round(weeklySalaryCost / 7)
 
     // 13. Daily profit
-    const dayExpenses = dayTax + subscriptionCost + purchaseCost + monthlyExpense + expiredLoss +
-      dailyFixedCosts + totalCategoryFines
+    const dayExpenses = dayTax + subscriptionCost + purchaseCost + monthlyExpense +
+      dailyEmployeeSalary + expiredLoss + dailyFixedCosts + totalCategoryFines
     let dayNetProfit = dayRevenue - dayExpenses
 
     // 14. Pain losses
@@ -312,14 +326,6 @@ export function processWeek(state: GameState): DayResult {
       }
     }
 
-    // 19. Update monthly counter
-    const currentDaysSinceMonthly = state.daysSinceLastMonthly ?? 0
-    if (currentDaysSinceMonthly >= ECONOMY_CONSTANTS.MONTHLY_CYCLE_WEEKS * 7) {
-      monthlyExpense = calculateMonthlyExpenses(state) + weeklySalaryCost
-      state.daysSinceLastMonthly = 0
-    } else {
-      state.daysSinceLastMonthly = currentDaysSinceMonthly + 1
-    }
   } // End of week loop
 
   // 2. Competitor event check (once per week, not 7 times)
@@ -395,11 +401,11 @@ export function processWeek(state: GameState): DayResult {
   const bankPaymentRatioForResult = getBankPaymentRatio(state)
   const result: DayResult = {
     dayNumber: state.currentWeek - 1,  // Report previous week
-    clients: Math.round(weekRevenue / (config.avgCheck * bankPaymentRatioForResult)), // Estimate from revenue
+    clients: Math.round(weekRevenue / (getEffectiveAvgCheck(state) * bankPaymentRatioForResult)), // Estimate from revenue
     served: 0,  // Not tracked in week mode
     missed: 0,
     lostToBank: bankPaymentRatioForResult < 1
-      ? Math.round(weekRevenue / config.avgCheck * (1 - bankPaymentRatioForResult) / bankPaymentRatioForResult)
+      ? Math.round(weekRevenue / getEffectiveAvgCheck(state) * (1 - bankPaymentRatioForResult) / bankPaymentRatioForResult)
       : 0,
     revenue: weekRevenue,
     expenses: weekExpenses,
@@ -513,7 +519,7 @@ export function processWeek(state: GameState): DayResult {
           launchedWeek: campaign.launchedWeek ?? state.currentWeek,
           costSpent: campaign.cost,
           revenueGenerated: totalRevenue,
-          clientsAcquired: Math.round(totalRevenue / Math.max(1, config.avgCheck)),
+          clientsAcquired: Math.round(totalRevenue / Math.max(1, getEffectiveAvgCheck(state))),
           roi: campaign.cost > 0 ? ((totalRevenue - campaign.cost) / campaign.cost) * 100 : 0,
         })
       }
