@@ -176,6 +176,11 @@ export interface OnboardingStep {
   // - 'wait':   waits for in-game trigger before "Далее" becomes active
   kind?: 'intro' | 'action' | 'wait'
   waitForTrigger?: OnboardingTrigger
+  // Earliest in-game day when "Далее" is allowed for this step. Used to
+  // pace stage 1's three actions so a fresh player doesn't activate Bank,
+  // Register and OFD all on day 4 — actions become available, but
+  // advancement to the next step waits.
+  unlockDay?: number
 }
 
 export interface OnboardingStageConfig {

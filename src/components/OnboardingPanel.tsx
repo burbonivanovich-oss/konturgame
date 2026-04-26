@@ -106,6 +106,14 @@ export function OnboardingPanel({ onNavigate, onAction }: OnboardingPanelProps) 
   const needsAction = stepKind === 'action' && !actionDone
   const isWaiting = stepKind === 'wait' && !waitReady
 
+  // Day-gating: even after completing the action, advancement to the next
+  // step waits until the in-game day reaches the step's unlockDay. Paces
+  // stage-1's three back-to-back actions (bank/register/ofd) so the player
+  // doesn't connect everything on day 4.
+  const currentDay = (gameState.currentWeek - 1) * 7 + (gameState.dayOfWeek ?? 0) + 1
+  const dayGated = step.unlockDay !== undefined && currentDay < step.unlockDay
+  const daysToWait = step.unlockDay !== undefined ? Math.max(0, step.unlockDay - currentDay) : 0
+
   const { insufficientFunds } = checkOnboardingBlocked(gameState as any)
   const blockedStep = getBlockedActionStep(gameState as any)
   const canSkipStep = blockedStep !== null
@@ -115,7 +123,7 @@ export function OnboardingPanel({ onNavigate, onAction }: OnboardingPanelProps) 
   const actionLabel = step.requiresAction ? ACTION_LABEL[step.requiresAction] : undefined
   const waitHint = stepKind === 'wait' && step.waitForTrigger ? WAIT_HINT[step.waitForTrigger] : undefined
 
-  const canProceed = !needsAction && !isWaiting
+  const canProceed = !needsAction && !isWaiting && !dayGated
 
   const handleConfirm = () => {
     if (!canProceed) return
@@ -333,13 +341,24 @@ export function OnboardingPanel({ onNavigate, onAction }: OnboardingPanelProps) 
               </div>
             )}
 
-            {needsAction && actionDone && (
+            {needsAction && actionDone && !dayGated && (
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 8,
                 background: K.mintSoft, borderRadius: 10, padding: '8px 14px',
                 fontSize: 12, fontWeight: 600, color: K.mintInk,
               }}>
                 ✓ Выполнено — нажмите «Далее»
+              </div>
+            )}
+
+            {dayGated && stepKind === 'action' && actionDone && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                background: 'rgba(127,77,233,0.06)', border: `1px solid ${K.violet}`,
+                borderRadius: 10, padding: '8px 14px',
+                fontSize: 12, fontWeight: 600, color: K.violet,
+              }}>
+                ⏳ Поработайте с этим ещё {daysToWait} {daysToWait === 1 ? 'день' : daysToWait < 5 ? 'дня' : 'дней'} — потом продолжим
               </div>
             )}
 

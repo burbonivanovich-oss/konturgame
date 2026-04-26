@@ -164,7 +164,7 @@ export function calculateDailySubscriptions(state: GameState): number {
       total += service.annualPrice
     }
   }
-  return total / 365  // Дневная стоимость от годовой подписки
+  return Math.round(total / 365)  // Дневная стоимость от годовой подписки
 }
 
 export function calculateMonthlyExpenses(state: GameState): number {

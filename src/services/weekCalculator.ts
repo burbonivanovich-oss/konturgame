@@ -111,9 +111,11 @@ export function processWeek(state: GameState): DayResult {
   const loyaltyUpgradesBonus = getLoyaltyUpgradesBonus(state)
 
   // Weekly tactic — multipliers/deltas applied per day in the loop below.
-  // null tactic = operational drift penalty (-5%): no focus means small inefficiencies.
+  // No-tactic = neutral (1.0). Player can pick a tactic for a focused effect,
+  // but skipping doesn't punish — the chooser used to penalise non-pickers
+  // which made the system feel like friction, not a choice.
   const tactic = getWeeklyTacticDef(state.weeklyTactic)
-  const tacticRevenueMul = tactic?.revenueMultiplier ?? 0.95
+  const tacticRevenueMul = tactic?.revenueMultiplier ?? 1
   const tacticEnergyPerDay = tactic?.energyDelta ?? 0
   const tacticRepPerDay = tactic?.reputationDelta ?? 0
   const tacticLoyaltyPerDay = tactic?.loyaltyDelta ?? 0
@@ -360,9 +362,11 @@ export function processWeek(state: GameState): DayResult {
   }
 
   // Apply week results to state
-  const newBalance = state.balance + weekNetProfit
-  const newReputation = Math.max(0, Math.min(100, state.reputation + weekRepChange))
-  const newLoyalty = Math.max(0, Math.min(100, state.loyalty + weekLoyaltyChange))
+  // Round to whole rubles — fractional sources (subscriptions, decay, etc.)
+  // would otherwise compound into 90 425,753-style decimals in the UI.
+  const newBalance = Math.round(state.balance + weekNetProfit)
+  const newReputation = Math.max(0, Math.min(100, Math.round(state.reputation + weekRepChange)))
+  const newLoyalty = Math.max(0, Math.min(100, Math.round(state.loyalty + weekLoyaltyChange)))
 
   // Update quality weekly
   updateQualityWeekly(state)

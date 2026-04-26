@@ -159,8 +159,11 @@ input, select, textarea {
 
 .nav-pulse {
   animation: navPulse 1.6s ease-out infinite, navWiggle 2.4s ease-in-out infinite;
+  /* Outline drawn OUTSIDE the box — was inside (-2px offset) and visually
+     covered the text on small orange action buttons. Now wraps the element
+     and never overlaps content. */
   outline: 2px solid #FF6A2C;
-  outline-offset: -2px;
+  outline-offset: 2px;
   position: relative;
 }
 
