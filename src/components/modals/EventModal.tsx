@@ -171,15 +171,6 @@ export default function EventModal({ isOpen, event, onOptionSelect, queueLength 
                       {option.consequences.balanceDelta.toLocaleString('ru-RU')} ₽
                     </span>
                   )}
-                  {option.consequences.reputationDelta !== undefined && option.consequences.reputationDelta !== 0 && (
-                    <span style={{
-                      fontSize: 12, fontWeight: 600,
-                      color: isContour ? 'rgba(255,255,255,0.75)' : (option.consequences.reputationDelta >= 0 ? K.good : K.bad),
-                      alignSelf: 'flex-end', paddingBottom: 2,
-                    }}>
-                      реп {option.consequences.reputationDelta >= 0 ? '+' : ''}{option.consequences.reputationDelta}
-                    </span>
-                  )}
                 </div>
               </button>
             )

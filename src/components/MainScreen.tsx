@@ -36,6 +36,7 @@ import { KHeaderBar } from './design-system/KHeaderBar'
 import { K } from './design-system/tokens'
 import type { NavId } from './design-system/KLeftRail'
 import { getActiveSynergies } from '../services/synergyEngine'
+import { getBusinessHealth } from '../services/businessHealth'
 import { getTotalThroughput } from '../services/cashRegisterEngine'
 import type { ServiceType } from '../types/game'
 
@@ -67,10 +68,10 @@ function DashboardView({
 }) {
   const store = useGameStore()
   const {
-    currentWeek, balance, reputation, loyalty, services,
+    currentWeek, balance, services,
     pendingEvent, pendingEventsQueue, lastDayResult,
     entrepreneurEnergy, npcs, stockBatches, capacity, cashRegisters,
-    businessType, qualityLevel, level, weeklyTactic, setWeeklyTactic,
+    businessType, level, weeklyTactic, setWeeklyTactic,
   } = store
 
   const bizConfig = BUSINESS_CONFIGS[businessType]
@@ -451,14 +452,6 @@ function DashboardView({
                             {opt.consequences.balanceDelta.toLocaleString('ru-RU')} ₽
                           </div>
                         )}
-                        {opt.consequences?.reputationDelta != null && opt.consequences.reputationDelta !== 0 && (
-                          <div style={{
-                            fontSize: 11, fontWeight: 600,
-                            color: opt.isContourOption ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.45)',
-                          }}>
-                            репутация {opt.consequences.reputationDelta > 0 ? '+' : ''}{opt.consequences.reputationDelta}
-                          </div>
-                        )}
                       </button>
                     )
                   })}
@@ -617,51 +610,50 @@ function DashboardView({
           padding: 18, display: 'flex', flexDirection: 'column', gap: 14,
           overflowY: 'auto',
         }}>
-          {/* Status pills row */}
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {[
-              { label: 'Реп', value: reputation, color: K.violet, bg: K.violetSoft },
-              { label: 'Лоял', value: `${loyalty}%`, color: K.mint, bg: K.mintSoft },
-              {
-                label: 'Энергия',
-                value: `${entrepreneurEnergy}`,
-                color: entrepreneurEnergy < 40 ? K.orange : K.blue,
-                bg: entrepreneurEnergy < 40 ? K.orangeSoft : K.blueSoft,
-                onClick: onOpenOwnerInvestments,
-              },
-            ].map(p => (
-              <button
-                key={p.label}
-                onClick={p.onClick}
-                disabled={!p.onClick}
-                style={{
-                  background: p.bg, border: 'none', borderRadius: 999,
-                  padding: '5px 10px', fontSize: 11, fontWeight: 700,
-                  color: p.color, cursor: p.onClick ? 'pointer' : 'default',
-                  fontFamily: 'inherit',
-                  display: 'flex', alignItems: 'center', gap: 5,
-                }}
-              >
-                <span style={{ opacity: 0.7, fontWeight: 500 }}>{p.label}</span>
-                <span>{p.value}</span>
-              </button>
-            ))}
-          </div>
+          {/* Status pills row: only money-adjacent and energy stay visible.
+              Reputation / loyalty / quality moved into the health card below
+              as a single qualitative read. */}
+          {(() => {
+            const lowEnergy = entrepreneurEnergy < 40
+            return (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <button
+                  onClick={onOpenOwnerInvestments}
+                  style={{
+                    background: lowEnergy ? K.orangeSoft : K.blueSoft,
+                    border: 'none', borderRadius: 999,
+                    padding: '5px 10px', fontSize: 11, fontWeight: 700,
+                    color: lowEnergy ? K.orange : K.blue,
+                    cursor: 'pointer', fontFamily: 'inherit',
+                    display: 'flex', alignItems: 'center', gap: 5,
+                  }}
+                >
+                  <span style={{ opacity: 0.7, fontWeight: 500 }}>Энергия</span>
+                  <span>{entrepreneurEnergy}</span>
+                </button>
+              </div>
+            )
+          })()}
 
-          {/* Quality + Stage compact row */}
+          {/* Business health + Stage compact row */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {(() => {
-              const qualColor = qualityLevel > 70 ? K.mint : qualityLevel > 40 ? K.orange : '#c0392b'
+              const health = getBusinessHealth(useGameStore.getState())
+              const tone = health.tone
+              const healthColor = tone === 'good' ? K.mint
+                : tone === 'warn' ? K.orange
+                : tone === 'bad' ? '#c0392b'
+                : K.ink2
               return (
                 <div style={{ background: K.bone, borderRadius: 10, padding: '10px 12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                    <span style={{ fontSize: 10, color: K.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                      Качество
-                    </span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: qualColor }}>{qualityLevel}%</span>
+                  <div style={{ fontSize: 10, color: K.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+                    Состояние
                   </div>
-                  <div style={{ height: 5, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${qualityLevel}%`, background: qualColor, borderRadius: 999 }} />
+                  <div style={{ fontSize: 14, fontWeight: 800, color: healthColor }}>
+                    {health.label}
+                  </div>
+                  <div style={{ fontSize: 11, color: K.muted, marginTop: 2, lineHeight: 1.4 }}>
+                    {health.hint}
                   </div>
                 </div>
               )

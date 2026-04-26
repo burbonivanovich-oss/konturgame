@@ -6,6 +6,7 @@ import {
 } from '../../constants/business'
 import { getCampaignStats } from '../../services/weekCalculator'
 import { getCurrentTier, getNextTier, canUpgradeTier } from '../../services/economyEngine'
+import { getDimensionStatus } from '../../services/businessHealth'
 import { K } from '../design-system/tokens'
 
 type DevTab = 'marketing' | 'upgrades' | 'tier' | 'roi'
@@ -165,14 +166,22 @@ function TierSection() {
             <Requirement met={state.balance >= next.unlockBalance}
               label={`Оборот от ${next.unlockBalance.toLocaleString('ru-RU')} ₽`}
               actual={`${state.balance.toLocaleString('ru-RU')} ₽`} />
-            <Requirement met={state.reputation >= next.unlockReputation}
-              label={`Репутация ${next.unlockReputation}+`}
-              actual={`${state.reputation}`} />
-            {next.unlockQuality !== undefined && (
-              <Requirement met={(state.qualityLevel ?? 0) >= next.unlockQuality}
-                label={`Качество ${next.unlockQuality}+`}
-                actual={`${state.qualityLevel ?? 0}`} />
-            )}
+            {(() => {
+              const repStatus = getDimensionStatus(state.reputation)
+              return (
+                <Requirement met={state.reputation >= next.unlockReputation}
+                  label="Прочная репутация"
+                  actual={repStatus.label} />
+              )
+            })()}
+            {next.unlockQuality !== undefined && (() => {
+              const qualStatus = getDimensionStatus(state.qualityLevel ?? 0)
+              return (
+                <Requirement met={(state.qualityLevel ?? 0) >= next.unlockQuality}
+                  label="Качество держится"
+                  actual={qualStatus.label} />
+              )
+            })()}
             <Requirement met={state.balance >= next.upgradeCost}
               label={`Стоимость апгрейда: ${next.upgradeCost.toLocaleString('ru-RU')} ₽`}
               actual={state.balance >= next.upgradeCost ? 'хватает' : 'не хватает'} />
