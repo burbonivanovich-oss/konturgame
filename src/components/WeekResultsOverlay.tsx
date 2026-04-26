@@ -90,7 +90,7 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
         {/* Milestone celebration */}
         {milestone && (
           <div style={{
-            background: `linear-gradient(135deg, ${K.violet} 0%, ${K.blue} 100%)`,
+            background: K.violet,
             borderRadius: 16, padding: '18px 22px',
             display: 'flex', alignItems: 'center', gap: 16,
           }}>
@@ -121,7 +121,8 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
             <div style={{
               position: 'absolute', top: -20, right: -20,
               width: 100, height: 100, borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(0,200,150,0.25) 0%, transparent 70%)',
+              background: K.mintSoft,
+              opacity: 0.45,
               pointerEvents: 'none',
             }} />
           )}

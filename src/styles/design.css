@@ -189,9 +189,8 @@
   font-size: 13px; font-weight: 700;
 }
 .k-saved::before {
-  content: ''; width: 16px; height: 16px; border-radius: 50%;
-  background: var(--k-ink); display: inline-block;
-  background-image: radial-gradient(circle at center, var(--k-green) 30%, transparent 32%);
+  content: ''; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--k-green); display: inline-block;
 }
 
 /* tab bar */

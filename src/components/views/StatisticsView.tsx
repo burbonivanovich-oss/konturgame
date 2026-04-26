@@ -108,7 +108,8 @@ ${isYearComplete ? '✨ Выжил первый год! ✨' : `Прогресс
         <div style={{
           position: 'absolute', top: -40, right: -40, width: 160, height: 160,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(0,200,150,0.15) 0%, transparent 70%)',
+          background: K.mintSoft,
+          opacity: 0.45,
           pointerEvents: 'none',
         }} />
         <div style={{ fontSize: 11, fontWeight: 800, opacity: 0.5, letterSpacing: '0.08em', textTransform: 'uppercase' }}>

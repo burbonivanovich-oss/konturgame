@@ -52,7 +52,7 @@ export default function PromoCodeModal() {
         {/* Icon */}
         <div style={{
           width: 64, height: 64, borderRadius: 20,
-          background: `linear-gradient(135deg, ${K.violet}, ${K.blue})`,
+          background: K.violet,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 30, margin: '0 auto 16px',
         }}>
