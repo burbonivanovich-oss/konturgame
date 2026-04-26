@@ -168,4 +168,91 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
       },
     ],
   },
+
+  // ─────────────────────────────────────────────────────────────────────
+  // Recurring crisis events: fire AFTER the first-encounter window when
+  // the player kept declining. Single sharp punishments instead of
+  // ambient drip. Not oneTime — they can fire multiple times in a run
+  // if the player keeps holding out.
+  // ─────────────────────────────────────────────────────────────────────
+
+  {
+    id: 'PAIN_DIADOC',
+    title: 'Штраф за «нарушение документооборота»',
+    description: 'Камеральная проверка по контрагенту, у которого вы закупались. Налоговая выявила расхождения в первичке: часть оригиналов не нашлась, часть — без подписи. Вешают 30 000 ₽ штрафа и предписание «привести в порядок». Без электронного документооборота это будет повторяться.',
+    trigger: { dayMin: 70, randomChance: 0.06, noService: 'diadoc', oneTime: false },
+    options: [
+      {
+        id: 'pay',
+        text: 'Заплатить штраф (30 000 ₽)',
+        consequences: { balanceDelta: -30000, reputationDelta: -2 },
+      },
+      {
+        id: 'subscribe',
+        text: 'Подключить Контур.Диадок (24 000 ₽) — закрыть на годы',
+        consequences: { balanceDelta: -24000, serviceId: 'diadoc' },
+        isContourOption: true,
+      },
+    ],
+  },
+
+  {
+    id: 'PAIN_FOKUS',
+    title: 'Поставщик оказался в реестре недобросовестных',
+    description: 'Партия пришла бракованная, поставщик пропал. Через знакомого юриста выясняется: ИП в реестре «фирм-однодневок», на нём уже три исполнительных производства. Деньги вернуть нереально. Если бы заранее проверить — вопросов было бы много.',
+    trigger: { dayMin: 70, randomChance: 0.05, noService: 'fokus', oneTime: false },
+    options: [
+      {
+        id: 'eat_loss',
+        text: 'Списать в потери (40 000 ₽)',
+        consequences: { balanceDelta: -40000, reputationDelta: -3 },
+      },
+      {
+        id: 'subscribe',
+        text: 'Подключить Контур.Фокус (24 000 ₽) — впредь проверка за минуту',
+        consequences: { balanceDelta: -24000, serviceId: 'fokus' },
+        isContourOption: true,
+      },
+    ],
+  },
+
+  {
+    id: 'PAIN_ELBA',
+    title: 'Ошибка в декларации — штраф',
+    description: 'Налоговая нашла недоплату по УСН за прошлый квартал — несколько тысяч недосчитали в расходах. Сама ошибка мелкая, штраф несоразмерный: 25 000 ₽ + пени. Бухгалтер по знакомству говорит: «Если б у вас была система — она бы это поймала. Так-то работаешь по тетрадке — и получаешь по тетрадке».',
+    trigger: { dayMin: 80, randomChance: 0.05, noService: 'elba', oneTime: false },
+    options: [
+      {
+        id: 'pay_fine',
+        text: 'Заплатить и в следующий раз быть внимательнее (25 000 ₽)',
+        consequences: { balanceDelta: -25000 },
+      },
+      {
+        id: 'subscribe',
+        text: 'Подключить Контур.Эльба (36 000 ₽) — расчёт автоматом',
+        consequences: { balanceDelta: -36000, serviceId: 'elba' },
+        isContourOption: true,
+      },
+    ],
+  },
+
+  {
+    id: 'PAIN_EXTERN',
+    title: 'Блокировка счёта за просрочку отчётности',
+    description: 'Утром не проходит платёж поставщику. Звонок в банк: «Счёт ограничен по требованию ФНС». В налоговой инспекции: «Отчёт по НДФЛ не сдан в срок, разблокируем после сдачи и проверки. Это от пяти рабочих дней». Поставщики ждать не будут.',
+    trigger: { dayMin: 90, randomChance: 0.05, noService: 'extern', oneTime: false },
+    options: [
+      {
+        id: 'rush_courier',
+        text: 'Курьер с бумагами в инспекцию (12 000 ₽), ещё неделю простоя',
+        consequences: { balanceDelta: -12000, reputationDelta: -3 },
+      },
+      {
+        id: 'subscribe',
+        text: 'Подключить Контур.Экстерн (48 000 ₽) — на год вперёд, разблокировка тем же днём',
+        consequences: { balanceDelta: -48000, serviceId: 'extern' },
+        isContourOption: true,
+      },
+    ],
+  },
 ]
