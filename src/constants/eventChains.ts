@@ -449,11 +449,216 @@ export const CHAIN_EVENTS: EventTemplate[] = [
       },
     ],
   },
+
+  // ── CHAIN 10: Гена-инвестор (gena_arc) ─────────────────────────────────────
+  // Комический рефрен. 5 эпизодов, повторяющийся персонаж — каждый раз
+  // приходит с новой «темой века». Все промежуточные вложения уходят в
+  // минус. Финал на нед. 47-49: если хоть раз вкладывался — 10% шанс
+  // лотереи (+500 000 ₽). Если всегда отказывал — он просто смеётся
+  // «А я же говорил». Лотерея — единственное место с RNG в пользу игрока.
+  {
+    id: 'gena_arc_1',
+    title: 'Гена с темой века',
+    description: 'В магазин заходит мужик в спортивных штанах: «Брат! Помнишь меня? Гена! Двоюродный твой шурина брат через тётю. Слушай, у меня тут тема — крипто-ферма в гараже у Толика. Тридцать вкладываешь — через месяц девяносто. Зуб даю». Достаёт телефон с какими-то графиками. Графики действительно растут.',
+    trigger: {
+      dayMin: 56,
+      dayMax: 84,
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'gena_arc',
+      chainStep: 1,
+    },
+    npcId: 'gena',
+    options: [
+      {
+        id: 'invest',
+        text: 'Дать 30 000 ₽ — крипта так крипта',
+        consequences: { balanceDelta: -30000 },
+        npcRelationshipDelta: 6,
+        chainFollowUpId: 'gena_arc_2',
+      },
+      {
+        id: 'decline',
+        text: '«Гена, нет»',
+        consequences: {},
+        npcRelationshipDelta: -2,
+        chainFollowUpId: 'gena_arc_2',
+      },
+    ],
+  },
+
+  {
+    id: 'gena_arc_2',
+    title: 'Гена с новой темой',
+    description: 'Гена снова в дверях, но уже без графиков — теперь с iPad. «Слушай, забудь про крипту, тема была сырая. Сейчас другое — NFT-маркетплейс для малого бизнеса. Я уже договорился с разработчиком, нужно пятнадцать на старт. Это вообще будущее, не пожалеешь». Тыкает пальцем в какую-то картинку обезьяны.',
+    trigger: {
+      dayMin: 0,
+      dayMax: 9999,
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'gena_arc',
+      chainStep: 2,
+    },
+    npcId: 'gena',
+    options: [
+      {
+        id: 'invest',
+        text: 'Дать 15 000 ₽ — обезьяна так обезьяна',
+        consequences: { balanceDelta: -15000 },
+        npcRelationshipDelta: 6,
+        chainFollowUpId: 'gena_arc_3',
+      },
+      {
+        id: 'decline',
+        text: 'Объяснить, что NFT уже не модно',
+        consequences: {},
+        npcRelationshipDelta: -2,
+        chainFollowUpId: 'gena_arc_3',
+      },
+    ],
+  },
+
+  {
+    id: 'gena_arc_3',
+    title: 'Гена зовёт сниматься',
+    description: 'На этот раз без iPad, зато с микрофоном-петличкой и видеокамерой на штативе: «Брат, мы с тобой запишем курс по предпринимательству. Я буду брать интервью у успешных. Ты успешный, у тебя бизнес. По-братски — пять тысяч на монтаж, выручка 50 на 50». На записи он перебивает каждое слово.',
+    trigger: {
+      dayMin: 0,
+      dayMax: 9999,
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'gena_arc',
+      chainStep: 3,
+    },
+    npcId: 'gena',
+    options: [
+      {
+        id: 'agree',
+        text: 'Дать 5 000 ₽ — будет о чём вспомнить',
+        consequences: { balanceDelta: -5000 },
+        npcRelationshipDelta: 4,
+        chainFollowUpId: 'gena_arc_4',
+      },
+      {
+        id: 'refuse',
+        text: 'Сослаться на занятость',
+        consequences: {},
+        npcRelationshipDelta: -3,
+        chainFollowUpId: 'gena_arc_4',
+      },
+    ],
+  },
+
+  {
+    id: 'gena_arc_4',
+    title: 'Гена и нейросети',
+    description: 'Гена влетает с горящими глазами: «Это всё. Это последняя тема. Дальше — пенсия. Нейросети для малого бизнеса, у меня знакомый из Сколково, нужно двадцать пять на лицензию OpenAI и сервер. Через два месяца возвращаешь полтора". Слово "Сколково" он произносит с особым вкусом.',
+    trigger: {
+      dayMin: 0,
+      dayMax: 9999,
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'gena_arc',
+      chainStep: 4,
+    },
+    npcId: 'gena',
+    options: [
+      {
+        id: 'invest',
+        text: 'Дать 25 000 ₽ — это же будущее',
+        consequences: { balanceDelta: -25000 },
+        npcRelationshipDelta: 6,
+        chainFollowUpId: 'gena_arc_5',
+      },
+      {
+        id: 'decline',
+        text: '«Гена. Хватит».',
+        consequences: {},
+        npcRelationshipDelta: -3,
+        chainFollowUpId: 'gena_arc_5',
+      },
+    ],
+  },
+
+  // Final variant 1: jackpot — one of his old schemes actually took off
+  // and the player gets a windfall. 10% roll for those who invested.
+  {
+    id: 'gena_arc_5_jackpot',
+    title: 'Гена с конвертом',
+    description: 'Гена заходит в костюме. В костюме! «Брат. Помнишь крипто-ферму у Толика? Помнишь нейросети? Так вот — одна из тем выстрелила. Я не уточняю какая. Это твоя доля». Кладёт на прилавок конверт. Сам уходит — в первый раз без новой темы. Может, и правда последняя.',
+    trigger: {
+      dayMin: 0,
+      dayMax: 9999,
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'gena_arc',
+      chainStep: 5,
+    },
+    npcId: 'gena',
+    options: [
+      {
+        id: 'open',
+        text: 'Открыть конверт (+500 000 ₽)',
+        consequences: { balanceDelta: 500000 },
+        npcRelationshipDelta: 30,
+      },
+    ],
+  },
+
+  // Final variant 2: burned — invested but lottery missed. The whole
+  // arc was just a slow drain. Gena is undeterred, of course.
+  {
+    id: 'gena_arc_5_burned',
+    title: 'Гена с новой темой (опять)',
+    description: 'Гена в дверях. На лице — то же выражение, что и в первый раз. «Брат! Слушай, забудь всё что было, это была разведка. Сейчас настоящая тема — солнечные панели на дачах. Я уже почти договорился с одним поставщиком». Делает паузу. «Сорок тысяч». На улице между прочим январь.',
+    trigger: {
+      dayMin: 0,
+      dayMax: 9999,
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'gena_arc',
+      chainStep: 5,
+    },
+    npcId: 'gena',
+    options: [
+      {
+        id: 'show_door',
+        text: 'Молча показать на дверь',
+        consequences: {},
+        npcRelationshipDelta: -5,
+      },
+    ],
+  },
+
+  // Final variant 3: never invested — Gena drops by, mock-laughs,
+  // declares his own success in the abstract, leaves.
+  {
+    id: 'gena_arc_5_told_you_so',
+    title: 'Гена с самодовольством',
+    description: 'Гена заходит. В руках — пакет из дорогого магазина. «Брат, я что хотел сказать. Помнишь, я тебе тогда про крипту говорил? Так вот. Я был прав. Я не буду злорадствовать, ну ты понимаешь». Злорадствует молча, всем видом. «Ладно, побежал. Дела». Пакет — пустой, видно по тому как он его несёт.',
+    trigger: {
+      dayMin: 0,
+      dayMax: 9999,
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'gena_arc',
+      chainStep: 5,
+    },
+    npcId: 'gena',
+    options: [
+      {
+        id: 'nod',
+        text: 'Кивнуть и проводить взглядом',
+        consequences: {},
+        npcRelationshipDelta: 0,
+      },
+    ],
+  },
 ]
 
 export const CHAIN_IDS = [
   'mikhail_crisis', 'svetlana_growth', 'inspector_chain', 'anna_war', 'legacy',
-  'tamara_arc',
+  'tamara_arc', 'gena_arc',
 ] as const
 export type ChainId = typeof CHAIN_IDS[number]
 
@@ -465,6 +670,7 @@ export const CHAIN_TRIGGER_WEEKS: Record<ChainId, number> = {
   anna_war: 10,
   legacy: 15,
   tamara_arc: 8,
+  gena_arc: 8,
 }
 
 // Delay in weeks before the follow-up fires after the triggering choice
@@ -485,6 +691,15 @@ export const CHAIN_FOLLOWUP_DELAY: Record<string, number> = {
   tamara_arc_2: 17,
   tamara_arc_3a: 15,
   tamara_arc_3b: 15,
+  // Гена: появляется примерно раз в 8 недель, финал ~13 недель
+  // после 4-го эпизода — лотерея ложится на нед. 47-49.
+  gena_arc_2: 8,
+  gena_arc_3: 8,
+  gena_arc_4: 8,
+  gena_arc_5: 13,
+  gena_arc_5_jackpot: 13,
+  gena_arc_5_burned: 13,
+  gena_arc_5_told_you_so: 13,
 }
 
 export function getChainEvent(id: string): EventTemplate | undefined {

@@ -1,7 +1,7 @@
 import type { GameState, DayResult } from '../types/game'
 import { DAILY_MICRO_EVENTS } from '../constants/dailyMicroEvents'
 import { BUSINESS_CONFIGS, ECONOMY_CONSTANTS, CAMPAIGN_DIMINISHING_FACTORS } from '../constants/business'
-import { ensureNPCsInitialized, applyNPCPassiveEffects, getInspectorChain2EventId } from './npcManager'
+import { ensureNPCsInitialized, applyNPCPassiveEffects, getInspectorChain2EventId, getGenaFinalEventId } from './npcManager'
 import { getChainEvent, getChainStartEvent, CHAIN_TRIGGER_WEEKS, type ChainId } from '../constants/eventChains'
 import { templateToEvent, applyEventConsequence, generateCrisisEvent } from './eventGenerator'
 import { pickDiaryEntry } from '../constants/diary'
@@ -839,10 +839,14 @@ function triggerDueChainEvents(state: GameState): void {
   if (due.length === 0) return
 
   for (const followUp of due) {
-    // inspector_chain step 2 branches depending on Petrov relationship
-    const eventId = followUp.chainEventId.startsWith('inspector_chain_2')
-      ? getInspectorChain2EventId(state)
-      : followUp.chainEventId
+    // inspector_chain step 2 branches depending on Petrov relationship.
+    // gena_arc step 5 branches on whether player ever invested + a 10% RNG roll.
+    let eventId = followUp.chainEventId
+    if (eventId.startsWith('inspector_chain_2')) {
+      eventId = getInspectorChain2EventId(state)
+    } else if (eventId === 'gena_arc_5') {
+      eventId = getGenaFinalEventId(state)
+    }
 
     const template = getChainEvent(eventId)
     if (!template) continue

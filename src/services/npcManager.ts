@@ -172,6 +172,19 @@ export function getInspectorChain2EventId(state: GameState): string {
   return relationship >= 50 ? 'inspector_chain_2_good' : 'inspector_chain_2_bad'
 }
 
+// Picks the final Gena episode based on player history. The mid-arc events
+// were always money-down with no immediate payout — this is the moment the
+// gamble resolves. 10% jackpot if the player ever invested, otherwise the
+// burned-but-undeterred variant. Players who never invested get the
+// "I told you so" variant — same lack of payout, different vibe.
+export function getGenaFinalEventId(state: GameState): string {
+  const choices = state.chosenEventOptions ?? {}
+  const investmentEvents = ['gena_arc_1', 'gena_arc_2', 'gena_arc_4']
+  const everInvested = investmentEvents.some(id => choices[id] === 'invest')
+  if (!everInvested) return 'gena_arc_5_told_you_so'
+  return Math.random() < 0.1 ? 'gena_arc_5_jackpot' : 'gena_arc_5_burned'
+}
+
 export function ensureNPCsInitialized(state: GameState): void {
   if (!state.npcs || state.npcs.length === 0) {
     state.npcs = initializeNPCs()

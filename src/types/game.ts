@@ -1,6 +1,6 @@
 export type BusinessType = 'shop' | 'cafe' | 'beauty-salon'
 
-export type NpcRole = 'supplier' | 'employee' | 'inspector' | 'competitor' | 'consultant' | 'banker' | 'blogger' | 'customer'
+export type NpcRole = 'supplier' | 'employee' | 'inspector' | 'competitor' | 'consultant' | 'banker' | 'blogger' | 'customer' | 'investor'
 
 export type BackstoryMotivation = 'corp' | 'contest' | 'accident'
 export type BackstoryPersonal = 'free' | 'friend' | 'hometown'

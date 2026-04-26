@@ -72,6 +72,21 @@ function pickExitLine(npcId: string, r: number, triggeredEventIds: string[] = []
       }
       // First episode fired but no terminal — she vanished from view.
       return 'Бабушка Тамара перестала заходить в какой-то момент. Вы так и не узнали — переехала, заболела, забыла. Просто однажды поняли: её нет уже давно.'
+
+    case 'gena':
+      // Three terminal variants from gena_arc_5; relationship level is
+      // inconsistent across them so we key off the triggered event.
+      if (triggeredEventIds.includes('gena_arc_5_jackpot')) {
+        return 'Гена пишет из Дубая. На фотках — балкон, пальма, тарелка с морепродуктами. «Брат, помнишь я говорил? Я всегда говорил». Раз в месяц предлагает новую тему. Вы вежливо игнорируете.'
+      }
+      if (triggeredEventIds.includes('gena_arc_5_burned')) {
+        return 'Гена в районе. Тема теперь — солнечные панели на даче, потом, наверное, что-то про водород. Деньги его не научили ничему. Ваши, к сожалению, тоже.'
+      }
+      if (triggeredEventIds.includes('gena_arc_5_told_you_so')) {
+        return 'Гена больше не заходит. Видимо, обиделся. Иногда мелькает в чате района — там у него уже какая-то новая тема, пишет про неё много восклицательных знаков.'
+      }
+      // Met him but never reached the finale.
+      return 'Гена пропал после третьей или четвёртой темы. Не звонит, не пишет. Может, наконец нашёл того, кто согласился.'
   }
   return null
 }

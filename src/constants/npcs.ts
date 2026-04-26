@@ -56,6 +56,15 @@ export const NPC_DEFINITIONS: NPCDefinition[] = [
     personality: 'Тихая женщина за семьдесят. Заходит раз в неделю — за хлебом, за разговором, за тем, чтобы «выйти в люди». Никогда не торопится.',
     startRelationship: 50,
   },
+  {
+    id: 'gena',
+    name: 'Гена',
+    role: 'investor',
+    portrait: '🤙',
+    shortRole: 'Дядя со схемами',
+    personality: 'Двоюродный брат двоюродного знакомого. Заходит раз в два месяца с очередной «темой века»: крипта, NFT, нейросети, солнечные панели. Зуб даёт каждый раз. Если хоть один раз выстрелит — будет помнить всю жизнь.',
+    startRelationship: 35,
+  },
 ]
 
 export function createInitialNPCs(): NPC[] {
