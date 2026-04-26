@@ -1,5 +1,5 @@
 import type { GameState, NPC, NpcMemoryEntry } from '../types/game'
-import { createInitialNPCs, getNPCDefinition } from '../constants/npcs'
+import { createInitialNPCs, getNPCDefinition, NPC_DEFINITIONS } from '../constants/npcs'
 
 export function initializeNPCs(): NPC[] {
   return createInitialNPCs()
@@ -210,6 +210,23 @@ export function getInspectorChain2EventId(state: GameState): string {
 export function ensureNPCsInitialized(state: GameState): void {
   if (!state.npcs || state.npcs.length === 0) {
     state.npcs = initializeNPCs()
+  } else {
+    // Top up NPCs added in newer versions so old saves don't miss them.
+    const existingIds = new Set(state.npcs.map(n => n.id))
+    const additions = NPC_DEFINITIONS
+      .filter(def => !existingIds.has(def.id))
+      .map(def => ({
+        id: def.id,
+        name: def.name,
+        role: def.role,
+        portrait: def.portrait,
+        relationshipLevel: def.startRelationship,
+        isRevealed: false,
+        memory: [],
+      }))
+    if (additions.length > 0) {
+      state.npcs = [...state.npcs, ...additions]
+    }
   }
   if (state.activeChainIds === undefined) {
     state.activeChainIds = []

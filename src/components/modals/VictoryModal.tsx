@@ -132,7 +132,7 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
   const {
     startNewGame, currentWeek, balance, reputation, gameOverReason,
     playerBackstory, npcs, completedChainIds, totalPainLosses, personalGoal,
-    decisionLog, newlyUnlockedLessons,
+    decisionLog, newlyUnlockedLessons, triggeredEventIds,
   } = useGameStore()
 
   const newLessons = (newlyUnlockedLessons ?? [])
@@ -163,7 +163,7 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
   // defeat — these are the "where everyone ended up" moments that turn a
   // game-over into an ending.
   const goalClosure = buildGoalClosure(personalGoal, playerBackstory ?? null, balance)
-  const npcExits = buildNpcExitLines(npcs ?? [])
+  const npcExits = buildNpcExitLines(npcs ?? [], triggeredEventIds ?? [])
 
   const handleNewGame = () => {
     startNewGame('shop')

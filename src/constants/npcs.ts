@@ -74,6 +74,15 @@ export const NPC_DEFINITIONS: NPCDefinition[] = [
     personality: '23 года, 18 тысяч подписчиков в соцсетях. Пишет про жизнь района. Ищет контент — честный или скандальный, ему всё равно.',
     startRelationship: 30,
   },
+  {
+    id: 'tamara',
+    name: 'Бабушка Тамара',
+    role: 'customer',
+    portrait: '👵',
+    shortRole: 'Постоянная клиентка',
+    personality: 'Тихая женщина за семьдесят. Заходит раз в неделю — за хлебом, за разговором, за тем, чтобы «выйти в люди». Никогда не торопится.',
+    startRelationship: 50,
+  },
 ]
 
 export function createInitialNPCs(): NPC[] {

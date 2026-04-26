@@ -17,23 +17,26 @@ export interface ExitLine {
 
 /**
  * Returns exit lines for all revealed NPCs, picked by relationship level.
- * Order matches NPC_DEFINITIONS for stable layout.
+ * Order matches NPC_DEFINITIONS for stable layout. `triggeredEventIds` is
+ * passed through so episodic NPCs (e.g. Tamara) can select an exit line
+ * by which terminal episode fired, rather than by relationship level —
+ * useful when the chain spans long enough that decay homogenises the level.
  */
-export function buildNpcExitLines(npcs: NPC[]): ExitLine[] {
+export function buildNpcExitLines(npcs: NPC[], triggeredEventIds: string[] = []): ExitLine[] {
   const lines: ExitLine[] = []
 
   for (const def of NPC_DEFINITIONS) {
     const npc = npcs.find(n => n.id === def.id)
     if (!npc?.isRevealed) continue
     const r = npc.relationshipLevel
-    const text = pickExitLine(def.id, r)
+    const text = pickExitLine(def.id, r, triggeredEventIds)
     if (text) lines.push({ npcId: def.id, text })
   }
 
   return lines
 }
 
-function pickExitLine(npcId: string, r: number): string | null {
+function pickExitLine(npcId: string, r: number, triggeredEventIds: string[] = []): string | null {
   switch (npcId) {
     case 'mikhail':
       if (r >= 70) return 'Михаил пишет из Краснодара. Внуки, веранда, рыбалка по выходным. В декабре прислал ящик мандаринов — без повода, «просто чтоб не забывали».'
@@ -72,6 +75,19 @@ function pickExitLine(npcId: string, r: number): string | null {
       if (r >= 40) return 'Глеб делает контент по району. Вас упоминает иногда — нейтрально. Это и есть отношения.'
       if (r >= 15) return 'Глеб переключился на скандалы про другие места. У вас — затишье. И слава богу.'
       return 'После того скандала Глеб развернул войну. Снимает раз в месяц новый «разоблачающий» материал. Просмотры есть, конверсии нет — но осадок остаётся.'
+
+    case 'tamara':
+      // Pinned to which terminal episode fired, not relationship level —
+      // the chain spans 30+ weeks and weekly decay would otherwise blur
+      // the visit-vs-pass branches into the same neutral 50.
+      if (triggeredEventIds.includes('tamara_arc_3a')) {
+        return 'Бабушка Тамара ходит до сих пор — медленнее, с палочкой, но раз в неделю. Иногда забывает кошелёк, тогда расплачивается анекдотом про мужа. Платок у неё всегда чистый.'
+      }
+      if (triggeredEventIds.includes('tamara_arc_3b')) {
+        return 'Бабушку Тамару похоронили в Твери. Её записку вы так и не выбросили — лежит в ящике под кассой, между квитанциями. Иногда натыкаетесь.'
+      }
+      // First episode fired but no terminal — she vanished from view.
+      return 'Бабушка Тамара перестала заходить в какой-то момент. Вы так и не узнали — переехала, заболела, забыла. Просто однажды поняли: её нет уже давно.'
   }
   return null
 }

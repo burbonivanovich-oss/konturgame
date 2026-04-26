@@ -576,11 +576,123 @@ export const CHAIN_EVENTS: EventTemplate[] = [
       },
     ],
   },
+
+  // ── CHAIN 9: Бабушка Тамара (tamara_arc) ───────────────────────────────────
+  // Пасс на тон, не на механику. 3 эпизода, маленькие дельты,
+  // эмоциональный якорь. Без opinion-stack — игрок не выбирает между
+  // «помочь» и «потерять 50K», только между «увидеть человека» и «забить».
+  {
+    id: 'tamara_arc_1',
+    title: 'Бабушка Тамара зашла за хлебом',
+    description: 'Невысокая женщина в платке, лет за семьдесят, выкладывает на прилавок сдачу — копейка к копейке. Пока считаете, она тихо: «Я тут к вам уже месяц захожу. Знаете, муж осенью умер, я теперь почти не выхожу. А у вас тут — люди. Хорошо у вас». Улыбается в полпальца. Достаёт из сумки печенье — «вам, к чаю». Уходит.',
+    trigger: {
+      dayMin: 56, // ~week 8
+      dayMax: 84, // ~week 12
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'tamara_arc',
+      chainStep: 1,
+    },
+    npcId: 'tamara',
+    options: [
+      {
+        id: 'thank_warm',
+        text: 'Поблагодарить и сказать, чтоб заходила почаще',
+        consequences: {},
+        npcRelationshipDelta: 4,
+        chainFollowUpId: 'tamara_arc_2',
+      },
+      {
+        id: 'just_nod',
+        text: 'Кивнуть и пробить чек — дел много',
+        consequences: {},
+        npcRelationshipDelta: 0,
+        chainFollowUpId: 'tamara_arc_2',
+      },
+    ],
+  },
+
+  {
+    id: 'tamara_arc_2',
+    title: 'Бабушка Тамара не приходит уже три недели',
+    description: 'Только сейчас заметили: бабушки Тамары нет давно. Спросили у соседки, та машет рукой: «Слегла. Воспаление лёгких, тяжело. Дочка из Твери приехала, ходит за ней. Адрес я знаю — если что». Молчит. «Она вас вспоминала, кстати. Говорила — там хорошие люди».',
+    trigger: {
+      dayMin: 0,
+      dayMax: 9999,
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'tamara_arc',
+      chainStep: 2,
+    },
+    npcId: 'tamara',
+    options: [
+      {
+        id: 'visit',
+        text: 'Закрыть пораньше, заехать с пакетом мандаринов (−5 энергии)',
+        consequences: { energyDelta: -5 },
+        npcRelationshipDelta: 8,
+        chainFollowUpId: 'tamara_arc_3a',
+      },
+      {
+        id: 'pass',
+        text: 'Пожалеть мысленно — но это просто бабушка, не до того',
+        consequences: {},
+        npcRelationshipDelta: -6,
+        chainFollowUpId: 'tamara_arc_3b',
+      },
+    ],
+  },
+
+  {
+    id: 'tamara_arc_3a',
+    title: 'Бабушка Тамара вернулась',
+    description: 'Дверь открывается медленнее обычного. На пороге — Тамара. Похудевшая, в новом платке, с палочкой. «Здравствуйте. Я ненадолго — за хлебом и сказать. Спасибо, что приехали тогда. Дочка говорит — я после вашего визита на поправку и пошла». Долго молчит у прилавка. «Я ещё похожу к вам, ладно?» Уходит, держась за стену.',
+    trigger: {
+      dayMin: 0,
+      dayMax: 9999,
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'tamara_arc',
+      chainStep: 3,
+    },
+    npcId: 'tamara',
+    options: [
+      {
+        id: 'see_her_out',
+        text: 'Проводить до выхода',
+        consequences: { reputationDelta: 2 },
+        npcRelationshipDelta: 6,
+      },
+    ],
+  },
+
+  {
+    id: 'tamara_arc_3b',
+    title: 'Записка от соседки',
+    description: 'На прилавке — сложенный вчетверо листок. Соседка занесла утром, не дождалась. «Тамара Ивановна ушла в среду. Тихо, во сне. Дочка просила передать спасибо всем, кто её знал — вы у неё в записях были. Похороны в субботу, в Твери». Внизу — телефон. Печенья сегодня к чаю не будет.',
+    trigger: {
+      dayMin: 0,
+      dayMax: 9999,
+      randomChance: 1.0,
+      oneTime: true,
+      chainId: 'tamara_arc',
+      chainStep: 3,
+    },
+    npcId: 'tamara',
+    options: [
+      {
+        id: 'fold_it',
+        text: 'Сложить записку и положить в ящик',
+        consequences: {},
+        npcRelationshipDelta: 0,
+      },
+    ],
+  },
 ]
 
 export const CHAIN_IDS = [
   'mikhail_crisis', 'svetlana_growth', 'inspector_chain', 'anna_war', 'legacy',
-  'marina_promo', 'viktor_loan', 'gleb_review',
+  'marina_promo', 'viktor_loan', 'gleb_review', 'tamara_arc',
 ] as const
 export type ChainId = typeof CHAIN_IDS[number]
 
@@ -594,6 +706,7 @@ export const CHAIN_TRIGGER_WEEKS: Record<ChainId, number> = {
   marina_promo: 5,
   viktor_loan: 12,
   gleb_review: 4,
+  tamara_arc: 8,
 }
 
 // Delay in weeks before the follow-up fires after the triggering choice
@@ -617,6 +730,11 @@ export const CHAIN_FOLLOWUP_DELAY: Record<string, number> = {
   gleb_review_2a: 1,
   gleb_review_2b: 1,
   gleb_review_2c: 1,
+  // Долгие промежутки: между знакомством и болезнью ~17 недель,
+  // между развязкой ~15 недель. Эпизоды должны казаться случайными.
+  tamara_arc_2: 17,
+  tamara_arc_3a: 15,
+  tamara_arc_3b: 15,
 }
 
 export function getChainEvent(id: string): EventTemplate | undefined {
