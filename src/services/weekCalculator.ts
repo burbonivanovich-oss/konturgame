@@ -91,6 +91,8 @@ export function processWeek(state: GameState): DayResult {
 
   // Accumulate results for the week
   let weekRevenue = 0
+  let weekServed = 0
+  let weekMissed = 0
   let weekExpenses = 0
   let weekNetProfit = 0
   let weekRepChange = 0
@@ -304,6 +306,8 @@ export function processWeek(state: GameState): DayResult {
 
     // 17. Accumulate week results
     weekRevenue += dayRevenue
+    weekServed += served
+    weekMissed += missed
     weekExpenses += dayExpenses + additionalPainLoss
     weekNetProfit += dayNetProfit
     weekRepChange += dayRepChange
@@ -401,9 +405,9 @@ export function processWeek(state: GameState): DayResult {
   const bankPaymentRatioForResult = getBankPaymentRatio(state)
   const result: DayResult = {
     dayNumber: state.currentWeek - 1,  // Report previous week
-    clients: Math.round(weekRevenue / (getEffectiveAvgCheck(state) * bankPaymentRatioForResult)), // Estimate from revenue
-    served: 0,  // Not tracked in week mode
-    missed: 0,
+    clients: weekServed + weekMissed,
+    served: weekServed,
+    missed: weekMissed,
     lostToBank: bankPaymentRatioForResult < 1
       ? Math.round(weekRevenue / getEffectiveAvgCheck(state) * (1 - bankPaymentRatioForResult) / bankPaymentRatioForResult)
       : 0,
