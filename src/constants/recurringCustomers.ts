@@ -87,7 +87,7 @@ export const RECURRING_CUSTOMER_EVENTS: EventTemplate[] = [
     options: [
       {
         id: 'listen',
-        text: 'Послушать и поблагодарить (−5 мин, +хорошее настроение)',
+        text: 'Послушать и поблагодарить',
         consequences: { reputationDelta: 3, loyaltyDelta: 2 },
         npcRelationshipDelta: 6,
       },

@@ -89,7 +89,7 @@ export const MORAL_DILEMMA_EVENTS: EventTemplate[] = [
       },
       {
         id: 'refuse_bribe',
-        text: 'Отказать и оформить официально (−38 000 ₽ штраф, репутация +8)',
+        text: 'Отказать и оформить официально (−38 000 ₽ штраф)',
         consequences: { balanceDelta: -38000, reputationDelta: 8 },
       },
     ],
@@ -104,7 +104,7 @@ export const MORAL_DILEMMA_EVENTS: EventTemplate[] = [
     options: [
       {
         id: 'buy',
-        text: 'Купить базу (−12 000 ₽, +клиенты на 2 недели)',
+        text: 'Купить базу (−12 000 ₽)',
         consequences: { balanceDelta: -12000, clientModifier: 0.2, clientModifierDays: 14 },
       },
       {

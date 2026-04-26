@@ -188,17 +188,17 @@ export const PERSONAL_BACKSTORY_EVENTS: EventTemplate[] = [
     options: [
       {
         id: 'sit_with_her',
-        text: 'Сесть рядом на 20 минут, отдать смену кассиру (−2 500 ₽, +20 энергии)',
+        text: 'Сесть рядом на 20 минут, отдать смену кассиру (−2 500 ₽)',
         consequences: { balanceDelta: -2500, energyDelta: 20, loyaltyDelta: 3 },
       },
       {
         id: 'short_hello',
-        text: 'Поздороваться, занять чаем, продолжить работать (+5 энергии)',
+        text: 'Поздороваться, занять чаем, продолжить работать',
         consequences: { energyDelta: 5 },
       },
       {
         id: 'send_off',
-        text: 'Сказать «у меня клиенты, давай вечером созвонимся» (−5 энергии, −2 лояльности)',
+        text: 'Сказать «у меня клиенты, давай вечером созвонимся»',
         consequences: { energyDelta: -5, loyaltyDelta: -2 },
       },
     ],
@@ -259,7 +259,7 @@ export const PERSONAL_BACKSTORY_EVENTS: EventTemplate[] = [
       },
       {
         id: 'take_with_terms',
-        text: 'Взять под расписку с процентами — «иначе не возьму» (+80 000 ₽, +4 репутации)',
+        text: 'Взять под расписку с процентами — «иначе не возьму» (+80 000 ₽)',
         consequences: { balanceDelta: 80000, reputationDelta: 4, loyaltyDelta: 2 },
       },
       {

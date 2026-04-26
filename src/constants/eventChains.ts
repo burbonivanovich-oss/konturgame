@@ -252,7 +252,7 @@ export const CHAIN_EVENTS: EventTemplate[] = [
     options: [
       {
         id: 'fight_back',
-        text: 'Ответить своей акцией (−10 000 ₽, вернуть клиентов)',
+        text: 'Ответить своей акцией (−10 000 ₽)',
         consequences: { balanceDelta: -10000, clientModifier: 0.1, clientModifierDays: 14 },
         npcRelationshipDelta: -15,
       },
@@ -297,7 +297,7 @@ export const CHAIN_EVENTS: EventTemplate[] = [
     options: [
       {
         id: 'agree',
-        text: 'Согласиться (−5 энергии/неделю на 5 недель)',
+        text: 'Согласиться',
         consequences: { energyDelta: -5 },
         chainFollowUpId: 'legacy_2a',
       },

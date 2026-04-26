@@ -173,7 +173,7 @@ export const NPC_EVENTS: EventTemplate[] = [
     options: [
       {
         id: 'agree',
-        text: 'Согласиться (−5 000 ₽ на печать, +клиенты)',
+        text: 'Согласиться (−5 000 ₽ на печать)',
         consequences: { balanceDelta: -5000, clientModifier: 0.12, clientModifierDays: 10, reputationDelta: 2 },
         npcRelationshipDelta: 10,
       },

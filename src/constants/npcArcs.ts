@@ -228,7 +228,7 @@ export const NPC_ARC_EVENTS: EventTemplate[] = [
     options: [
       {
         id: 'accept',
-        text: '«Спасибо. Так и сделаем» (−8 000 ₽, конец истории)',
+        text: '«Спасибо. Так и сделаем» (−8 000 ₽)',
         consequences: { balanceDelta: -8000, reputationDelta: -2 },
         npcRelationshipDelta: 8,
       },
@@ -477,7 +477,7 @@ export const NPC_ARC_EVENTS: EventTemplate[] = [
     options: [
       {
         id: 'pay',
-        text: 'Согласиться (−8 000 ₽, +клиенты на 2 недели)',
+        text: 'Согласиться (−8 000 ₽)',
         consequences: { balanceDelta: -8000, clientModifier: 0.15, clientModifierDays: 14 },
         npcRelationshipDelta: 10,
       },
