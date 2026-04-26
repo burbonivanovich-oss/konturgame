@@ -4,6 +4,7 @@ import Indicators from './Indicators'
 import NextDayButton from './NextDayButton'
 import ServicePanel from './ServicePanel'
 import { OnboardingPanel } from './OnboardingPanel'
+import { TutorialMoments } from './TutorialMoments'
 import EventModal from './modals/EventModal'
 import HelpModal from './modals/HelpModal'
 import SettingsModal from './modals/SettingsModal'
@@ -251,7 +252,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
           <>
             {/* Hero balance — gradient card matching desktop */}
             <div style={{
-              background: `linear-gradient(135deg, ${K.orange} 0%, #FFB020 100%)`,
+              background: K.orange,
               borderRadius: 14, padding: '14px 16px',
               boxShadow: '0 4px 14px rgba(255,106,44,0.25)',
               display: 'flex', flexDirection: 'column', gap: 4,
@@ -308,7 +309,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
               const def = getWeeklyTacticDef(weeklyTactic)
               return def ? (
                 <div style={{
-                  background: 'linear-gradient(135deg, rgba(255,107,0,0.06) 0%, rgba(255,176,32,0.06) 100%)',
+                  background: K.orangeSoft,
                   border: `1px solid ${K.orange}`,
                   borderRadius: 12, padding: '8px 12px',
                   display: 'flex', alignItems: 'center', gap: 10,
@@ -512,6 +513,21 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
         }}
         onAction={(action) => {
           if (action === 'buy_register') setShowCashRegisterModal(true)
+        }}
+      />
+      <TutorialMoments
+        onNavigate={(nav) => {
+          const navToTab: Record<string, string> = {
+            ecosystem: 'services',
+            operations: 'operations',
+            dashboard: 'day',
+            warehouse: 'warehouse',
+            development: 'development',
+            finance: 'finance',
+            statistics: 'statistics',
+            journal: 'journal',
+          }
+          setActiveTab(navToTab[nav] ?? nav)
         }}
       />
       <PromoCodeModal />

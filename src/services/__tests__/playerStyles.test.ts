@@ -40,7 +40,7 @@ function makeGameState(overrides: Partial<GameState> = {}): GameState {
     savedBalance: 0,
     reputation: 50,
     entrepreneurEnergy: 100,
-    loyalty: 50,
+    loyalty: 55,
     stock: [],
     stockBatches: [],
     capacity: 35,
@@ -224,10 +224,13 @@ function runSimulation(policy: Policy, weeks: number = 52): RunResult {
   // services, and is running one perma-active ad campaign. Without these
   // assumptions the bare-bones sim shows uniform bankruptcy by week 5
   // because no policy can outpace the ~22 500₽/week baseline expense.
+  // Also pre-purchase the equipment that gates each enabled category so
+  // categories actually produce revenue (otherwise they're silently skipped).
+  const allCategoryUpgrades = ['cold-case', 'freezer', 'tobacco-display', 'liquor-cabinet']
   const state = makeGameState({
     services: makeServices(policy.initialServices),
     capacity: 75, // assumes hall-expansion + a small upgrade
-    purchasedUpgrades: ['hall-expansion'],
+    purchasedUpgrades: ['hall-expansion', ...allCategoryUpgrades],
     // Permanent gentle traffic bonus — simulates one constantly-running
     // cheap ad campaign (e.g. flyer drop, neighborhood social post).
     temporaryClientMod: 0.20,

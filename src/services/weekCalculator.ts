@@ -91,6 +91,8 @@ export function processWeek(state: GameState): DayResult {
 
   // Accumulate results for the week
   let weekRevenue = 0
+  let weekServed = 0
+  let weekMissed = 0
   let weekExpenses = 0
   let weekNetProfit = 0
   let weekRepChange = 0
@@ -302,8 +304,23 @@ export function processWeek(state: GameState): DayResult {
     const qualityLoyaltyBonus = getQualityLoyaltyBonus(state)
     dayLoyaltyChange += elbaLoyaltyBonus + synergyMods.loyaltyBonus + qualityLoyaltyBonus + loyaltyUpgradesBonus + tacticLoyaltyPerDay
 
+    // Loyalty soft-cap decay above 70 — without active maintenance, customer
+    // loyalty drifts down. At 70: no decay; at 100: 3/day pull. To plateau
+    // at X, the player needs (X - 70) × 0.10 = sustained daily inflow:
+    //   • +0/day → drifts to 70
+    //   • +1/day → ~80 plateau
+    //   • +2/day → ~90
+    //   • +3/day → 100 (perfect play: service tactic + max quality + synergies)
+    // Loyalty bonuses on upgrades have been removed; loyalty now reflects HOW
+    // you play (tactic, choices, quality), not WHAT you bought.
+    if (state.loyalty > 70) {
+      dayLoyaltyChange -= (state.loyalty - 70) * 0.10
+    }
+
     // 17. Accumulate week results
     weekRevenue += dayRevenue
+    weekServed += served
+    weekMissed += missed
     weekExpenses += dayExpenses + additionalPainLoss
     weekNetProfit += dayNetProfit
     weekRepChange += dayRepChange
@@ -401,9 +418,9 @@ export function processWeek(state: GameState): DayResult {
   const bankPaymentRatioForResult = getBankPaymentRatio(state)
   const result: DayResult = {
     dayNumber: state.currentWeek - 1,  // Report previous week
-    clients: Math.round(weekRevenue / (getEffectiveAvgCheck(state) * bankPaymentRatioForResult)), // Estimate from revenue
-    served: 0,  // Not tracked in week mode
-    missed: 0,
+    clients: weekServed + weekMissed,
+    served: weekServed,
+    missed: weekMissed,
     lostToBank: bankPaymentRatioForResult < 1
       ? Math.round(weekRevenue / getEffectiveAvgCheck(state) * (1 - bankPaymentRatioForResult) / bankPaymentRatioForResult)
       : 0,

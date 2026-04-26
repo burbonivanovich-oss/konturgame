@@ -66,12 +66,14 @@ export function getQualityReputationBonus(state: GameState): number {
  * Get loyalty bonus/penalty based on quality
  */
 export function getQualityLoyaltyBonus(state: GameState): number {
+  // Halved daily contributions — quality is one of several inputs and was
+  // letting loyalty pin to 100 by week 5 for any committed player.
   const quality = calculateQualityLevel(state)
 
-  if (quality >= 80) return 3
-  if (quality >= 60) return 1
+  if (quality >= 80) return 1
+  if (quality >= 60) return 0.5
   if ((state.currentWeek ?? 0) <= QUALITY_GRACE_WEEKS) return 0
-  if (quality <= 30) return -3
+  if (quality <= 30) return -2
   if (quality <= 45) return -1
   return 0
 }

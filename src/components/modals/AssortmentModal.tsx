@@ -1,6 +1,7 @@
 import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
 import { PRODUCT_CATEGORIES, isCategoryAllowed } from '../../services/assortmentEngine'
+import { UPGRADES_CONFIG } from '../../constants/business'
 import { K } from '../design-system/tokens'
 
 const SERVICE_ICONS: Record<string, string> = {
@@ -68,6 +69,10 @@ export default function AssortmentModal({ isOpen, onClose }: AssortmentModalProp
           const missingServices = cat.requiredServices.filter(
             (sId) => !services?.[sId]?.isActive
           )
+          const purchasedSet = new Set(state.purchasedUpgrades ?? [])
+          const upgradesList = UPGRADES_CONFIG[businessType] ?? []
+          const missingUpgrades = (cat.requiredUpgradeIds ?? []).filter(u => !purchasedSet.has(u))
+          const upgradeName = (id: string) => upgradesList.find(u => u.id === id)?.name ?? id
 
           return (
             <div key={cat.id} style={{
@@ -140,6 +145,18 @@ export default function AssortmentModal({ isOpen, onClose }: AssortmentModalProp
                           </div>
                         )
                       })}
+                      {(cat.requiredUpgradeIds ?? []).map(uId => {
+                        const owned = purchasedSet.has(uId)
+                        return (
+                          <div key={uId} style={{
+                            fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
+                            background: owned ? K.mint : 'rgba(180,47,35,0.12)',
+                            color: owned ? K.white : K.bad,
+                          }}>
+                            {upgradeName(uId)} {owned ? '✓' : '✕'}
+                          </div>
+                        )
+                      })}
                       {cat.requiresEgais && (
                         <div style={{
                           fontSize: 10, fontWeight: 700, padding: '3px 8px',
@@ -151,31 +168,38 @@ export default function AssortmentModal({ isOpen, onClose }: AssortmentModalProp
                     </div>
                   )}
 
-                  {/* Warning for enabled but non-compliant */}
-                  {isEnabled && !allowed && missingServices.length > 0 && (
+                  {/* Lock reason */}
+                  {!allowed && (missingServices.length > 0 || missingUpgrades.length > 0) && (
                     <div style={{
-                      fontSize: 11, fontWeight: 600, color: K.orange,
-                      background: K.orangeSoft, borderRadius: 8, padding: '8px 10px',
+                      fontSize: 11, fontWeight: 600, color: K.muted,
+                      background: K.bone, borderRadius: 8, padding: '8px 10px', marginTop: 6,
                     }}>
-                      ⚠️ Штраф 10% выручки/день без: {missingServices.map((s) => SERVICE_NAMES[s]).join(', ')}
+                      🔒 Нужно: {[
+                        ...missingServices.map(s => `Контур.${SERVICE_NAMES[s]}`),
+                        ...missingUpgrades.map(upgradeName),
+                      ].join(', ')}
                     </div>
                   )}
                 </div>
 
                 {/* Toggle button */}
                 <button
-                  onClick={() => toggleCategory(cat.id)}
+                  onClick={() => allowed && toggleCategory(cat.id)}
+                  disabled={!allowed && !isEnabled}
                   style={{
                     padding: '8px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700,
-                    border: 'none', cursor: 'pointer', flexShrink: 0,
+                    border: 'none',
+                    cursor: !allowed && !isEnabled ? 'not-allowed' : 'pointer',
+                    flexShrink: 0,
+                    opacity: !allowed && !isEnabled ? 0.5 : 1,
                     background: isEnabled
                       ? (allowed ? K.mint : K.orange)
                       : K.bone,
-                    color: isEnabled ? K.white : K.ink,
+                    color: isEnabled ? K.white : (!allowed ? K.muted : K.ink),
                     transition: 'all 0.2s',
                   }}
                 >
-                  {isEnabled ? 'Вкл' : 'Выкл'}
+                  {!allowed && !isEnabled ? '🔒' : isEnabled ? 'Вкл' : 'Выкл'}
                 </button>
               </div>
             </div>

@@ -244,6 +244,7 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
             return (
             <div
               key={s.id}
+              className={isOnboardingTarget ? 'nav-pulse' : undefined}
               style={{
                 background: s.isActive ? s.color : '#fff',
                 color: s.isActive ? (s.color === K.orange || s.color === K.mint ? K.ink : '#fff') : K.ink,
@@ -252,9 +253,7 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
                   : wasJustActivated
                   ? `2px solid ${K.mint}`
                   : s.isActive ? 'none' : `1.5px solid ${K.line}`,
-                boxShadow: isOnboardingTarget
-                  ? `0 0 0 4px rgba(255,107,44,0.18)`
-                  : wasJustActivated
+                boxShadow: !isOnboardingTarget && wasJustActivated
                   ? `0 0 0 4px rgba(0,200,150,0.2)`
                   : 'none',
                 borderRadius: 18, padding: 18,

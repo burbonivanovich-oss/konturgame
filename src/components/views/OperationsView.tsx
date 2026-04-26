@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useGameStore } from '../../stores/gameStore'
-import { BUSINESS_CONFIGS } from '../../constants/business'
+import { BUSINESS_CONFIGS, UPGRADES_CONFIG } from '../../constants/business'
 import { PRODUCT_CATEGORIES, isCategoryAllowed } from '../../services/assortmentEngine'
 import { getBusinessStage, STAGE_CONFIG, getNextStage } from '../../constants/businessStages'
 import { ONBOARDING_STAGES } from '../../constants/onboarding'
@@ -136,6 +136,10 @@ export default function OperationsView({ onShowHireModal }: OperationsViewProps)
               const missingServices = cat.requiredServices.filter(
                 sId => !services?.[sId]?.isActive
               )
+              const purchasedSet = new Set(state.purchasedUpgrades ?? [])
+              const upgradesList = UPGRADES_CONFIG[businessType] ?? []
+              const missingUpgrades = (cat.requiredUpgradeIds ?? []).filter(u => !purchasedSet.has(u))
+              const upgradeName = (id: string) => upgradesList.find(u => u.id === id)?.name ?? id
 
               return (
                 <div
@@ -203,6 +207,18 @@ export default function OperationsView({ onShowHireModal }: OperationsViewProps)
                               </span>
                             )
                           })}
+                          {(cat.requiredUpgradeIds ?? []).map(uId => {
+                            const owned = purchasedSet.has(uId)
+                            return (
+                              <span key={uId} style={{
+                                fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 5,
+                                background: owned ? K.mint : `${K.bad}1F`,
+                                color: owned ? K.white : K.bad,
+                              }}>
+                                {upgradeName(uId)} {owned ? '✓' : '✕'}
+                              </span>
+                            )
+                          })}
                           {cat.requiresEgais && (
                             <span style={{
                               fontSize: 10, fontWeight: 700, padding: '2px 7px',
@@ -218,6 +234,21 @@ export default function OperationsView({ onShowHireModal }: OperationsViewProps)
                         </div>
                       )}
 
+                      {/* Lock reason hint when category not yet usable */}
+                      {!allowed && (missingServices.length > 0 || missingUpgrades.length > 0) && (
+                        <div style={{
+                          marginTop: 8, fontSize: 11, fontWeight: 600,
+                          color: K.muted,
+                          padding: '6px 10px', borderRadius: 6,
+                          background: K.bone,
+                        }}>
+                          🔒 Заблокировано: нужно {[
+                            ...missingServices.map(s => `Контур.${SERVICE_NAMES[s]}`),
+                            ...missingUpgrades.map(upgradeName),
+                          ].join(', ')}
+                        </div>
+                      )}
+
                       {isEnabled && !allowed && missingServices.length > 0 && (
                         <div style={{
                           marginTop: 8, fontSize: 11, fontWeight: 600,
@@ -230,18 +261,21 @@ export default function OperationsView({ onShowHireModal }: OperationsViewProps)
                     </div>
 
                     <button
-                      onClick={() => toggleCategory(cat.id)}
+                      onClick={() => allowed && toggleCategory(cat.id)}
+                      disabled={!allowed && !isEnabled}
                       style={{
                         flexShrink: 0, padding: '8px 14px', borderRadius: 10,
-                        fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer',
+                        fontSize: 12, fontWeight: 700, border: 'none',
+                        cursor: !allowed && !isEnabled ? 'not-allowed' : 'pointer',
                         background: isEnabled
                           ? (allowed ? K.mint : K.orange)
                           : K.bone,
-                        color: isEnabled ? K.white : K.ink,
+                        color: isEnabled ? K.white : (!allowed ? K.muted : K.ink),
+                        opacity: !allowed && !isEnabled ? 0.5 : 1,
                         transition: 'all 0.2s',
                       }}
                     >
-                      {isEnabled ? 'Вкл' : 'Выкл'}
+                      {!allowed && !isEnabled ? '🔒' : isEnabled ? 'Вкл' : 'Выкл'}
                     </button>
                   </div>
                 </div>

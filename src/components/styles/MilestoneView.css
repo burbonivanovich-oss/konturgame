@@ -1,6 +1,6 @@
 .milestone-view {
   padding: 2rem;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  background: #0E1116;
   border-radius: 12px;
   color: #fff;
 }
@@ -8,10 +8,7 @@
 .milestone-view h2 {
   margin-bottom: 2rem;
   font-size: 1.8rem;
-  background: linear-gradient(90deg, #60a5fa, #34d399);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #14B88A;
 }
 
 .milestone-progress {
@@ -95,7 +92,7 @@
 }
 
 .achievement-badge {
-  background: linear-gradient(90deg, #34d399, #10b981);
+  background: #14B88A;
   padding: 0.35rem 0.85rem;
   border-radius: 20px;
   font-size: 0.8rem;
@@ -131,7 +128,7 @@
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  background: #3D5BE6;
   transition: width 0.3s ease;
   display: flex;
   align-items: center;
@@ -140,7 +137,7 @@
 }
 
 .milestone-card.achieved .progress-fill {
-  background: linear-gradient(90deg, #34d399, #10b981);
+  background: #14B88A;
 }
 
 .progress-text {

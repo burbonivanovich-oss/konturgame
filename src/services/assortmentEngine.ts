@@ -1,57 +1,62 @@
 import type { BusinessType, GameState, ProductCategory } from '../types/game'
+import { UPGRADES_CONFIG } from '../constants/business'
 
 export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
   shop: [
     {
       id: 'basic',
       name: 'Бакалея',
-      description: 'Крупы, консервы, макароны. Простой старт без требований.',
-      margin: 0.25,
-      dailyCost: 4125,
-      baseRevenue: 5500,
+      description: 'Крупы, консервы, макароны. Базовая категория — есть всегда.',
+      margin: 0.35,
+      dailyCost: 4550,
+      baseRevenue: 7000,
       requiredServices: [],
       icon: '🏪',
     },
     {
       id: 'dairy',
       name: 'Молочная продукция',
-      description: 'Маркированный товар. Требует Маркет для учёта Честного знака.',
+      description: 'Маркированный товар. Нужен холодильник + Маркет для Честного знака.',
       margin: 0.25,
       dailyCost: 3750,
       baseRevenue: 5000,
       requiredServices: ['market', 'ofd'],
+      requiredUpgradeIds: ['cold-case'],
       icon: '🥛',
     },
     {
       id: 'meat',
       name: 'Мясо и рыба',
-      description: 'Ветеринарные сертификаты + Меркурий. Высокая маржа.',
+      description: 'Высокая маржа. Нужны холодильник + морозильник + Меркурий.',
       margin: 0.3,
       dailyCost: 4900,
       baseRevenue: 7000,
       requiredServices: ['market', 'ofd'],
+      requiredUpgradeIds: ['cold-case', 'freezer'],
       requiresVetCert: true,
       icon: '🥩',
     },
     {
       id: 'alcohol',
       name: 'Алкоголь',
-      description: 'Лицензия + ЕГАИС + ОФД + Экстерн. Самая высокая маржа.',
+      description: 'Самая высокая маржа. Нужен алкошкаф + лицензия (ОФД+Экстерн).',
       margin: 0.4,
       dailyCost: 6000,
       baseRevenue: 10000,
       requiredServices: ['ofd', 'extern'],
+      requiredUpgradeIds: ['liquor-cabinet'],
       requiresEgais: true,
       icon: '🍷',
     },
     {
       id: 'tobacco',
       name: 'Табак и вейп',
-      description: 'Маркированная продукция. Стабильный спрос.',
+      description: 'Маркированная продукция в закрытом шкафу.',
       margin: 0.4,
       dailyCost: 3300,
       baseRevenue: 5500,
       requiredServices: ['market', 'ofd'],
+      requiredUpgradeIds: ['tobacco-display'],
       icon: '🚬',
     },
   ],
@@ -59,7 +64,7 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
     {
       id: 'beverages',
       name: 'Напитки',
-      description: 'Кофе, чай, соки. Быстрый оборот, хорошая маржа.',
+      description: 'Кофе, чай, соки. Базовая категория. С кофемашиной — выручка ×1.5.',
       margin: 0.65,
       dailyCost: 1750,
       baseRevenue: 5000,
@@ -69,31 +74,34 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
     {
       id: 'ready-food',
       name: 'Готовая еда',
-      description: 'Блюда по техкартам. Маркет снижает себестоимость на 10%.',
+      description: 'Блюда по техкартам. Нужна кухня + Маркет.',
       margin: 0.5,
       dailyCost: 3500,
       baseRevenue: 7000,
       requiredServices: ['market'],
+      requiredUpgradeIds: ['kitchen'],
       icon: '🍽️',
     },
     {
       id: 'desserts',
       name: 'Десерты и выпечка',
-      description: 'Высокий средний чек. Маркировка не нужна.',
+      description: 'Высокий средний чек. Нужна печь.',
       margin: 0.55,
       dailyCost: 2025,
       baseRevenue: 4500,
       requiredServices: [],
+      requiredUpgradeIds: ['oven'],
       icon: '🧁',
     },
     {
       id: 'alcohol-cafe',
       name: 'Барная карта',
-      description: 'Пиво, вино, коктейли. Лицензия + ОФД + Экстерн.',
+      description: 'Пиво, вино, коктейли. Нужна барная стойка + лицензия (ОФД+Экстерн).',
       margin: 0.45,
       dailyCost: 4400,
       baseRevenue: 8000,
       requiredServices: ['ofd', 'extern'],
+      requiredUpgradeIds: ['bar-counter'],
       requiresEgais: true,
       icon: '🍹',
     },
@@ -102,7 +110,7 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
     {
       id: 'basic-services',
       name: 'Базовые услуги',
-      description: 'Стрижки, укладки, маникюр. Основной доход.',
+      description: 'Стрижки, укладки. Базовая категория — кресло, ножницы, фен.',
       margin: 0.6,
       dailyCost: 2400,
       baseRevenue: 6000,
@@ -112,31 +120,34 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
     {
       id: 'premium-services',
       name: 'Премиум-услуги',
-      description: 'Окрашивание, ламинирование. Маркет помогает с учётом материалов.',
+      description: 'Окрашивание, ламинирование. Нужна окрасочная станция + Маркет.',
       margin: 0.6,
       dailyCost: 3600,
       baseRevenue: 9000,
       requiredServices: ['market'],
+      requiredUpgradeIds: ['coloring-station'],
       icon: '💎',
     },
     {
       id: 'cosmetics',
       name: 'Продажа косметики',
-      description: 'Маркированная продукция. Дополнительный доход.',
+      description: 'Маркированная продукция в витрине. Доп. доход.',
       margin: 0.3,
       dailyCost: 2800,
       baseRevenue: 4000,
       requiredServices: ['market', 'ofd'],
+      requiredUpgradeIds: ['cosmetics-shelf'],
       icon: '💄',
     },
     {
       id: 'spa',
       name: 'SPA-процедуры',
-      description: 'Массаж, обёртывания. Высокий чек, стабильный спрос.',
+      description: 'Массаж, обёртывания. Нужна оборудованная SPA-комната.',
       margin: 0.55,
       dailyCost: 3150,
       baseRevenue: 7000,
       requiredServices: [],
+      requiredUpgradeIds: ['spa-room'],
       icon: '🧖',
     },
   ],
@@ -149,7 +160,33 @@ export interface CategoryRevenueResult {
 }
 
 export function isCategoryAllowed(category: ProductCategory, state: GameState): boolean {
-  return category.requiredServices.every((sId) => state.services?.[sId]?.isActive === true)
+  const servicesOk = category.requiredServices.every((sId) => state.services?.[sId]?.isActive === true)
+  const purchased = new Set(state.purchasedUpgrades ?? [])
+  const upgradesOk = (category.requiredUpgradeIds ?? []).every((u) => purchased.has(u))
+  return servicesOk && upgradesOk
+}
+
+// Returns a human-readable list of what's missing — used in lock UI.
+export function getCategoryLockReasons(category: ProductCategory, state: GameState): string[] {
+  const reasons: string[] = []
+  const SERVICE_NAMES: Record<string, string> = {
+    market: 'Маркет', bank: 'Банк', ofd: 'ОФД',
+    diadoc: 'Диадок', fokus: 'Фокус', elba: 'Эльба', extern: 'Экстерн',
+  }
+  for (const sId of category.requiredServices) {
+    if (!state.services?.[sId]?.isActive) {
+      reasons.push(`Подключить Контур.${SERVICE_NAMES[sId] ?? sId}`)
+    }
+  }
+  const purchased = new Set(state.purchasedUpgrades ?? [])
+  const upgrades = UPGRADES_CONFIG[state.businessType] ?? []
+  for (const u of category.requiredUpgradeIds ?? []) {
+    if (!purchased.has(u)) {
+      const cfg = upgrades.find(up => up.id === u)
+      reasons.push(`Купить ${cfg?.name ?? u}`)
+    }
+  }
+  return reasons
 }
 
 export function calculateCategoryRevenue(state: GameState): CategoryRevenueResult {
@@ -164,11 +201,20 @@ export function calculateCategoryRevenue(state: GameState): CategoryRevenueResul
     if (!enabledIds.includes(cat.id)) continue
 
     const allowed = isCategoryAllowed(cat, state)
-    const cost = cat.dailyCost
-    const fine = allowed ? 0 : Math.round(cat.baseRevenue * 0.1)
-    const revenue = allowed ? cat.baseRevenue : Math.round(cat.baseRevenue * 0.5)
+    if (!allowed) {
+      // Category enabled but its prerequisites aren't met (e.g. service was
+      // toggled off after enabling, or save predates upgrade-gating). Don't
+      // charge cost or earn revenue — show as "blocked" in breakdown so UI can
+      // surface the lock reason. UI also disables the toggle for unmet items
+      // so this is mainly a defence-in-depth guard.
+      breakdown[cat.id] = { revenue: 0, cost: 0, fine: 0, allowed: false }
+      continue
+    }
 
-    breakdown[cat.id] = { revenue, cost, fine, allowed }
+    const cost = cat.dailyCost
+    const revenue = cat.baseRevenue
+
+    breakdown[cat.id] = { revenue, cost, fine: 0, allowed: true }
     totalRevenue += revenue
     totalDailyCost += cost
   }
@@ -179,6 +225,11 @@ export function calculateCategoryRevenue(state: GameState): CategoryRevenueResul
 export function getDefaultCategories(businessType: BusinessType): string[] {
   const cats = PRODUCT_CATEGORIES[businessType]
   if (!cats || cats.length === 0) return []
-  // Enable all categories that require no services by default
-  return cats.filter(c => c.requiredServices.length === 0).map(c => c.id)
+  // Default-enable categories with no dependencies (services AND upgrades both empty).
+  // For shop that's "basic"; for cafe and salon every category now requires equipment,
+  // so the player starts with nothing enabled and must buy first upgrade — onboarding
+  // teaches this via the first tutorial moment.
+  return cats
+    .filter(c => c.requiredServices.length === 0 && (c.requiredUpgradeIds?.length ?? 0) === 0)
+    .map(c => c.id)
 }

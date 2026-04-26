@@ -4,6 +4,7 @@ import { getNPCDefinition } from '../constants/npcs'
 import ResponsiveLayout from './ResponsiveLayout'
 import MobileMainScreen from './MobileMainScreen'
 import { OnboardingPanel } from './OnboardingPanel'
+import { TutorialMoments } from './TutorialMoments'
 import HelpModal from './modals/HelpModal'
 import SettingsModal from './modals/SettingsModal'
 import VictoryModal from './modals/VictoryModal'
@@ -188,7 +189,7 @@ function DashboardView({
             const def = getWeeklyTacticDef(weeklyTactic)
             return def ? (
               <div style={{
-                background: 'linear-gradient(135deg, rgba(255,107,0,0.06) 0%, rgba(255,176,32,0.06) 100%)',
+                background: K.orangeSoft,
                 border: `1px solid ${K.orange}`,
                 borderRadius: 12, padding: '10px 16px',
                 display: 'flex', alignItems: 'center', gap: 12,
@@ -230,10 +231,9 @@ function DashboardView({
           <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr', gap: 10 }}>
             {/* Hero balance card — visually dominant */}
             <div style={{
-              background: `linear-gradient(135deg, ${K.orange} 0%, #FFB020 100%)`,
+              background: K.orange,
               borderRadius: 14, padding: '16px 18px',
               display: 'flex', flexDirection: 'column', gap: 4,
-              boxShadow: '0 4px 14px rgba(255,106,44,0.25)',
             }}>
               <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
                 Баланс
@@ -956,6 +956,8 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
             if (action === 'buy_register') setShowCashRegisterModal(true)
           }}
         />
+
+        <TutorialMoments onNavigate={setActiveView} />
 
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 

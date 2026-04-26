@@ -224,12 +224,12 @@ export function OnboardingPanel({ onNavigate, onAction }: OnboardingPanelProps) 
                 if (targetNav) onNavigate(targetNav)
                 if (step.requiresAction) onAction?.(step.requiresAction)
               }}
+              className="nav-pulse"
               style={{
                 padding: '11px 18px', borderRadius: 10, border: 'none',
                 background: K.orange, color: K.white,
                 fontSize: 13, fontWeight: 800, cursor: 'pointer',
                 fontFamily: 'inherit', flexShrink: 0,
-                boxShadow: '0 2px 6px rgba(255,107,0,0.35)',
               }}
             >
               {actionLabel} →

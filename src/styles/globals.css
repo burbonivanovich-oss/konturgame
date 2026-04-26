@@ -141,12 +141,40 @@ input, select, textarea {
   to   { opacity: 1; }
 }
 
+/* Strong attention pulse — outline stays solid, ring expands outward and fades.
+   Used for "click here next" indicators in nav and action buttons. */
 @keyframes navPulse {
-  0%, 100% { outline-color: rgba(255, 107, 0, 0.9); background-color: rgba(255, 107, 0, 0.08); }
-  50%       { outline-color: rgba(255, 107, 0, 0.3); background-color: rgba(255, 107, 0, 0.18); }
+  0%   { box-shadow: 0 0 0 0 rgba(255, 106, 44, 0.7); background-color: rgba(255, 106, 44, 0.12); }
+  60%  { box-shadow: 0 0 0 14px rgba(255, 106, 44, 0); background-color: rgba(255, 106, 44, 0.08); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 106, 44, 0); background-color: rgba(255, 106, 44, 0.12); }
+}
+
+@keyframes navWiggle {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-1.5px); }
+  40%      { transform: translateX(1.5px); }
+  60%      { transform: translateX(-1px); }
+  80%      { transform: translateX(1px); }
 }
 
 .nav-pulse {
-  animation: navPulse 1.2s ease-in-out infinite;
+  animation: navPulse 1.6s ease-out infinite, navWiggle 2.4s ease-in-out infinite;
+  outline: 2px solid #FF6A2C;
   outline-offset: -2px;
+  position: relative;
+}
+
+/* Floating arrow indicator — points at a target element. Use as ::before
+   pseudo by adding `coach-arrow` class to a wrapping element, or use the
+   <CoachArrow /> component for absolute placement. */
+@keyframes coachArrowBounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+.coach-arrow {
+  display: inline-block;
+  color: #FF6A2C;
+  font-weight: 800;
+  animation: coachArrowBounce 0.9s ease-in-out infinite;
 }

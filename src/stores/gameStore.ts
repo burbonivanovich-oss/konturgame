@@ -48,7 +48,7 @@ const createInitialState = (businessType: BusinessType): GameState => {
     balance: config.startBalance,
     savedBalance: 0,
     reputation: 50,
-    loyalty: 50,
+    loyalty: 55,
     entrepreneurEnergy: ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY,
 
     stock: [],
@@ -176,6 +176,9 @@ const createInitialState = (businessType: BusinessType): GameState => {
     // Narrative systems (v3.1)
     decisionLog: [],
     seenNewspaperWeeks: [],
+
+    // Just-in-time tutorial moments (v6)
+    seenTutorialMoments: [],
 
     // Cliffhanger teaser (v4.0)
     upcomingEventTeaser: null,
@@ -336,6 +339,9 @@ interface GameStoreActions {
   // Narrative systems (v3.1)
   addDecisionLogEntry: (entry: DecisionLogEntry) => void
   addSeenNewspaper: (week: number) => void
+
+  // Tutorial moments (v6) — mark a just-in-time tip as dismissed
+  markTutorialMomentSeen: (id: string) => void
 }
 
 interface GameStore extends GameState, GameStoreActions {}
@@ -884,6 +890,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         // v3.1 narrative systems
         decisionLog: state.decisionLog ?? [],
         seenNewspaperWeeks: state.seenNewspaperWeeks ?? [],
+        // v6 tutorial moments
+        seenTutorialMoments: state.seenTutorialMoments ?? [],
       }
       set(migrated)
       saveToStorage(migrated)
@@ -1333,6 +1341,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
         lastUpdated: Date.now(),
       }))
     },
+
+    markTutorialMomentSeen: (id: string) => {
+      set((state) => {
+        const seen = state.seenTutorialMoments ?? []
+        if (seen.includes(id)) return { lastUpdated: Date.now() }
+        return {
+          seenTutorialMoments: [...seen, id],
+          lastUpdated: Date.now(),
+        }
+      })
+    },
   }))
 
 // LocalStorage persistence
@@ -1372,6 +1391,8 @@ function extractState(state: any): GameState {
     npcs, playerBackstory, activeChainIds, completedChainIds, pendingChainFollowUps,
     // v3.1 narrative
     decisionLog, seenNewspaperWeeks,
+    // v6 tutorial moments
+    seenTutorialMoments,
     // v4.2 onboarding resilience
     skippedOnboardingActions, onboardingEmergencyGrantUsed, lastSavedTimestamp,
     // v4.3 progression fixes
@@ -1441,6 +1462,8 @@ function extractState(state: any): GameState {
     // v3.1 narrative systems
     decisionLog: decisionLog ?? [],
     seenNewspaperWeeks: seenNewspaperWeeks ?? [],
+    // v6 tutorial moments
+    seenTutorialMoments: seenTutorialMoments ?? [],
     // v4.0 teaser
     upcomingEventTeaser: (state as any).upcomingEventTeaser ?? null,
     pendingMilestoneCelebration: (state as any).pendingMilestoneCelebration ?? null,

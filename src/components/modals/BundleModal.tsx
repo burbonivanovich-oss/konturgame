@@ -52,7 +52,7 @@ export default function BundleModal() {
 
         {/* Bundle offer */}
         <div style={{
-          background: `linear-gradient(135deg, ${K.violet}, ${K.blue})`,
+          background: K.violet,
           borderRadius: 20, padding: 20, marginBottom: 24, color: '#fff',
         }}>
           <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.85, marginBottom: 6 }}>

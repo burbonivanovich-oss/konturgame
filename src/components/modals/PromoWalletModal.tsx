@@ -54,7 +54,7 @@ export default function PromoWalletModal({ isOpen, onClose }: PromoWalletModalPr
         {/* Bundle promo */}
         {hasAllServices && (
           <div style={{
-            background: `linear-gradient(135deg, ${K.violet}, ${K.blue})`,
+            background: K.violet,
             borderRadius: 16, padding: 18, color: '#fff',
           }}>
             <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 6, opacity: 0.85 }}>
