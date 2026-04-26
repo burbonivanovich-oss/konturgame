@@ -304,6 +304,19 @@ export function processWeek(state: GameState): DayResult {
     const qualityLoyaltyBonus = getQualityLoyaltyBonus(state)
     dayLoyaltyChange += elbaLoyaltyBonus + synergyMods.loyaltyBonus + qualityLoyaltyBonus + loyaltyUpgradesBonus + tacticLoyaltyPerDay
 
+    // Loyalty soft-cap decay above 70 — without active maintenance, customer
+    // loyalty drifts down. At 70: no decay; at 100: 3/day pull. To plateau
+    // at X, the player needs (X - 70) × 0.10 = sustained daily inflow:
+    //   • +0/day → drifts to 70
+    //   • +1/day → ~80 plateau
+    //   • +2/day → ~90
+    //   • +3/day → 100 (perfect play: service tactic + max quality + synergies)
+    // Loyalty bonuses on upgrades have been removed; loyalty now reflects HOW
+    // you play (tactic, choices, quality), not WHAT you bought.
+    if (state.loyalty > 70) {
+      dayLoyaltyChange -= (state.loyalty - 70) * 0.10
+    }
+
     // 17. Accumulate week results
     weekRevenue += dayRevenue
     weekServed += served

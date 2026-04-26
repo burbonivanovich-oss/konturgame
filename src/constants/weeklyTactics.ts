@@ -37,11 +37,11 @@ export const WEEKLY_TACTICS: WeeklyTacticDef[] = [
     id: 'service',
     icon: '⭐',
     title: 'Качество и сервис',
-    blurb: '−3% выручки, зато +0.8 репутации и +1.5 лояльности в день',
+    blurb: '−3% выручки, +0.8 репутации и +0.5 лояльности в день',
     revenueMultiplier: 0.97,
     energyDelta: 0,
     reputationDelta: 0.8,
-    loyaltyDelta: 1.5,
+    loyaltyDelta: 0.5,
   },
 ]
 
