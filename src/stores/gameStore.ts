@@ -48,7 +48,7 @@ const createInitialState = (businessType: BusinessType): GameState => {
     balance: config.startBalance,
     savedBalance: 0,
     reputation: 50,
-    loyalty: 50,
+    loyalty: 55,
     entrepreneurEnergy: ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY,
 
     stock: [],

@@ -40,7 +40,7 @@ function makeGameState(overrides: Partial<GameState> = {}): GameState {
     savedBalance: 0,
     reputation: 50,
     entrepreneurEnergy: 100,
-    loyalty: 50,
+    loyalty: 55,
     stock: [],
     stockBatches: [],
     capacity: 35,
