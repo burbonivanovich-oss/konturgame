@@ -124,20 +124,10 @@ function getNarrativeEnding(
   }
 }
 
-const SERVICE_LABELS: Record<string, string> = {
-  market: 'Контур.Маркет',
-  ofd:    'Контур.ОФД',
-  elba:   'Контур.Эльба',
-  bank:   'Контур.Банк',
-  diadoc: 'Контур.Диадок',
-  fokus:  'Контур.Фокус',
-  extern: 'Контур.Экстерн',
-}
-
 export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
   const {
     startNewGame, currentWeek, balance, reputation, gameOverReason,
-    playerBackstory, npcs, completedChainIds, totalPainLosses, personalGoal,
+    playerBackstory, npcs, completedChainIds, personalGoal,
     decisionLog, newlyUnlockedLessons, triggeredEventIds, victoryType,
   } = useGameStore()
 
@@ -240,18 +230,14 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
             border: `1px solid ${accentColor}`,
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 12 }}>
-              <span style={{ color: K.muted }}>Неделя:</span>
-              <span style={{ fontWeight: 700, color: K.ink }}>{currentWeek}</span>
+              <span style={{ color: K.muted }}>Прожито недель:</span>
+              <span style={{ fontWeight: 700, color: K.ink }}>{currentWeek} / 52</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
               <span style={{ color: K.muted }}>Финальный баланс:</span>
               <span style={{ fontWeight: 700, color: balance >= 0 ? K.ink : K.bad }}>
                 {balance.toLocaleString('ru-RU')} ₽
               </span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 12 }}>
-              <span style={{ color: K.muted }}>Репутация:</span>
-              <span style={{ fontWeight: 700, color: K.ink }}>{reputation}/100</span>
             </div>
           </div>
 
@@ -292,38 +278,9 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
 
           {isVictory && (
             <p style={{ fontSize: 14, color: K.muted, marginBottom: 24, lineHeight: 1.6 }}>
-              Вы успешно управляли бизнесом и освоили экосистему Контура!
+              Вы дожили до конца года и освоили экосистему Контура.
             </p>
           )}
-          {!isVictory && totalPainLosses && totalPainLosses.total > 0 && (() => {
-            const top3 = Object.entries(SERVICE_LABELS)
-              .map(([key, label]) => ({ label, loss: (totalPainLosses as any)[key] as number ?? 0 }))
-              .filter(x => x.loss > 0)
-              .sort((a, b) => b.loss - a.loss)
-              .slice(0, 3)
-            return top3.length > 0 ? (
-              <div style={{
-                textAlign: 'left',
-                background: K.orangeSoft,
-                border: `1px solid ${K.orange}`,
-                borderRadius: 12, padding: '14px 18px', marginBottom: 16,
-              }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: K.orange, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
-                  За всю игру потеряно без Контура
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {top3.map(({ label, loss }) => (
-                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                      <span style={{ color: K.ink2 }}>{label}</span>
-                      <span style={{ fontWeight: 700, color: K.bad, fontVariantNumeric: 'tabular-nums' }}>
-                        −{loss.toLocaleString('ru-RU')} ₽
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null
-          })()}
           {/* Goal closure scene — what happened to the personal dream */}
           {goalClosure && (
             <div style={{

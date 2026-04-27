@@ -32,7 +32,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 const WAVES = [1, 2, 3, 4] as const
 
 export default function AchievementsModal({ isOpen, onClose }: AchievementsModalProps) {
-  const { achievements, level, experience, currentWeek } = useGameStore()
+  const { achievements, currentWeek } = useGameStore()
 
   const totalCount = ACHIEVEMENTS.length
   const unlockedCount = achievements.length
@@ -52,7 +52,7 @@ export default function AchievementsModal({ isOpen, onClose }: AchievementsModal
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             marginBottom: 12, fontSize: 13, fontWeight: 700,
           }}>
-            <span>Уровень {level} · {experience} опыта · неделя {currentWeek}</span>
+            <span>Неделя {currentWeek} / 52</span>
             <span style={{ color: K.violet }}>{unlockedCount}/{totalCount}</span>
           </div>
           <div style={{ height: 8, background: K.line, borderRadius: 999, overflow: 'hidden', marginBottom: 8 }}>
