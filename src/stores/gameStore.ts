@@ -133,10 +133,6 @@ const createInitialState = (businessType: BusinessType): GameState => {
     // Weekly micro event (passive feed)
     lastWeekMicroEvent: null,
 
-    // Suppliers system (NEW v2.0)
-    suppliers: [],
-    activeSupplierId: null,
-
     // Employees system (NEW v2.0)
     employees: [],
 
@@ -1370,7 +1366,7 @@ function extractState(state: any): GameState {
     cashRegisters, enabledCategories, promoCodesRevealed,
     daysBalanceNegative, competitorEventTriggered, lastDayPainLosses, bundlePromoShown,
     // v2.0 new fields
-    suppliers, activeSupplierId, employees, qualityLevel, weeksSinceCompetitorEvent,
+    employees, qualityLevel, weeksSinceCompetitorEvent,
     // v2.1 new fields
     loans,
     // v2.2 new fields
@@ -1426,8 +1422,6 @@ function extractState(state: any): GameState {
     bundlePromoShown: bundlePromoShown ?? false,
     lastWeekMicroEvent: null,
     // v2.0 fields with defaults for save compatibility
-    suppliers: suppliers ?? [],
-    activeSupplierId: activeSupplierId ?? null,
     employees: employees ?? [],
     qualityLevel: qualityLevel ?? 50,
     weeksSinceCompetitorEvent: weeksSinceCompetitorEvent ?? 0,

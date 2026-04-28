@@ -54,8 +54,6 @@ const ACHIEVEMENT_CHECKS: Record<string, CheckFn> = {
     s.chosenEventOptions?.['NPC_ANNA_CRISIS'] === 'lend_kindness',
   choice_svetlana_partner: (s) =>
     s.chosenEventOptions?.['NPC_SVETLANA_POACHED'] === 'partner_share',
-  choice_gleb_recorded: (s) =>
-    s.chosenEventOptions?.['NPC_GLEB_SCANDAL'] === 'go_public',
 
   // Goal achievements
   goal_achieved: (s) => s.personalGoal?.achieved === true,

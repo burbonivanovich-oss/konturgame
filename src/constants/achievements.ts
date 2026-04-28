@@ -313,14 +313,6 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     category: 'special',
     wave: 1,
   },
-  {
-    id: 'choice_gleb_recorded',
-    name: 'Записал шантажиста',
-    description: 'Записали разговор с Глебом и выложили — не дали ему развернуться',
-    icon: '🎙️',
-    category: 'special',
-    wave: 1,
-  },
 
   // Goal achievements (v5.4)
   {

@@ -59,8 +59,6 @@ function makeState(activeServices: ServiceType[] = []): GameState {
     lastDayPainLosses: null,
     bundlePromoShown: false,
     weeklyEnergyRestored: false,
-    suppliers: [],
-    activeSupplierId: null,
     employees: [],
     qualityLevel: 50,
     weeksSinceCompetitorEvent: 0,

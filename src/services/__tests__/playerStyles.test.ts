@@ -79,8 +79,6 @@ function makeGameState(overrides: Partial<GameState> = {}): GameState {
     bundlePromoShown: false,
     weeklyEnergyRestored: false,
     weekPhase: 'actions' as const,
-    suppliers: [],
-    activeSupplierId: null,
     employees: [],
     qualityLevel: 50,
     weeksSinceCompetitorEvent: 0,

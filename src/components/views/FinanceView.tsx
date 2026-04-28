@@ -88,15 +88,8 @@ export function FinanceView() {
     ...(lastDayResult.registerOverflowPenalty > 0 ? [{ label: 'Штраф за очередь (касса)', value: lastDayResult.registerOverflowPenalty }] : []),
   ] : []
 
-  const painItems = lastDayResult ? [
-    ...(lastDayResult.painLossBankMissed > 0 ? [{ label: 'Без Банка: 40% клиентов платят наличными', value: lastDayResult.painLossBankMissed }] : []),
-    ...(lastDayResult.painLossMarketInventory > 0 ? [{ label: 'Без Маркета: ошибки ручного учёта', value: lastDayResult.painLossMarketInventory }] : []),
-    ...(lastDayResult.painLossOfdFine > 0 ? [{ label: 'Без ОФД: штраф налоговой', value: lastDayResult.painLossOfdFine }] : []),
-    ...(lastDayResult.painLossDiadocDelay > 0 ? [{ label: 'Без Диадока: задержка поставки', value: lastDayResult.painLossDiadocDelay }] : []),
-    ...(lastDayResult.painLossFokusBadSupplier > 0 ? [{ label: 'Без Фокуса: ненадёжный поставщик', value: lastDayResult.painLossFokusBadSupplier }] : []),
-    ...(lastDayResult.painLossElbaFine > 0 ? [{ label: 'Без Эльбы: штраф за ошибку в декларации', value: lastDayResult.painLossElbaFine }] : []),
-    ...(lastDayResult.painLossExternBlock > 0 ? [{ label: 'Без Экстерна: блокировка счёта', value: lastDayResult.painLossExternBlock }] : []),
-  ] : []
+  // Pain losses retired (step 6) — kept the empty array for the JSX guard.
+  const painItems: { label: string; value: number }[] = []
 
   return (
     <div style={{
@@ -212,31 +205,6 @@ export function FinanceView() {
                     }}>
                       <span style={{ fontSize: 13, fontWeight: 600, color: K.muted }}>{item.label}</span>
                       <span style={{ fontSize: 13, fontWeight: 700, color: K.bad }} className="k-num">
-                        −{item.value.toLocaleString('ru-RU')} ₽
-                      </span>
-                    </div>
-                  ))}
-                </>
-              )}
-
-              {/* Pain losses */}
-              {painItems.length > 0 && (
-                <>
-                  <div style={{
-                    fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
-                    color: K.bad, marginTop: 8,
-                  }}>
-                    ⚠️ ПОТЕРИ БЕЗ СЕРВИСОВ КОНТУРА
-                  </div>
-                  {painItems.map((item, i) => (
-                    <div key={i} style={{
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      padding: '6px 10px', borderRadius: 10,
-                      background: `${K.bad}0f`,
-                      borderLeft: `3px solid ${K.bad}66`,
-                    }}>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: K.muted, flex: 1 }}>{item.label}</span>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: K.bad, flexShrink: 0 }} className="k-num">
                         −{item.value.toLocaleString('ru-RU')} ₽
                       </span>
                     </div>

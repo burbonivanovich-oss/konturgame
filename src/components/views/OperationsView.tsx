@@ -66,8 +66,8 @@ export default function OperationsView({ onShowHireModal }: OperationsViewProps)
     }}>
       {/* Page header */}
       <div>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>УПРАВЛЕНИЕ</div>
-        <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.025em' }}>Операции</div>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>СОСТАВ БИЗНЕСА</div>
+        <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.025em' }}>Кто и что у вас работает</div>
       </div>
 
       {/* Cash registers — needed for legal POS, onboarding-targeted at stage 1 */}

@@ -27,7 +27,7 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
   const {
     currentWeek, balance, lastDayResult, services, achievements,
     upcomingEventTeaser, pendingMilestoneCelebration,
-    lastWeekPainLosses, lastWeekMicroEvent, npcs, lastDiaryEntry,
+    lastWeekMicroEvent, npcs, lastDiaryEntry,
   } = useGameStore()
 
   if (!lastDayResult) return null
@@ -203,51 +203,6 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
           ))}
         </div>
 
-        {/* Pain losses — show weeks 1-5 as motivator */}
-        {lastWeekPainLosses && lastWeekPainLosses.total > 0 && currentWeek <= 6 && (
-          <div style={{
-            background: K.orangeSoft,
-            border: `1px solid ${K.orange}`,
-            borderRadius: 12, padding: '14px 18px',
-            display: 'flex', flexDirection: 'column', gap: 8,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 15 }}>⚠️</span>
-              <div style={{ fontSize: 12, fontWeight: 700, color: K.orange }}>
-                Без сервисов Контура потеряно: <span style={{ fontSize: 14 }}>{lastWeekPainLosses.total.toLocaleString('ru-RU')} ₽</span>
-              </div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {(
-                [
-                  { key: 'market', label: 'Контур.Маркет' },
-                  { key: 'ofd',    label: 'Контур.ОФД' },
-                  { key: 'elba',   label: 'Контур.Эльба' },
-                  { key: 'bank',   label: 'Контур.Банк' },
-                  { key: 'diadoc', label: 'Контур.Диадок' },
-                  { key: 'fokus',  label: 'Контур.Фокус' },
-                  { key: 'extern', label: 'Контур.Экстерн' },
-                ] as const
-              )
-                .filter(s => (lastWeekPainLosses as any)[s.key] > 0)
-                .sort((a, b) => (lastWeekPainLosses as any)[b.key] - (lastWeekPainLosses as any)[a.key])
-                .slice(0, 3)
-                .map(s => (
-                  <div key={s.key} style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    fontSize: 12, color: K.orange,
-                  }}>
-                    <span style={{ fontWeight: 500 }}>{s.label}</span>
-                    <span style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
-                      −{(lastWeekPainLosses as any)[s.key].toLocaleString('ru-RU')} ₽
-                    </span>
-                  </div>
-                ))
-              }
-            </div>
-          </div>
-        )}
-
         {/* Weekly micro event */}
         {lastWeekMicroEvent && (
           <div style={{
@@ -293,10 +248,11 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
           if (allies.length === 0) return null
           const bonuses: Record<string, string> = {
             mikhail: 'Хорошая цена на поставки',
-            svetlana: '+1 лояльности / нед',
-            marina: '+1 репутации / нед',
-            viktor: 'Льготные условия в банке',
+            svetlana: 'Команда не уходит',
             petrov: 'Лояльность при проверках',
+            anna: 'Перемирие на улице',
+            tamara: 'Тёплое лицо вашего бизнеса',
+            gena: 'Иногда заходит — иногда полезно',
           }
           const visible = allies.filter(n => bonuses[n.id])
           if (visible.length === 0) return null

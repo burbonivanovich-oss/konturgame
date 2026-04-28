@@ -70,8 +70,6 @@ describe('Game Types', () => {
       weekPhase: 'actions' as const,
       purchasedOwnerItems: [],
       ownerSubscriptions: [],
-      suppliers: [],
-      activeSupplierId: null,
       employees: [],
       qualityLevel: 50,
       weeksSinceCompetitorEvent: 0,

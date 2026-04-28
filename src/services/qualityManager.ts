@@ -1,5 +1,4 @@
 import type { GameState } from '../types/game'
-import { getQualityModifier } from './supplierManager'
 import { getEmployeeCapacityBonus } from './employeeManager'
 
 /**
@@ -14,11 +13,9 @@ export function initializeQuality(): number {
  */
 export function calculateQualityLevel(state: GameState): number {
   let quality = state.qualityLevel ?? 50
-  
-  // Factor 1: Supplier quality modifier (+/- 20 points)
-  const supplierMod = getQualityModifier(state) * 100
-  quality += supplierMod
-  
+
+  // (Supplier-tier modifier removed — supplier system was dormant and is gone.)
+
   // Factor 2: Employee efficiency bonus
   if (state.employees.length > 0) {
     const empBonus = (getEmployeeCapacityBonus(state) - state.employees.length) * 10
@@ -100,15 +97,9 @@ export function updateQualityWeekly(state: GameState): void {
   
   // Natural decay towards baseline (50) if no active management
   let newQuality = currentQuality
-  
-  // If using premium supplier, quality slowly increases
-  const supplierMod = getQualityModifier(state)
-  if (supplierMod > 0) {
-    newQuality += 1
-  } else if (supplierMod < 0) {
-    newQuality -= 1
-  }
-  
+
+  // (Supplier weekly nudge removed alongside the dormant supplier system.)
+
   // Employee impact
   if (state.employees.length > 0) {
     const avgEfficiency = getEmployeeCapacityBonus(state) / state.employees.length

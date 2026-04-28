@@ -2,16 +2,20 @@ import { useGameStore } from '../stores/gameStore'
 import { useMemo } from 'react'
 import { ECONOMY_CONSTANTS } from '../constants/business'
 import { getBusinessStage, STAGE_CONFIG, getNextStage } from '../constants/businessStages'
+import { getBusinessHealth } from '../services/businessHealth'
 import { K } from './design-system/tokens'
 
-function getStatusColor(value: number): { color: string; icon: string } {
-  if (value >= 70) return { color: K.mint, icon: '✓' }
-  if (value >= 40) return { color: K.orange, icon: '!' }
-  return { color: K.bad, icon: '⚠' }
+function statusColor(value: number): string {
+  if (value >= 70) return K.mint
+  if (value >= 40) return K.orange
+  return K.bad
 }
 
 export default function Indicators() {
-  const { reputation, loyalty, stockBatches, capacity, lastDayResult, balance, entrepreneurEnergy, restoreEnergyAtWeekStart, qualityLevel, currentWeek, level } = useGameStore()
+  const {
+    stockBatches, capacity, lastDayResult, balance, entrepreneurEnergy,
+    currentWeek, level,
+  } = useGameStore()
   const { addBalance, addLoyalty } = useGameStore()
 
   const stockLevel = useMemo(() => {
@@ -31,15 +35,18 @@ export default function Indicators() {
     }
   }
 
-  const repColor = getStatusColor(reputation)
-  const loyaltyColor = getStatusColor(loyalty)
-  const stockColor = getStatusColor(stockLevel)
-  const energyColor = getStatusColor(entrepreneurEnergy)
-  const qualityColor = getStatusColor(qualityLevel)
+  const stockColorVal = statusColor(stockLevel)
+  const energyColor = statusColor(entrepreneurEnergy)
   const stage = getBusinessStage(currentWeek, level)
   const stageConfig = STAGE_CONFIG[stage]
   const nextStage = getNextStage(stage)
   const nextStageConfig = nextStage ? STAGE_CONFIG[nextStage] : null
+
+  const health = getBusinessHealth(useGameStore.getState())
+  const healthColor = health.tone === 'good' ? K.mint
+    : health.tone === 'warn' ? K.orange
+    : health.tone === 'bad' ? K.bad
+    : K.ink2
 
   const servedPct = lastDayResult && lastDayResult.clients > 0
     ? Math.round((lastDayResult.served / lastDayResult.clients) * 100)
@@ -47,53 +54,31 @@ export default function Indicators() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {/* Репутация */}
+      {/* Business health — single qualitative read replaces three numerical bars
+          (reputation / loyalty / quality). Numbers still live in state and
+          drive every mechanic, the player just feels them through this card
+          and through events. */}
       <div style={{
         background: K.white, borderRadius: 16, padding: 16,
-        display: 'flex', flexDirection: 'column', gap: 8,
+        display: 'flex', flexDirection: 'column', gap: 6,
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em' }}>⭐ РЕПУТАЦИЯ</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: repColor.color }} className="k-num">
-            {reputation}/100
-          </div>
+        <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em' }}>
+          СОСТОЯНИЕ
         </div>
-        <div style={{
-          height: 6, background: K.line, borderRadius: 999, overflow: 'hidden',
-        }}>
-          <div style={{
-            height: '100%', background: repColor.color, width: `${reputation}%`,
-            transition: 'width 0.3s ease',
-          }}/>
+        <div style={{ fontSize: 18, fontWeight: 800, color: healthColor }}>
+          {health.label}
         </div>
-      </div>
-
-      {/* Лояльность */}
-      <div style={{
-        background: K.white, borderRadius: 16, padding: 16,
-        display: 'flex', flexDirection: 'column', gap: 8,
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em' }}>❤️ ЛОЯЛЬНОСТЬ</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: loyaltyColor.color }} className="k-num">
-            {loyalty}/100
-          </div>
+        <div style={{ fontSize: 11, opacity: 0.7, lineHeight: 1.4 }}>
+          {health.hint}
         </div>
-        <div style={{
-          height: 6, background: K.line, borderRadius: 999, overflow: 'hidden',
-        }}>
-          <div style={{
-            height: '100%', background: loyaltyColor.color, width: `${loyalty}%`,
-            transition: 'width 0.3s ease',
-          }}/>
-        </div>
-        {loyalty < 70 && premiumCost > 0 && (
+        {premiumCost > 0 && (
           <button
             onClick={handlePremium}
             disabled={balance < premiumCost}
             style={{
-              marginTop: 8, width: '100%', padding: '8px 12px', borderRadius: 10,
-              fontSize: 11, fontWeight: 700, border: 'none', cursor: balance >= premiumCost ? 'pointer' : 'not-allowed',
+              marginTop: 6, width: '100%', padding: '8px 12px', borderRadius: 10,
+              fontSize: 11, fontWeight: 700, border: 'none',
+              cursor: balance >= premiumCost ? 'pointer' : 'not-allowed',
               background: balance >= premiumCost ? K.orange : K.line,
               color: balance >= premiumCost ? K.ink : K.muted,
               transition: 'opacity 0.2s',
@@ -110,8 +95,8 @@ export default function Indicators() {
         display: 'flex', flexDirection: 'column', gap: 8,
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em' }}>⚡ ВЫГОРАНИЕ</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: energyColor.color }} className="k-num">
+          <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em' }}>⚡ ЭНЕРГИЯ</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: energyColor }} className="k-num">
             {entrepreneurEnergy}/100
           </div>
         </div>
@@ -119,7 +104,7 @@ export default function Indicators() {
           height: 6, background: K.line, borderRadius: 999, overflow: 'hidden',
         }}>
           <div style={{
-            height: '100%', background: energyColor.color, width: `${entrepreneurEnergy}%`,
+            height: '100%', background: energyColor, width: `${entrepreneurEnergy}%`,
             transition: 'width 0.3s ease',
           }}/>
         </div>
@@ -135,7 +120,7 @@ export default function Indicators() {
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em' }}>📦 СКЛАД</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: stockColor.color }} className="k-num">
+          <div style={{ fontSize: 14, fontWeight: 800, color: stockColorVal }} className="k-num">
             {stockLevel}%
           </div>
         </div>
@@ -143,33 +128,9 @@ export default function Indicators() {
           height: 6, background: K.line, borderRadius: 999, overflow: 'hidden',
         }}>
           <div style={{
-            height: '100%', background: stockColor.color, width: `${stockLevel}%`,
+            height: '100%', background: stockColorVal, width: `${stockLevel}%`,
             transition: 'width 0.3s ease',
           }}/>
-        </div>
-      </div>
-
-      {/* Качество услуг */}
-      <div style={{
-        background: K.white, borderRadius: 16, padding: 16,
-        display: 'flex', flexDirection: 'column', gap: 8,
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em' }}>✨ КАЧЕСТВО</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: qualityColor.color }} className="k-num">
-            {qualityLevel}/100
-          </div>
-        </div>
-        <div style={{
-          height: 6, background: K.line, borderRadius: 999, overflow: 'hidden',
-        }}>
-          <div style={{
-            height: '100%', background: qualityColor.color, width: `${qualityLevel}%`,
-            transition: 'width 0.3s ease',
-          }}/>
-        </div>
-        <div style={{ fontSize: 10, opacity: 0.6, lineHeight: 1.3 }}>
-          Зависит от поставщика и уровня сотрудников. Влияет на репутацию, лояльность и чек.
         </div>
       </div>
 
@@ -183,7 +144,7 @@ export default function Indicators() {
         <div style={{ fontSize: 11, opacity: 0.7, lineHeight: 1.3 }}>{stageConfig.description}</div>
         {nextStageConfig && (
           <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2 }}>
-            Далее: {nextStageConfig.label} · нед. {nextStageConfig.weeksMin} · ур. {nextStageConfig.levelMin}
+            Далее: {nextStageConfig.label}
           </div>
         )}
       </div>
