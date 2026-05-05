@@ -914,9 +914,9 @@ export function generateEvent(day: number, state: GameState): Event | null {
       const npc = (state.npcs ?? []).find(n => n.id === template.npcId)
       if (template.trigger.requiresNpcRevealed && (!npc || !npc.isRevealed)) continue
       if (template.trigger.npcRelationshipMin !== undefined &&
-          (!npc || npc.relationshipLevel < template.trigger.npcRelationshipMin)) continue
+          (!npc || (npc.relationshipLevel ?? 50) < template.trigger.npcRelationshipMin)) continue
       if (template.trigger.npcRelationshipMax !== undefined &&
-          (!npc || npc.relationshipLevel > template.trigger.npcRelationshipMax)) continue
+          (!npc || (npc.relationshipLevel ?? 50) > template.trigger.npcRelationshipMax)) continue
     }
 
     candidates.push(template)

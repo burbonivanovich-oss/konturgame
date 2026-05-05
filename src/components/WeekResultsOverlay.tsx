@@ -289,7 +289,7 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
 
         {/* Active NPC allies */}
         {(() => {
-          const allies = (npcs ?? []).filter(n => n.isRevealed && n.relationshipLevel >= 60)
+          const allies = (npcs ?? []).filter(n => n.isRevealed && (n.relationshipLevel ?? 50) >= 60)
           if (allies.length === 0) return null
           const bonuses: Record<string, string> = {
             mikhail: 'Хорошая цена на поставки',

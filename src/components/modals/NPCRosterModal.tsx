@@ -1,6 +1,6 @@
 import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
-import { NPC_DEFINITIONS, getNPCDefinition } from '../../constants/npcs'
+import { NPC_DEFINITIONS, getNpcDefinition } from '../../constants/npcs'
 import { K } from '../design-system/tokens'
 
 interface NPCRosterModalProps {
@@ -35,7 +35,7 @@ export default function NPCRosterModal({ isOpen, onClose }: NPCRosterModalProps)
         {NPC_DEFINITIONS.map(def => {
           const npc = npcs.find(n => n.id === def.id)
           const isRevealed = npc?.isRevealed ?? false
-          const level = npc?.relationshipLevel ?? def.startRelationship
+          const level = npc?.relationshipLevel ?? def.startRelationship ?? 50
           const band = relationshipBand(level)
           const recentMemory = (npc?.memory ?? []).slice(-3).reverse()
 
@@ -157,4 +157,4 @@ export default function NPCRosterModal({ isOpen, onClose }: NPCRosterModalProps)
   )
 }
 
-export { getNPCDefinition }
+export { getNpcDefinition }

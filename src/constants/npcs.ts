@@ -1,80 +1,98 @@
-import type { NPC, NpcRole } from '../types/game'
+import type { NPC, NpcId, NpcRole } from '../types/game'
 
-export interface NPCDefinition {
-  id: string
+// 8 NPCs total — 6 mechanically functional + 2 narrative-only.
+// Each NPC has 3-5 episodes triggered at specific game weeks. After all
+// episodes resolve, the NPC fades to background (no daily/weekly upkeep).
+
+export interface NpcDefinition {
+  id: NpcId
   name: string
   role: NpcRole
   portrait: string
-  shortRole: string
-  personality: string
-  startRelationship: number
+  shortBlurb: string
+  // Mechanical hook this NPC gates. UI surfaces it so players know what
+  // meeting them unlocks.
+  unlocks: string
+  // Legacy fields kept for older UI code that still reads them. Modern UI
+  // should use shortBlurb/unlocks; these mirror them so nothing breaks.
+  shortRole?: string
+  personality?: string
+  startRelationship?: number
 }
 
-export const NPC_DEFINITIONS: NPCDefinition[] = [
+export const NPC_DEFINITIONS: NpcDefinition[] = [
   {
-    id: 'mikhail',
-    name: 'Михаил Власов',
-    role: 'supplier',
-    portrait: '👨‍💼',
-    shortRole: 'Ваш поставщик',
-    personality: 'Работает на рынке 12 лет. Семейный человек, помнит добро и зло. Надёжный — пока его не прижмут.',
-    startRelationship: 50,
-  },
-  {
-    id: 'svetlana',
-    name: 'Светлана Орлова',
-    role: 'employee',
+    id: 'katya',
+    name: 'Катя',
+    role: 'accountant',
     portrait: '👩‍💼',
-    shortRole: 'Лучший продавец',
-    personality: 'Амбициозная и умная. Хочет расти и учиться. Если её не замечать — уйдёт к тому, кто заметит.',
-    startRelationship: 60,
-  },
-  {
-    id: 'petrov',
-    name: 'Инспектор Петров',
-    role: 'inspector',
-    portrait: '👮',
-    shortRole: 'Налоговый инспектор',
-    personality: 'Формальный и дотошный. Уважает тех, кто соблюдает закон. Помнит нарушителей.',
-    startRelationship: 40,
-  },
-  {
-    id: 'anna',
-    name: 'Анна Козлова',
-    role: 'competitor',
-    portrait: '👩',
-    shortRole: 'Конкурент',
-    personality: 'Открыла бизнес рядом специально. Умная и агрессивная, но умеет договариваться.',
-    startRelationship: 20,
-  },
-  {
-    id: 'marina',
-    name: 'Марина Воронова',
-    role: 'consultant',
-    portrait: '👩‍💻',
-    shortRole: 'Маркетолог-консультант',
-    personality: 'Фрилансер с 6-летним опытом в digital-рекламе. Обаятельная, говорит убедительно. Результаты бывают разными — зависит от того, насколько глубоко она поймёт ваш бизнес.',
-    startRelationship: 45,
+    shortBlurb: 'Подруга со школы, теперь бухгалтер',
+    unlocks: 'Ускоряет Эльбу + защита от налогового кризиса',
   },
   {
     id: 'viktor',
-    name: 'Виктор Семёнов',
-    role: 'banker',
-    portrait: '🏦',
-    shortRole: 'Менеджер банка',
-    personality: 'Менеджер местного отделения банка. Вежливый и обстоятельный. Умеет находить решения — но всегда в интересах банка прежде всего.',
-    startRelationship: 50,
+    name: 'Виктор',
+    role: 'competitor',
+    portrait: '🧔',
+    shortBlurb: 'Сосед-предприниматель, открывает магазин рядом',
+    unlocks: 'Весь конкурент-контент игры',
   },
   {
-    id: 'gleb',
-    name: 'Глеб Котов',
-    role: 'blogger',
-    portrait: '📱',
-    shortRole: 'Блогер',
-    personality: '23 года, 18 тысяч подписчиков в соцсетях. Пишет про жизнь района. Ищет контент — честный или скандальный, ему всё равно.',
-    startRelationship: 30,
+    id: 'denis',
+    name: 'Денис',
+    role: 'investor',
+    portrait: '🧑‍🎓',
+    shortBlurb: 'Однокурсник, ушёл в IT и поднялся',
+    unlocks: 'Беспроцентный займ + альтернативный финал',
+  },
+  {
+    id: 'irina',
+    name: 'Ирина Петровна',
+    role: 'mentor',
+    portrait: '👩‍🏫',
+    shortBlurb: 'Мама подруги, ведёт свой салон 20 лет',
+    unlocks: 'Boost soft-метрик (репутация, лояльность)',
+  },
+  {
+    id: 'artyom',
+    name: 'Артём',
+    role: 'colleague',
+    portrait: '🧑‍💻',
+    shortBlurb: 'Бывший коллега по корпоративной жизни',
+    unlocks: 'VIP-сотрудник с двойной эффективностью',
+  },
+  {
+    id: 'mikhail',
+    name: 'Михаил Сергеевич',
+    role: 'supplier',
+    portrait: '👨‍🌾',
+    shortBlurb: 'Поставщик-старичок, работает с района 30 лет',
+    unlocks: '−10% к закупкам всех категорий',
+  },
+  {
+    id: 'tamara',
+    name: 'Бабушка Тамара',
+    role: 'customer',
+    portrait: '👵',
+    shortBlurb: 'Постоянная клиентка, заходит каждую неделю',
+    unlocks: 'Человеческое лицо твоего бизнеса',
+  },
+  {
+    id: 'gena',
+    name: 'Гена',
+    role: 'schemer',
+    portrait: '🤙',
+    shortBlurb: 'Парень в спортивных штанах с очередным проектом века',
+    unlocks: 'Комический риск-менеджмент (опционально)',
   },
 ]
+
+// Auto-fill legacy fields from new ones so old UI code still finds them.
+NPC_DEFINITIONS.forEach(def => {
+  if (def.shortRole === undefined) def.shortRole = def.shortBlurb
+  if (def.personality === undefined) def.personality = def.shortBlurb
+  if (def.startRelationship === undefined) def.startRelationship = 50
+})
 
 export function createInitialNPCs(): NPC[] {
   return NPC_DEFINITIONS.map(def => ({
@@ -82,12 +100,18 @@ export function createInitialNPCs(): NPC[] {
     name: def.name,
     role: def.role,
     portrait: def.portrait,
-    relationshipLevel: def.startRelationship,
     isRevealed: false,
-    memory: [],
+    modifiers: [],
+    completedEpisodes: [],
+    relationshipLevel: 50,  // legacy field for backwards-compat UI
   }))
 }
 
-export function getNPCDefinition(id: string): NPCDefinition | undefined {
-  return NPC_DEFINITIONS.find(d => d.id === id)
+export function getNpcDefinition(id: NpcId): NpcDefinition | undefined {
+  return NPC_DEFINITIONS.find(n => n.id === id)
+}
+
+// Helper: sum of all modifier values for an NPC = effective opinion
+export function getNpcOpinion(npc: NPC): number {
+  return npc.modifiers.reduce((sum, m) => sum + m.value, 0)
 }

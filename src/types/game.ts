@@ -1,6 +1,19 @@
 export type BusinessType = 'shop' | 'cafe' | 'beauty-salon'
 
-export type NpcRole = 'supplier' | 'employee' | 'inspector' | 'competitor' | 'consultant' | 'banker' | 'blogger'
+// 6 functional NPCs each gate one mechanic + 2 narrative-only NPCs (drama,
+// comedy). New model replaces 0-100 friendship grinding with a CK3-style
+// list of visible modifiers ("Катя помнит: помог с депозитом +20").
+export type NpcId =
+  | 'katya'      // друг-бухгалтер: ускоряет Эльбу, защищает от налогового кризиса
+  | 'viktor'     // сосед-конкурент: весь конкурент-контент
+  | 'denis'      // друг-инвестор: 0% займы, альт-финал
+  | 'irina'      // мама-наставница: boost soft-метрик
+  | 'artyom'     // бывший коллега: VIP-сотрудник ×2
+  | 'mikhail'    // поставщик-старичок: −10% costs категорий
+  | 'tamara'     // бабушка Тамара: эмоциональный якорь (drama)
+  | 'gena'       // Гена-инвестор: комический рефрен (comedy)
+
+export type NpcRole = 'accountant' | 'competitor' | 'investor' | 'mentor' | 'colleague' | 'supplier' | 'customer' | 'schemer'
 
 export type BackstoryMotivation = 'corp' | 'contest' | 'accident'
 export type BackstoryPersonal = 'free' | 'friend' | 'hometown'
@@ -15,22 +28,36 @@ export interface DecisionLogEntry {
   npcId?: string
 }
 
+// Legacy shape kept for save migration only — not used in new flow.
 export interface NpcMemoryEntry {
   week: number
   eventId: string
   choiceId: string
   note: string
-  isAnchor?: boolean  // anchor entries are never evicted by the 10-entry limit
+  isAnchor?: boolean
+}
+
+// New: each NPC has a stack of visible modifiers explaining their opinion.
+// "Катя помнит: помог с депозитом +20, проигнорировал просьбу −10".
+// Sum of values is the effective opinion (no more invisible 0-100 number).
+export interface NpcModifier {
+  reason: string         // "Помог с депозитом", "Отказался от Диадока"
+  value: number          // -50..+50, signed
+  week: number           // when it was added (for sorting, decay if needed)
 }
 
 export interface NPC {
-  id: string
+  id: NpcId
   name: string
   role: NpcRole
   portrait: string
-  relationshipLevel: number  // 0-100
   isRevealed: boolean
-  memory: NpcMemoryEntry[]
+  modifiers: NpcModifier[]
+  // Episodes the player has completed (e.g. ['katya_meet', 'katya_deposit'])
+  completedEpisodes: string[]
+  // Legacy field kept for save migration; not used in new flow.
+  relationshipLevel?: number
+  memory?: NpcMemoryEntry[]
 }
 
 export interface PlayerBackstory {

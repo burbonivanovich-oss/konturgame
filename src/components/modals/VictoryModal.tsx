@@ -3,7 +3,7 @@ import { useGameStore } from '../../stores/gameStore'
 import type { PlayerBackstory, NPC } from '../../types/game'
 import { K } from '../design-system/tokens'
 import { buildNpcExitLines, buildGoalClosure } from '../../constants/npcExits'
-import { getNPCDefinition } from '../../constants/npcs'
+import { getNpcDefinition } from '../../constants/npcs'
 import { getMetaLesson } from '../../constants/metaLessons'
 
 interface VictoryModalProps {
@@ -48,13 +48,16 @@ function getNarrativeEnding(
   currentWeek: number,
 ): { title: string; text: string } {
   const mikhail = npcs.find(n => n.id === 'mikhail')
-  const svetlana = npcs.find(n => n.id === 'svetlana')
-  const anna = npcs.find(n => n.id === 'anna')
+  // Legacy NPC ids ('svetlana', 'anna') no longer exist in the NpcId union.
+  // Cast through any so the comparison still works on legacy saves where
+  // these IDs may persist; new games won't have them.
+  const svetlana = npcs.find(n => (n.id as any) === 'svetlana')
+  const anna = npcs.find(n => (n.id as any) === 'anna')
 
   // Alliance ending: Mikhail trusted partner + Svetlana stayed + reputation high
   if (
-    mikhail && mikhail.relationshipLevel >= 70 &&
-    svetlana && svetlana.relationshipLevel >= 70 &&
+    mikhail && (mikhail.relationshipLevel ?? 50) >= 70 &&
+    svetlana && (svetlana.relationshipLevel ?? 50) >= 70 &&
     reputation >= 70
   ) {
     return {
@@ -64,7 +67,7 @@ function getNarrativeEnding(
   }
 
   // Rivalry ending: Anna subdued
-  if (anna && anna.relationshipLevel <= 25 && completedChainIds.includes('anna_war')) {
+  if (anna && (anna.relationshipLevel ?? 50) <= 25 && completedChainIds.includes('anna_war')) {
     return {
       title: 'Победа в конкурентной борьбе',
       text: 'Анна Козлова пыталась вас уничтожить. Вы устояли. Теперь её магазин закрыт, а ваш процветает. Честная победа в нечестной игре.',
@@ -392,7 +395,7 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {npcExits.map(line => {
-                  const def = getNPCDefinition(line.npcId)
+                  const def = getNpcDefinition(line.npcId as any)
                   if (!def) return null
                   return (
                     <div key={line.npcId} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>

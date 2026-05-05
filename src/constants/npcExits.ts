@@ -25,7 +25,7 @@ export function buildNpcExitLines(npcs: NPC[]): ExitLine[] {
   for (const def of NPC_DEFINITIONS) {
     const npc = npcs.find(n => n.id === def.id)
     if (!npc?.isRevealed) continue
-    const r = npc.relationshipLevel
+    const r = npc.relationshipLevel ?? 50
     const text = pickExitLine(def.id, r)
     if (text) lines.push({ npcId: def.id, text })
   }

@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { CHAIN_FOLLOWUP_DELAY, getChainEvent } from '../constants/eventChains'
-import { getNPCDefinition } from '../constants/npcs'
+import { getNpcDefinition } from '../constants/npcs'
 import ResponsiveLayout from './ResponsiveLayout'
 import MobileMainScreen from './MobileMainScreen'
 import { OnboardingPanel } from './OnboardingPanel'
@@ -315,7 +315,7 @@ function DashboardView({
 
           {/* Pending event card */}
           {pendingEvent && (() => {
-            const npcDef = pendingEvent.npcId ? getNPCDefinition(pendingEvent.npcId) : null
+            const npcDef = pendingEvent.npcId ? getNpcDefinition(pendingEvent.npcId as any) : null
             const npc = pendingEvent.npcId ? (npcs ?? []).find(n => n.id === pendingEvent.npcId) : null
             const isMoral = pendingEvent.isMoralDilemma === true
             const deadlineWeeksLeft = pendingEvent.decisionDeadlineWeek
@@ -369,10 +369,10 @@ function DashboardView({
                       <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{npcDef.shortRole}</div>
                     </div>
                     {npc && npc.isRevealed && (
-                      <div style={{ fontSize: 11, fontWeight: 700, color: npc.relationshipLevel >= 60 ? K.mint : 'rgba(255,255,255,0.4)' }}>
-                        {npc.relationshipLevel >= 80 ? 'Союзник' :
-                         npc.relationshipLevel >= 60 ? 'Доверяет' :
-                         npc.relationshipLevel >= 40 ? 'Нейтрально' : 'Напряжённо'}
+                      <div style={{ fontSize: 11, fontWeight: 700, color: (npc.relationshipLevel ?? 50) >= 60 ? K.mint : 'rgba(255,255,255,0.4)' }}>
+                        {(npc.relationshipLevel ?? 50) >= 80 ? 'Союзник' :
+                         (npc.relationshipLevel ?? 50) >= 60 ? 'Доверяет' :
+                         (npc.relationshipLevel ?? 50) >= 40 ? 'Нейтрально' : 'Напряжённо'}
                       </div>
                     )}
                   </div>
