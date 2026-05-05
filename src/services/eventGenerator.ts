@@ -1035,5 +1035,17 @@ export function applyEventConsequence(
     state.triggeredEventIds.push(event.id)
   }
 
+  // If this event was an NPC episode, mark it completed on that NPC so the
+  // episode trigger doesn't re-fire it and the next-arc-step prereq is met.
+  if (event.npcId) {
+    const npcs = state.npcs ?? []
+    state.npcs = npcs.map(n => {
+      if (n.id !== event.npcId) return n
+      const completed = n.completedEpisodes ?? []
+      if (completed.includes(event.id)) return n
+      return { ...n, isRevealed: true, completedEpisodes: [...completed, event.id] }
+    })
+  }
+
   state.pendingEvent = null
 }

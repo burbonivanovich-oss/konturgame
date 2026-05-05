@@ -4,6 +4,7 @@ import { BUSINESS_CONFIGS, ECONOMY_CONSTANTS, CAMPAIGN_DIMINISHING_FACTORS } fro
 import { ensureNPCsInitialized, applyNPCPassiveEffects, getInspectorChain2EventId } from './npcManager'
 import { getChainEvent, getChainStartEvent, CHAIN_TRIGGER_WEEKS, type ChainId } from '../constants/eventChains'
 import { templateToEvent, applyEventConsequence, generateCrisisEvent } from './eventGenerator'
+import { getDueEpisode, episodeToEvent } from './npcEpisodeTrigger'
 import { pickDiaryEntry } from '../constants/diary'
 import { getWeeklyTacticDef } from '../constants/weeklyTactics'
 import {
@@ -657,14 +658,18 @@ export function processWeek(state: GameState): DayResult {
   // Pick 1 micro event per week (passive, no modal — shown in WeekResults)
   applyWeeklyMicroEvent(state)
 
-  // STRICT 1 event per week (was: 1-2 from main pool + independent crisis
-  // roll → up to 3 events stacking). On scheduled crisis weeks (10/20/30/40)
-  // a crisis fires INSTEAD of a regular event. Otherwise, regular pool only.
-  // Single event per week keeps the cadence legible — the player decides one
-  // thing, sees its consequence, moves on.
+  // STRICT 1 event per week. Priority order:
+  //   1. NPC episode (story arc beats — narrative spine)
+  //   2. Crisis (scheduled at week 10/20/30/40)
+  //   3. Regular event pool
+  // Player decides one thing per week — the cadence is legible.
   if (!state.isGameOver && !state.isVictory && !state.pendingEvent) {
-    const isCrisisWeek = [10, 20, 30, 40].includes(state.currentWeek)
-    let chosen = isCrisisWeek ? generateCrisisEvent(state) : null
+    const dueEpisode = getDueEpisode(state)
+    let chosen = dueEpisode ? episodeToEvent(dueEpisode, state.currentWeek) : null
+    if (!chosen) {
+      const isCrisisWeek = [10, 20, 30, 40].includes(state.currentWeek)
+      chosen = isCrisisWeek ? generateCrisisEvent(state) : null
+    }
     if (!chosen) {
       chosen = generateEvent(state.currentWeek * 7, state)
     }
