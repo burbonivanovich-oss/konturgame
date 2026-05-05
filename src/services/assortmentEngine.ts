@@ -1,5 +1,6 @@
 import type { BusinessType, GameState, ProductCategory } from '../types/game'
 import { UPGRADES_CONFIG } from '../constants/business'
+import { getMikhailDiscountPct } from './npcHooks'
 
 export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
   shop: [
@@ -192,6 +193,7 @@ export function getCategoryLockReasons(category: ProductCategory, state: GameSta
 export function calculateCategoryRevenue(state: GameState): CategoryRevenueResult {
   const categories = PRODUCT_CATEGORIES[state.businessType] ?? []
   const enabledIds = state.enabledCategories ?? []
+  const mikhailDiscount = getMikhailDiscountPct(state)
 
   let totalRevenue = 0
   let totalDailyCost = 0
@@ -211,7 +213,8 @@ export function calculateCategoryRevenue(state: GameState): CategoryRevenueResul
       continue
     }
 
-    const cost = cat.dailyCost
+    // Mikhail discount applies if his arc is active and opinion is positive
+    const cost = Math.round(cat.dailyCost * (1 - mikhailDiscount))
     const revenue = cat.baseRevenue
 
     breakdown[cat.id] = { revenue, cost, fine: 0, allowed: true }

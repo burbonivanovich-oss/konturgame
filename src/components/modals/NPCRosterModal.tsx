@@ -1,6 +1,8 @@
 import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
-import { NPC_DEFINITIONS, getNpcDefinition } from '../../constants/npcs'
+import { NPC_DEFINITIONS, getNpcDefinition, getNpcOpinion } from '../../constants/npcs'
+import { getRelationshipLabel } from '../../services/npcManager'
+import { getNpcArc } from '../../constants/npcEpisodes'
 import { K } from '../design-system/tokens'
 
 interface NPCRosterModalProps {
@@ -8,19 +10,9 @@ interface NPCRosterModalProps {
   onClose: () => void
 }
 
-function relationshipBand(level: number) {
-  if (level >= 80) return { label: 'Союзник', color: K.mint }
-  if (level >= 60) return { label: 'Доверяет', color: K.mint }
-  if (level >= 40) return { label: 'Нейтрально', color: K.muted }
-  if (level >= 20) return { label: 'Настороженно', color: K.orange }
-  return { label: 'Враждебно', color: '#c0392b' }
-}
-
 export default function NPCRosterModal({ isOpen, onClose }: NPCRosterModalProps) {
   const npcs = useGameStore(s => s.npcs ?? [])
 
-  // Show only revealed NPCs (player has interacted at least once).
-  // Locked silhouettes for the rest, so the player sees there's more to discover.
   const revealedIds = new Set(npcs.filter(n => n.isRevealed).map(n => n.id))
   const totalCount = NPC_DEFINITIONS.length
   const revealedCount = revealedIds.size
@@ -35,9 +27,12 @@ export default function NPCRosterModal({ isOpen, onClose }: NPCRosterModalProps)
         {NPC_DEFINITIONS.map(def => {
           const npc = npcs.find(n => n.id === def.id)
           const isRevealed = npc?.isRevealed ?? false
-          const level = npc?.relationshipLevel ?? def.startRelationship ?? 50
-          const band = relationshipBand(level)
-          const recentMemory = (npc?.memory ?? []).slice(-3).reverse()
+          const opinion = npc ? getNpcOpinion(npc) : 0
+          const band = getRelationshipLabel(opinion)
+          const modifiers = (npc?.modifiers ?? []).slice().reverse()
+          const arc = getNpcArc(def.id)
+          const completed = (npc?.completedEpisodes ?? []).length
+          const totalEpisodes = arc.length
 
           if (!isRevealed) {
             return (
@@ -57,7 +52,7 @@ export default function NPCRosterModal({ isOpen, onClose }: NPCRosterModalProps)
                 }}>?</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: K.muted }}>
-                    {def.shortRole}
+                    {def.shortBlurb}
                   </div>
                   <div style={{ fontSize: 11, color: K.muted, marginTop: 2 }}>
                     Появится позже
@@ -75,7 +70,7 @@ export default function NPCRosterModal({ isOpen, onClose }: NPCRosterModalProps)
               padding: 16,
               display: 'flex', flexDirection: 'column', gap: 10,
             }}>
-              {/* Header: portrait + name + relationship band */}
+              {/* Header: portrait + name + opinion band */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{
                   width: 44, height: 44, borderRadius: 999,
@@ -90,7 +85,7 @@ export default function NPCRosterModal({ isOpen, onClose }: NPCRosterModalProps)
                     {def.name}
                   </div>
                   <div style={{ fontSize: 11, color: K.muted, marginTop: 1 }}>
-                    {def.shortRole}
+                    {def.shortBlurb}
                   </div>
                 </div>
                 <div style={{
@@ -100,53 +95,65 @@ export default function NPCRosterModal({ isOpen, onClose }: NPCRosterModalProps)
                   padding: '4px 10px', borderRadius: 999,
                   whiteSpace: 'nowrap',
                 }}>
-                  {band.label}
+                  {band.text} {opinion >= 0 ? '+' : ''}{opinion}
                 </div>
               </div>
 
-              {/* Personality blurb */}
+              {/* What this NPC unlocks */}
               <div style={{
-                fontSize: 12, color: K.ink2, lineHeight: 1.5,
-                fontStyle: 'italic',
+                fontSize: 11, color: K.ink2, lineHeight: 1.4,
+                background: K.bone, borderRadius: 8, padding: '6px 10px',
               }}>
-                «{def.personality}»
+                <span style={{ fontWeight: 700, color: K.ink }}>Открывает: </span>
+                {def.unlocks}
               </div>
 
-              {/* Relationship bar */}
-              <div>
-                <div style={{ height: 5, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
+              {/* Arc progress */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: K.muted }}>
+                <span>Эпизоды:</span>
+                <span style={{ fontWeight: 700, color: K.ink, fontVariantNumeric: 'tabular-nums' }}>
+                  {completed} / {totalEpisodes}
+                </span>
+                <div style={{ flex: 1, height: 4, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
                   <div style={{
-                    width: `${level}%`, height: '100%',
-                    background: band.color, transition: 'width 0.3s',
+                    width: totalEpisodes > 0 ? `${(completed / totalEpisodes) * 100}%` : '0%',
+                    height: '100%',
+                    background: band.color,
+                    transition: 'width 0.3s',
                   }} />
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10, color: K.muted, fontVariantNumeric: 'tabular-nums' }}>
-                  <span>отношения</span>
-                  <span style={{ color: band.color, fontWeight: 700 }}>{level} / 100</span>
-                </div>
               </div>
 
-              {/* Recent memory entries */}
-              {recentMemory.length > 0 && (
+              {/* Modifier list — CK3-style "this is why they feel this way" */}
+              {modifiers.length > 0 && (
                 <div style={{
                   borderTop: `1px solid ${K.lineSoft}`,
                   paddingTop: 10, marginTop: 2,
-                  display: 'flex', flexDirection: 'column', gap: 6,
+                  display: 'flex', flexDirection: 'column', gap: 4,
                 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: K.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Недавно
+                  <div style={{ fontSize: 10, fontWeight: 700, color: K.muted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>
+                    {def.name} помнит
                   </div>
-                  {recentMemory.map((m, i) => (
-                    <div key={i} style={{
-                      fontSize: 12, color: K.ink2, lineHeight: 1.4,
-                      display: 'flex', gap: 8,
-                    }}>
-                      <span style={{ color: K.muted, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
-                        нед. {m.week}
-                      </span>
-                      <span>{m.note}</span>
-                    </div>
-                  ))}
+                  {modifiers.map((m, i) => {
+                    const sign = m.value >= 0 ? '+' : ''
+                    const color = m.value > 0 ? K.mintInk : m.value < 0 ? '#c0392b' : K.muted
+                    return (
+                      <div key={i} style={{
+                        fontSize: 12, lineHeight: 1.35,
+                        display: 'flex', gap: 8, alignItems: 'baseline',
+                      }}>
+                        <span style={{ color: K.muted, fontVariantNumeric: 'tabular-nums', flexShrink: 0, fontSize: 11 }}>
+                          нед. {m.week}
+                        </span>
+                        <span style={{ flex: 1, color: K.ink2 }}>{m.reason}</span>
+                        {m.value !== 0 && (
+                          <span style={{ fontWeight: 700, color, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+                            {sign}{m.value}
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>

@@ -18,6 +18,7 @@ import { createPersonalGoal } from '../constants/personalGoals'
 import { loadMetaProgress, saveMetaProgress, evaluateRun, getAggregateBonus } from '../services/metaProgress'
 import { updateNPCRelationship, recordNPCMemory } from '../services/npcManager'
 import { canUpgradeTier, getNextTier, getCurrentTier } from '../services/economyEngine'
+import { getLoanWeeklyRateForType } from '../services/npcHooks'
 
 const STORAGE_KEY = 'konturgame_state'
 const ROLLBACK_STORAGE_KEY = 'konturgame_rollback'
@@ -1151,20 +1152,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const activeLoans = (state.loans ?? []).filter(l => !l.isRepaid)
       if (activeLoans.length >= 1) return false
 
-      // Loan parameters
-      const params = {
-        micro: { weeks: 2, weeklyRate: 0.15 / 2 },      // 15% total over 2 weeks
-        standard: { weeks: 4, weeklyRate: 0.10 / 4 },   // 10% total over 4 weeks
-        'long-term': { weeks: 12, weeklyRate: 0.08 / 12 }, // 8% total over 12 weeks
-      }
-      const param = params[type]
+      // Loan parameters — rate may be 0 if Денис arc unlocked it (one-time)
+      const weeksByType = { micro: 2, standard: 4, 'long-term': 12 }
+      const weeklyRate = getLoanWeeklyRateForType(state, type)
 
       const newLoan = {
         id: `loan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         amount,
         borrowedWeek: state.currentWeek,
-        dueWeek: state.currentWeek + param.weeks,
-        weeklyInterest: param.weeklyRate,
+        dueWeek: state.currentWeek + weeksByType[type],
+        weeklyInterest: weeklyRate,
         totalInterestPaid: 0,
         isRepaid: false,
         type,
