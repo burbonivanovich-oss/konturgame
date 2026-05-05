@@ -3,6 +3,7 @@ import type { Loan } from '../../types/game'
 import { ECONOMY_CONSTANTS, UPGRADES_CONFIG } from '../../constants/business'
 import { getEffectiveRent, getEffectiveBaseSalary } from '../../services/economyEngine'
 import { K } from '../design-system/tokens'
+import { formatRub, formatRubSigned } from '../../utils/format'
 
 function calcTotalOwed(loan: Loan): number {
   const weeks = loan.dueWeek - loan.borrowedWeek
@@ -27,7 +28,7 @@ function ForecastBar({ label, value }: { label: string; value: number }) {
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0' }}>
       <span style={{ fontSize: 12, color: K.muted, fontWeight: 600 }}>{label}</span>
       <span style={{ fontSize: 14, fontWeight: 800, color }} className="k-num">
-        {value >= 0 ? '' : '−'}{Math.abs(value).toLocaleString('ru-RU')} ₽
+        {value >= 0 ? formatRub(value) : `−${formatRub(Math.abs(value))}`}
       </span>
     </div>
   )
@@ -120,7 +121,7 @@ export function FinanceView() {
         }}>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.75 }}>ТЕКУЩИЙ БАЛАНС</div>
           <div style={{ fontSize: 36, fontWeight: 800, letterSpacing: '-0.03em', color: K.mint }} className="k-num">
-            {balance.toLocaleString('ru-RU')} ₽
+            {formatRub(balance)}
           </div>
           {/* Goal mini progress */}
           <div>
@@ -139,10 +140,10 @@ export function FinanceView() {
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted }}>ВЫРУЧКА ЗА НЕДЕЛЮ</div>
           <div>
             <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em', color: K.orange }} className="k-num">
-              {(lastDayResult?.revenue ?? 0).toLocaleString('ru-RU')} ₽
+              {formatRub((lastDayResult?.revenue ?? 0))}
             </div>
             <div style={{ fontSize: 10, color: K.muted, marginTop: 4, fontWeight: 600 }}>
-              ~{Math.round((lastDayResult?.revenue ?? 0) / 7).toLocaleString('ru-RU')} ₽/день
+              ~{formatRub(Math.round((lastDayResult?.revenue ?? 0) / 7))}/день
             </div>
           </div>
         </div>
@@ -156,7 +157,7 @@ export function FinanceView() {
               color: (lastDayResult?.netProfit ?? 0) >= 0 ? K.good : K.bad,
             }} className="k-num">
               {(lastDayResult?.netProfit ?? 0) >= 0 ? '+' : ''}
-              {(lastDayResult?.netProfit ?? 0).toLocaleString('ru-RU')} ₽
+              {formatRub((lastDayResult?.netProfit ?? 0))}
             </div>
             <div style={{ fontSize: 10, color: K.muted, marginTop: 4, fontWeight: 600 }}>
               {(lastDayResult?.revenue ?? 0) > 0
@@ -195,7 +196,7 @@ export function FinanceView() {
                 }}>
                   <span style={{ fontSize: 13, fontWeight: 600 }}>{item.label}</span>
                   <span style={{ fontSize: 14, fontWeight: 800, color: K.good }} className="k-num">
-                    +{item.value.toLocaleString('ru-RU')} ₽
+                    +{formatRub(item.value)}
                   </span>
                 </div>
               ))}
@@ -212,7 +213,7 @@ export function FinanceView() {
                     }}>
                       <span style={{ fontSize: 13, fontWeight: 600, color: K.muted }}>{item.label}</span>
                       <span style={{ fontSize: 13, fontWeight: 700, color: K.bad }} className="k-num">
-                        −{item.value.toLocaleString('ru-RU')} ₽
+                        −{formatRub(item.value)}
                       </span>
                     </div>
                   ))}
@@ -237,7 +238,7 @@ export function FinanceView() {
                     }}>
                       <span style={{ fontSize: 12, fontWeight: 600, color: K.muted, flex: 1 }}>{item.label}</span>
                       <span style={{ fontSize: 13, fontWeight: 700, color: K.bad, flexShrink: 0 }} className="k-num">
-                        −{item.value.toLocaleString('ru-RU')} ₽
+                        −{formatRub(item.value)}
                       </span>
                     </div>
                   ))}
@@ -256,7 +257,7 @@ export function FinanceView() {
                   fontSize: 20, fontWeight: 800,
                   color: lastDayResult.netProfit >= 0 ? K.good : K.bad,
                 }} className="k-num">
-                  {lastDayResult.netProfit >= 0 ? '+' : ''}{lastDayResult.netProfit.toLocaleString('ru-RU')} ₽
+                  {lastDayResult.netProfit >= 0 ? '+' : ''}{formatRub(lastDayResult.netProfit)}
                 </span>
               </div>
             </>
@@ -302,7 +303,7 @@ export function FinanceView() {
                 borderBottom: i < arr.length - 1 ? `1px dashed ${K.lineSoft}` : 'none',
               }}>
                 <span style={{ color: K.muted }}>{item.label}</span>
-                <span className="k-num">{item.value.toLocaleString('ru-RU')} ₽</span>
+                <span className="k-num">{formatRub(item.value)}</span>
               </div>
             ))}
             <div style={{
@@ -311,7 +312,7 @@ export function FinanceView() {
               borderTop: `1.5px solid ${K.ink}`,
             }}>
               <span>Итого в месяц</span>
-              <span className="k-num" style={{ color: K.bad }}>−{totalMonthlyFixed.toLocaleString('ru-RU')} ₽</span>
+              <span className="k-num" style={{ color: K.bad }}>−{formatRub(totalMonthlyFixed)}</span>
             </div>
             {weeklyRevenue > 0 && (
               <div style={{ fontSize: 10, color: K.muted, marginTop: 6, fontWeight: 600 }}>
@@ -333,7 +334,7 @@ export function FinanceView() {
                   borderBottom: `1px dashed ${K.lineSoft}`,
                 }}>
                   <span style={{ color: K.muted }}>{svc.name}</span>
-                  <span className="k-num">{svc.annualPrice.toLocaleString('ru-RU')} ₽/год</span>
+                  <span className="k-num">{formatRub(svc.annualPrice)}/год</span>
                 </div>
               ))
             )}
@@ -344,7 +345,7 @@ export function FinanceView() {
                 borderTop: `1.5px solid ${K.ink}`,
               }}>
                 <span>Итого/год</span>
-                <span className="k-num">{yearlySubscription.toLocaleString('ru-RU')} ₽</span>
+                <span className="k-num">{formatRub(yearlySubscription)}</span>
               </div>
             )}
           </div>
@@ -353,7 +354,7 @@ export function FinanceView() {
           <div style={{ background: K.mintSoft, borderRadius: 14, padding: 18, border: `1px solid ${K.line}` }}>
             <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>СПАСЕНО С КОНТУРОМ</div>
             <div style={{ fontSize: 28, fontWeight: 800, marginTop: 4, color: K.good }} className="k-num">
-              {(savedBalance ?? 0).toLocaleString('ru-RU')} ₽
+              {formatRub((savedBalance ?? 0))}
             </div>
             {yearlySubscription > 0 && savedBalance > 0 && (
               <div style={{ fontSize: 11, fontWeight: 700, color: K.muted, marginTop: 4 }}>
@@ -389,7 +390,7 @@ export function FinanceView() {
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ fontSize: 12, fontWeight: 800, color: overdue ? K.bad : K.ink }} className="k-num">
-                            {totalOwed.toLocaleString('ru-RU')} ₽
+                            {formatRub(totalOwed)}
                           </div>
                           <div style={{ fontSize: 10, color: K.muted }}>к возврату</div>
                         </div>
@@ -407,7 +408,7 @@ export function FinanceView() {
                         onMouseEnter={e => { if (balance >= totalOwed) e.currentTarget.style.opacity = '0.8' }}
                         onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
                       >
-                        Погасить {totalOwed.toLocaleString('ru-RU')} ₽
+                        Погасить {formatRub(totalOwed)}
                       </button>
                     </div>
                   )

@@ -572,20 +572,11 @@ export interface GameState {
   // migration; new runs always populate it via markEventAsResolved.
   chosenEventOptions?: Record<string, string>
 
-  // Weekly tactic — small player-driven choice at the start of each week.
-  // Resets to null when a new week starts; player picks from 3 options.
-  // - 'aggressive': +15% revenue, -3 energy/day
-  // - 'calm':      -8% revenue, +2 energy/day
-  // - 'service':   -5% revenue, +0.5 reputation/day, +1 loyalty/day
-  weeklyTactic?: WeeklyTactic | null
-
   // Lessons unlocked by THIS run (i.e. just earned at game-over). Set by
   // setGameOver / setVictory; consumed by VictoryModal to celebrate them.
   // Cleared on new game start.
   newlyUnlockedLessons?: string[]
 }
-
-export type WeeklyTactic = 'aggressive' | 'calm' | 'service'
 
 /**
  * Cross-run metaprogression (v5.5). Persists separately from the main save

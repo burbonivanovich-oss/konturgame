@@ -1,5 +1,6 @@
 import { useGameStore } from '../stores/gameStore'
 import { K } from './design-system/tokens'
+import { formatRub, formatRubSigned } from '../utils/format'
 
 interface WeekSummaryOverlayProps {
   onStart: () => void
@@ -65,9 +66,9 @@ export function WeekSummaryOverlay({ onStart }: WeekSummaryOverlayProps) {
             </div>
             <div style={{ display: 'flex', gap: 0 }}>
               {[
-                { label: 'Выручка', value: `${lastDayResult.revenue.toLocaleString('ru-RU')} ₽`, color: K.ink },
-                { label: 'Прибыль', value: `${isProfitable ? '+' : ''}${lastDayResult.netProfit.toLocaleString('ru-RU')} ₽`, color: isProfitable ? K.good : K.bad },
-                { label: 'Баланс', value: `${balance.toLocaleString('ru-RU')} ₽`, color: K.ink },
+                { label: 'Выручка', value: formatRub(lastDayResult.revenue), color: K.ink },
+                { label: 'Прибыль', value: formatRubSigned(lastDayResult.netProfit), color: isProfitable ? K.good : K.bad },
+                { label: 'Баланс', value: formatRub(balance), color: K.ink },
               ].map((t, i) => (
                 <div key={t.label} style={{
                   flex: 1,

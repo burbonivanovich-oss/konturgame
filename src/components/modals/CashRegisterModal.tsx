@@ -4,6 +4,7 @@ import { CASH_REGISTER_CONFIGS } from '../../constants/cashRegisters'
 import { getTotalThroughput, getRegisterSummary } from '../../services/cashRegisterEngine'
 import type { CashRegisterType } from '../../types/game'
 import { K } from '../design-system/tokens'
+import { formatRub } from '../../utils/format'
 
 interface CashRegisterModalProps {
   isOpen: boolean
@@ -130,7 +131,7 @@ export default function CashRegisterModal({ isOpen, onClose }: CashRegisterModal
                     </div>
                   )}
                   <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 8 }}>
-                    {effectiveCost.toLocaleString('ru-RU')} ₽
+                    {formatRub(effectiveCost)}
                   </div>
                   <button
                     onClick={() => handleBuy(type)}

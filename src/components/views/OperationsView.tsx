@@ -6,6 +6,7 @@ import { getCurrentTier, getNextTier } from '../../services/economyEngine'
 import { ONBOARDING_STAGES } from '../../constants/onboarding'
 import CashRegisterModal from '../modals/CashRegisterModal'
 import { K } from '../design-system/tokens'
+import { formatRub } from '../../utils/format'
 
 const SERVICE_NAMES: Record<string, string> = {
   market: 'Маркет', bank: 'Банк', ofd: 'ОФД',
@@ -179,13 +180,13 @@ export default function OperationsView({ onShowHireModal }: OperationsViewProps)
                         <span>
                           <span style={{ color: K.muted }}>Выручка: </span>
                           <span style={{ fontWeight: 700, color: K.good }}>
-                            ~{cat.baseRevenue.toLocaleString('ru-RU')} ₽/день
+                            ~{formatRub(cat.baseRevenue)}/день
                           </span>
                         </span>
                         <span>
                           <span style={{ color: K.muted }}>Закупка: </span>
                           <span style={{ fontWeight: 700, color: K.orange }}>
-                            {cat.dailyCost.toLocaleString('ru-RU')} ₽/день
+                            {formatRub(cat.dailyCost)}/день
                           </span>
                         </span>
                       </div>
@@ -309,7 +310,7 @@ export default function OperationsView({ onShowHireModal }: OperationsViewProps)
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{emp.name}</div>
                   <div style={{ fontSize: 10, color: K.muted }}>
-                    {POSITION_LABELS[emp.position] ?? emp.position} · {emp.salary.toLocaleString('ru-RU')} ₽/мес · эффективность {(emp.efficiency * 100).toFixed(0)}%
+                    {POSITION_LABELS[emp.position] ?? emp.position} · {formatRub(emp.salary)}/мес · эффективность {(emp.efficiency * 100).toFixed(0)}%
                   </div>
                 </div>
                 <button

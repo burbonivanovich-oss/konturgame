@@ -1,5 +1,6 @@
 import { useGameStore } from '../stores/gameStore'
 import { K } from './design-system/tokens'
+import { formatRub, formatRubSigned } from '../utils/format'
 
 interface WeekResultsOverlayProps {
   onContinue: () => void
@@ -134,13 +135,13 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
               fontSize: 34, fontWeight: 700, letterSpacing: '-0.02em',
               color: K.white, marginTop: 4, fontVariantNumeric: 'tabular-nums',
             }}>
-              {isProfitable ? '+' : ''}{lastDayResult.netProfit.toLocaleString('ru-RU')} ₽
+              {formatRubSigned(lastDayResult.netProfit)}
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>Баланс</div>
             <div style={{ fontSize: 20, fontWeight: 700, color: K.white, fontVariantNumeric: 'tabular-nums' }}>
-              {balance.toLocaleString('ru-RU')} ₽
+              {formatRub(balance)}
             </div>
           </div>
         </div>
@@ -168,7 +169,7 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
                 color: row.value >= 0 ? K.good : K.bad,
                 fontVariantNumeric: 'tabular-nums',
               }}>
-                {row.value >= 0 ? '+' : ''}{row.value.toLocaleString('ru-RU')} ₽
+                {formatRubSigned(row.value)}
               </span>
             </div>
           ))}
@@ -182,7 +183,7 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
           }}>
             <span>Итого</span>
             <span style={{ color: isProfitable ? K.good : K.bad, fontVariantNumeric: 'tabular-nums' }}>
-              {isProfitable ? '+' : ''}{lastDayResult.netProfit.toLocaleString('ru-RU')} ₽
+              {formatRubSigned(lastDayResult.netProfit)}
             </span>
           </div>
         </div>
@@ -214,7 +215,7 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 15 }}>⚠️</span>
               <div style={{ fontSize: 12, fontWeight: 700, color: K.orange }}>
-                Без сервисов Контура потеряно: <span style={{ fontSize: 14 }}>{lastWeekPainLosses.total.toLocaleString('ru-RU')} ₽</span>
+                Без сервисов Контура потеряно: <span style={{ fontSize: 14 }}>{formatRub(lastWeekPainLosses.total)}</span>
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -239,7 +240,7 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
                   }}>
                     <span style={{ fontWeight: 500 }}>{s.label}</span>
                     <span style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
-                      −{(lastWeekPainLosses as any)[s.key].toLocaleString('ru-RU')} ₽
+                      −{formatRub((lastWeekPainLosses as any)[s.key])}
                     </span>
                   </div>
                 ))

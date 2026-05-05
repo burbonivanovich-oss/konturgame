@@ -3,6 +3,7 @@ import { useGameStore } from '../stores/gameStore'
 import { SYNERGIES_CONFIG } from '../constants/business'
 import { ONBOARDING_STAGE_LABELS } from '../constants/onboarding'
 import type { OnboardingStage } from '../types/game'
+import { formatRub } from '../utils/format'
 import { K } from './design-system/tokens'
 
 const SERVICE_COLORS: Record<string, string> = {
@@ -163,7 +164,7 @@ export default function ServicePanel() {
               <span style={{ fontSize: 20 }}>{service.icon}</span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 12, fontWeight: 700 }}>{service.name}</div>
-                <div style={{ fontSize: 10, opacity: 0.7 }}>{service.annualPrice.toLocaleString('ru-RU')} ₽/год</div>
+                <div style={{ fontSize: 10, opacity: 0.7 }}>{formatRub(service.annualPrice)}/год</div>
               </div>
             </div>
             <div style={{ fontSize: 11, opacity: 0.8, lineHeight: 1.3 }}>{service.description}</div>
@@ -214,7 +215,7 @@ export default function ServicePanel() {
                     <span style={{ fontSize: 20 }}>{service.icon}</span>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 12, fontWeight: 700 }}>{service.name}</div>
-                      <div style={{ fontSize: 10, opacity: 0.7 }}>{service.annualPrice.toLocaleString('ru-RU')} ₽/год</div>
+                      <div style={{ fontSize: 10, opacity: 0.7 }}>{formatRub(service.annualPrice)}/год</div>
                     </div>
                     <div style={{ fontSize: 18 }}>🔒</div>
                   </div>

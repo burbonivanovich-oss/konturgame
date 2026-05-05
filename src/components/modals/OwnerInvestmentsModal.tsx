@@ -4,6 +4,7 @@ import { OWNER_INVESTMENTS } from '../../constants/ownerInvestments'
 import type { OwnerInvestmentId } from '../../constants/ownerInvestments'
 import { ECONOMY_CONSTANTS } from '../../constants/business'
 import { K } from '../design-system/tokens'
+import { formatRub } from '../../utils/format'
 
 interface OwnerInvestmentsModalProps {
   isOpen: boolean
@@ -91,7 +92,7 @@ export default function OwnerInvestmentsModal({ isOpen, onClose }: OwnerInvestme
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 4 }}>
-                    {item.cost.toLocaleString('ru')}₽
+                    {formatRub(item.cost)}
                   </div>
                   <button
                     disabled={disabled}
@@ -117,7 +118,7 @@ export default function OwnerInvestmentsModal({ isOpen, onClose }: OwnerInvestme
         </div>
 
         <div style={{ fontSize: 11, opacity: 0.45, textAlign: 'center' }}>
-          Баланс: {balance.toLocaleString('ru')}₽ · Покупки вычитаются из баланса немедленно
+          Баланс: {formatRub(balance)} · Покупки вычитаются из баланса немедленно
         </div>
       </div>
     </Modal>

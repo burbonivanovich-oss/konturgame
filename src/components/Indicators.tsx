@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import { ECONOMY_CONSTANTS } from '../constants/business'
 import { getCurrentTier, getNextTier } from '../services/economyEngine'
 import { K } from './design-system/tokens'
+import { formatRub } from '../utils/format'
 
 function getStatusColor(value: number): { color: string; icon: string } {
   if (value >= 70) return { color: K.mint, icon: '✓' }
@@ -98,7 +99,7 @@ export default function Indicators() {
               transition: 'opacity 0.2s',
             }}
           >
-            💰 Премия персоналу ({premiumCost.toLocaleString('ru-RU')} ₽)
+            💰 Премия персоналу ({formatRub(premiumCost)})
           </button>
         )}
       </div>

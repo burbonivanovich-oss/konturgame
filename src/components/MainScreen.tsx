@@ -29,8 +29,8 @@ import { useGameStore } from '../stores/gameStore'
 import { ONBOARDING_STAGES } from '../constants/onboarding'
 import { BUSINESS_CONFIGS } from '../constants/business'
 import { getCurrentTier, getNextTier } from '../services/economyEngine'
-import { WEEKLY_TACTICS, getWeeklyTacticDef } from '../constants/weeklyTactics'
 import type { BusinessType } from '../types/game'
+import { formatRub, formatRubSigned } from '../utils/format'
 import { KLeftRail } from './design-system/KLeftRail'
 import { KHeaderBar } from './design-system/KHeaderBar'
 import { K } from './design-system/tokens'
@@ -70,7 +70,7 @@ function DashboardView({
     currentWeek, balance, reputation, loyalty, services,
     pendingEvent, pendingEventsQueue, lastDayResult,
     entrepreneurEnergy, npcs, stockBatches, capacity, cashRegisters,
-    businessType, qualityLevel, level, weeklyTactic, setWeeklyTactic,
+    businessType, qualityLevel, level,
   } = store
 
   const bizConfig = BUSINESS_CONFIGS[businessType]
@@ -141,90 +141,6 @@ function DashboardView({
           display: 'flex', flexDirection: 'column', gap: 14,
           overflowY: 'auto',
         }}>
-          {/* Weekly tactic — chooser card or active chip */}
-          {!weeklyTactic ? (
-            <div style={{
-              background: K.white,
-              border: `2px solid ${K.orange}`,
-              borderRadius: 14,
-              padding: '14px 16px',
-              display: 'flex', flexDirection: 'column', gap: 10,
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: K.orange, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Тактика на неделю
-                  </div>
-                  <div style={{ fontSize: 13, color: K.muted, marginTop: 2 }}>
-                    Выберите фокус — он будет влиять на эту неделю
-                  </div>
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                {WEEKLY_TACTICS.map(t => (
-                  <button
-                    key={t.id}
-                    onClick={() => setWeeklyTactic(t.id)}
-                    style={{
-                      textAlign: 'left', padding: '10px 12px',
-                      background: K.bone, border: `1px solid ${K.lineSoft}`,
-                      borderRadius: 10, cursor: 'pointer',
-                      fontFamily: 'inherit',
-                      display: 'flex', flexDirection: 'column', gap: 4,
-                      transition: 'all 0.15s',
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = K.orange }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = K.lineSoft }}
-                  >
-                    <div style={{ fontSize: 18 }}>{t.icon}</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: K.ink }}>{t.title}</div>
-                    <div style={{ fontSize: 11, color: K.muted, lineHeight: 1.4 }}>{t.blurb}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (() => {
-            const def = getWeeklyTacticDef(weeklyTactic)
-            return def ? (
-              <div style={{
-                background: K.orangeSoft,
-                border: `1px solid ${K.orange}`,
-                borderRadius: 12, padding: '10px 16px',
-                display: 'flex', alignItems: 'center', gap: 12,
-              }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: 999,
-                  background: K.white, border: `1px solid ${K.lineSoft}`,
-                  display: 'grid', placeItems: 'center',
-                  fontSize: 18, flexShrink: 0,
-                }}>
-                  {def.icon}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 10, fontWeight: 800, color: K.orange, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                      Тактика недели
-                    </span>
-                    <span style={{ fontSize: 14, fontWeight: 800, color: K.ink }}>{def.title}</span>
-                  </div>
-                  <div style={{ fontSize: 12, color: K.ink2, marginTop: 2 }}>{def.blurb}</div>
-                </div>
-                <button
-                  onClick={() => setWeeklyTactic(null)}
-                  title="Сменить тактику"
-                  style={{
-                    background: K.white, border: `1px solid ${K.lineSoft}`,
-                    borderRadius: 8, padding: '6px 10px',
-                    fontSize: 11, fontWeight: 700, color: K.muted,
-                    cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
-                  }}
-                >
-                  Сменить
-                </button>
-              </div>
-            ) : null
-          })()}
-
           {/* Top KPI strip — hero balance card + 3 supporting metrics */}
           <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr', gap: 10 }}>
             {/* Hero balance card — visually dominant */}
@@ -237,21 +153,21 @@ function DashboardView({
                 Баланс
               </div>
               <div style={{ fontSize: 32, fontWeight: 900, color: K.white, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.025em', lineHeight: 1.05 }}>
-                {balance.toLocaleString('ru-RU')} ₽
+                {formatRub(balance)}
               </div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)' }}>
                 Неделя {currentWeek}
                 {dailyProfit !== 0 && (
                   <> · <span style={{ fontWeight: 700 }}>
-                    {dailyProfit > 0 ? '+' : ''}{dailyProfit.toLocaleString('ru-RU')} ₽/день
+                    {formatRubSigned(dailyProfit)}/день
                   </span></>
                 )}
               </div>
             </div>
 
             {[
-              { icon: '💹', label: 'Прибыль / день', value: `${dailyProfit > 0 ? '+' : ''}${dailyProfit.toLocaleString('ru-RU')} ₽`, bg: dailyProfit >= 0 ? K.mint : '#c0392b', sub: 'после налогов' },
-              { icon: '💸', label: 'Расходы / день', value: `${dailyExpenses.toLocaleString('ru-RU')} ₽`, bg: K.violet, sub: lastDayResult ? 'за вчера' : 'нет данных' },
+              { icon: '💹', label: 'Прибыль / день', value: formatRubSigned(dailyProfit), bg: dailyProfit >= 0 ? K.mint : '#c0392b', sub: 'после налогов' },
+              { icon: '💸', label: 'Расходы / день', value: formatRub(dailyExpenses), bg: K.violet, sub: lastDayResult ? 'за вчера' : 'нет данных' },
               { icon: '👥', label: 'Клиенты', value: lastDayResult ? `${servedToday} / ${clientsToday}` : '—', bg: K.blue, sub: missedToday > 0 ? `${missedToday} ушли` : 'все обслужены' },
             ].map(t => (
               <div key={t.label} style={{
@@ -445,8 +361,7 @@ function DashboardView({
                               ? K.white
                               : opt.consequences.balanceDelta >= 0 ? K.mint : '#FF8080',
                           }}>
-                            {opt.consequences.balanceDelta > 0 ? '+' : ''}
-                            {opt.consequences.balanceDelta.toLocaleString('ru-RU')} ₽
+                            {formatRubSigned(opt.consequences.balanceDelta)}
                           </div>
                         )}
                         {opt.consequences?.reputationDelta != null && opt.consequences.reputationDelta !== 0 && (
@@ -1020,7 +935,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
           padding: '16px 24px', borderRadius: 16, fontSize: 14, fontWeight: 700,
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
         }}>
-          <span>✅ Контур сэкономил {savingsToast.savings.toLocaleString('ru-RU')} ₽</span>
+          <span>✅ Контур сэкономил {formatRub(savingsToast.savings)}</span>
           <span style={{ fontSize: 11, fontWeight: 400, opacity: 0.8 }}>
             vs «{savingsToast.vsOption}»
           </span>

@@ -2,6 +2,7 @@ import type { BusinessType } from '../types/game'
 import { BUSINESS_CONFIGS, MONTHLY_EXPENSES } from '../constants/business'
 import { useGameStore } from '../stores/gameStore'
 import { K } from './design-system/tokens'
+import { formatRub } from '../utils/format'
 
 const BUSINESS_INFO: Record<BusinessType, { icon: string; title: string; description: string; season?: string }> = {
   shop: {
@@ -94,8 +95,8 @@ export default function BusinessSelector({ onGameStart }: BusinessSelectorProps)
               { label: 'Клиенты/день', value: `~${config.baseClients}` },
               { label: 'Средний чек', value: `${config.avgCheck} ₽` },
               { label: 'Вместимость', value: `${config.capacity} чел.` },
-              { label: 'Аренда/мес', value: `${monthly.rent.toLocaleString('ru-RU')} ₽` },
-              { label: 'Зарплата/мес', value: `${monthly.baseSalary.toLocaleString('ru-RU')} ₽` },
+              { label: 'Аренда/мес', value: formatRub(monthly.rent) },
+              { label: 'Зарплата/мес', value: formatRub(monthly.baseSalary) },
               { label: config.hasStock ? 'Срок хранения' : 'Склад', value: config.hasStock ? `${config.stockExpiry} дней` : 'не нужен' },
             ]
 

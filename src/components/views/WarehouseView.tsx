@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useGameStore } from '../../stores/gameStore'
 import AssortmentModal from '../modals/AssortmentModal'
 import { K } from '../design-system/tokens'
+import { formatRub } from '../../utils/format'
 import { BUSINESS_CONFIGS } from '../../constants/business'
 import { PRODUCT_CATEGORIES } from '../../services/assortmentEngine'
 
@@ -56,14 +57,14 @@ export function WarehouseView() {
             <div style={{ background: K.white, borderRadius: 14, padding: 18, border: `1px solid ${K.line}` }}>
               <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>ЗАКУПКА/ДЕНЬ</div>
               <div style={{ fontSize: 24, fontWeight: 800, marginTop: 4, color: K.orange }} className="k-num">
-                {totalDailyCost.toLocaleString('ru-RU')} ₽
+                {formatRub(totalDailyCost)}
               </div>
               <div style={{ fontSize: 11, color: K.muted, marginTop: 4 }}>списывается автоматически</div>
             </div>
             <div style={{ background: K.white, borderRadius: 14, padding: 18, border: `1px solid ${K.line}` }}>
               <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>ВЫРУЧКА/ДЕНЬ</div>
               <div style={{ fontSize: 24, fontWeight: 800, marginTop: 4, color: K.good }} className="k-num">
-                ~{totalDailyRevenue.toLocaleString('ru-RU')} ₽
+                ~{formatRub(totalDailyRevenue)}
               </div>
               <div style={{ fontSize: 11, color: K.muted, marginTop: 4 }}>базовая, без модификаторов</div>
             </div>
@@ -101,9 +102,9 @@ export function WarehouseView() {
                     <div style={{ fontSize: 11, color: K.muted, marginTop: 2 }}>{cat.description}</div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: K.good }}>+{cat.baseRevenue.toLocaleString('ru-RU')} ₽/д</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: K.good }}>+{formatRub(cat.baseRevenue)}/д</div>
                     <div style={{ fontSize: 11, color: K.muted }}>
-                      {cat.dailyCost.toLocaleString('ru-RU')} ₽ {hasStock ? 'закупка' : 'расходники'}
+                      {formatRub(cat.dailyCost)} {hasStock ? 'закупка' : 'расходники'}
                     </div>
                   </div>
                 </div>

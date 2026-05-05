@@ -3,6 +3,7 @@ import { BUSINESS_CONFIGS, MONTHLY_EXPENSES, UPGRADES_CONFIG, CAMPAIGN_DIMINISHI
 import { BUSINESS_TIERS, type BusinessTierConfig } from '../constants/businessTiers'
 import { LOYALTY_CAPACITY_THRESHOLDS, LOYALTY_CAPACITY_MODIFIER } from '../constants/gameBalance'
 import { calculateSynergyModifiers } from './synergyEngine'
+import { formatRub } from '../utils/format'
 
 // ── Business tier (level) helpers ────────────────────────────────────────────
 // Tier multipliers scale every "size" number (clients, check, rent, salary,
@@ -27,10 +28,10 @@ export function canUpgradeTier(state: GameState): { ok: boolean; reason?: string
     return { ok: false, reason: `Доступно с ${next.unlockWeek}-й недели` }
   }
   if (state.balance < next.upgradeCost) {
-    return { ok: false, reason: `Недостаточно средств (нужно ${next.upgradeCost.toLocaleString('ru-RU')} ₽)` }
+    return { ok: false, reason: `Недостаточно средств (нужно ${formatRub(next.upgradeCost)})` }
   }
   if (state.balance < next.unlockBalance) {
-    return { ok: false, reason: `Нужен оборотный баланс от ${next.unlockBalance.toLocaleString('ru-RU')} ₽` }
+    return { ok: false, reason: `Нужен оборотный баланс от ${formatRub(next.unlockBalance)}` }
   }
   if (state.reputation < next.unlockReputation) {
     return { ok: false, reason: `Нужна репутация от ${next.unlockReputation}` }

@@ -2,6 +2,7 @@ import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
 import type { Event, ServiceType } from '../../types/game'
 import { K } from '../design-system/tokens'
+import { formatRubSigned } from '../../utils/format'
 
 interface EventModalProps {
   isOpen: boolean
@@ -167,8 +168,7 @@ export default function EventModal({ isOpen, event, onOptionSelect, queueLength 
                         ? K.white
                         : option.consequences.balanceDelta >= 0 ? K.good : K.bad,
                     }}>
-                      {option.consequences.balanceDelta >= 0 ? '+' : ''}
-                      {option.consequences.balanceDelta.toLocaleString('ru-RU')} ₽
+                      {formatRubSigned(option.consequences.balanceDelta)}
                     </span>
                   )}
                   {option.consequences.reputationDelta !== undefined && option.consequences.reputationDelta !== 0 && (

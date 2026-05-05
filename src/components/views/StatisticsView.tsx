@@ -3,6 +3,7 @@ import { useGameStore } from '../../stores/gameStore'
 import { ECONOMY_CONSTANTS } from '../../constants/business'
 import { ACHIEVEMENTS } from '../../constants/achievements'
 import { K } from '../design-system/tokens'
+import { formatRub } from '../../utils/format'
 
 const HISTORY_KEY = 'konturgame_history'
 
@@ -50,7 +51,7 @@ export default function StatisticsView() {
   const campaignsLaunched = campaignROI?.length ?? 0
 
   const shareText = `Я прожил ${currentWeek} ${currentWeek % 10 === 1 && currentWeek !== 11 ? 'неделю' : 'недель'} в Бизнесе с Контуром! 💼
-Баланс: ${balance.toLocaleString('ru-RU')} ₽
+Баланс: ${formatRub(balance)}
 Репутация: ${reputation}%
 Уровень: ${level}
 Ачивки: ${achievements.length}/${ACHIEVEMENTS.length}
@@ -138,7 +139,7 @@ ${isYearComplete ? '✨ Выжил первый год! ✨' : `Прогресс
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
           {[
-            { label: 'БАЛАНС', value: `${balance.toLocaleString('ru-RU')} ₽`, isNum: true, wide: true },
+            { label: 'БАЛАНС', value: `${formatRub(balance)}`, isNum: true, wide: true },
             { label: 'РЕПУТАЦИЯ', value: `${reputation}` },
             { label: 'ЛОЯЛЬНОСТЬ', value: `${loyalty}%` },
             { label: 'УРОВЕНЬ', value: `${level}/10` },
@@ -190,7 +191,7 @@ ${isYearComplete ? '✨ Выжил первый год! ✨' : `Прогресс
               { label: 'ИГРСЫГРАНО', value: String(totalGames) },
               { label: 'ВЫЖИЛ ГОД', value: String(gamesCompleted), color: gamesCompleted > 0 ? K.good : undefined },
               { label: 'СРЕДНЯЯ ВЫЖИВАЕМОСТЬ', value: `${averageWeeks} нед.` },
-              { label: 'ЛУЧШИЙ РЕЗУЛЬТАТ', value: `${bestBalance.toLocaleString('ru-RU')} ₽`, isNum: true },
+              { label: 'ЛУЧШИЙ РЕЗУЛЬТАТ', value: `${formatRub(bestBalance)}`, isNum: true },
             ].map(item => (
               <div key={item.label} style={{
                 padding: 16, borderRadius: 14,

@@ -24,11 +24,11 @@ import OperationsView from './views/OperationsView'
 import { DevelopmentView } from './views/DevelopmentView'
 import StatisticsView from './views/StatisticsView'
 import { DecisionLogView } from './views/DecisionLogView'
-import { WEEKLY_TACTICS, getWeeklyTacticDef } from '../constants/weeklyTactics'
 import { WeekSummaryOverlay } from './WeekSummaryOverlay'
 import { WeekResultsOverlay } from './WeekResultsOverlay'
 import { useGameStore } from '../stores/gameStore'
 import { ONBOARDING_STAGES as ONBOARDING_STAGES_FOR_HIGHLIGHT } from '../constants/onboarding'
+import { formatRub, formatRubSigned } from '../utils/format'
 
 interface MobileMainScreenProps {
   onRestart?: () => void
@@ -51,7 +51,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
   const {
     pendingEvent, pendingEventsQueue, isGameOver, isVictory, businessType, achievements, promoCodesRevealed,
     weekPhase, completeResultsPhase, completeSummaryPhase, lastDayResult, balance,
-    weeklyTactic, setWeeklyTactic, personalGoal, currentWeek, npcs,
+    personalGoal, currentWeek, npcs,
     onboardingStage, onboardingStepIndex, onboardingCompleted,
   } = useGameStore()
   const [savingsToast, setSavingsToast] = useState<number | null>(null)
@@ -261,80 +261,17 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
                 Баланс
               </div>
               <div style={{ fontSize: 26, fontWeight: 900, color: K.white, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', lineHeight: 1.05 }} className="k-num">
-                {balance.toLocaleString('ru-RU')} ₽
+                {formatRub(balance)}
               </div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>
                 Неделя {currentWeek}
                 {lastDayResult && (
                   <> · <span style={{ fontWeight: 700 }}>
-                    {lastDayResult.netProfit >= 0 ? '+' : ''}{lastDayResult.netProfit.toLocaleString('ru-RU')} ₽/день
+                    {formatRubSigned(lastDayResult.netProfit)}/день
                   </span></>
                 )}
               </div>
             </div>
-
-            {/* Weekly tactic — chooser if not picked yet, chip after */}
-            {!weeklyTactic ? (
-              <div style={{
-                background: K.white, border: `2px solid ${K.orange}`,
-                borderRadius: 12, padding: 12,
-                display: 'flex', flexDirection: 'column', gap: 8,
-              }}>
-                <div style={{ fontSize: 10, fontWeight: 800, color: K.orange, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Тактика на неделю
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {WEEKLY_TACTICS.map(t => (
-                    <button
-                      key={t.id}
-                      onClick={() => setWeeklyTactic(t.id)}
-                      style={{
-                        textAlign: 'left', padding: '10px 12px',
-                        background: K.bone, border: `1px solid ${K.lineSoft}`,
-                        borderRadius: 10, cursor: 'pointer',
-                        fontFamily: 'inherit',
-                        display: 'flex', alignItems: 'center', gap: 10,
-                      }}
-                    >
-                      <span style={{ fontSize: 18, flexShrink: 0 }}>{t.icon}</span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: K.ink }}>{t.title}</div>
-                        <div style={{ fontSize: 10, color: K.muted, lineHeight: 1.3 }}>{t.blurb}</div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (() => {
-              const def = getWeeklyTacticDef(weeklyTactic)
-              return def ? (
-                <div style={{
-                  background: K.orangeSoft,
-                  border: `1px solid ${K.orange}`,
-                  borderRadius: 12, padding: '8px 12px',
-                  display: 'flex', alignItems: 'center', gap: 10,
-                }}>
-                  <span style={{ fontSize: 18 }}>{def.icon}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: K.orange, textTransform: 'uppercase' }}>
-                      Тактика
-                    </div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: K.ink }}>{def.title}</div>
-                  </div>
-                  <button
-                    onClick={() => setWeeklyTactic(null)}
-                    style={{
-                      background: K.white, border: `1px solid ${K.lineSoft}`,
-                      borderRadius: 8, padding: '5px 9px',
-                      fontSize: 10, fontWeight: 700, color: K.muted,
-                      cursor: 'pointer', fontFamily: 'inherit',
-                    }}
-                  >
-                    Сменить
-                  </button>
-                </div>
-              ) : null
-            })()}
 
             {/* Personal goal — compact progress bar */}
             {personalGoal && !personalGoal.achieved && !personalGoal.missed && (() => {
@@ -358,7 +295,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
                     <div style={{ width: `${pct}%`, height: '100%', background: barColor, transition: 'width 0.3s' }} />
                   </div>
                   <div style={{ fontSize: 10, color: K.muted, fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
-                    {balance.toLocaleString('ru-RU')} / {personalGoal.targetAmount.toLocaleString('ru-RU')} ₽
+                    {formatRub(balance)} / {formatRub(personalGoal.targetAmount)}
                   </div>
                 </div>
               )
@@ -375,9 +312,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
                 Прибыль за день
               </div>
               <div style={{ fontSize: 14, fontWeight: 800, color: (lastDayResult?.netProfit ?? 0) >= 0 ? K.ink : K.bad }} className="k-num">
-                {lastDayResult
-                  ? `${lastDayResult.netProfit >= 0 ? '+' : ''}${lastDayResult.netProfit.toLocaleString('ru-RU')} ₽`
-                  : '—'}
+                {lastDayResult ? formatRubSigned(lastDayResult.netProfit) : '—'}
               </div>
             </div>
 
@@ -476,7 +411,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
           fontSize: 12, fontWeight: 700, textAlign: 'center',
           animation: 'slideUp 0.3s ease',
         }}>
-          💙 Контур сэкономил {savingsToast.toLocaleString('ru-RU')} ₽!
+          💙 Контур сэкономил {formatRub(savingsToast)}!
         </div>
       )}
 

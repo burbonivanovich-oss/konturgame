@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
 import { K } from '../design-system/tokens'
+import { formatRub } from '../../utils/format'
 
 interface CampaignModalProps {
   isOpen: boolean
@@ -95,7 +96,7 @@ export default function CampaignModal({ isOpen, onClose }: CampaignModalProps) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                   <span style={{ fontSize: 14, fontWeight: 700 }}>{campaign.name}</span>
                   <span style={{ fontSize: 13, fontWeight: 700, color: canAfford ? K.ink : K.bad }}>
-                    {campaign.cost.toLocaleString('ru-RU')} ₽
+                    {formatRub(campaign.cost)}
                   </span>
                 </div>
                 <p style={{ fontSize: 12, color: K.muted, marginBottom: 10, margin: '0 0 10px 0' }}>

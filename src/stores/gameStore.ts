@@ -3,7 +3,7 @@ import type {
   GameState, BusinessType, ServiceType, Service, DayResult, Event,
   AdCampaign, CashRegisterType, CashRegister, OnboardingStage,
   CampaignROI, MilestoneStatus, WeekPhase, NPC, PlayerBackstory, NpcMemoryEntry,
-  DecisionLogEntry, WeeklyTactic, EmployeePosition,
+  DecisionLogEntry, EmployeePosition,
 } from '../types/game'
 import { SERVICES_CONFIG, BUSINESS_CONFIGS, ECONOMY_CONSTANTS, MAX_ACTIVE_CAMPAIGNS } from '../constants/business'
 import { ONBOARDING_STAGES, SERVICE_UNLOCK_MAP } from '../constants/onboarding'
@@ -163,7 +163,6 @@ const createInitialState = (businessType: BusinessType): GameState => {
     npcs: createInitialNPCs(),
     playerBackstory: null,
     personalGoal: null,
-    weeklyTactic: null,
     newlyUnlockedLessons: [],
     activeChainIds: [],
     completedChainIds: [],
@@ -197,7 +196,6 @@ interface GameStoreActions {
   completeActionsPhase: () => { blocked: boolean; reason?: string }
   completeResultsPhase: () => void
   completeSummaryPhase: () => void
-  setWeeklyTactic: (tactic: WeeklyTactic | null) => void
 
   // Balance and metrics
   setBalance: (amount: number) => void
@@ -452,15 +450,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     completeSummaryPhase: () => {
       set({
         weekPhase: 'actions' as WeekPhase,
-        // Clear weekly tactic — player will pick a fresh one for the new week.
-        weeklyTactic: null,
-        lastUpdated: Date.now(),
-      })
-    },
-
-    setWeeklyTactic: (tactic: WeeklyTactic | null) => {
-      set({
-        weeklyTactic: tactic,
         lastUpdated: Date.now(),
       })
     },

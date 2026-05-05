@@ -2,6 +2,7 @@ import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
 import type { PlayerBackstory, NPC } from '../../types/game'
 import { K } from '../design-system/tokens'
+import { formatRub } from '../../utils/format'
 import { buildNpcExitLines, buildGoalClosure } from '../../constants/npcExits'
 import { getNPCDefinition } from '../../constants/npcs'
 import { getMetaLesson } from '../../constants/metaLessons'
@@ -225,7 +226,7 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 12 }}>
               <span style={{ color: K.muted }}>Финальный баланс:</span>
               <span style={{ fontWeight: 700, color: balance >= 0 ? K.ink : K.bad }}>
-                {balance.toLocaleString('ru-RU')} ₽
+                {formatRub(balance)}
               </span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 12 }}>
@@ -295,7 +296,7 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
                     <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
                       <span style={{ color: K.ink2 }}>{label}</span>
                       <span style={{ fontWeight: 700, color: K.bad, fontVariantNumeric: 'tabular-nums' }}>
-                        −{loss.toLocaleString('ru-RU')} ₽
+                        −{formatRub(loss)}
                       </span>
                     </div>
                   ))}

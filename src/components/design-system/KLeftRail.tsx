@@ -2,6 +2,7 @@ import { K } from './tokens'
 import { KIcon } from './KIcon'
 import { Row, Col, Card } from './primitives'
 import type { BusinessType, PersonalGoal } from '../../types/game'
+import { formatRub } from '../../utils/format'
 
 type NavId = 'dashboard' | 'ecosystem' | 'finance' | 'development' | 'operations' |
              'warehouse' | 'statistics' | 'journal'
@@ -279,7 +280,7 @@ export function KLeftRail({
           Спасено с Контуром
         </div>
         <div style={{ fontSize: 22, fontWeight: 700, marginTop: 2, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
-          {savedBalance.toLocaleString('ru-RU')} ₽
+          {formatRub(savedBalance)}
         </div>
         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>
           за {currentWeek} {currentWeek === 1 ? 'неделю' : currentWeek < 5 ? 'недели' : 'недель'}

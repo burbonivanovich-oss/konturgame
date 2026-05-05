@@ -3,6 +3,7 @@ import { useGameStore } from '../../stores/gameStore'
 import { PRODUCT_CATEGORIES, isCategoryAllowed } from '../../services/assortmentEngine'
 import { UPGRADES_CONFIG } from '../../constants/business'
 import { K } from '../design-system/tokens'
+import { formatRub } from '../../utils/format'
 
 const SERVICE_ICONS: Record<string, string> = {
   market: '🛒', bank: '🏦', ofd: '📄',
@@ -45,13 +46,13 @@ export default function AssortmentModal({ isOpen, onClose }: AssortmentModalProp
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.45 }}>ВЫРУЧКА/ДЕНЬ</div>
             <div style={{ fontSize: 16, fontWeight: 800, color: K.good }}>
-              ~{totalDailyRevenue.toLocaleString('ru-RU')} ₽
+              ~{formatRub(totalDailyRevenue)}
             </div>
           </div>
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.45 }}>РАСХОДЫ/ДЕНЬ</div>
             <div style={{ fontSize: 16, fontWeight: 800, color: K.orange }}>
-              ~{totalDailyCost.toLocaleString('ru-RU')} ₽
+              ~{formatRub(totalDailyCost)}
             </div>
           </div>
           <div>
@@ -116,13 +117,13 @@ export default function AssortmentModal({ isOpen, onClose }: AssortmentModalProp
                     <div>
                       <span style={{ opacity: 0.45 }}>Выручка: </span>
                       <span style={{ fontWeight: 700, color: K.good }}>
-                        ~{cat.baseRevenue.toLocaleString('ru-RU')} ₽/день
+                        ~{formatRub(cat.baseRevenue)}/день
                       </span>
                     </div>
                     <div>
                       <span style={{ opacity: 0.45 }}>Закупка: </span>
                       <span style={{ fontWeight: 700, color: K.orange }}>
-                        {cat.dailyCost.toLocaleString('ru-RU')} ₽/день
+                        {formatRub(cat.dailyCost)}/день
                       </span>
                     </div>
                   </div>

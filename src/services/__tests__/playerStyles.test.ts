@@ -12,7 +12,7 @@ import { describe, it } from 'vitest'
 import { processWeek } from '../weekCalculator'
 import { applyEventConsequence } from '../eventGenerator'
 import type {
-  GameState, ServiceType, Event, WeeklyTactic,
+  GameState, ServiceType, Event,
 } from '../../types/game'
 import { SERVICES_CONFIG } from '../../constants/business'
 
@@ -94,7 +94,6 @@ function makeGameState(overrides: Partial<GameState> = {}): GameState {
     pendingChainFollowUps: [],
     decisionLog: [],
     seenNewspaperWeeks: [],
-    weeklyTactic: null,
     chosenEventOptions: {},
     createdAt: Date.now(),
     lastUpdated: Date.now(),
@@ -112,7 +111,6 @@ interface Policy {
   initialServices: ServiceType[]
   // Set of services to activate at certain weeks
   servicePlan?: Array<{ atWeek: number; service: ServiceType }>
-  weeklyTactic: WeeklyTactic | null | ((week: number, state: GameState) => WeeklyTactic | null)
   // How to resolve pending events
   eventStrategy: EventOptionPicker
   // Optionally restore energy by some amount each week (sim of owner investments)
@@ -261,11 +259,6 @@ function runSimulation(policy: Policy, weeks: number = 52): RunResult {
     // Restock — engaged player would top up via purchaseModal each week
     restockWeekly(state)
 
-    // Pick weekly tactic
-    state.weeklyTactic = typeof policy.weeklyTactic === 'function'
-      ? policy.weeklyTactic(w, state)
-      : policy.weeklyTactic
-
     // Restore energy (mirrors completeResultsPhase)
     state.entrepreneurEnergy = Math.min(
       100,
@@ -341,7 +334,7 @@ function runSimulation(policy: Policy, weeks: number = 52): RunResult {
 // ─────────────────────────────────────────────────────────────────
 const POLICIES: Policy[] = [
   {
-    name: 'OPTIMAL — все сервисы рано, агрессив, контур-выборы',
+    name: 'OPTIMAL — все сервисы рано, контур-выборы',
     initialServices: ['bank', 'ofd'],
     servicePlan: [
       { atWeek: 2, service: 'market' },
@@ -350,46 +343,39 @@ const POLICIES: Policy[] = [
       { atWeek: 6, service: 'fokus' },
       { atWeek: 8, service: 'diadoc' },
     ],
-    weeklyTactic: 'aggressive',
     eventStrategy: 'kontur',
   },
   {
-    name: 'MINIMUM — только Bank+OFD, calm, дешёвые выборы',
+    name: 'MINIMUM — только Bank+OFD, дешёвые выборы',
     initialServices: ['bank', 'ofd'],
-    weeklyTactic: 'calm',
     eventStrategy: 'cheapest',
   },
   {
-    name: 'NO_TACTIC — Bank+OFD+Market, тактику не выбирает',
+    name: 'MARKET_BASE — Bank+OFD+Market',
     initialServices: ['bank', 'ofd', 'market'],
-    weeklyTactic: null,
     eventStrategy: 'cheapest',
   },
   {
-    name: 'REPUTATION — service tactic always, кашерные выборы',
+    name: 'REPUTATION — Bank+OFD+Fokus, кашерные выборы',
     initialServices: ['bank', 'ofd', 'fokus'],
     servicePlan: [{ atWeek: 5, service: 'elba' }],
-    weeklyTactic: 'service',
     eventStrategy: 'cheapest',
   },
   {
-    name: 'BURNOUT_RISK — aggressive каждую неделю, без отдыха',
+    name: 'LOW_ENERGY — выгорающий хозяин (низкое восстановление)',
     initialServices: ['bank', 'ofd', 'market'],
-    weeklyTactic: 'aggressive',
     eventStrategy: 'cheapest',
     energyRestoreOverride: 25, // simulate exhausted owner with no investments
   },
   {
-    name: 'CHAOS — random event picks, alternating tactics',
+    name: 'CHAOS — random event picks',
     initialServices: ['bank', 'ofd'],
     servicePlan: [{ atWeek: 4, service: 'market' }],
-    weeklyTactic: (w) => (w % 3 === 0 ? 'aggressive' : w % 3 === 1 ? 'calm' : 'service'),
     eventStrategy: 'random',
   },
   {
     name: 'MIN_VIABLE — только Bank, никаких сервисов',
     initialServices: ['bank'],
-    weeklyTactic: 'calm',
     eventStrategy: 'cheapest',
   },
 ]
@@ -500,36 +486,7 @@ function detectVulnerabilities(results: RunResult[]): Vulnerability[] {
     }
   }
 
-  // 9. Active strategies should outperform passive — flag if not
-  const activeResults = results.filter(r => {
-    const t = r.policy.weeklyTactic
-    return t !== null && typeof t !== 'function'
-  })
-  const passiveResults = results.filter(r => r.policy.weeklyTactic === null)
-  if (passiveResults.length && activeResults.length) {
-    const bestPassive = Math.max(...passiveResults.map(r => r.rows[r.rows.length - 1]?.balance ?? 0))
-    const bestActive = Math.max(...activeResults.map(r => r.rows[r.rows.length - 1]?.balance ?? 0))
-    if (bestPassive > bestActive) {
-      vulns.push({
-        policy: 'meta',
-        type: 'PASSIVE_BEATS_ACTIVE',
-        detail: `Лучший пассивный (${bestPassive.toLocaleString('ru')}₽) > лучший активный (${bestActive.toLocaleString('ru')}₽). Тактика недели не вознаграждает игрока за участие.`,
-      })
-    }
-  }
-
-  // 10. Aggressive tactic + low-energy systems = burnout trap
-  for (const r of results) {
-    if (r.policy.weeklyTactic === 'aggressive' && r.ended === 'burnout') {
-      vulns.push({
-        policy: r.policy.name,
-        type: 'AGGRESSIVE_TRAP',
-        detail: `Тактика 'aggressive' (-3 энергии/день) надёжно ведёт в burnout (${r.weeksSurvived} нед.). Без owner investments игрок не может её держать дольше 5-11 недель.`,
-      })
-    }
-  }
-
-  // 11. Crisis events never fired across any run
+  // 9. Crisis events never fired across any run
   const allCrisis = results.flatMap(r =>
     r.finalState.triggeredEventIds.filter(id => id.startsWith('CRISIS_'))
   )

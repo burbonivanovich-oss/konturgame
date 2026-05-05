@@ -5,7 +5,6 @@ import { ensureNPCsInitialized, applyNPCPassiveEffects, getInspectorChain2EventI
 import { getChainEvent, getChainStartEvent, CHAIN_TRIGGER_WEEKS, type ChainId } from '../constants/eventChains'
 import { templateToEvent, applyEventConsequence, generateCrisisEvent } from './eventGenerator'
 import { pickDiaryEntry } from '../constants/diary'
-import { getWeeklyTacticDef } from '../constants/weeklyTactics'
 import {
   buildModifiers,
   calculateClients,
@@ -45,6 +44,7 @@ import { getTotalThroughput, calculateRegisterPenalty, checkRegisterBreakdown } 
 import { calculateCategoryRevenue } from './assortmentEngine'
 import { initializeEmployees, getWeeklySalaryCost, getWeeklyEnergyCost, getEmployeeCapacityBonus, getUpgradeEnergyBonus } from './employeeManager'
 import { initializeQuality, updateQualityWeekly, getQualityReputationBonus, getQualityLoyaltyBonus, getQualityPricePremium, getQualityClientModifier, getBrandEffect } from './qualityManager'
+import { formatRub } from '../utils/format'
 
 export function checkWeekBlocked(state: GameState): { blocked: boolean; reason?: string } {
   if (state.pendingEvent) {
@@ -108,16 +108,6 @@ export function processWeek(state: GameState): DayResult {
   const weeklyEnergyCost = getWeeklyEnergyCost(state)
   const employeeCapacityBonus = getEmployeeCapacityBonus(state)
   const loyaltyUpgradesBonus = getLoyaltyUpgradesBonus(state)
-
-  // Weekly tactic — multipliers/deltas applied per day in the loop below.
-  // No-tactic = neutral (1.0). Player can pick a tactic for a focused effect,
-  // but skipping doesn't punish — the chooser used to penalise non-pickers
-  // which made the system feel like friction, not a choice.
-  const tactic = getWeeklyTacticDef(state.weeklyTactic)
-  const tacticRevenueMul = tactic?.revenueMultiplier ?? 1
-  const tacticEnergyPerDay = tactic?.energyDelta ?? 0
-  const tacticRepPerDay = tactic?.reputationDelta ?? 0
-  const tacticLoyaltyPerDay = tactic?.loyaltyDelta ?? 0
 
   // Process each day of the week (7 iterations)
   for (let dayNum = 0; dayNum < 7; dayNum++) {
@@ -219,7 +209,7 @@ export function processWeek(state: GameState): DayResult {
       energyModifier = ENERGY_REVENUE_MULTIPLIER.TIRED
     }
 
-    const dayRevenue = Math.max(0, Math.round((dailyRevenue - breakdownPenalty) * energyModifier * tacticRevenueMul))
+    const dayRevenue = Math.max(0, Math.round((dailyRevenue - breakdownPenalty) * energyModifier))
     const registerOverflowPenalty = Math.round(registerMissed * avgCheck)
 
     // 8. Purchase costs (via assortment daily costs)
@@ -283,7 +273,7 @@ export function processWeek(state: GameState): DayResult {
       ? (state.services.fokus.effects.reputationBonus ?? 0)
       : 0
     const qualityRepBonus = getQualityReputationBonus(state)
-    const dayRepChange = Math.round(repFromMissed + fokusRepBonus + synergyMods.reputationBonus + qualityRepBonus + tacticRepPerDay)
+    const dayRepChange = Math.round(repFromMissed + fokusRepBonus + synergyMods.reputationBonus + qualityRepBonus)
 
     // 16. Loyalty change with quality bonus
     const elbaActive = state.services?.elba?.isActive ?? false
@@ -303,7 +293,7 @@ export function processWeek(state: GameState): DayResult {
     }
     const elbaLoyaltyBonus = elbaActive ? (state.services.elba.effects.loyaltyBonus ?? 0) : 0
     const qualityLoyaltyBonus = getQualityLoyaltyBonus(state)
-    dayLoyaltyChange += elbaLoyaltyBonus + synergyMods.loyaltyBonus + qualityLoyaltyBonus + loyaltyUpgradesBonus + tacticLoyaltyPerDay
+    dayLoyaltyChange += elbaLoyaltyBonus + synergyMods.loyaltyBonus + qualityLoyaltyBonus + loyaltyUpgradesBonus
 
     // Loyalty soft-cap decay above 70 — without active maintenance, customer
     // loyalty drifts down. At 70: no decay; at 100: 3/day pull. To plateau
@@ -311,9 +301,9 @@ export function processWeek(state: GameState): DayResult {
     //   • +0/day → drifts to 70
     //   • +1/day → ~80 plateau
     //   • +2/day → ~90
-    //   • +3/day → 100 (perfect play: service tactic + max quality + synergies)
+    //   • +3/day → 100 (perfect play: max quality + synergies + good choices)
     // Loyalty bonuses on upgrades have been removed; loyalty now reflects HOW
-    // you play (tactic, choices, quality), not WHAT you bought.
+    // you play (choices, quality), not WHAT you bought.
     if (state.loyalty > 70) {
       dayLoyaltyChange -= (state.loyalty - 70) * 0.10
     }
@@ -373,11 +363,9 @@ export function processWeek(state: GameState): DayResult {
   // Deduct weekly employee energy cost, minus upgrade bonuses
   const upgradeEnergyBonus = getUpgradeEnergyBonus(state)
   const actualEnergyCost = Math.max(0, weeklyEnergyCost - upgradeEnergyBonus)
-  // Apply weekly tactic's per-day energy delta over 7 days (e.g. -3/day = -21/week).
-  const tacticEnergyTotal = tacticEnergyPerDay * 7
   state.entrepreneurEnergy = Math.max(
     0,
-    Math.min(100, state.entrepreneurEnergy - actualEnergyCost + tacticEnergyTotal)
+    Math.min(100, state.entrepreneurEnergy - actualEnergyCost)
   )
 
   // Check if entrepreneur energy reached 0 (end of week).
@@ -711,7 +699,7 @@ function generateNextWeekTeaser(state: GameState): string | null {
   if (state.loans?.length) {
     const urgentLoan = state.loans.find(l => !l.isRepaid && l.dueWeek === state.currentWeek + 1)
     if (urgentLoan) {
-      return `💸 На следующей неделе истекает срок займа — потребуется вернуть ${urgentLoan.amount.toLocaleString('ru-RU')} ₽`
+      return `💸 На следующей неделе истекает срок займа — потребуется вернуть ${formatRub(urgentLoan.amount)}`
     }
     const nearLoan = state.loans.find(l => !l.isRepaid && l.dueWeek === state.currentWeek + 2)
     if (nearLoan) {

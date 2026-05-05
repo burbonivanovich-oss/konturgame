@@ -21,17 +21,6 @@ export interface TutorialMoment {
 // dismisses, next render may show the next eligible one.
 export const TUTORIAL_MOMENTS: TutorialMoment[] = [
   {
-    id: 'tactic-chooser',
-    icon: '🎯',
-    title: 'Тактика на неделю',
-    body: 'Каждую неделю выбирайте фокус — он влияет на всю неделю целиком.\n\n• Активная: +20% выручки, но −2 энергии/день\n• Спокойная: −8% выручки, +2 энергии/день\n• Качество: −5% выручки, но +0.5 репутации и +1 лояльности/день\n\nЕсли не выбрать — −5% выручки за рассеянность.',
-    shouldShow: (s) =>
-      (s.currentWeek ?? 1) === 1 &&
-      (s.dayOfWeek ?? 0) >= 1 &&
-      !s.weeklyTactic &&
-      !!s.onboardingStage && s.onboardingStage >= 1,
-  },
-  {
     id: 'upgrades-available',
     icon: '🔧',
     title: 'Улучшения и оборудование',

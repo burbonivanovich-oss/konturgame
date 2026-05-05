@@ -142,11 +142,14 @@ input, select, textarea {
 }
 
 /* Strong attention pulse — outline stays solid, ring expands outward and fades.
-   Used for "click here next" indicators in nav and action buttons. */
+   Used for "click here next" indicators in nav and action buttons.
+   Animates only box-shadow: animating background-color used to bleach
+   already-orange action buttons (e.g. "Купить кассу") into a translucent
+   wash where the white label became unreadable. */
 @keyframes navPulse {
-  0%   { box-shadow: 0 0 0 0 rgba(255, 106, 44, 0.7); background-color: rgba(255, 106, 44, 0.12); }
-  60%  { box-shadow: 0 0 0 14px rgba(255, 106, 44, 0); background-color: rgba(255, 106, 44, 0.08); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 106, 44, 0); background-color: rgba(255, 106, 44, 0.12); }
+  0%   { box-shadow: 0 0 0 0 rgba(255, 106, 44, 0.7); }
+  60%  { box-shadow: 0 0 0 14px rgba(255, 106, 44, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 106, 44, 0); }
 }
 
 @keyframes navWiggle {

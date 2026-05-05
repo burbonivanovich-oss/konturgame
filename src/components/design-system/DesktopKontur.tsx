@@ -3,6 +3,7 @@ import { useGameStore } from '../../stores/gameStore'
 import { SYNERGIES_CONFIG } from '../../constants/business'
 import { ONBOARDING_STAGES } from '../../constants/onboarding'
 import { K } from './tokens'
+import { formatRub } from '../../utils/format'
 
 const ACTIVATION_TOAST: Record<string, { headline: string; detail: string }> = {
   market:  { headline: 'Контур.Маркет подключён!',  detail: '+20% клиентов · +15% к среднему чеку · списания -20%' },
@@ -133,7 +134,7 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
                 СПАСЕНО
               </div>
               <div style={{ fontSize: 48, fontWeight: 800, letterSpacing: '-0.035em', marginTop: 4 }} className="k-num">
-                {savedBalance.toLocaleString('ru-RU')} ₽
+                {formatRub(savedBalance)}
               </div>
             </div>
             {roi > 0 && (
@@ -160,7 +161,7 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
           </div>
           <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6 }}>
             {totalCost > 0
-              ? `Экономит в ${roi} раз больше, чем стоит подписка (${totalCost.toLocaleString('ru-RU')} ₽/год).`
+              ? `Экономит в ${roi} раз больше, чем стоит подписка (${formatRub(totalCost)}/год).`
               : 'Подключите сервисы для максимальной экономии.'}
           </div>
         </div>
@@ -229,7 +230,7 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
             padding: '8px 14px', borderRadius: 999,
             background: K.ink, color: '#fff',
             fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap', flexShrink: 0,
-          }}>Подключено {servicesList.filter(s => s.isActive).length} · {totalCost.toLocaleString('ru-RU')} ₽/год</div>
+          }}>Подключено {servicesList.filter(s => s.isActive).length} · {formatRub(totalCost)}/год</div>
         </div>
 
         <div style={{
@@ -302,7 +303,7 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.6 }}>ЦЕНА</div>
                   <div style={{ fontSize: 14, fontWeight: 800 }} className="k-num">
-                    {s.annualPrice.toLocaleString('ru-RU')} ₽<span style={{ fontSize: 10, opacity: 0.7 }}>/год</span>
+                    {formatRub(s.annualPrice)}<span style={{ fontSize: 10, opacity: 0.7 }}>/год</span>
                   </div>
                 </div>
                 <button

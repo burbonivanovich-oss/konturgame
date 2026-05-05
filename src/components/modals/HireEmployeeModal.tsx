@@ -3,6 +3,7 @@ import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
 import type { EmployeePosition } from '../../types/game'
 import { K } from '../design-system/tokens'
+import { formatRub } from '../../utils/format'
 
 const EMPLOYEE_POSITIONS: Array<{ id: EmployeePosition; label: string; baseSalary: number }> = [
   { id: 'cashier', label: '💳 Кассир', baseSalary: 45000 },
@@ -69,10 +70,10 @@ export default function HireEmployeeModal({ isOpen, onClose }: HireEmployeeModal
                 Зарплата в месяц
               </div>
               <div style={{ fontSize: 28, fontWeight: 800, color: K.orange, fontVariantNumeric: 'tabular-nums' }}>
-                {selectedData.baseSalary.toLocaleString('ru-RU')} ₽
+                {formatRub(selectedData.baseSalary)}
               </div>
               <div style={{ fontSize: 10, opacity: 0.5, marginTop: 8 }}>
-                ≈ {(selectedData.baseSalary / 30).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} ₽/день
+                ≈ {formatRub(selectedData.baseSalary / 30)}/день
               </div>
             </div>
 
@@ -97,7 +98,7 @@ export default function HireEmployeeModal({ isOpen, onClose }: HireEmployeeModal
               onMouseEnter={(e) => canAfford && (e.currentTarget.style.opacity = '0.9')}
               onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
             >
-              {canAfford ? `Нанять за ${selectedData.baseSalary.toLocaleString('ru-RU')} ₽` : 'Недостаточно средств'}
+              {canAfford ? `Нанять за ${formatRub(selectedData.baseSalary)}` : 'Недостаточно средств'}
             </button>
           </>
         )}

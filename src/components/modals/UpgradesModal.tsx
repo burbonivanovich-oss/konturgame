@@ -3,6 +3,7 @@ import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
 import { getUpgradesForBusiness } from '../../constants/business'
 import { K } from '../design-system/tokens'
+import { formatRub } from '../../utils/format'
 
 interface UpgradesModalProps {
   isOpen: boolean
@@ -57,7 +58,7 @@ export default function UpgradesModal({ isOpen, onClose }: UpgradesModalProps) {
                 </p>
                 {!isPurchased && (
                   <p style={{ fontSize: 12, fontWeight: 700, color: canAfford ? K.ink : K.bad, margin: 0 }}>
-                    {upgrade.cost.toLocaleString('ru-RU')} ₽
+                    {formatRub(upgrade.cost)}
                   </p>
                 )}
               </div>

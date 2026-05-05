@@ -50,9 +50,12 @@ export const ONBOARDING_STAGES: OnboardingStageConfig[] = [
   },
 
   // ── STAGE 1: ПРИЁМ ОПЛАТЫ (4 шага) ─────────────────────────────────
+  // Растянуто: банк → ~неделя бизнес-деятельности → касса → ~неделя → ОФД.
+  // Игроку нужно почувствовать каждое подключение отдельно, прежде чем
+  // навешивать следующее. Раньше все три закрывались за 9 дней.
   {
     stage: 1,
-    dayRange: [4, 14],
+    dayRange: [4, 21],
     unlocksServices: ['bank', 'ofd'],
     requiredAction: 'activate_ofd',
     steps: [
@@ -60,13 +63,13 @@ export const ONBOARDING_STAGES: OnboardingStageConfig[] = [
         id: '1-0',
         kind: 'intro',
         title: 'Точка продаж: 3 шага по закону',
-        text: 'Вы могли заметить — клиенты приходят, но не все платят. Без терминала ~40% уходят. Плюс по закону каждая продажа должна пробиваться через онлайн-кассу с передачей чеков в ФНС.\n\nСейчас закроем эту тему за 3 шага: банк → касса → ОФД. Потеряете несколько минут — забудете про штрафы и кассовый разрыв.',
+        text: 'Вы могли заметить — клиенты приходят, но не все платят. Без терминала ~40% уходят. Плюс по закону каждая продажа должна пробиваться через онлайн-кассу с передачей чеков в ФНС.\n\nСейчас закроем эту тему за 3 шага: банк → касса → ОФД. Делаем не подряд — между шагами поработайте, посмотрите как меняется бизнес.',
       },
       {
         id: '1-1',
         kind: 'action',
         requiresAction: 'activate_bank',
-        unlockDay: 5,
+        unlockDay: 6,
         title: 'Шаг 1: Контур.Банк',
         text: 'Открывает расчётный счёт онлайн за 5 минут. Принимаете оплату картой — те 40% клиентов остаются. Зайдите в «Экосистема» и нажмите кнопку Подключить.',
       },
@@ -74,15 +77,15 @@ export const ONBOARDING_STAGES: OnboardingStageConfig[] = [
         id: '1-2',
         kind: 'action',
         requiresAction: 'buy_register',
-        unlockDay: 9,
+        unlockDay: 14,
         title: 'Шаг 2: касса',
-        text: 'Поработали с банком пару дней? Теперь касса. В «Управление» — мобильная (для старта), надёжная или быстрая. Разовая покупка.',
+        text: 'Прошло около недели с банком — увидели разницу. Теперь касса. В «Управление» — мобильная (для старта), надёжная или быстрая. Разовая покупка.',
       },
       {
         id: '1-3',
         kind: 'action',
         requiresAction: 'activate_ofd',
-        unlockDay: 13,
+        unlockDay: 20,
         title: 'Шаг 3: Контур.ОФД',
         text: 'Касса работает только с ОФД — оператором фискальных данных. Передаёт чеки в ФНС автоматически. Без него штраф до 10 000 ₽ за каждый чек.',
       },
@@ -90,9 +93,11 @@ export const ONBOARDING_STAGES: OnboardingStageConfig[] = [
   },
 
   // ── STAGE 2: УЧЁТ ТОВАРОВ (2 шага) ──────────────────────────────────
+  // Между ОФД и Маркетом — две полные недели работы с кассой,
+  // чтобы реально почувствовать «что-то просрочилось, что-то списали».
   {
     stage: 2,
-    dayRange: [15, 28],
+    dayRange: [22, 42],
     unlocksServices: ['bank', 'ofd', 'market'],
     requiredAction: 'activate_market',
     steps: [
@@ -106,7 +111,7 @@ export const ONBOARDING_STAGES: OnboardingStageConfig[] = [
         id: '2-1',
         kind: 'action',
         requiresAction: 'activate_market',
-        unlockDay: 18,
+        unlockDay: 35,
         title: 'Подключите Контур.Маркет',
         text: 'В разделе «Экосистема» нажмите Подключить. Связка с ОФД и кассой даст синергию — Маркет автоматически импортирует продажи.',
       },
@@ -114,9 +119,10 @@ export const ONBOARDING_STAGES: OnboardingStageConfig[] = [
   },
 
   // ── STAGE 3: КОМАНДА И ДОКУМЕНТЫ (2 шага) ────────────────────────────
+  // Месяц с Маркетом перед документооборотом — разная природа проблем.
   {
     stage: 3,
-    dayRange: [29, 42],
+    dayRange: [43, 70],
     unlocksServices: ['bank', 'ofd', 'market', 'diadoc', 'fokus'],
     requiredAction: 'activate_diadoc',
     steps: [
@@ -130,7 +136,7 @@ export const ONBOARDING_STAGES: OnboardingStageConfig[] = [
         id: '3-1',
         kind: 'action',
         requiresAction: 'activate_diadoc',
-        unlockDay: 32,
+        unlockDay: 56,
         title: 'Подключите Диадок',
         text: 'Электронный документооборот с поставщиками. Подключите в «Экосистеме», Фокус откроется тоже — его можно подключить позже когда дойдут руки.',
       },
@@ -138,9 +144,11 @@ export const ONBOARDING_STAGES: OnboardingStageConfig[] = [
   },
 
   // ── STAGE 4: НАЛОГИ И МАСШТАБ (3 шага) ──────────────────────────────
+  // Эльба — финальный сервис, ~12-я неделя. Раньше — 7-я; игрок
+  // получал «полный набор» раньше, чем успевал понять, зачем каждый.
   {
     stage: 4,
-    dayRange: [43, 365],
+    dayRange: [71, 365],
     unlocksServices: ['bank', 'ofd', 'market', 'diadoc', 'fokus', 'elba', 'extern'],
     steps: [
       {
@@ -153,7 +161,7 @@ export const ONBOARDING_STAGES: OnboardingStageConfig[] = [
         id: '4-1',
         kind: 'action',
         requiresAction: 'activate_elba',
-        unlockDay: 46,
+        unlockDay: 84,
         title: 'Подключите Эльбу',
         text: 'В «Экосистеме» нажмите Подключить на Эльбу. Экстерн откроется тоже — он работает с Эльбой в паре.',
       },

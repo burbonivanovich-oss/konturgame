@@ -7,6 +7,7 @@ import {
 import { getCampaignStats } from '../../services/weekCalculator'
 import { getCurrentTier, getNextTier, canUpgradeTier } from '../../services/economyEngine'
 import { K } from '../design-system/tokens'
+import { formatRub } from '../../utils/format'
 
 type DevTab = 'marketing' | 'upgrades' | 'tier' | 'roi'
 
@@ -163,8 +164,8 @@ function TierSection() {
               label={`Неделя ${next.unlockWeek}+`}
               actual={`сейчас ${state.currentWeek}`} />
             <Requirement met={state.balance >= next.unlockBalance}
-              label={`Оборот от ${next.unlockBalance.toLocaleString('ru-RU')} ₽`}
-              actual={`${state.balance.toLocaleString('ru-RU')} ₽`} />
+              label={`Оборот от ${formatRub(next.unlockBalance)}`}
+              actual={`${formatRub(state.balance)}`} />
             <Requirement met={state.reputation >= next.unlockReputation}
               label={`Репутация ${next.unlockReputation}+`}
               actual={`${state.reputation}`} />
@@ -174,7 +175,7 @@ function TierSection() {
                 actual={`${state.qualityLevel ?? 0}`} />
             )}
             <Requirement met={state.balance >= next.upgradeCost}
-              label={`Стоимость апгрейда: ${next.upgradeCost.toLocaleString('ru-RU')} ₽`}
+              label={`Стоимость апгрейда: ${formatRub(next.upgradeCost)}`}
               actual={state.balance >= next.upgradeCost ? 'хватает' : 'не хватает'} />
           </div>
 
@@ -191,7 +192,7 @@ function TierSection() {
               fontFamily: 'inherit', letterSpacing: '-0.01em',
             }}
           >
-            {check.ok ? `Перейти на «${next.name}» за ${next.upgradeCost.toLocaleString('ru-RU')} ₽` : (check.reason ?? 'Недоступно')}
+            {check.ok ? `Перейти на «${next.name}» за ${formatRub(next.upgradeCost)}` : (check.reason ?? 'Недоступно')}
           </button>
           {error && (
             <div style={{ marginTop: 8, fontSize: 12, color: '#c0392b' }}>{error}</div>
@@ -401,7 +402,7 @@ function MarketingSection() {
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
                   <div style={{ fontSize: 15, fontWeight: 800 }} className="k-num">
-                    {cfg.cost.toLocaleString('ru-RU')} ₽
+                    {formatRub(cfg.cost)}
                   </div>
                   <button
                     onClick={() => !active && !blocked && handleLaunch(cfg)}
@@ -448,7 +449,7 @@ function MarketingSection() {
                       {name}
                     </div>
                     <div style={{ fontSize: 10, color: K.muted, marginTop: 1 }}>
-                      Неделя {entry.launchedWeek} · потрачено {entry.costSpent.toLocaleString('ru-RU')} ₽
+                      Неделя {entry.launchedWeek} · потрачено {formatRub(entry.costSpent)}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -459,7 +460,7 @@ function MarketingSection() {
                       {positive ? '+' : ''}{entry.roi.toFixed(0)}% ROI
                     </div>
                     <div style={{ fontSize: 10, color: K.muted }}>
-                      {entry.revenueGenerated.toLocaleString('ru-RU')} ₽ выручки
+                      {formatRub(entry.revenueGenerated)} выручки
                     </div>
                   </div>
                 </div>
@@ -546,7 +547,7 @@ function UpgradesSection() {
                   color: canAfford ? K.orange : K.bad,
                   marginTop: 'auto',
                 }}>
-                  {upgrade.cost.toLocaleString('ru-RU')} ₽
+                  {formatRub(upgrade.cost)}
                 </div>
               )}
 
@@ -609,8 +610,8 @@ function RoiSection() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 10 }}>
         {[
           { label: 'КАМПАНИЙ', value: String(stats.totalCampaigns) },
-          { label: 'ПОТРАЧЕНО', value: `${stats.totalSpent.toLocaleString('ru-RU')} ₽` },
-          { label: 'ВЫРУЧКА', value: `${stats.totalRevenue.toLocaleString('ru-RU')} ₽` },
+          { label: 'ПОТРАЧЕНО', value: `${formatRub(stats.totalSpent)}` },
+          { label: 'ВЫРУЧКА', value: `${formatRub(stats.totalRevenue)}` },
           {
             label: 'СРЕДНИЙ ROI',
             value: `${stats.averageROI >= 0 ? '+' : ''}${stats.averageROI.toFixed(1)}%`,
@@ -649,8 +650,8 @@ function RoiSection() {
                 <div style={{ fontSize: 13, fontWeight: 700 }}>{name}</div>
                 <div style={{ display: 'flex', gap: 12, marginTop: 3, fontSize: 10, fontWeight: 600, color: K.muted }}>
                   <span>Неделя {entry.launchedWeek}</span>
-                  <span className="k-num">потрачено {entry.costSpent.toLocaleString('ru-RU')} ₽</span>
-                  <span className="k-num">выручка {entry.revenueGenerated.toLocaleString('ru-RU')} ₽</span>
+                  <span className="k-num">потрачено {formatRub(entry.costSpent)}</span>
+                  <span className="k-num">выручка {formatRub(entry.revenueGenerated)}</span>
                 </div>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
