@@ -20,6 +20,10 @@ export interface NpcMemoryEntry {
   eventId: string
   choiceId: string
   note: string
+  // Signed relationship change captured at the time of the choice. Used by
+  // the NPCRosterModal opinion stack so the player can see why someone is
+  // hostile / friendly rather than just a single 0-100 number.
+  delta?: number
   isAnchor?: boolean  // anchor entries are never evicted by the 10-entry limit
 }
 

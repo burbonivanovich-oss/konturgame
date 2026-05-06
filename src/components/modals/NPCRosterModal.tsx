@@ -1,6 +1,7 @@
 import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
 import { NPC_DEFINITIONS, getNPCDefinition } from '../../constants/npcs'
+import type { NpcMemoryEntry } from '../../types/game'
 import { K } from '../design-system/tokens'
 
 interface NPCRosterModalProps {
@@ -16,11 +17,29 @@ function relationshipBand(level: number) {
   return { label: 'Враждебно', color: '#c0392b' }
 }
 
+// Sort: anchors first (permanent), then by recency. Hide entries with
+// zero delta — they're not opinion-shaping events. Show up to ~6 lines.
+function buildOpinionStack(memory: NpcMemoryEntry[]): NpcMemoryEntry[] {
+  const meaningful = memory.filter(m => (m.delta ?? 0) !== 0)
+  const anchors = meaningful.filter(m => m.isAnchor)
+  const nonAnchors = meaningful.filter(m => !m.isAnchor).slice(-6)
+  return [...anchors, ...nonAnchors].slice(-8)
+}
+
+function deltaColor(d: number): string {
+  if (d > 0) return K.mint
+  if (d < 0) return '#c0392b'
+  return K.muted
+}
+
+function deltaText(d: number): string {
+  if (d > 0) return `+${d}`
+  return String(d)
+}
+
 export default function NPCRosterModal({ isOpen, onClose }: NPCRosterModalProps) {
   const npcs = useGameStore(s => s.npcs ?? [])
 
-  // Show only revealed NPCs (player has interacted at least once).
-  // Locked silhouettes for the rest, so the player sees there's more to discover.
   const revealedIds = new Set(npcs.filter(n => n.isRevealed).map(n => n.id))
   const totalCount = NPC_DEFINITIONS.length
   const revealedCount = revealedIds.size
@@ -37,7 +56,7 @@ export default function NPCRosterModal({ isOpen, onClose }: NPCRosterModalProps)
           const isRevealed = npc?.isRevealed ?? false
           const level = npc?.relationshipLevel ?? def.startRelationship
           const band = relationshipBand(level)
-          const recentMemory = (npc?.memory ?? []).slice(-3).reverse()
+          const stack = buildOpinionStack(npc?.memory ?? [])
 
           if (!isRevealed) {
             return (
@@ -93,14 +112,22 @@ export default function NPCRosterModal({ isOpen, onClose }: NPCRosterModalProps)
                     {def.shortRole}
                   </div>
                 </div>
-                <div style={{
-                  fontSize: 11, fontWeight: 700,
-                  color: band.color,
-                  background: K.bone,
-                  padding: '4px 10px', borderRadius: 999,
-                  whiteSpace: 'nowrap',
-                }}>
-                  {band.label}
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{
+                    fontSize: 11, fontWeight: 700,
+                    color: band.color,
+                    background: K.bone,
+                    padding: '4px 10px', borderRadius: 999,
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {band.label}
+                  </div>
+                  <div style={{
+                    fontSize: 10, color: K.muted, marginTop: 4,
+                    fontVariantNumeric: 'tabular-nums',
+                  }}>
+                    {level} / 100
+                  </div>
                 </div>
               </div>
 
@@ -112,41 +139,48 @@ export default function NPCRosterModal({ isOpen, onClose }: NPCRosterModalProps)
                 «{def.personality}»
               </div>
 
-              {/* Relationship bar */}
-              <div>
-                <div style={{ height: 5, background: K.lineSoft, borderRadius: 999, overflow: 'hidden' }}>
-                  <div style={{
-                    width: `${level}%`, height: '100%',
-                    background: band.color, transition: 'width 0.3s',
-                  }} />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10, color: K.muted, fontVariantNumeric: 'tabular-nums' }}>
-                  <span>отношения</span>
-                  <span style={{ color: band.color, fontWeight: 700 }}>{level} / 100</span>
-                </div>
-              </div>
-
-              {/* Recent memory entries */}
-              {recentMemory.length > 0 && (
+              {/* Opinion stack — CK3-style "they remember" list. Each line
+                  is a moment that moved the needle, with the signed delta. */}
+              {stack.length > 0 && (
                 <div style={{
                   borderTop: `1px solid ${K.lineSoft}`,
                   paddingTop: 10, marginTop: 2,
-                  display: 'flex', flexDirection: 'column', gap: 6,
+                  display: 'flex', flexDirection: 'column', gap: 4,
                 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: K.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Недавно
+                  <div style={{
+                    fontSize: 10, fontWeight: 700, color: K.muted,
+                    textTransform: 'uppercase', letterSpacing: '0.06em',
+                    marginBottom: 2,
+                  }}>
+                    {def.name.split(' ')[0]} помнит
                   </div>
-                  {recentMemory.map((m, i) => (
-                    <div key={i} style={{
-                      fontSize: 12, color: K.ink2, lineHeight: 1.4,
-                      display: 'flex', gap: 8,
-                    }}>
-                      <span style={{ color: K.muted, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
-                        нед. {m.week}
-                      </span>
-                      <span>{m.note}</span>
-                    </div>
-                  ))}
+                  {stack.map((m, i) => {
+                    const d = m.delta ?? 0
+                    return (
+                      <div key={i} style={{
+                        fontSize: 12, color: K.ink2, lineHeight: 1.4,
+                        display: 'flex', alignItems: 'baseline', gap: 8,
+                      }}>
+                        {m.isAnchor && (
+                          <span style={{
+                            fontSize: 9, color: K.muted,
+                            flexShrink: 0, marginTop: 2,
+                          }}>📌</span>
+                        )}
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          {m.note}
+                        </span>
+                        <span style={{
+                          fontSize: 12, fontWeight: 800,
+                          color: deltaColor(d),
+                          fontVariantNumeric: 'tabular-nums',
+                          flexShrink: 0,
+                        }}>
+                          {deltaText(d)}
+                        </span>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>

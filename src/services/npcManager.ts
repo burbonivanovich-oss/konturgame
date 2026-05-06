@@ -29,13 +29,14 @@ export function updateNPCRelationship(npcs: NPC[], npcId: string, delta: number)
   })
 }
 
-// Applies a relationship delta with memory recording and overflow-to-XP conversion.
-// Replaces the inline map in eventGenerator so all callers share the same logic.
+// Applies a relationship delta with memory recording. Stores the signed
+// delta on the memory entry so the UI can render an opinion stack
+// ("note +20", "note −10") rather than only the aggregate number.
 export function applyRelationshipDeltaToState(
   state: GameState,
   npcId: string,
   delta: number,
-  memoryEntry: Omit<NpcMemoryEntry, 'isAnchor'>,
+  memoryEntry: Omit<NpcMemoryEntry, 'isAnchor' | 'delta'>,
 ): void {
   // Events with large deltas (≥15) are anchored so they survive memory trimming
   const isAnchor = Math.abs(delta) >= 15
@@ -46,7 +47,7 @@ export function applyRelationshipDeltaToState(
     const current = npc.relationshipLevel
 
     const newRel = Math.max(0, Math.min(100, current + delta))
-    const newMemory = trimMemory([...npc.memory, { ...memoryEntry, isAnchor }])
+    const newMemory = trimMemory([...npc.memory, { ...memoryEntry, delta, isAnchor }])
 
     return { ...npc, relationshipLevel: newRel, isRevealed: true, memory: newMemory }
   })

@@ -37,12 +37,19 @@ function ForecastBar({ label, value }: { label: string; value: number }) {
 export function FinanceView() {
   const {
     balance, savedBalance, lastDayResult, services, currentWeek,
-    loans, takeLoan, repayLoan,
+    loans, takeLoan, repayLoan, npcs,
     businessType, employees, purchasedUpgrades,
   } = useGameStore()
 
   const activeLoans = (loans ?? []).filter(l => !l.isRepaid)
   const bankActive = services?.bank?.isActive ?? false
+  // Loans are gated behind Денис: in the new NPC roster he's the
+  // school-friend-investor, and the meet event (NPC_DENIS_MEET) seeds
+  // the relationship between weeks 5-10. Without that introduction the
+  // bank's "loans" section makes no narrative sense — you don't have a
+  // money person yet.
+  const denisRevealed = (npcs ?? []).find(n => n.id === 'denis')?.isRevealed ?? false
+  const loansUnlocked = bankActive && denisRevealed
 
   const goalAmount = ECONOMY_CONSTANTS.GOAL_AMOUNT
   const toGoalPct = Math.min((balance / goalAmount) * 100, 100)
@@ -416,11 +423,11 @@ export function FinanceView() {
               </div>
             )}
 
-            {bankActive ? (
+            {loansUnlocked ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {activeLoans.length === 0 ? (
                   <>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: K.muted, letterSpacing: '0.05em', textTransform: 'uppercase' }}>ВЗЯТЬ ЗАЙМ</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: K.muted, letterSpacing: '0.05em', textTransform: 'uppercase' }}>ВЗЯТЬ ЗАЙМ · через Дениса</div>
                     {LOAN_OPTIONS.map(opt => (
                       <button
                         key={opt.type}
@@ -444,9 +451,13 @@ export function FinanceView() {
                   </div>
                 )}
               </div>
-            ) : (
+            ) : !bankActive ? (
               <div style={{ fontSize: 11, color: K.muted, lineHeight: 1.5 }}>
                 🏦 Подключите Контур.Банк, чтобы получить доступ к займам на выгодных условиях
+              </div>
+            ) : (
+              <div style={{ fontSize: 11, color: K.muted, lineHeight: 1.5 }}>
+                💬 Появится после знакомства с Денисом — школьным другом-инвестором (~5–10 неделя)
               </div>
             )}
           </div>
