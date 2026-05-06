@@ -33,7 +33,7 @@ export default function OperationsView({ onShowHireModal }: OperationsViewProps)
     businessType, enabledCategories, services,
     toggleCategory, employees,
     fireEmployee,
-    currentWeek, level,
+    currentWeek,
     cashRegisters,
     onboardingStage, onboardingStepIndex, onboardingCompleted,
   } = useGameStore()

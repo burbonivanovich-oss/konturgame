@@ -13,8 +13,6 @@ import VictoryModal from './modals/VictoryModal'
 import CashRegisterModal from './modals/CashRegisterModal'
 import AssortmentModal from './modals/AssortmentModal'
 import PromoCodeModal from './modals/PromoCodeModal'
-import PromoWalletModal from './modals/PromoWalletModal'
-import BundleModal from './modals/BundleModal'
 import OwnerInvestmentsModal from './modals/OwnerInvestmentsModal'
 import NPCRosterModal from './modals/NPCRosterModal'
 import HireEmployeeModal from './modals/HireEmployeeModal'
@@ -42,14 +40,13 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [showAchievementsModal, setShowAchievementsModal] = useState(false)
   const [showCashRegisterModal, setShowCashRegisterModal] = useState(false)
-  const [showPromoWalletModal, setShowPromoWalletModal] = useState(false)
   const [showOwnerInvestmentsModal, setShowOwnerInvestmentsModal] = useState(false)
   const [showNpcRosterModal, setShowNpcRosterModal] = useState(false)
   const [showHireEmployeeModal, setShowHireEmployeeModal] = useState(false)
   const [activeTab, setActiveTab] = useState('day')
 
   const {
-    pendingEvent, pendingEventsQueue, isGameOver, isVictory, businessType, achievements, promoCodesRevealed,
+    pendingEvent, pendingEventsQueue, isGameOver, isVictory, businessType, achievements,
     weekPhase, completeResultsPhase, completeSummaryPhase, lastDayResult, balance,
     personalGoal, currentWeek, npcs,
     onboardingStage, onboardingStepIndex, onboardingCompleted,
@@ -139,27 +136,6 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
       }}>
         <div style={{ fontSize: 14, fontWeight: 800 }}>Бизнес с Контуром</div>
         <div style={{ display: 'flex', gap: 6 }}>
-          <button
-            onClick={() => setShowPromoWalletModal(true)}
-            style={{
-              width: 32, height: 32, borderRadius: 8,
-              background: K.orangeSoft, border: 'none', cursor: 'pointer',
-              fontSize: 14, position: 'relative',
-            }}
-            title="Промокоды"
-          >
-            🎟️
-            {(promoCodesRevealed?.length ?? 0) > 0 && (
-              <span style={{
-                position: 'absolute', top: -4, right: -4,
-                background: K.orange, color: K.white,
-                fontSize: 9, fontWeight: 800, padding: '2px 4px',
-                borderRadius: 4,
-              }}>
-                {Math.min(promoCodesRevealed?.length ?? 0, 9)}
-              </span>
-            )}
-          </button>
           <button
             onClick={() => setShowAchievementsModal(true)}
             style={{
@@ -466,9 +442,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
         }}
       />
       <PromoCodeModal />
-      <PromoWalletModal isOpen={showPromoWalletModal} onClose={() => setShowPromoWalletModal(false)} />
       <OwnerInvestmentsModal isOpen={showOwnerInvestmentsModal} onClose={() => setShowOwnerInvestmentsModal(false)} />
-      <BundleModal />
       <VictoryModal isOpen={isVictory} type="victory" />
       <VictoryModal isOpen={isGameOver && !isVictory} type="defeat" />
 

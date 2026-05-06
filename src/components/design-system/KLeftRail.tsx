@@ -54,13 +54,11 @@ interface KLeftRailProps {
   balance: number
   personalGoal: PersonalGoal | null | undefined
   pendingEventCount: number
-  promoCodesCount: number
   revealedNpcCount: number
   highlightNav?: NavId
   onNav: (id: NavId) => void
   onHelp: () => void
   onSettings: () => void
-  onPromoWallet: () => void
   onAchievements: () => void
   onNpcRoster: () => void
 }
@@ -68,9 +66,9 @@ interface KLeftRailProps {
 export function KLeftRail({
   active, businessType, currentWeek, activeServiceCount,
   savedBalance, balance, personalGoal, pendingEventCount,
-  promoCodesCount, revealedNpcCount,
+  revealedNpcCount,
   highlightNav, onNav, onHelp, onSettings,
-  onPromoWallet, onAchievements, onNpcRoster,
+  onAchievements, onNpcRoster,
 }: KLeftRailProps) {
   const season = getSeason(currentWeek)
 
@@ -286,30 +284,6 @@ export function KLeftRail({
           за {currentWeek} {currentWeek === 1 ? 'неделю' : currentWeek < 5 ? 'недели' : 'недель'}
         </div>
       </Card>
-
-      {/* Promo wallet */}
-      <button
-        onClick={onPromoWallet}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          padding: '10px 12px', borderRadius: 10,
-          background: K.mintSoft, color: K.mintInk,
-          fontSize: 13, fontWeight: 600, cursor: 'pointer',
-          border: 'none', fontFamily: 'inherit', width: '100%', position: 'relative',
-        }}
-      >
-        <KIcon name="gift" size={16} color={K.mintInk} />
-        <div style={{ flex: 1, textAlign: 'left' }}>Промокоды</div>
-        {promoCodesCount > 0 && (
-          <span style={{
-            fontSize: 10, fontWeight: 700,
-            padding: '2px 6px', borderRadius: 6,
-            background: K.mint, color: K.white,
-          }}>
-            {Math.min(promoCodesCount, 9)}
-          </span>
-        )}
-      </button>
 
       {/* Help + Settings */}
       <Row gap={6} style={{ borderTop: `1px solid ${K.lineSoft}`, paddingTop: 12 }}>

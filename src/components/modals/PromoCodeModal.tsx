@@ -11,6 +11,7 @@ export default function PromoCodeModal() {
   if (!pendingPromoCode) return null
 
   const data = PROMO_CODE_DATA[pendingPromoCode as ServiceType]
+  // Most services don't have a promo code; only 3 flagship ones pop the modal.
   if (!data) return null
 
   const handleCopy = () => {
@@ -100,7 +101,6 @@ export default function PromoCodeModal() {
 
         <div style={{ fontSize: 11, opacity: 0.45, marginBottom: 20, lineHeight: 1.4 }}>
           Используйте этот код при покупке {data.serviceName} на сайте Контура.
-          Все промокоды сохраняются в Кошельке.
         </div>
 
         <button

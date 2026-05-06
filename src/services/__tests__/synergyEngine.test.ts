@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { getActiveSynergies, calculateSynergyModifiers } from '../synergyEngine'
-import type { GameState, Service, ServiceType } from '../../types/game'
+import { getActiveSynergies, calculateSynergyModifiers, getActiveBundleTier, countActiveServices } from '../synergyEngine'
+import type { GameState, ServiceType } from '../../types/game'
 import { SERVICES_CONFIG } from '../../constants/business'
 
 function makeServices(activeIds: ServiceType[] = []): GameState['services'] {
@@ -29,8 +29,6 @@ function makeState(activeServices: ServiceType[] = []): GameState {
     capacity: 60,
     services: makeServices(activeServices),
     achievements: [],
-    level: 1,
-    experience: 0,
     lastDayResult: null,
     pendingEvent: null,
     pendingEventsQueue: [],
@@ -57,7 +55,6 @@ function makeState(activeServices: ServiceType[] = []): GameState {
     daysBalanceNegative: 0,
     competitorEventTriggered: false,
     lastDayPainLosses: null,
-    bundlePromoShown: false,
     weeklyEnergyRestored: false,
     employees: [],
     qualityLevel: 50,
@@ -80,87 +77,63 @@ function makeState(activeServices: ServiceType[] = []): GameState {
   }
 }
 
-describe('getActiveSynergies', () => {
-  it('returns no synergies when no services active', () => {
-    const state = makeState([])
-    expect(getActiveSynergies(state)).toHaveLength(0)
+describe('countActiveServices', () => {
+  it('returns 0 when none active', () => {
+    expect(countActiveServices(makeState([]))).toBe(0)
   })
-
-  it('returns market_ofd synergy when both active', () => {
-    const state = makeState(['market', 'ofd'])
-    const synergies = getActiveSynergies(state)
-    const ids = synergies.map((s) => s.id)
-    expect(ids).toContain('market_ofd')
+  it('counts the active set', () => {
+    expect(countActiveServices(makeState(['bank', 'ofd', 'market']))).toBe(3)
   })
+})
 
-  it('does not return synergy if only one service active', () => {
-    const state = makeState(['market'])
-    const synergies = getActiveSynergies(state)
-    expect(synergies.find((s) => s.id === 'market_ofd')).toBeUndefined()
+describe('getActiveBundleTier', () => {
+  it('null below 3 services', () => {
+    expect(getActiveBundleTier(makeState(['bank', 'ofd']))).toBeNull()
   })
-
-  it('returns market_diadoc synergy when both active', () => {
-    const state = makeState(['market', 'diadoc'])
-    const ids = getActiveSynergies(state).map((s) => s.id)
-    expect(ids).toContain('market_diadoc')
+  it('basic tier at 3 services', () => {
+    const tier = getActiveBundleTier(makeState(['bank', 'ofd', 'market']))
+    expect(tier?.minServices).toBe(3)
+    expect(tier?.revenueBonus).toBe(0.10)
   })
-
-  it('returns full_kontour synergy when all 7 services active', () => {
-    const state = makeState(['market', 'bank', 'ofd', 'diadoc', 'fokus', 'elba', 'extern'])
-    const ids = getActiveSynergies(state).map((s) => s.id)
-    expect(ids).toContain('full_kontour')
+  it('extended tier at 5 services', () => {
+    const tier = getActiveBundleTier(makeState(['bank', 'ofd', 'market', 'diadoc', 'fokus']))
+    expect(tier?.minServices).toBe(5)
   })
-
-  it('does not return full_kontour when only 6 active', () => {
-    const state = makeState(['market', 'bank', 'ofd', 'diadoc', 'fokus', 'elba'])
-    const ids = getActiveSynergies(state).map((s) => s.id)
-    expect(ids).not.toContain('full_kontour')
+  it('full stack at 7 services', () => {
+    const tier = getActiveBundleTier(makeState(['bank', 'ofd', 'market', 'diadoc', 'fokus', 'elba', 'extern']))
+    expect(tier?.minServices).toBe(7)
+    expect(tier?.revenueBonus).toBe(0.30)
   })
 })
 
 describe('calculateSynergyModifiers', () => {
-  it('returns all zeros when no services active', () => {
-    const state = makeState([])
-    const mods = calculateSynergyModifiers(state)
+  it('returns zero revenue bonus below 3 services', () => {
+    expect(calculateSynergyModifiers(makeState(['bank', 'ofd'])).revenueBonus).toBe(0)
+  })
+  it('returns 10% revenue bonus at 3 services', () => {
+    expect(calculateSynergyModifiers(makeState(['bank', 'ofd', 'market'])).revenueBonus).toBe(0.10)
+  })
+  it('returns 30% revenue bonus at 7 services', () => {
+    expect(calculateSynergyModifiers(makeState(['bank', 'ofd', 'market', 'diadoc', 'fokus', 'elba', 'extern'])).revenueBonus).toBe(0.30)
+  })
+  it('only revenue is non-zero — bundle is revenue-only', () => {
+    const mods = calculateSynergyModifiers(makeState(['bank', 'ofd', 'market', 'diadoc', 'fokus', 'elba', 'extern']))
     expect(mods.reputationBonus).toBe(0)
     expect(mods.clientBonus).toBe(0)
-    expect(mods.revenueBonus).toBe(0)
     expect(mods.taxSaving).toBe(0)
     expect(mods.loyaltyBonus).toBe(0)
     expect(mods.capacityBonus).toBe(0)
+    expect(mods.checkBonus).toBe(0)
   })
+})
 
-  it('adds market+ofd reputation bonus', () => {
-    const state = makeState(['market', 'ofd'])
-    const mods = calculateSynergyModifiers(state)
-    expect(mods.reputationBonus).toBe(1)
+describe('getActiveSynergies (legacy shape)', () => {
+  it('returns empty list below 3 services', () => {
+    expect(getActiveSynergies(makeState(['bank', 'ofd']))).toHaveLength(0)
   })
-
-  it('adds bank+elba revenue bonus', () => {
-    const state = makeState(['bank', 'elba'])
-    const mods = calculateSynergyModifiers(state)
-    expect(mods.revenueBonus).toBe(0.02)
-  })
-
-  it('adds extern+bank tax saving', () => {
-    const state = makeState(['extern', 'bank'])
-    const mods = calculateSynergyModifiers(state)
-    expect(mods.taxSaving).toBe(0.01)
-  })
-
-  it('stacks bonuses from multiple synergies', () => {
-    const state = makeState(['market', 'ofd', 'bank', 'elba'])
-    const mods = calculateSynergyModifiers(state)
-    // market+ofd: +1 rep; bank+elba: +2% revenue
-    expect(mods.reputationBonus).toBe(1)
-    expect(mods.revenueBonus).toBe(0.02)
-  })
-
-  it('full kontour adds 5% revenue bonus on top of individual synergies', () => {
-    const state = makeState(['market', 'bank', 'ofd', 'diadoc', 'fokus', 'elba', 'extern'])
-    const mods = calculateSynergyModifiers(state)
-    // full_kontour: +5% revenue + 1 rep; plus sub-synergies
-    expect(mods.revenueBonus).toBeGreaterThanOrEqual(0.05)
-    expect(mods.reputationBonus).toBeGreaterThanOrEqual(1)
+  it('returns one pseudo-synergy for the active bundle tier', () => {
+    const list = getActiveSynergies(makeState(['bank', 'ofd', 'market']))
+    expect(list).toHaveLength(1)
+    expect(list[0].id).toBe('bundle_3')
   })
 })

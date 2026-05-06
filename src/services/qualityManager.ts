@@ -1,37 +1,35 @@
 import type { GameState } from '../types/game'
 import { getEmployeeCapacityBonus } from './employeeManager'
 
-// Quality system — consolidated from qualityManager + qualityModifier.
-// One number 0-100 representing how well the business runs (kept in
-// state.qualityLevel). All quality- and brand-related effects live here.
+// Quality system — simplified to two visible effects on the player:
+//   1) client modifier (more/fewer customers walk in)
+//   2) price premium  (higher/lower average check)
+//
+// Reputation and loyalty have their own mechanics (events, services,
+// missed-customer penalty) and are NOT additionally modified by quality
+// here. The previous "getBrandEffect" compound (rep+loy → +clients/+price/
+// +revenue at >80) has been removed — three layered multipliers were
+// invisible to the player and rewarded perfect play disproportionately.
 
 export function initializeQuality(): number {
-  return 50  // average baseline
+  return 50
 }
 
-const QUALITY_GRACE_WEEKS = 3  // no penalties while business is getting started
+const QUALITY_GRACE_WEEKS = 3  // no negative penalties for the first weeks
 
-// Quality is computed from inputs (services, employees, upgrades) on demand.
-// state.qualityLevel is the persistent baseline that drifts weekly via
-// updateQualityWeekly; the daily computed value adds context-specific bonuses.
 export function calculateQualityLevel(state: GameState): number {
   let quality = state.qualityLevel ?? 50
 
-  // Employee efficiency bonus (efficient team raises quality)
   if (state.employees.length > 0) {
     const empBonus = (getEmployeeCapacityBonus(state) - state.employees.length) * 10
     quality += empBonus
   }
-
-  // Service bonuses
   if (state.services?.fokus?.isActive) {
     quality += state.services.fokus.effects.reputationBonus ?? 0
   }
   if (state.services?.market?.isActive) {
-    quality += 5  // Market helps with inventory quality
+    quality += 5
   }
-
-  // Upgrades that explicitly target quality
   const hasQualityUpgrades = state.purchasedUpgrades?.some(id =>
     id.includes('quality') || id.includes('premium') || id.includes('interior')
   )
@@ -42,62 +40,24 @@ export function calculateQualityLevel(state: GameState): number {
   return Math.max(0, Math.min(100, Math.round(quality)))
 }
 
-export function getQualityReputationBonus(state: GameState): number {
-  const quality = calculateQualityLevel(state)
-  if (quality >= 80) return 2
-  if (quality >= 60) return 1
-  if ((state.currentWeek ?? 0) <= QUALITY_GRACE_WEEKS) return 0
-  if (quality <= 30) return -2
-  if (quality <= 45) return -1
-  return 0
-}
-
-export function getQualityLoyaltyBonus(state: GameState): number {
-  const quality = calculateQualityLevel(state)
-  if (quality >= 80) return 1
-  if (quality >= 60) return 0.5
-  if ((state.currentWeek ?? 0) <= QUALITY_GRACE_WEEKS) return 0
-  if (quality <= 30) return -2
-  if (quality <= 45) return -1
+// Single curve, two outputs. Below 40 hurts both clients and prices;
+// above 70 lifts both. 40-70 is neutral.
+export function getQualityClientModifier(state: GameState): number {
+  const q = calculateQualityLevel(state)
+  if ((state.currentWeek ?? 0) <= QUALITY_GRACE_WEEKS && q < 40) return 0
+  if (q < 40) return -0.20
+  if (q >= 80) return 0.20
+  if (q >= 70) return 0.10
   return 0
 }
 
 export function getQualityPricePremium(state: GameState): number {
-  const quality = calculateQualityLevel(state)
-  if (quality >= 80) return 0.15
-  if (quality >= 60) return 0.08
-  if ((state.currentWeek ?? 0) <= QUALITY_GRACE_WEEKS) return 0
-  if (quality <= 30) return -0.15
-  if (quality <= 45) return -0.08
+  const q = calculateQualityLevel(state)
+  if ((state.currentWeek ?? 0) <= QUALITY_GRACE_WEEKS && q < 40) return 0
+  if (q < 40) return -0.10
+  if (q >= 80) return 0.10
+  if (q >= 70) return 0.05
   return 0
-}
-
-// Client-side modifier from quality level (formerly in qualityModifier.ts)
-export function getQualityClientModifier(qualityLevel: number): number {
-  if (qualityLevel < 40) return -0.3
-  if (qualityLevel < 70) return -0.1
-  return 0.2
-}
-
-// Brand effect — combined rep+loy bonus. Was a hidden compound multiplier
-// (rep>80 AND loy>80 → +40% clients +30% revenue +10% price = ×2 at top).
-// Simplified to a smooth function of the average and capped at moderate
-// numbers so it stops compounding into "everything goes infinite for the
-// best player". Single visible field per UI.
-export function getBrandEffect(reputation: number, loyalty: number): {
-  clientMod: number
-  revenueMod: number
-  priceMod: number
-  isBrand: boolean
-} {
-  const avg = (reputation + loyalty) / 2
-  if (avg >= 80) {
-    return { clientMod: 0.20, revenueMod: 0.05, priceMod: 0.05, isBrand: true }
-  }
-  if (avg >= 60) {
-    return { clientMod: 0.10, revenueMod: 0, priceMod: 0.02, isBrand: false }
-  }
-  return { clientMod: 0, revenueMod: 0, priceMod: 0, isBrand: false }
 }
 
 // Seasonality modifier (was in qualityModifier.ts; moved for consolidation)
@@ -111,7 +71,6 @@ export function updateQualityWeekly(state: GameState): void {
   const currentQuality = state.qualityLevel ?? 50
   let newQuality = currentQuality
 
-  // Employee impact
   if (state.employees.length > 0) {
     const avgEfficiency = getEmployeeCapacityBonus(state) / state.employees.length
     if (avgEfficiency > 1.2) {

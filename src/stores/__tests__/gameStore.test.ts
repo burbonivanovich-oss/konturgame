@@ -260,20 +260,6 @@ describe('GameStore', () => {
     })
   })
 
-  describe('Experience & Level', () => {
-    it('should add experience', () => {
-      const { addExperience } = useGameStore.getState()
-      addExperience(50)
-      expect(useGameStore.getState().experience).toBe(50)
-    })
-
-    it('should set level', () => {
-      const { setLevel } = useGameStore.getState()
-      setLevel(5)
-      expect(useGameStore.getState().level).toBe(5)
-    })
-  })
-
   describe('Temporary Modifiers', () => {
     it('should set temporary modifiers', () => {
       const { setTemporaryModifiers } = useGameStore.getState()
@@ -321,8 +307,6 @@ describe('GameStore', () => {
         capacity: currentState.capacity,
         services: currentState.services,
         achievements: currentState.achievements,
-        level: currentState.level,
-        experience: currentState.experience,
         lastDayResult: currentState.lastDayResult,
         pendingEvent: currentState.pendingEvent,
         triggeredEventIds: currentState.triggeredEventIds,

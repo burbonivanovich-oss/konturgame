@@ -1,6 +1,6 @@
-import React, { useMemo, useState, useRef } from 'react'
+import React, { useState, useRef } from 'react'
 import { useGameStore } from '../../stores/gameStore'
-import { SYNERGIES_CONFIG } from '../../constants/business'
+import { BUNDLE_TIERS, countActiveServices } from '../../services/synergyEngine'
 import { ONBOARDING_STAGES } from '../../constants/onboarding'
 import { K } from './tokens'
 import { formatRub } from '../../utils/format'
@@ -71,11 +71,7 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
     }
   }
 
-  const activeSynergies = useMemo(() => {
-    return SYNERGIES_CONFIG.filter((syn: any) =>
-      syn.requiredServices.every((id: any) => (services as any)[id]?.isActive === true),
-    )
-  }, [services])
+  const activeServiceCount = countActiveServices({ services } as any)
 
   const servicesList = useMemo(() => {
     return Object.entries(services)
@@ -171,49 +167,33 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
           flex: 1, display: 'flex', flexDirection: 'column', gap: 8,
         }}>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.5 }}>
-            СИНЕРГИИ · {activeSynergies.length}/{SYNERGIES_CONFIG.length}
+            БАНДЛ · {activeServiceCount}/7 СЕРВИСОВ
           </div>
-          {SYNERGIES_CONFIG.map((s: any) => (
-            <div key={s.id} style={{
-              padding: '10px 12px', borderRadius: 12,
-              background: activeSynergies.some((syn: any) => syn.id === s.id)
-                ? K.mintSoft
-                : K.bone,
-              border: activeSynergies.some((syn: any) => syn.id === s.id)
-                ? 'none'
-                : `1.5px dashed ${K.line}`,
-              display: 'flex', alignItems: 'center', gap: 10,
-              opacity: activeSynergies.some((syn: any) => syn.id === s.id) ? 1 : 0.6,
-            }}>
-              <div style={{ display: 'flex', gap: 4 }}>
+          {BUNDLE_TIERS.map((tier) => {
+            const reached = activeServiceCount >= tier.minServices
+            return (
+              <div key={tier.minServices} style={{
+                padding: '10px 12px', borderRadius: 12,
+                background: reached ? K.mintSoft : K.bone,
+                border: reached ? 'none' : `1.5px dashed ${K.line}`,
+                display: 'flex', alignItems: 'center', gap: 10,
+                opacity: reached ? 1 : 0.6,
+              }}>
                 <span style={{
-                  padding: '2px 6px', borderRadius: 4,
-                  background: activeSynergies.some((syn: any) => syn.id === s.id)
-                    ? K.ink
-                    : K.line,
-                  color: activeSynergies.some((syn: any) => syn.id === s.id)
-                    ? '#fff'
-                    : K.muted,
-                  fontSize: 9, fontWeight: 800,
-                }}>{s.requiredServices[0]}</span>
-                <span style={{ fontSize: 10, opacity: 0.5, alignSelf: 'center' }}>+</span>
-                <span style={{
-                  padding: '2px 6px', borderRadius: 4,
-                  background: activeSynergies.some((syn: any) => syn.id === s.id)
-                    ? K.ink
-                    : K.line,
-                  color: activeSynergies.some((syn: any) => syn.id === s.id)
-                    ? '#fff'
-                    : K.muted,
-                  fontSize: 9, fontWeight: 800,
-                }}>{s.requiredServices[1]}</span>
+                  padding: '2px 8px', borderRadius: 4,
+                  background: reached ? K.ink : K.line,
+                  color: reached ? '#fff' : K.muted,
+                  fontSize: 10, fontWeight: 800,
+                }}>{tier.minServices}+</span>
+                <div style={{ flex: 1, fontSize: 11, fontWeight: 700 }}>
+                  {tier.label}
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 800, color: reached ? K.good : K.muted }}>
+                  +{Math.round(tier.revenueBonus * 100)}%
+                </span>
               </div>
-              <div style={{ flex: 1, fontSize: 11, fontWeight: 700 }}>{s.name}</div>
-              {activeSynergies.some((syn: any) => syn.id === s.id) && (
-                <span style={{ fontSize: 10, fontWeight: 800, color: K.good }}>✓</span>
-              )}
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
 

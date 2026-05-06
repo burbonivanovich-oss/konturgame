@@ -28,7 +28,7 @@ function saveRecord(record: GameRecord) {
 }
 
 export default function StatisticsView() {
-  const { currentWeek, balance, reputation, loyalty, achievements, level, isGameOver, isVictory, services, purchasedUpgrades, employees, campaignROI, milestoneStatus } = useGameStore()
+  const { currentWeek, balance, reputation, loyalty, achievements, isGameOver, isVictory, services, purchasedUpgrades, employees, campaignROI, milestoneStatus } = useGameStore()
 
   const weekProgress = (currentWeek / ECONOMY_CONSTANTS.TOTAL_WEEKS_PER_YEAR) * 100
   const isYearComplete = currentWeek >= ECONOMY_CONSTANTS.TOTAL_WEEKS_PER_YEAR
@@ -53,7 +53,6 @@ export default function StatisticsView() {
   const shareText = `Я прожил ${currentWeek} ${currentWeek % 10 === 1 && currentWeek !== 11 ? 'неделю' : 'недель'} в Бизнесе с Контуром! 💼
 Баланс: ${formatRub(balance)}
 Репутация: ${reputation}%
-Уровень: ${level}
 Ачивки: ${achievements.length}/${ACHIEVEMENTS.length}
 
 ${isYearComplete ? '✨ Выжил первый год! ✨' : `Прогресс: ${weekProgress.toFixed(0)}%`}
@@ -142,7 +141,6 @@ ${isYearComplete ? '✨ Выжил первый год! ✨' : `Прогресс
             { label: 'БАЛАНС', value: `${formatRub(balance)}`, isNum: true, wide: true },
             { label: 'РЕПУТАЦИЯ', value: `${reputation}` },
             { label: 'ЛОЯЛЬНОСТЬ', value: `${loyalty}%` },
-            { label: 'УРОВЕНЬ', value: `${level}/10` },
             { label: 'СЕРВИСЫ', value: `${activeServices}/7` },
             { label: 'СОТРУДНИКИ', value: String(employees?.length ?? 0) },
             { label: 'КАМПАНИИ', value: String(campaignsLaunched) },

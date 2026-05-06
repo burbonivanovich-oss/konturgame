@@ -419,8 +419,6 @@ export interface GameState {
 
   services: Record<ServiceType, Service>
   achievements: string[]
-  level: number
-  experience: number
 
   lastDayResult: DayResult | null
   pendingEvent: Event | null
@@ -488,9 +486,6 @@ export interface GameState {
 
   // Pain losses from last day
   lastDayPainLosses: PainLossRecord | null
-
-  // Bundle promo shown
-  bundlePromoShown: boolean
 
   // Weekly micro event (passive, shown in results)
   lastWeekMicroEvent?: { icon: string; title: string; effectText: string } | null

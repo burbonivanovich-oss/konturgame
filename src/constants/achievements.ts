@@ -173,7 +173,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'promo_collector',
     name: 'Коллекционер',
-    description: 'Собрать 5 промокодов на услуги Контура',
+    description: 'Получить все 3 промокода Контура',
     icon: '🎟️',
     category: 'services',
     wave: 2,
@@ -186,15 +186,6 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     category: 'special',
     wave: 2,
   },
-  {
-    id: 'level_10',
-    name: 'Мастер бизнеса',
-    description: 'Достичь 10-го уровня',
-    icon: '🎖️',
-    category: 'progress',
-    wave: 2,
-  },
-
   // Wave 3 — unlocks week 26
   {
     id: 'millionaire',
@@ -205,25 +196,9 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     wave: 3,
   },
   {
-    id: 'level_5',
-    name: 'Профессионал',
-    description: 'Достичь 5-го уровня',
-    icon: '🎖️',
-    category: 'progress',
-    wave: 3,
-  },
-  {
     id: 'all_services',
     name: 'Полный Контур',
     description: 'Подключить все 7 сервисов Контура',
-    icon: '🏆',
-    category: 'services',
-    wave: 3,
-  },
-  {
-    id: 'full_promo',
-    name: 'Полный набор',
-    description: 'Собрать все 7 промокодов на услуги Контура',
     icon: '🏆',
     category: 'services',
     wave: 3,
@@ -254,15 +229,6 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     category: 'special',
     wave: 4,
   },
-  {
-    id: 'level_15',
-    name: 'Легенда бизнеса',
-    description: 'Достичь 15-го уровня',
-    icon: '👑',
-    category: 'progress',
-    wave: 4,
-  },
-
   // Backstory choice achievements (v5.4) — wave 1 so they fire when earned.
   // Each is gated by a specific option id chosen in a backstory/NPC event.
   {

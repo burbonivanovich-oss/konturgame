@@ -14,13 +14,17 @@ import { checkWeekBlocked, processWeek } from '../services/weekCalculator'
 import { OWNER_INVESTMENTS_MAP } from '../constants/ownerInvestments'
 import type { OwnerInvestmentId } from '../constants/ownerInvestments'
 import { createInitialNPCs } from '../constants/npcs'
+import { PROMO_SERVICES } from '../constants/promoCodes'
 import { createPersonalGoal } from '../constants/personalGoals'
 import { loadMetaProgress, saveMetaProgress, evaluateRun, getAggregateBonus } from '../services/metaProgress'
 import { updateNPCRelationship, recordNPCMemory } from '../services/npcManager'
 import { canUpgradeTier, getNextTier, getCurrentTier } from '../services/economyEngine'
 
-const STORAGE_KEY = 'konturgame_state'
-const ROLLBACK_STORAGE_KEY = 'konturgame_rollback'
+// v7: bumped after large schema cleanup — dropped level/experience,
+// brand effect, supplier-promos and bundlePromoShown. Old saves are
+// incompatible; key change is the simplest migration (force fresh start).
+const STORAGE_KEY = 'konturgame_state_v7'
+const ROLLBACK_STORAGE_KEY = 'konturgame_rollback_v7'
 
 const createInitialServices = (): Record<ServiceType, Service> => {
   const services: Record<ServiceType, Service> = {} as Record<ServiceType, Service>
@@ -56,8 +60,6 @@ const createInitialState = (businessType: BusinessType): GameState => {
 
     services: createInitialServices(),
     achievements: [],
-    level: 1,
-    experience: 0,
 
     hadLowReputation: false,
     consecutiveNoExpiry: 0,
@@ -119,9 +121,6 @@ const createInitialState = (businessType: BusinessType): GameState => {
 
     // Pain losses
     lastDayPainLosses: null,
-
-    // Bundle promo
-    bundlePromoShown: false,
 
     // 4-phase weekly cycle (week 1 starts in actions — no prior summary to show)
     weekPhase: 'actions' as const,
@@ -247,10 +246,8 @@ interface GameStoreActions {
   setGameOver: (isGameOver: boolean, reason?: string) => void
   setVictory: (isVictory: boolean) => void
 
-  // Achievements and progression
+  // Achievements
   addAchievement: (achievementId: string) => void
-  addExperience: (amount: number) => void
-  setLevel: (level: number) => void
 
   // Temporary modifiers
   setTemporaryModifiers: (clientMod: number, checkMod: number, daysLeft: number) => void
@@ -297,7 +294,6 @@ interface GameStoreActions {
   // Promo codes
   revealPromoCode: (serviceId: ServiceType) => void
   clearPendingPromoCode: () => void
-  markBundlePromoShown: () => void
 
   // Employees
   hireEmployee: (position: EmployeePosition, name: string, salary: number) => void
@@ -778,20 +774,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }))
     },
 
-    addExperience: (amount: number) => {
-      set((state: GameState) => ({
-        experience: state.experience + amount,
-        lastUpdated: Date.now(),
-      }))
-    },
-
-    setLevel: (level: number) => {
-      set({
-        level,
-        lastUpdated: Date.now(),
-      })
-    },
-
     // Temporary modifiers
     setTemporaryModifiers: (clientMod: number, checkMod: number, daysLeft: number) => {
       set({
@@ -860,7 +842,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
         daysBalanceNegative: state.daysBalanceNegative ?? 0,
         competitorEventTriggered: state.competitorEventTriggered ?? false,
         lastDayPainLosses: state.lastDayPainLosses ?? null,
-        bundlePromoShown: state.bundlePromoShown ?? false,
         // v3.0 NPC system
         npcs: state.npcs ?? createInitialNPCs(),
         playerBackstory: state.playerBackstory ?? null,
@@ -1058,8 +1039,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       })
     },
 
-    // Promo codes
+    // Promo codes — only 3 flagship services trigger a popup.
     revealPromoCode: (serviceId: ServiceType) => {
+      if (!PROMO_SERVICES.includes(serviceId)) return
       set((state) => {
         if (state.promoCodesRevealed.includes(serviceId)) {
           return { lastUpdated: Date.now() }
@@ -1075,10 +1057,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     clearPendingPromoCode: () => {
       set({ pendingPromoCode: null, lastUpdated: Date.now() })
-    },
-
-    markBundlePromoShown: () => {
-      set({ bundlePromoShown: true, lastUpdated: Date.now() })
     },
 
     // Daily micro events
@@ -1344,7 +1322,7 @@ function saveToStorage(state: GameState) {
 function extractState(state: any): GameState {
   const {
     businessType, currentWeek, dayOfWeek, balance, savedBalance, reputation, loyalty,
-    entrepreneurEnergy, stock, stockBatches, capacity, services, achievements, level, experience,
+    entrepreneurEnergy, stock, stockBatches, capacity, services, achievements,
     lastDayResult, pendingEvent, pendingEventsQueue, triggeredEventIds,
     isGameOver, isVictory, gameOverReason, consecutiveOverloadDays, daysReputationZero,
     daysSinceLastMonthly, purchaseOfferedThisDay, activeAdCampaigns, purchasedUpgrades,
@@ -1355,7 +1333,7 @@ function extractState(state: any): GameState {
     // New fields
     onboardingStage, onboardingCompleted, onboardingStepIndex, unlockedServices,
     cashRegisters, enabledCategories, promoCodesRevealed,
-    daysBalanceNegative, competitorEventTriggered, lastDayPainLosses, bundlePromoShown,
+    daysBalanceNegative, competitorEventTriggered, lastDayPainLosses,
     // v2.0 new fields
     employees, qualityLevel, weeksSinceCompetitorEvent,
     // v2.1 new fields
@@ -1386,7 +1364,7 @@ function extractState(state: any): GameState {
     dayOfWeek: dow,
     balance, savedBalance, reputation, loyalty,
     entrepreneurEnergy: entrepreneurEnergy ?? ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY,
-    stock, stockBatches, capacity, services, achievements, level, experience,
+    stock, stockBatches, capacity, services, achievements,
     lastDayResult, pendingEvent, pendingEventsQueue: pendingEventsQueue ?? [],
     triggeredEventIds, isGameOver, isVictory, gameOverReason,
     consecutiveOverloadDays, daysReputationZero, daysSinceLastMonthly,
@@ -1410,7 +1388,6 @@ function extractState(state: any): GameState {
     daysBalanceNegative: daysBalanceNegative ?? 0,
     competitorEventTriggered: competitorEventTriggered ?? false,
     lastDayPainLosses: lastDayPainLosses ?? null,
-    bundlePromoShown: bundlePromoShown ?? false,
     lastWeekMicroEvent: null,
     // v2.0 fields with defaults for save compatibility
     employees: employees ?? [],

@@ -215,59 +215,7 @@ export const MARKET_MODULES: MarketModule[] = [
   },
 ]
 
-export const SYNERGIES_CONFIG: SynergyBonus[] = [
-  {
-    id: 'market_ofd',
-    name: 'Кассовый порядок',
-    description: 'Маркет + ОФД: +1 репутации в день',
-    requiredServices: ['market', 'ofd'],
-    effects: { reputationBonus: 1 },
-  },
-  {
-    id: 'market_diadoc',
-    name: 'Цепочка поставок',
-    description: 'Маркет + Диадок: +5% к пропускной способности',
-    requiredServices: ['market', 'diadoc'],
-    effects: { capacityBonus: 0.05 },
-  },
-  {
-    id: 'bank_elba',
-    name: 'Финансовый контроль',
-    description: 'Банк + Эльба: +2% к выручке',
-    requiredServices: ['bank', 'elba'],
-    effects: { revenueBonus: 0.02 },
-  },
-  {
-    id: 'fokus_diadoc',
-    name: 'Надёжный контрагент',
-    description: 'Фокус + Диадок: +2% клиентов от репутации надёжности',
-    requiredServices: ['fokus', 'diadoc'],
-    effects: { clientBonus: 0.02 },
-  },
-  {
-    id: 'extern_bank',
-    name: 'Налоговая оптимизация',
-    description: 'Экстерн + Банк: дополнительные -1% налогов',
-    requiredServices: ['extern', 'bank'],
-    effects: { taxSaving: 0.01 },
-  },
-  {
-    id: 'elba_extern',
-    name: 'Полная бухгалтерия',
-    // Эльба считает, Экстерн отправляет — точно и вовремя.
-    // -0.5% налогов поверх индивидуальных эффектов сервисов.
-    description: 'Эльба + Экстерн: точный расчёт + своевременная отчётность = -0.5% налогов',
-    requiredServices: ['elba', 'extern'],
-    effects: { taxSaving: 0.005 },
-  },
-  {
-    id: 'full_kontour',
-    name: 'Полный Контур',
-    description: 'Все 7 сервисов активны: +5% к выручке и +1 репутации/день',
-    requiredServices: ['market', 'bank', 'ofd', 'diadoc', 'fokus', 'elba', 'extern'],
-    effects: { revenueBonus: 0.05, reputationBonus: 1 },
-  },
-]
+// Bundle tiers replace the legacy 7-pair synergies — see services/synergyEngine.ts.
 
 export const ECONOMY_CONSTANTS = {
   TAX_RATE: 0.06,
@@ -294,11 +242,7 @@ export const ECONOMY_CONSTANTS = {
 
   VICTORY_WEEKLY_PROFIT: 20000,  // ↑ Было 10000 - сложнее выиграть
   VICTORY_BALANCE: 500000,  // ↑ Было 150000
-  VICTORY_LEVEL: 10,
   VICTORY_ACHIEVEMENTS: 7,
-
-  EXPERIENCE_PER_WEEK: 7,
-  EXPERIENCE_PER_10K_PROFIT: 2,
 
   // Reverted to pre-tier values: were bumped during the 90% margin era.
   // With realistic 15-40% margins, these were eating tier-1 income.

@@ -12,8 +12,6 @@ import AchievementsModal from './modals/AchievementsModal'
 import NPCRosterModal from './modals/NPCRosterModal'
 import CashRegisterModal from './modals/CashRegisterModal'
 import PromoCodeModal from './modals/PromoCodeModal'
-import PromoWalletModal from './modals/PromoWalletModal'
-import BundleModal from './modals/BundleModal'
 import HireEmployeeModal from './modals/HireEmployeeModal'
 import OwnerInvestmentsModal from './modals/OwnerInvestmentsModal'
 import { WeekSummaryOverlay } from './WeekSummaryOverlay'
@@ -70,7 +68,7 @@ function DashboardView({
     currentWeek, balance, reputation, loyalty, services,
     pendingEvent, pendingEventsQueue, lastDayResult,
     entrepreneurEnergy, npcs, stockBatches, capacity, cashRegisters,
-    businessType, qualityLevel, level,
+    businessType, qualityLevel,
   } = store
 
   const bizConfig = BUSINESS_CONFIGS[businessType]
@@ -692,7 +690,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const [showAchievementsModal, setShowAchievementsModal] = useState(false)
   const [showNpcRosterModal, setShowNpcRosterModal] = useState(false)
   const [showCashRegisterModal, setShowCashRegisterModal] = useState(false)
-  const [showPromoWalletModal, setShowPromoWalletModal] = useState(false)
   const [showHireEmployeeModal, setShowHireEmployeeModal] = useState(false)
   const [showOwnerInvestmentsModal, setShowOwnerInvestmentsModal] = useState(false)
   const [dayBlockedMsg, setDayBlockedMsg] = useState<string | null>(null)
@@ -704,7 +701,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
 
   const {
     currentWeek, balance, services, pendingEvent, pendingEventsQueue,
-    isGameOver, isVictory, savedBalance, promoCodesRevealed,
+    isGameOver, isVictory, savedBalance,
     addBalance, addReputation, addLoyalty, markEventAsResolved, activateService,
     addSavedBalance, setTemporaryModifiers, advanceDay,
     weekPhase, completeActionsPhase, completeResultsPhase, completeSummaryPhase,
@@ -844,13 +841,11 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
         balance={balance}
         personalGoal={personalGoal}
         pendingEventCount={pendingEventCount}
-        promoCodesCount={promoCodesRevealed?.length ?? 0}
         revealedNpcCount={(npcs ?? []).filter(n => n.isRevealed).length}
         highlightNav={highlightNav}
         onNav={handleNavClick}
         onHelp={() => setShowHelpModal(true)}
         onSettings={() => setShowSettingsModal(true)}
-        onPromoWallet={() => setShowPromoWalletModal(true)}
         onAchievements={() => setShowAchievementsModal(true)}
         onNpcRoster={() => setShowNpcRosterModal(true)}
       />
@@ -914,8 +909,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       <HireEmployeeModal isOpen={showHireEmployeeModal} onClose={() => setShowHireEmployeeModal(false)} />
       <OwnerInvestmentsModal isOpen={showOwnerInvestmentsModal} onClose={() => setShowOwnerInvestmentsModal(false)} />
       <PromoCodeModal />
-      <PromoWalletModal isOpen={showPromoWalletModal} onClose={() => setShowPromoWalletModal(false)} />
-      <BundleModal />
       <VictoryModal isOpen={isVictory} type="victory" />
       <VictoryModal isOpen={isGameOver && !isVictory} type="defeat" />
 

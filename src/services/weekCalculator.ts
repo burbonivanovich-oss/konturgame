@@ -25,7 +25,6 @@ import {
   checkVictory,
   resolveVictoryType,
   updateGameOverCounters,
-  getLevelForExperience,
 } from './victoryChecker'
 import { calculateSynergyModifiers } from './synergyEngine'
 import { checkNewAchievements } from './achievementChecker'
@@ -43,7 +42,7 @@ import {
 import { getTotalThroughput, calculateRegisterPenalty, checkRegisterBreakdown } from './cashRegisterEngine'
 import { calculateCategoryRevenue } from './assortmentEngine'
 import { initializeEmployees, getWeeklySalaryCost, getWeeklyEnergyCost, getEmployeeCapacityBonus, getUpgradeEnergyBonus } from './employeeManager'
-import { initializeQuality, updateQualityWeekly, getQualityReputationBonus, getQualityLoyaltyBonus, getQualityPricePremium, getQualityClientModifier, getBrandEffect } from './qualityManager'
+import { initializeQuality, updateQualityWeekly, getQualityPricePremium, getQualityClientModifier } from './qualityManager'
 import { formatRub } from '../utils/format'
 
 export function checkWeekBlocked(state: GameState): { blocked: boolean; reason?: string } {
@@ -128,12 +127,8 @@ export function processWeek(state: GameState): DayResult {
     let totalClients = calculateClients(getEffectiveBaseClients(state), modifiers)
 
     // Apply quality modifier (affects client acquisition)
-    const qualityClientMod = getQualityClientModifier(state.qualityLevel)
+    const qualityClientMod = getQualityClientModifier(state)
     totalClients = Math.round(totalClients * (1 + qualityClientMod))
-
-    // Apply brand effect (reputation + loyalty synergy)
-    const brandEffect = getBrandEffect(state.reputation, state.loyalty)
-    totalClients = Math.round(totalClients * (1 + brandEffect.clientMod))
 
     // Hard reputation penalty: below 30 customers actively avoid you; below 15 it's word of mouth damage
     const repClientMod = state.reputation < 15 ? 0.75 : state.reputation < 30 ? 0.90 : 1.0
@@ -161,13 +156,9 @@ export function processWeek(state: GameState): DayResult {
     const bankPaymentRatio = getBankPaymentRatio(state)
     const effectiveServed = Math.floor(served * bankPaymentRatio)
 
-    // 5. Average check with quality and brand premiums
+    // 5. Average check with quality premium
     let avgCheck = calculateAverageCheck(getEffectiveAvgCheck(state), modifiers)
-
-    // Add quality price premium + brand effect (skip getQualityPriceModifier to avoid double-counting)
-    const totalPriceModifier = qualityPricePremium + brandEffect.priceMod
-
-    avgCheck = Math.round(avgCheck * (1 + totalPriceModifier))
+    avgCheck = Math.round(avgCheck * (1 + qualityPricePremium))
 
     // 6. Revenue (daily)
     let dailyRevenue: number
@@ -177,16 +168,14 @@ export function processWeek(state: GameState): DayResult {
     if (config.usesAssortment && (state.enabledCategories?.length ?? 0) > 0) {
       const catResult = calculateCategoryRevenue(state)
       const baseRevenue = Math.round(catResult.totalRevenue * bankPaymentRatio)
-      const totalRevenueBonus = synergyMods.revenueBonus + brandEffect.revenueMod
-      dailyRevenue = Math.round(baseRevenue * (1 + totalRevenueBonus))
+      dailyRevenue = Math.round(baseRevenue * (1 + synergyMods.revenueBonus))
       totalDailyCategoryCost = catResult.totalDailyCost
       for (const [catId, data] of Object.entries(catResult.breakdown)) {
         if (data.fine > 0) categoryFines[catId] = data.fine
       }
     } else {
       const baseRevenue = calculateRevenue(effectiveServed, avgCheck)
-      const totalRevenueBonus = synergyMods.revenueBonus + brandEffect.revenueMod
-      dailyRevenue = Math.round(baseRevenue * (1 + totalRevenueBonus))
+      dailyRevenue = Math.round(baseRevenue * (1 + synergyMods.revenueBonus))
     }
 
     // 6b. Bank acquiring fee (1.5% of revenue — cost of cashless payments)
@@ -272,8 +261,7 @@ export function processWeek(state: GameState): DayResult {
     const fokusRepBonus = state.services?.fokus?.isActive
       ? (state.services.fokus.effects.reputationBonus ?? 0)
       : 0
-    const qualityRepBonus = getQualityReputationBonus(state)
-    const dayRepChange = Math.round(repFromMissed + fokusRepBonus + synergyMods.reputationBonus + qualityRepBonus)
+    const dayRepChange = Math.round(repFromMissed + fokusRepBonus + synergyMods.reputationBonus)
 
     // 16. Loyalty change with quality bonus
     const elbaActive = state.services?.elba?.isActive ?? false
@@ -292,8 +280,7 @@ export function processWeek(state: GameState): DayResult {
       state.consecutiveOverloadDays = 0
     }
     const elbaLoyaltyBonus = elbaActive ? (state.services.elba.effects.loyaltyBonus ?? 0) : 0
-    const qualityLoyaltyBonus = getQualityLoyaltyBonus(state)
-    dayLoyaltyChange += elbaLoyaltyBonus + synergyMods.loyaltyBonus + qualityLoyaltyBonus + loyaltyUpgradesBonus
+    dayLoyaltyChange += elbaLoyaltyBonus + synergyMods.loyaltyBonus + loyaltyUpgradesBonus
 
     // Loyalty soft-cap decay above 70 — without active maintenance, customer
     // loyalty drifts down. At 70: no decay; at 100: 3/day pull. To plateau
@@ -535,12 +522,6 @@ export function processWeek(state: GameState): DayResult {
     state.activeAdCampaigns = updated.filter(c => c.daysRemaining > 0)
   }
 
-  // Gain experience (7 days + profit bonus)
-  state.experience += ECONOMY_CONSTANTS.EXPERIENCE_PER_WEEK
-  if (weekNetProfit > 0) {
-    state.experience += Math.floor(weekNetProfit / 10000) * ECONOMY_CONSTANTS.EXPERIENCE_PER_10K_PROFIT
-  }
-  state.level = getLevelForExperience(state.experience)
 
   // Update reputation-zero counter
   updateGameOverCounters(state)

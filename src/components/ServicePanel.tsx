@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useGameStore } from '../stores/gameStore'
-import { SYNERGIES_CONFIG } from '../constants/business'
+import { BUNDLE_TIERS, countActiveServices, getActiveBundleTier } from '../services/synergyEngine'
 import { ONBOARDING_STAGE_LABELS } from '../constants/onboarding'
 import type { OnboardingStage } from '../types/game'
 import { formatRub } from '../utils/format'
@@ -41,11 +41,9 @@ export default function ServicePanel() {
   const [isExpanded, setIsExpanded] = useState(false)
   const { services, toggleService, balance, unlockedServices, onboardingStage } = useGameStore()
 
-  const activeSynergies = useMemo(() => {
-    return SYNERGIES_CONFIG.filter((syn) =>
-      syn.requiredServices.every((id) => services[id]?.isActive === true),
-    )
-  }, [services])
+  const activeServiceCount = countActiveServices({ services } as any)
+  const activeBundle = getActiveBundleTier({ services } as any)
+  const nextBundle = BUNDLE_TIERS.find(t => t.minServices > activeServiceCount) ?? null
 
   const allServicesList = Object.entries(services).map(([_, service]) => ({
     ...service,
@@ -102,19 +100,19 @@ export default function ServicePanel() {
             </button>
           ))}
         </div>
-        {activeSynergies.length > 0 && (
+        {activeBundle && (
           <div style={{
             borderTop: `1px solid ${K.line}`, paddingTop: 8,
             display: 'flex', flexDirection: 'column', gap: 4,
           }}>
             <div style={{ fontSize: 11, fontWeight: 800, color: K.violet }}>
-              ⚡ {activeSynergies.length} синергия
+              ⚡ {activeBundle.label}: +{Math.round(activeBundle.revenueBonus * 100)}% выручки
             </div>
-            {activeSynergies.slice(0, 2).map((syn) => (
-              <div key={syn.id} style={{ fontSize: 10, opacity: 0.6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {syn.name}
+            {nextBundle && (
+              <div style={{ fontSize: 10, opacity: 0.6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                Ещё {nextBundle.minServices - activeServiceCount} сервис(а) → {nextBundle.label} (+{Math.round(nextBundle.revenueBonus * 100)}%)
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>
@@ -241,25 +239,35 @@ export default function ServicePanel() {
         )
       })()}
 
-      {activeSynergies.length > 0 && (
-        <div style={{
-          borderTop: `1px solid ${K.line}`, paddingTop: 12,
-          display: 'flex', flexDirection: 'column', gap: 8,
-        }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: K.violet, letterSpacing: '0.05em' }}>
-            ⚡ АКТИВНЫЕ СИНЕРГИИ ({activeSynergies.length})
-          </div>
-          {activeSynergies.map((syn) => (
-            <div key={syn.id} style={{
-              background: K.violetSoft, borderRadius: 10, padding: 10,
-              display: 'flex', flexDirection: 'column', gap: 4,
-            }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: K.violet }}>{syn.name}</div>
-              <div style={{ fontSize: 10, opacity: 0.7, lineHeight: 1.3 }}>{syn.description}</div>
-            </div>
-          ))}
+      <div style={{
+        borderTop: `1px solid ${K.line}`, paddingTop: 12,
+        display: 'flex', flexDirection: 'column', gap: 8,
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: K.violet, letterSpacing: '0.05em' }}>
+          ⚡ БАНДЛЫ КОНТУРА ({activeServiceCount}/7)
         </div>
-      )}
+        {BUNDLE_TIERS.map((tier) => {
+          const reached = activeServiceCount >= tier.minServices
+          return (
+            <div key={tier.minServices} style={{
+              background: reached ? K.violetSoft : K.bone,
+              borderRadius: 10, padding: 10,
+              border: reached ? 'none' : `1px dashed ${K.line}`,
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              opacity: reached ? 1 : 0.6,
+            }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: reached ? K.violet : K.muted }}>
+                  {reached ? '✓ ' : ''}{tier.label}
+                </div>
+                <div style={{ fontSize: 10, opacity: 0.7, lineHeight: 1.3 }}>
+                  {tier.minServices}+ сервисов: +{Math.round(tier.revenueBonus * 100)}% к выручке
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

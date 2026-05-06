@@ -12,7 +12,7 @@ function getStatusColor(value: number): { color: string; icon: string } {
 }
 
 export default function Indicators() {
-  const { reputation, loyalty, stockBatches, capacity, lastDayResult, balance, entrepreneurEnergy, restoreEnergyAtWeekStart, qualityLevel, currentWeek, level } = useGameStore()
+  const { reputation, loyalty, stockBatches, capacity, lastDayResult, balance, entrepreneurEnergy, restoreEnergyAtWeekStart, qualityLevel, currentWeek } = useGameStore()
   const { addBalance, addLoyalty } = useGameStore()
 
   const stockLevel = useMemo(() => {

@@ -29,8 +29,6 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     capacity: 60,
     services: makeServices([]),
     achievements: [],
-    level: 1,
-    experience: 0,
     lastDayResult: null,
     pendingEvent: null,
     pendingEventsQueue: [],
@@ -57,7 +55,6 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     daysBalanceNegative: 0,
     competitorEventTriggered: false,
     lastDayPainLosses: null,
-    bundlePromoShown: false,
     weeklyEnergyRestored: false,
     employees: [],
     qualityLevel: 50,
@@ -224,16 +221,6 @@ describe('checkNewAchievements', () => {
   it('grants hall_upgrade when upgrade purchased', () => {
     const state = makeState({ purchasedUpgrades: ['hall-expansion'] })
     expect(checkNewAchievements(state)).toContain('hall_upgrade')
-  })
-
-  it('grants level_5 at level 5', () => {
-    const state = makeState({ level: 5 })
-    expect(checkNewAchievements(state)).toContain('level_5')
-  })
-
-  it('grants level_10 at level 10', () => {
-    const state = makeState({ level: 10 })
-    expect(checkNewAchievements(state)).toContain('level_10')
   })
 
   it('grants event_veteran at 10 triggered events', () => {
