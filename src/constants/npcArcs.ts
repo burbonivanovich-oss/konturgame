@@ -1,36 +1,489 @@
 import type { EventTemplate } from '../types/game'
 
 /**
- * NPC arc events — second and third beats for each of the 7 NPCs, gated by
- * the NPC's revealed status and relationship level. The goal is to move NPCs
- * from "modifier with portrait" to "co-protagonist with arc".
+ * NPC arcs (Phase C). Eight characters, each gets a 3-episode arc:
  *
- * Pattern per NPC:
- *  - One escalation event (mid-game, fires only at high relationship)
- *  - One fork event (late-game, two NPC-meaningful outcomes)
+ *   Episode 1 — meet/intro (weeks 5-10): one-shot reveal event,
+ *               not gated by relationship. Establishes who they are.
+ *   Episode 2 — test/conflict (weeks 20-25): a meaningful choice with
+ *               real consequences. Gated by relationship from episode 1.
+ *   Episode 3 — resolve (weeks 35-45): closure. Outcome reflected in
+ *               buildNpcExitLines.
  *
- * Each event is `oneTime` and references events the player would remember,
- * so the relationship feels accumulative rather than episodic.
+ * After episode 3 the character moves to background — no more arc events,
+ * just passive flavour from npcManager. Goal: NPCs feel finite and real,
+ * not procedural relationship machines.
  */
 
 export const NPC_ARC_EVENTS: EventTemplate[] = [
 
   // ──────────────────────────────────────────────────────────────────
-  // Михаил Власов — поставщик
+  // KATYA — подруга-бухгалтер
   // ──────────────────────────────────────────────────────────────────
   {
-    id: 'NPC_MIKHAIL_FAVOR',
+    id: 'NPC_KATYA_MEET',
+    title: 'Катя приехала с пирогом',
+    description:
+      'Катя зашла без предупреждения, с яблочным пирогом на тарелке. «Я тут увидела пост — ты бизнес открыл? Отчёты сама делаешь? Господи, не делай этого. Я тебе бесплатно первую квартальную сделаю — и забудь. И не благодари, я просто не могу смотреть на это».',
+    trigger: { dayMin: 35, dayMax: 70, randomChance: 1.0, oneTime: true },
+    npcId: 'katya',
+    options: [
+      {
+        id: 'accept_help',
+        text: 'Принять помощь — она в этом разбирается лучше',
+        consequences: { reputationDelta: 2 },
+        npcRelationshipDelta: 12,
+      },
+      {
+        id: 'thank_buy',
+        text: 'Поблагодарить, но настоять на оплате (−2 000 ₽)',
+        consequences: { balanceDelta: -2000, reputationDelta: 1 },
+        npcRelationshipDelta: 8,
+      },
+    ],
+  },
+  {
+    id: 'NPC_KATYA_TEST',
+    title: 'Катя нашла серую схему',
+    description:
+      'Катя позвонила в субботу: «Слушай, я тут смотрела документы. Если оформить часть выручки через ИП твоей мамы — сэкономишь 80 000 в год на налогах. Технически законно, но если налоговая копнёт — будут вопросы. Решай сам, я просто говорю как есть».',
+    trigger: { dayMin: 140, dayMax: 175, randomChance: 1.0, oneTime: true, requiresNpcRevealed: true },
+    npcId: 'katya',
+    isMoralDilemma: true,
+    options: [
+      {
+        id: 'use_scheme',
+        text: '«Давай попробуем» (+80 000 ₽, репутация ниже если попадёшься)',
+        consequences: { balanceDelta: 80000, reputationDelta: -4 },
+        npcRelationshipDelta: 4,
+      },
+      {
+        id: 'refuse_clean',
+        text: '«Спасибо, но мне нужно спать спокойно»',
+        consequences: { reputationDelta: 4 },
+        npcRelationshipDelta: 10,
+      },
+      {
+        id: 'extern_check',
+        text: 'Через Контур.Экстерн проверить, нет ли способа проще',
+        consequences: { reputationDelta: 6 },
+        npcRelationshipDelta: 12,
+        requiredService: 'extern',
+        isContourOption: true,
+      },
+    ],
+  },
+  {
+    id: 'NPC_KATYA_RESOLVE',
+    title: 'Катя зовёт в партнёры',
+    description:
+      'Катя приходит вечером, ставит чайник без спроса. «Слушай. Я ухожу из своей конторы. Хочу делать бутиковую бухгалтерию для таких, как ты. Ты — мой первый клиент по плану. Платно. Но я хочу твой совет: стоит ли вообще?» Ждёт честного ответа.',
+    trigger: { dayMin: 245, dayMax: 315, randomChance: 1.0, oneTime: true, requiresNpcRevealed: true, npcRelationshipMin: 50 },
+    npcId: 'katya',
+    options: [
+      {
+        id: 'encourage',
+        text: '«Иди, я с тобой» — стать первым клиентом',
+        consequences: { balanceDelta: -12000, reputationDelta: 4, loyaltyDelta: 3 },
+        npcRelationshipDelta: 16,
+      },
+      {
+        id: 'caution',
+        text: '«Подожди полгода — слишком рискованно сейчас»',
+        consequences: {},
+        npcRelationshipDelta: -4,
+      },
+      {
+        id: 'invest',
+        text: 'Вложить 30 000 ₽ как бизнес-ангел',
+        consequences: { balanceDelta: -30000, reputationDelta: 6, loyaltyDelta: 4 },
+        npcRelationshipDelta: 20,
+      },
+    ],
+  },
+
+  // ──────────────────────────────────────────────────────────────────
+  // VIKTOR — сосед-конкурент
+  // ──────────────────────────────────────────────────────────────────
+  {
+    id: 'NPC_VIKTOR_MEET',
+    title: 'Виктор зашёл познакомиться',
+    description:
+      'Через неделю после того как ты повесил вывеску, через дорогу открылся такой же бизнес. Хозяин зашёл сам — представился: «Виктор. Я через дорогу. Будем соседи. Конкурируем — нормально, но без подлянок, ладно?» Пожал руку. Уверенно, но без агрессии.',
+    trigger: { dayMin: 35, dayMax: 70, randomChance: 1.0, oneTime: true },
+    npcId: 'viktor',
+    options: [
+      {
+        id: 'friendly',
+        text: 'Тепло принять — соседи же',
+        consequences: { reputationDelta: 2 },
+        npcRelationshipDelta: 10,
+      },
+      {
+        id: 'guarded',
+        text: 'Пожать руку, но без эмоций — посмотрим как себя поведёт',
+        consequences: {},
+        npcRelationshipDelta: 0,
+      },
+      {
+        id: 'cold',
+        text: '«Удачи» — и закрыл дверь. Конкурент есть конкурент',
+        consequences: {},
+        npcRelationshipDelta: -8,
+      },
+    ],
+  },
+  {
+    id: 'NPC_VIKTOR_TEST',
+    title: 'Виктор демпингует',
+    description:
+      'Виктор повесил баннер: «Цены ниже на 20%». Знаешь, что в минус торгует — но клиенты пошли к нему. Можешь демпинговать в ответ, можешь договориться, можешь работать как работал.',
+    trigger: { dayMin: 140, dayMax: 175, randomChance: 1.0, oneTime: true, requiresNpcRevealed: true },
+    npcId: 'viktor',
+    isMoralDilemma: true,
+    options: [
+      {
+        id: 'price_war',
+        text: 'Демпинговать в ответ (−10% к чеку на 14 дней)',
+        consequences: { checkModifier: -0.10, checkModifierDays: 14, clientModifier: 0.08, clientModifierDays: 14 },
+        npcRelationshipDelta: -15,
+      },
+      {
+        id: 'talk_truce',
+        text: 'Зайти к нему, предложить не убивать друг друга',
+        consequences: { reputationDelta: 3 },
+        npcRelationshipDelta: 14,
+      },
+      {
+        id: 'quality_focus',
+        text: 'Не реагировать — сфокусироваться на качестве',
+        consequences: { reputationDelta: 4, loyaltyDelta: 3 },
+        npcRelationshipDelta: 4,
+      },
+    ],
+  },
+  {
+    id: 'NPC_VIKTOR_RESOLVE',
+    title: 'Виктор закрывается',
+    description:
+      'Виктор зашёл с папкой документов. «Слушай. Я закрываюсь. Не вытащил. Аренду перекинули, поставщик кинул, жена ушла — много всего». Молчит. «Если возьмёшь моё оборудование за полцены — мне это поможет. И я просто хотел, чтобы ты знал — ты выиграл честно».',
+    trigger: { dayMin: 245, dayMax: 315, randomChance: 1.0, oneTime: true, requiresNpcRevealed: true },
+    npcId: 'viktor',
+    options: [
+      {
+        id: 'buy_gear',
+        text: 'Купить оборудование (−40 000 ₽, +15% к пропускной)',
+        consequences: { balanceDelta: -40000, clientModifier: 0.10, clientModifierDays: 60, reputationDelta: 3 },
+        npcRelationshipDelta: 12,
+      },
+      {
+        id: 'help_anyway',
+        text: 'Дать 20 000 ₽ просто так — на старт где-то ещё',
+        consequences: { balanceDelta: -20000, reputationDelta: 8, loyaltyDelta: 2 },
+        npcRelationshipDelta: 18,
+      },
+      {
+        id: 'walk_away',
+        text: '«Сожалею» — и ничего не сделать',
+        consequences: { reputationDelta: -2 },
+        npcRelationshipDelta: -8,
+      },
+    ],
+  },
+
+  // ──────────────────────────────────────────────────────────────────
+  // DENIS — школьный друг-инвестор
+  // ──────────────────────────────────────────────────────────────────
+  {
+    id: 'NPC_DENIS_MEET',
+    title: 'Денис позвонил из Лондона',
+    description:
+      'Звонок ночью: «Стас? Денис, помнишь меня? Мы в десятом классе спорили про бизнес. Я через знакомых увидел, что ты открылся. Слушай, я тут на одном проекте поднял прилично — могу дать тебе 100 тысяч под 0% на полгода. Просто чтобы ты был чуть свободнее. Дружба плюс ставка на будущее».',
+    trigger: { dayMin: 35, dayMax: 70, randomChance: 1.0, oneTime: true },
+    npcId: 'denis',
+    options: [
+      {
+        id: 'accept_full',
+        text: 'Принять 100 000 ₽ без процентов',
+        consequences: { balanceDelta: 100000 },
+        npcRelationshipDelta: 12,
+      },
+      {
+        id: 'accept_small',
+        text: 'Взять 30 000 ₽ — больше неудобно',
+        consequences: { balanceDelta: 30000 },
+        npcRelationshipDelta: 8,
+      },
+      {
+        id: 'refuse_pride',
+        text: 'Отказаться — деньги портят дружбу',
+        consequences: { reputationDelta: 2 },
+        npcRelationshipDelta: 4,
+      },
+    ],
+  },
+  {
+    id: 'NPC_DENIS_TEST',
+    title: 'Денис просит долю',
+    description:
+      'Денис прилетел на пару дней. Сидит, пьёт чай, улыбается: «Слушай. Помнишь те 100 тысяч? Я не за процентами. Я за долей. 15% — и я возвращаю плюс ещё подкину на расширение. Это не друг говорит, это инвестор. Подумай».',
+    trigger: { dayMin: 140, dayMax: 175, randomChance: 1.0, oneTime: true, requiresNpcRevealed: true, npcRelationshipMin: 40 },
+    npcId: 'denis',
+    isMoralDilemma: true,
+    options: [
+      {
+        id: 'give_share',
+        text: 'Дать 15% — друг с долей лучше, чем кредитор',
+        consequences: { balanceDelta: 50000, reputationDelta: 1 },
+        npcRelationshipDelta: 14,
+      },
+      {
+        id: 'pay_back',
+        text: 'Вернуть 100 000 ₽ полностью — и закрыть тему',
+        consequences: { balanceDelta: -100000, reputationDelta: 3 },
+        npcRelationshipDelta: 6,
+      },
+      {
+        id: 'negotiate',
+        text: '«Долю не дам — давай 8% годовых»',
+        consequences: {},
+        npcRelationshipDelta: -4,
+      },
+    ],
+  },
+  {
+    id: 'NPC_DENIS_RESOLVE',
+    title: 'Денис зовёт в проект',
+    description:
+      'Звонок: «Я открываю новый проект — сеть точек. Мне нужен человек, который умеет держать локацию. Хочу тебя. Зарплата х3 от того, что ты сейчас имеешь. Но это значит закрыть твоё дело и выйти из него. Подумай неделю. Это серьёзный разговор».',
+    trigger: { dayMin: 245, dayMax: 315, randomChance: 1.0, oneTime: true, requiresNpcRevealed: true, npcRelationshipMin: 60 },
+    npcId: 'denis',
+    isMoralDilemma: true,
+    options: [
+      {
+        id: 'stay_owner',
+        text: '«Я остаюсь у себя. Спасибо, друг»',
+        consequences: { reputationDelta: 4, loyaltyDelta: 3 },
+        npcRelationshipDelta: 6,
+      },
+      {
+        id: 'side_consult',
+        text: 'Стать его консультантом, не уходя со своего (+100 000 ₽ разовый)',
+        consequences: { balanceDelta: 100000, reputationDelta: 1 },
+        npcRelationshipDelta: 10,
+      },
+      {
+        id: 'consider_seriously',
+        text: 'Согласиться обсудить детали — может это и есть выход',
+        consequences: { balanceDelta: 50000 },
+        npcRelationshipDelta: 8,
+      },
+    ],
+  },
+
+  // ──────────────────────────────────────────────────────────────────
+  // IRINA — мама-наставница
+  // ──────────────────────────────────────────────────────────────────
+  {
+    id: 'NPC_IRINA_MEET',
+    title: 'Мама зашла оценить',
+    description:
+      'Мама пришла без звонка, в воскресенье. Молча обошла всё помещение, потрогала прилавок, посмотрела ценники. Села. «Ты всё чисто делаешь, я вижу. Только улыбайся клиентам почаще. Иначе они тебе всё равно не простят, что ты не такой как все». Долго пила чай, потом ушла. Не похвалила и не отругала.',
+    trigger: { dayMin: 35, dayMax: 70, randomChance: 1.0, oneTime: true },
+    npcId: 'irina',
+    options: [
+      {
+        id: 'take_advice',
+        text: 'Запомнить — она знает, о чём говорит',
+        consequences: { loyaltyDelta: 4 },
+        npcRelationshipDelta: 10,
+      },
+      {
+        id: 'shrug_off',
+        text: '«Мам, у меня современный бизнес» — и забыть',
+        consequences: { loyaltyDelta: -2 },
+        npcRelationshipDelta: -6,
+      },
+    ],
+  },
+  {
+    id: 'NPC_IRINA_TEST',
+    title: 'Мама в больнице',
+    description:
+      'Звонок от соседки: маму увезли в больницу. Не критично, но капельницы и обследования. Нужно быть рядом неделю — забирать, кормить, возить. Бизнес работает один, без тебя. Это не выбор, это вопрос как.',
+    trigger: { dayMin: 140, dayMax: 175, randomChance: 1.0, oneTime: true, requiresNpcRevealed: true },
+    npcId: 'irina',
+    isMoralDilemma: true,
+    options: [
+      {
+        id: 'all_in',
+        text: 'Закрыть на неделю — мама важнее (−7 дней выручки)',
+        consequences: { balanceDelta: -25000, reputationDelta: 3 },
+        npcRelationshipDelta: 18,
+      },
+      {
+        id: 'split',
+        text: 'Бизнес работает с помощником, ты по вечерам',
+        consequences: { balanceDelta: -10000, loyaltyDelta: -2 },
+        npcRelationshipDelta: 8,
+      },
+      {
+        id: 'keep_going',
+        text: 'Заплатить сиделке — продолжить как обычно',
+        consequences: { balanceDelta: -15000 },
+        npcRelationshipDelta: -10,
+      },
+    ],
+  },
+  {
+    id: 'NPC_IRINA_RESOLVE',
+    title: 'Мама хочет помочь',
+    description:
+      'Мама пришла с тетрадкой. Записала всё: как считать остатки, как разговаривать с трудным клиентом, как заварить рассольник на 30 порций. «Я могу два раза в неделю помогать тебе с залом. Бесплатно. Я скучаю по делу. Только не отказывайся из вежливости».',
+    trigger: { dayMin: 245, dayMax: 315, randomChance: 1.0, oneTime: true, requiresNpcRevealed: true, npcRelationshipMin: 65 },
+    npcId: 'irina',
+    options: [
+      {
+        id: 'accept_warm',
+        text: 'Согласиться — это и для неё важно',
+        consequences: { reputationDelta: 5, loyaltyDelta: 5 },
+        npcRelationshipDelta: 16,
+      },
+      {
+        id: 'offer_pay',
+        text: 'Согласиться, но платить ей зарплату как сотруднику (−15 000 ₽/мес)',
+        consequences: { balanceDelta: -15000, reputationDelta: 3, loyaltyDelta: 3 },
+        npcRelationshipDelta: 10,
+      },
+      {
+        id: 'spare_her',
+        text: '«Мам, отдыхай. Я справляюсь» — и сами не верите',
+        consequences: { loyaltyDelta: -3 },
+        npcRelationshipDelta: -8,
+      },
+    ],
+  },
+
+  // ──────────────────────────────────────────────────────────────────
+  // ARTEM — бывший коллега
+  // ──────────────────────────────────────────────────────────────────
+  {
+    id: 'NPC_ARTEM_MEET',
+    title: 'Артём зашёл с резюме',
+    description:
+      'Артём — твой коллега из прошлой жизни. Принёс кофе и резюме на бумаге. «Слушай, я устал от своего корпората. Может, я к тебе? Зарплата меньше — мне всё равно. Делать буду много. Я знаю, как ты работаешь, и хочу так же». Серьёзный, не подшучивает.',
+    trigger: { dayMin: 35, dayMax: 70, randomChance: 1.0, oneTime: true },
+    npcId: 'artem',
+    options: [
+      {
+        id: 'hire_now',
+        text: 'Нанять (−45 000 ₽/мес, мощный сотрудник)',
+        consequences: { balanceDelta: -45000, loyaltyDelta: 5, clientModifier: 0.05, clientModifierDays: 60 },
+        npcRelationshipDelta: 14,
+      },
+      {
+        id: 'hire_later',
+        text: '«Через пару месяцев точно. Сейчас рано»',
+        consequences: {},
+        npcRelationshipDelta: 4,
+      },
+      {
+        id: 'refuse_friend',
+        text: 'Отказать — не работаю с друзьями',
+        consequences: { reputationDelta: 1 },
+        npcRelationshipDelta: -8,
+      },
+    ],
+  },
+  {
+    id: 'NPC_ARTEM_TEST',
+    title: 'Артём ошибся на 50 000',
+    description:
+      'Артём подошёл бледный: «Я ошибся в инвентаризации. Списал партию как порчу — оказалось, она была на складе. 50 тысяч убытка. Это моя ошибка, я готов компенсировать из зарплаты». Стоит, ждёт реакции. Видно, что не спал.',
+    trigger: { dayMin: 140, dayMax: 175, randomChance: 1.0, oneTime: true, requiresNpcRevealed: true },
+    npcId: 'artem',
+    isMoralDilemma: true,
+    options: [
+      {
+        id: 'cover',
+        text: '«Это и моя ошибка тоже. Спишем на опыт»',
+        consequences: { reputationDelta: 3, loyaltyDelta: 6 },
+        npcRelationshipDelta: 18,
+      },
+      {
+        id: 'split_loss',
+        text: 'Поделить убыток пополам (вычесть 25 000 ₽ из его зарплаты)',
+        consequences: { balanceDelta: 25000 },
+        npcRelationshipDelta: 4,
+      },
+      {
+        id: 'fire',
+        text: 'Уволить — нельзя терять 50 000 на одной ошибке',
+        consequences: { loyaltyDelta: -5 },
+        npcRelationshipDelta: -25,
+      },
+    ],
+  },
+  {
+    id: 'NPC_ARTEM_RESOLVE',
+    title: 'Артём становится партнёром',
+    description:
+      'Артём приходит с заранее распечатанным предложением. «Я хочу долю. 10%. Не как сотрудник — как сооснователь. Я тут уже не зарплату хочу, я хочу строить. Если нет — я тебя пойму, но мне надо двигаться». Кладёт лист и уходит до завтра.',
+    trigger: { dayMin: 245, dayMax: 315, randomChance: 1.0, oneTime: true, requiresNpcRevealed: true, npcRelationshipMin: 60 },
+    npcId: 'artem',
+    options: [
+      {
+        id: 'partner_full',
+        text: 'Дать 10% — он этого заслужил',
+        consequences: { reputationDelta: 5, loyaltyDelta: 8 },
+        npcRelationshipDelta: 18,
+      },
+      {
+        id: 'raise_keep',
+        text: 'Поднять зарплату на 20 000 ₽, но без доли',
+        consequences: { balanceDelta: -20000, loyaltyDelta: 2 },
+        npcRelationshipDelta: 4,
+      },
+      {
+        id: 'reject_offer',
+        text: 'Отказать — единоличный бизнес важнее',
+        consequences: {},
+        npcRelationshipDelta: -18,
+      },
+    ],
+  },
+
+  // ──────────────────────────────────────────────────────────────────
+  // MIKHAIL — поставщик-старичок
+  // ──────────────────────────────────────────────────────────────────
+  {
+    id: 'NPC_MIKHAIL_MEET',
+    title: 'Михаил привёз партию сам',
+    description:
+      'Михаил привёз первую партию лично. Не отдал водителю — приехал сам. «Хотел познакомиться. Я работаю с маленькими. Большие — это не моё. Если будет качество не то — звони лично, не через диспетчерскую. Договорились?» Жмёт руку крепко.',
+    trigger: { dayMin: 35, dayMax: 70, randomChance: 1.0, oneTime: true },
+    npcId: 'mikhail',
+    options: [
+      {
+        id: 'warm',
+        text: 'Поблагодарить, согласиться по-человечески',
+        consequences: { reputationDelta: 1 },
+        npcRelationshipDelta: 12,
+      },
+      {
+        id: 'business_only',
+        text: 'Договариваться по-деловому — без сантиментов',
+        consequences: {},
+        npcRelationshipDelta: 2,
+      },
+    ],
+  },
+  {
+    id: 'NPC_MIKHAIL_TEST',
     title: 'Михаил просит об услуге',
     description:
-      'Михаил приходит без партии, без прайса. Садится молча, потом: «Слушай. Дочка в институт поступила в Питере, общежитие дали без отопления. Нужно 40 тысяч до конца месяца — потом верну. Я бы не просил, ты сам понимаешь». Смотрит на свои руки. Ему стыдно.',
-    trigger: {
-      dayMin: 105, // ~week 15
-      dayMax: 245, // ~week 35
-      randomChance: 0.5,
-      oneTime: true,
-      requiresNpcRevealed: true,
-      npcRelationshipMin: 65,
-    },
+      'Михаил приходит без партии, без прайса. «Слушай. Дочка в институт поступила в Питере, общежитие дали без отопления. Нужно 40 тысяч до конца месяца — потом верну. Я бы не просил, ты сам понимаешь». Смотрит на свои руки. Ему стыдно.',
+    trigger: { dayMin: 140, dayMax: 175, randomChance: 1.0, oneTime: true, requiresNpcRevealed: true, npcRelationshipMin: 50 },
     npcId: 'mikhail',
     isMoralDilemma: true,
     options: [
@@ -47,12 +500,6 @@ export const NPC_ARC_EVENTS: EventTemplate[] = [
         npcRelationshipDelta: 8,
       },
       {
-        id: 'lend_partial',
-        text: 'Дать 15 000 ₽ — больше не могу',
-        consequences: { balanceDelta: -15000, loyaltyDelta: 1 },
-        npcRelationshipDelta: 4,
-      },
-      {
         id: 'refuse',
         text: 'Отказать — у самого впритык',
         consequences: {},
@@ -64,20 +511,13 @@ export const NPC_ARC_EVENTS: EventTemplate[] = [
     id: 'NPC_MIKHAIL_RETIRES',
     title: 'Михаил уходит на пенсию',
     description:
-      'Собрался серьёзный разговор. «Слушай, я закругляюсь. Сын зовёт в Краснодар, к внукам. Дело передаю парню одному — Денис, толковый, но молодой. Я его попросил с тебя начать. Не подведи нас обоих, ладно?» Жмёт руку. Это последняя поставка от него.',
-    trigger: {
-      dayMin: 245, // ~week 35
-      dayMax: 364, // end of year
-      randomChance: 0.7,
-      oneTime: true,
-      requiresNpcRevealed: true,
-      npcRelationshipMin: 70,
-    },
+      'Серьёзный разговор. «Слушай, я закругляюсь. Сын зовёт в Краснодар, к внукам. Дело передаю парню одному — толковый, но молодой. Я его попросил с тебя начать. Не подведи нас обоих, ладно?» Жмёт руку. Это последняя поставка от него.',
+    trigger: { dayMin: 245, dayMax: 315, randomChance: 1.0, oneTime: true, requiresNpcRevealed: true, npcRelationshipMin: 55 },
     npcId: 'mikhail',
     options: [
       {
         id: 'embrace',
-        text: 'Принять Дениса как Михаила — давать шанс',
+        text: 'Принять преемника как Михаила',
         consequences: { reputationDelta: 4, loyaltyDelta: 3 },
         npcRelationshipDelta: 5,
       },
@@ -89,7 +529,7 @@ export const NPC_ARC_EVENTS: EventTemplate[] = [
       },
       {
         id: 'try_other',
-        text: 'Параллельно поискать другого поставщика — на всякий случай',
+        text: 'Параллельно поискать другого — на всякий случай',
         consequences: {},
         npcRelationshipDelta: -3,
       },
@@ -97,436 +537,172 @@ export const NPC_ARC_EVENTS: EventTemplate[] = [
   },
 
   // ──────────────────────────────────────────────────────────────────
-  // Светлана Орлова — лучший продавец
+  // TAMARA — постоянная клиентка-якорь
   // ──────────────────────────────────────────────────────────────────
   {
-    id: 'NPC_SVETLANA_POACHED',
-    title: 'Анна предлагает Светлане работу',
+    id: 'NPC_TAMARA_MEET',
+    title: 'Тамара представилась',
     description:
-      'Светлана подходит, бледная: «Мне нужно вам сказать. Анна вчера предложила мне у неё работать. Зарплата на 7 000 больше, плюс процент от оборота. Я не сказала да. Но и не сказала нет. Я думала — буду честной». Смотрит, ждёт ответа.',
-    trigger: {
-      dayMin: 140, // ~week 20
-      dayMax: 280, // ~week 40
-      randomChance: 0.6,
-      oneTime: true,
-      requiresNpcRevealed: true,
-      npcRelationshipMin: 55,
-    },
-    npcId: 'svetlana',
-    isMoralDilemma: true,
+      'На пятый день к тебе зашла маленькая, в платочке, бабушка. Купила буханку хлеба. У кассы остановилась: «Меня Тамара зовут. Я тут до вас 30 лет хожу — здесь раньше были «Овощи». Если что-то непонятно — спрашивай. Я район как пальцы свои знаю». Улыбнулась и ушла.',
+    trigger: { dayMin: 21, dayMax: 49, randomChance: 1.0, oneTime: true },
+    npcId: 'tamara',
     options: [
       {
-        id: 'match_offer',
-        text: 'Поднять зарплату на 7 000 ₽ — нельзя её терять',
-        consequences: { balanceDelta: -7000, loyaltyDelta: 6 },
-        npcRelationshipDelta: 14,
-      },
-      {
-        id: 'partner_share',
-        text: 'Предложить долю с прибыли — пусть растёт со мной',
-        consequences: { balanceDelta: -3000, loyaltyDelta: 8, reputationDelta: 2 },
-        npcRelationshipDelta: 18,
-      },
-      {
-        id: 'thank_release',
-        text: '«Я благодарен за честность. Решай сама — я пойму».',
-        consequences: { reputationDelta: 3 },
-        npcRelationshipDelta: 4,
-        // High-risk: 50% she leaves anyway. Captured in events as flavor.
-      },
-      {
-        id: 'guilt_trip',
-        text: 'Намекнуть, что после всего, что я для неё сделал — это предательство',
-        consequences: { loyaltyDelta: -10 },
-        npcRelationshipDelta: -20,
-      },
-    ],
-  },
-  {
-    id: 'NPC_SVETLANA_DREAM',
-    title: 'Светлана делится мечтой',
-    description:
-      'После закрытия задержалась. Помогает с инкассацией, потом — вдруг: «Я хочу свой проект через год. Маленький, может онлайн-магазин. Можно с вами буду советоваться? Я не уйду — просто параллельно». Глаза горят. Это не просьба, это доверие.',
-    trigger: {
-      dayMin: 210, // ~week 30
-      dayMax: 350,
-      randomChance: 0.5,
-      oneTime: true,
-      requiresNpcRevealed: true,
-      npcRelationshipMin: 75,
-    },
-    npcId: 'svetlana',
-    options: [
-      {
-        id: 'mentor',
-        text: 'Согласиться, делиться опытом — её рост это и ваш рост',
-        consequences: { reputationDelta: 5, loyaltyDelta: 5 },
+        id: 'warm_greet',
+        text: 'Тепло поговорить, представиться',
+        consequences: { reputationDelta: 2 },
         npcRelationshipDelta: 12,
       },
       {
-        id: 'invest',
-        text: 'Предложить вложить 30 000 ₽ как ангел-инвестор',
-        consequences: { balanceDelta: -30000, reputationDelta: 6, loyaltyDelta: 6 },
-        npcRelationshipDelta: 16,
-      },
-      {
-        id: 'cautious',
-        text: '«Сначала год отработай уверенно — потом обсудим»',
-        consequences: { loyaltyDelta: -2 },
-        npcRelationshipDelta: -4,
+        id: 'polite_busy',
+        text: 'Вежливо, но коротко — много дел',
+        consequences: {},
+        npcRelationshipDelta: 0,
       },
     ],
   },
-
-  // ──────────────────────────────────────────────────────────────────
-  // Инспектор Петров
-  // ──────────────────────────────────────────────────────────────────
   {
-    id: 'NPC_PETROV_AFTER_HOURS',
-    title: 'Петров заходит после смены',
+    id: 'NPC_TAMARA_TEST',
+    title: 'Тамара пропала на неделю',
     description:
-      'Около восьми вечера в гражданке — без формы, в куртке. «Я тут мимо проходил. Можно чай?» Сидит молча, греет руки о кружку. Потом: «Знаете, за двадцать лет работы — вы один из немногих, к кому ездить не неприятно. Это редко». Допивает, уходит. Оставил визитку с личным номером.',
-    trigger: {
-      dayMin: 175, // ~week 25
-      dayMax: 350,
-      randomChance: 0.4,
-      oneTime: true,
-      requiresNpcRevealed: true,
-      npcRelationshipMin: 70,
-    },
-    npcId: 'petrov',
+      'Тамара не приходит уже шесть дней. Спрашиваешь у соседки — лежит дома, плохо себя чувствует, никого не зовёт. Можно зайти. Можно не лезть. Это её жизнь.',
+    trigger: { dayMin: 140, dayMax: 175, randomChance: 1.0, oneTime: true, requiresNpcRevealed: true, npcRelationshipMin: 50 },
+    npcId: 'tamara',
     options: [
       {
-        id: 'reciprocate',
-        text: 'Позвонить через неделю — узнать, как дела',
-        consequences: { reputationDelta: 4 },
+        id: 'visit',
+        text: 'Зайти с продуктами (−1 500 ₽)',
+        consequences: { balanceDelta: -1500, reputationDelta: 5, loyaltyDelta: 3 },
+        npcRelationshipDelta: 18,
+      },
+      {
+        id: 'send_box',
+        text: 'Передать набор через соседку (−800 ₽)',
+        consequences: { balanceDelta: -800, reputationDelta: 2, loyaltyDelta: 1 },
+        npcRelationshipDelta: 8,
+      },
+      {
+        id: 'leave_alone',
+        text: 'Не лезть — она не просила',
+        consequences: { loyaltyDelta: -2 },
+        npcRelationshipDelta: -6,
+      },
+    ],
+  },
+  {
+    id: 'NPC_TAMARA_RESOLVE',
+    title: 'Тамара переезжает к дочери',
+    description:
+      'Тамара пришла с пакетом — последний раз. «Дочка забирает к себе. Я сюда — попрощаться. Знаешь, я тут полжизни прожила. Ваш магазин — последний. Не бросай его, ладно? Многим нужен такой как ты». Положила на прилавок старый деревянный календарь.',
+    trigger: { dayMin: 245, dayMax: 315, randomChance: 1.0, oneTime: true, requiresNpcRevealed: true, npcRelationshipMin: 50 },
+    npcId: 'tamara',
+    options: [
+      {
+        id: 'farewell_gift',
+        text: 'Сделать продуктовый набор в дорогу (−2 500 ₽)',
+        consequences: { balanceDelta: -2500, reputationDelta: 5, loyaltyDelta: 4 },
         npcRelationshipDelta: 10,
       },
       {
-        id: 'distance',
-        text: 'Поблагодарить, но дистанцию сохранить — он всё-таки инспектор',
-        consequences: { reputationDelta: 1 },
-        npcRelationshipDelta: -2,
-      },
-    ],
-  },
-  {
-    id: 'NPC_PETROV_GREY_AREA',
-    title: 'Петров на распутье',
-    description:
-      'Звонок: «Слушайте, есть запрос сверху — найти у вас нарушения "для статистики квартала". У вас всё чисто, я подтверждал. Но если они пришлют второго инспектора — найдут что-нибудь. Так бывает. Я могу сказать, что нашёл мелочь — штраф 8 000, и вас оставят в покое». Голос напряжённый.',
-    trigger: {
-      dayMin: 245,
-      dayMax: 350,
-      randomChance: 0.5,
-      oneTime: true,
-      requiresNpcRevealed: true,
-      npcRelationshipMin: 75,
-    },
-    npcId: 'petrov',
-    isMoralDilemma: true,
-    options: [
-      {
-        id: 'accept',
-        text: '«Спасибо. Так и сделаем» (−8 000 ₽, конец истории)',
-        consequences: { balanceDelta: -8000, reputationDelta: -2 },
+        id: 'warm_hug',
+        text: 'Просто обнять и пожелать здоровья',
+        consequences: { reputationDelta: 3, loyaltyDelta: 3 },
         npcRelationshipDelta: 8,
       },
       {
-        id: 'refuse_clean',
-        text: '«Я ничего не нарушал — пусть присылают второго»',
-        consequences: { reputationDelta: 5 },
-        npcRelationshipDelta: -4,
-      },
-      {
-        id: 'extern_check',
-        text: 'Через Контур.Экстерн подать заранее идеальный отчёт — нечего им искать',
-        consequences: { reputationDelta: 8 },
-        npcRelationshipDelta: 6,
-        requiredService: 'extern',
-        isContourOption: true,
-      },
-    ],
-  },
-
-  // ──────────────────────────────────────────────────────────────────
-  // Анна Козлова — конкурент
-  // ──────────────────────────────────────────────────────────────────
-  {
-    id: 'NPC_ANNA_TRUCE',
-    title: 'Анна предлагает не воевать',
-    description:
-      'Анна заходит в нерабочее время. Без листовок, без проектов. «Слушай. Я устала. Мы оба тратим бюджеты на войну, которая никому не помогает. Может, разделим ниши? Я ухожу из твоей категории, ты — из моей. Подадим друг другу руки и работаем». Достаёт лист с предложением.',
-    trigger: {
-      dayMin: 175,
-      dayMax: 315,
-      randomChance: 0.5,
-      oneTime: true,
-      requiresNpcRevealed: true,
-      npcRelationshipMin: 35,
-    },
-    npcId: 'anna',
-    isMoralDilemma: true,
-    options: [
-      {
-        id: 'accept_truce',
-        text: 'Согласиться — устал воевать',
-        consequences: { reputationDelta: 4, loyaltyDelta: 2 },
-        npcRelationshipDelta: 20,
-      },
-      {
-        id: 'counter',
-        text: 'Контр-предложение: «Лучше открыто конкурируем, но без подлянок»',
-        consequences: { reputationDelta: 2 },
-        npcRelationshipDelta: 8,
-      },
-      {
-        id: 'refuse_war',
-        text: '«Не доверяю — будем работать как работали»',
-        consequences: {},
+        id: 'busy_polite',
+        text: '«Удачи» — и обратно к работе',
+        consequences: { loyaltyDelta: -3 },
         npcRelationshipDelta: -10,
       },
     ],
   },
-  {
-    id: 'NPC_ANNA_CRISIS',
-    title: 'Анна в беде',
-    description:
-      'Слухи по району: у Анны налоговая блокировка счёта, поставщик грозит подать в суд. Утром встречаешь её у входа — без обычного боевого вида. «Я тут... одолжишь 30 тысяч на неделю? Спасу бизнес — отдам с процентами. Если ты скажешь «нет» — не обижусь». Тишина.',
-    trigger: {
-      dayMin: 210,
-      dayMax: 350,
-      randomChance: 0.4,
-      oneTime: true,
-      requiresNpcRevealed: true,
-      npcRelationshipMax: 60, // event for low-trust state
-    },
-    npcId: 'anna',
-    isMoralDilemma: true,
-    options: [
-      {
-        id: 'lend_kindness',
-        text: 'Дать 30 000 ₽ — конкурент, но человек',
-        consequences: { balanceDelta: -30000, reputationDelta: 6 },
-        npcRelationshipDelta: 25,
-      },
-      {
-        id: 'lend_terms',
-        text: 'Дать 30 000 ₽, но в обмен на отказ от агрессивных акций на месяц',
-        consequences: { balanceDelta: -30000, clientModifier: 0.05, clientModifierDays: 30 },
-        npcRelationshipDelta: 12,
-      },
-      {
-        id: 'walk_away',
-        text: '«Нет. Это не моя проблема» (она запомнит)',
-        consequences: { reputationDelta: -2 },
-        npcRelationshipDelta: -8,
-      },
-    ],
-  },
 
   // ──────────────────────────────────────────────────────────────────
-  // Марина Воронова — маркетолог
+  // GENA — дядя со схемами (комический рефрен)
   // ──────────────────────────────────────────────────────────────────
   {
-    id: 'NPC_MARINA_AUDIT',
-    title: 'Марина показывает результаты',
+    id: 'NPC_GENA_MEET',
+    title: 'Дядя Гена с гениальной идеей',
     description:
-      'После первой кампании Марина приходит с отчётом. «Смотрите — клики выросли на 28%, но конверсия в реальные продажи всего 4%. Я бы сказала, что бюджет лучше переложить в карту лояльности. Это не выгодно мне — но честно». Кладёт распечатку на стол.',
-    trigger: {
-      dayMin: 84, // ~week 12
-      dayMax: 245,
-      randomChance: 0.5,
-      oneTime: true,
-      requiresNpcRevealed: true,
-      npcRelationshipMin: 50,
-    },
-    npcId: 'marina',
+      'Дядя Гена нашёл тебя на третий день. «Слушай, у меня тема. Криптомат в углу твоего магазина — обороты вырастут в три раза, я тебе говорю. Я уже договорился с поставщиком, нужно 50 тысяч, я их к концу месяца верну с двойной». Глаза горят. Тема, естественно, лажа.',
+    trigger: { dayMin: 21, dayMax: 49, randomChance: 1.0, oneTime: true },
+    npcId: 'gena',
     options: [
       {
-        id: 'trust',
-        text: 'Принять её рекомендацию — переложить бюджет',
-        consequences: { balanceDelta: -8000, loyaltyDelta: 6, reputationDelta: 2 },
-        npcRelationshipDelta: 12,
-      },
-      {
-        id: 'continue_ads',
-        text: 'Продолжить рекламу — клики растут, чек придёт позже',
-        consequences: { balanceDelta: -15000, clientModifier: 0.08, clientModifierDays: 14 },
-        npcRelationshipDelta: -3,
-      },
-    ],
-  },
-  {
-    id: 'NPC_MARINA_LEAVES',
-    title: 'Марина уходит в декрет',
-    description:
-      'Марина заходит с лёгкой улыбкой и опущенными плечами. «Я ухожу в декрет через две недели. Хочется передать вас в надёжные руки — но в нашей сфере это редкость. Если хотите, я подготовлю на квартал стратегию вперёд, пока есть силы. Бесплатно — по знакомству». Действительно от души.',
-    trigger: {
-      dayMin: 210,
-      dayMax: 350,
-      randomChance: 0.6,
-      oneTime: true,
-      requiresNpcRevealed: true,
-      npcRelationshipMin: 65,
-    },
-    npcId: 'marina',
-    options: [
-      {
-        id: 'accept_strategy',
-        text: 'Принять стратегию, отблагодарить деньгами (−10 000 ₽ — она же в декрет)',
-        consequences: { balanceDelta: -10000, clientModifier: 0.06, clientModifierDays: 60, reputationDelta: 3 },
-        npcRelationshipDelta: 15,
-      },
-      {
-        id: 'wish_well',
-        text: 'Поблагодарить, но стратегию написать самому — у вас уже есть опыт',
+        id: 'firm_no',
+        text: 'Твёрдо сказать «нет» — но без ругани',
         consequences: { reputationDelta: 1 },
-        npcRelationshipDelta: 4,
-      },
-    ],
-  },
-
-  // ──────────────────────────────────────────────────────────────────
-  // Виктор Семёнов — менеджер банка
-  // ──────────────────────────────────────────────────────────────────
-  {
-    id: 'NPC_VIKTOR_PROMOTION',
-    title: 'Виктор уходит на повышение',
-    description:
-      'Звонок из банка: «Я перевожусь в управление, в центральный офис. Хотел сам сказать. Я попросил, чтобы ваш счёт перевели в премиум-категорию — у вас обороты выросли. Это моё прощание. И — продолжайте, пожалуйста». Чуть теплее, чем обычно.',
-    trigger: {
-      dayMin: 175,
-      dayMax: 315,
-      randomChance: 0.5,
-      oneTime: true,
-      requiresNpcRevealed: true,
-      npcRelationshipMin: 60,
-    },
-    npcId: 'viktor',
-    options: [
-      {
-        id: 'thank_call',
-        text: 'Позвонить, поблагодарить лично, поздравить',
-        consequences: { reputationDelta: 3 },
-        npcRelationshipDelta: 8,
-      },
-      {
-        id: 'just_reply',
-        text: 'Поблагодарить в ответ по звонку — и забыть',
-        consequences: {},
-        npcRelationshipDelta: 1,
-      },
-    ],
-  },
-  {
-    id: 'NPC_VIKTOR_OFFER',
-    title: 'Виктор предлагает кредитную линию',
-    description:
-      'Виктор заходит без пиджака, по-домашнему: «Я тут посмотрел вашу динамику. Могу одобрить кредитную линию 200 000 ₽ под 7% годовых — это лучше рынка. Без обеспечения. Это и для банка хорошо, и для вас. Подумайте — без давления». Кладёт буклет.',
-    trigger: {
-      dayMin: 140,
-      dayMax: 280,
-      randomChance: 0.5,
-      oneTime: true,
-      requiresNpcRevealed: true,
-      npcRelationshipMin: 55,
-    },
-    npcId: 'viktor',
-    options: [
-      {
-        id: 'take_full',
-        text: 'Взять линию — будет подушка на чёрный день (+200 000 ₽)',
-        consequences: { balanceDelta: 200000 },
-        npcRelationshipDelta: 8,
-        // Note: not a loan in the loans system; treated as one-time injection
-        // for narrative simplicity. Player keeps the cash.
-      },
-      {
-        id: 'partial',
-        text: 'Взять 50 000 ₽ — точечно, без излишеств',
-        consequences: { balanceDelta: 50000 },
-        npcRelationshipDelta: 5,
-      },
-      {
-        id: 'refuse_debt',
-        text: 'Отказаться — без долгов спокойнее',
-        consequences: { loyaltyDelta: 2 },
-        npcRelationshipDelta: -3,
-      },
-    ],
-  },
-
-  // ──────────────────────────────────────────────────────────────────
-  // Глеб Котов — блогер
-  // ──────────────────────────────────────────────────────────────────
-  {
-    id: 'NPC_GLEB_COLLAB',
-    title: 'Глеб предлагает рекламу',
-    description:
-      'Глеб приходит с телефоном на штативе. «Слушайте, у меня уже 22 тысячи подписок. Сделаю про вас — честный обзор, не реклама. 8 000 ₽, плюс если придут клиенты — мы оба в плюсе». Кивает на камеру.',
-    trigger: {
-      dayMin: 84,
-      dayMax: 245,
-      randomChance: 0.5,
-      oneTime: true,
-      requiresNpcRevealed: true,
-      npcRelationshipMin: 40,
-    },
-    npcId: 'gleb',
-    options: [
-      {
-        id: 'pay',
-        text: 'Согласиться (−8 000 ₽, +клиенты на 2 недели)',
-        consequences: { balanceDelta: -8000, clientModifier: 0.15, clientModifierDays: 14 },
-        npcRelationshipDelta: 10,
-      },
-      {
-        id: 'barter',
-        text: 'Предложить бартер — он берёт у вас бесплатно месяц, а взамен делает обзор',
-        consequences: { balanceDelta: -3000, clientModifier: 0.10, clientModifierDays: 14, loyaltyDelta: 1 },
         npcRelationshipDelta: 6,
       },
       {
-        id: 'refuse',
-        text: 'Отказать — реклама у блогеров — лотерея',
+        id: 'curious',
+        text: 'Послушать схему до конца — может что-то полезное',
         consequences: {},
-        npcRelationshipDelta: -4,
+        npcRelationshipDelta: 4,
+      },
+      {
+        id: 'gift_him',
+        text: 'Дать ему 5 000 ₽ «на проект» — лишь бы отстал',
+        consequences: { balanceDelta: -5000, loyaltyDelta: -1 },
+        npcRelationshipDelta: 8,
       },
     ],
   },
   {
-    id: 'NPC_GLEB_SCANDAL',
-    title: 'Глеб ищет скандал',
+    id: 'NPC_GENA_TEST',
+    title: 'Гена приехал с сюрпризом',
     description:
-      'Глеб заходит с серьёзным лицом. «Ходят слухи, что у одного бизнеса в районе грязные методы. Если это правда у вас — лучше скажите сами, я смягчу. Если нет — дайте мне на кого-то ещё указать, я сделаю материал, и в плюсе оба будем». Это шантаж, замаскированный под "журналистику".',
-    trigger: {
-      dayMin: 175,
-      dayMax: 315,
-      randomChance: 0.4,
-      oneTime: true,
-      requiresNpcRevealed: true,
-      npcRelationshipMax: 50, // fires for low-trust Gleb
-    },
-    npcId: 'gleb',
+      'Гена приехал с чужим прицепом, на котором — 200 коробок с надписями «маска для лица №7». «Я по бартеру взял. У тебя место на складе есть, постоят неделю — я их перепродам в Челябинск». Уверенный как никогда. Если согласишься — занят будешь склад минимум на месяц.',
+    trigger: { dayMin: 140, dayMax: 175, randomChance: 1.0, oneTime: true, requiresNpcRevealed: true },
+    npcId: 'gena',
     isMoralDilemma: true,
     options: [
       {
-        id: 'pay_off',
-        text: 'Заплатить 15 000 ₽ — пусть уйдёт',
-        consequences: { balanceDelta: -15000, reputationDelta: -3 },
-        npcRelationshipDelta: 5,
+        id: 'host_boxes',
+        text: '«Ладно, на неделю» (склад занят, −5% к пропускной на 30 дней)',
+        consequences: { clientModifier: -0.05, clientModifierDays: 30 },
+        npcRelationshipDelta: 10,
       },
       {
-        id: 'point_finger',
-        text: 'Указать на конкурента — у Анны точно есть, что копать',
-        consequences: { reputationDelta: -8 },
-        npcRelationshipDelta: 12,
+        id: 'firm_refuse',
+        text: '«Нет. Это не клуб для маминой родни»',
+        consequences: { loyaltyDelta: 1 },
+        npcRelationshipDelta: -10,
       },
       {
-        id: 'go_public',
-        text: 'Записать разговор и выложить как доказательство шантажа',
-        consequences: { reputationDelta: 8 },
+        id: 'send_to_garage',
+        text: 'Помочь договориться с гаражом соседа (−3 000 ₽)',
+        consequences: { balanceDelta: -3000, reputationDelta: 1 },
+        npcRelationshipDelta: 8,
+      },
+    ],
+  },
+  {
+    id: 'NPC_GENA_RESOLVE',
+    title: 'Гена влип',
+    description:
+      'Гена приехал ночью. Без шуток, серьёзно. «Стас. Я попал. На 80 тысяч. Если не отдам послезавтра — будут проблемы. Не от полиции — от других людей. Я знаю, что я тебя достал. Но мне больше не к кому». Тишина. Это первый раз, когда он не улыбается.',
+    trigger: { dayMin: 245, dayMax: 315, randomChance: 1.0, oneTime: true, requiresNpcRevealed: true },
+    npcId: 'gena',
+    isMoralDilemma: true,
+    options: [
+      {
+        id: 'help_full',
+        text: 'Дать 80 000 ₽ — это семья',
+        consequences: { balanceDelta: -80000, reputationDelta: 4 },
+        npcRelationshipDelta: 22,
+      },
+      {
+        id: 'help_partial',
+        text: 'Дать 30 000 ₽ — больше реально не могу',
+        consequences: { balanceDelta: -30000, reputationDelta: 1 },
+        npcRelationshipDelta: 10,
+      },
+      {
+        id: 'final_refuse',
+        text: '«Гена. Нет. Это твои выборы — твои последствия»',
+        consequences: { reputationDelta: -2, loyaltyDelta: 1 },
         npcRelationshipDelta: -25,
       },
     ],

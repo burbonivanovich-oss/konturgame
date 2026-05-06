@@ -1,5 +1,19 @@
 import type { NPC, NpcRole } from '../types/game'
 
+// New roster (Phase C): 8 archetypes, each with a clear narrative function
+// rather than a "modifier with portrait". Each gets a 3-episode arc in
+// npcArcs.ts (meet → test → resolve) and either passes to background
+// after their final episode or stays as an emotional anchor.
+//
+//  1. Катя         — подруга-бухгалтер   (Эльба-ассистент)
+//  2. Виктор       — сосед-конкурент     (вся конкурент-история)
+//  3. Денис        — друг-инвестор       (0% займы, альт-финал)
+//  4. Ирина Петр.  — мама-наставница     (soft-метрики)
+//  5. Артём        — бывший коллега      (VIP-сотрудник)
+//  6. Михаил       — поставщик-старичок  (закупочные скидки)
+//  7. Тамара       — постоянная клиентка (эмоциональный якорь)
+//  8. Гена         — дядя-инвестор-схемы (комический рефрен)
+
 export interface NPCDefinition {
   id: string
   name: string
@@ -12,67 +26,76 @@ export interface NPCDefinition {
 
 export const NPC_DEFINITIONS: NPCDefinition[] = [
   {
-    id: 'mikhail',
-    name: 'Михаил Власов',
-    role: 'supplier',
-    portrait: '👨‍💼',
-    shortRole: 'Ваш поставщик',
-    personality: 'Работает на рынке 12 лет. Семейный человек, помнит добро и зло. Надёжный — пока его не прижмут.',
-    startRelationship: 50,
-  },
-  {
-    id: 'svetlana',
-    name: 'Светлана Орлова',
-    role: 'employee',
-    portrait: '👩‍💼',
-    shortRole: 'Лучший продавец',
-    personality: 'Амбициозная и умная. Хочет расти и учиться. Если её не замечать — уйдёт к тому, кто заметит.',
-    startRelationship: 60,
-  },
-  {
-    id: 'petrov',
-    name: 'Инспектор Петров',
-    role: 'inspector',
-    portrait: '👮',
-    shortRole: 'Налоговый инспектор',
-    personality: 'Формальный и дотошный. Уважает тех, кто соблюдает закон. Помнит нарушителей.',
-    startRelationship: 40,
-  },
-  {
-    id: 'anna',
-    name: 'Анна Козлова',
-    role: 'competitor',
-    portrait: '👩',
-    shortRole: 'Конкурент',
-    personality: 'Открыла бизнес рядом специально. Умная и агрессивная, но умеет договариваться.',
-    startRelationship: 20,
-  },
-  {
-    id: 'marina',
-    name: 'Марина Воронова',
+    id: 'katya',
+    name: 'Катя Михеева',
     role: 'consultant',
-    portrait: '👩‍💻',
-    shortRole: 'Маркетолог-консультант',
-    personality: 'Фрилансер с 6-летним опытом в digital-рекламе. Обаятельная, говорит убедительно. Результаты бывают разными — зависит от того, насколько глубоко она поймёт ваш бизнес.',
-    startRelationship: 45,
+    portrait: '👩‍💼',
+    shortRole: 'Подруга-бухгалтер',
+    personality: 'Школьная подруга, теперь бухгалтер с 8 годами стажа. Прямая, иногда резкая. Считает в уме быстрее любой Эльбы — но всё равно её ставит.',
+    startRelationship: 65,
   },
   {
     id: 'viktor',
     name: 'Виктор Семёнов',
+    role: 'competitor',
+    portrait: '🧔',
+    shortRole: 'Сосед-конкурент',
+    personality: 'Открыл свой бизнес через дорогу полгода назад. Вежливый, но видит в вас угрозу. Может стать другом — а может объявить войну.',
+    startRelationship: 30,
+  },
+  {
+    id: 'denis',
+    name: 'Денис Лапин',
     role: 'banker',
-    portrait: '🏦',
-    shortRole: 'Менеджер банка',
-    personality: 'Менеджер местного отделения банка. Вежливый и обстоятельный. Умеет находить решения — но всегда в интересах банка прежде всего.',
+    portrait: '🤵',
+    shortRole: 'Школьный друг-инвестор',
+    personality: 'Делал стартапы, сейчас сидит на дивидендах от продажи одного. Подкидывает деньги «по дружбе» — но дружба у него тоже считается.',
+    startRelationship: 55,
+  },
+  {
+    id: 'irina',
+    name: 'Ирина Петровна',
+    role: 'consultant',
+    portrait: '👩‍🦳',
+    shortRole: 'Мама-наставница',
+    personality: '30 лет проработала директором в советской столовой. Видит насквозь, говорит тихо, не повышает голос. Когда не одобряет — молчит.',
+    startRelationship: 70,
+  },
+  {
+    id: 'artem',
+    name: 'Артём Грин',
+    role: 'employee',
+    portrait: '👨‍💻',
+    shortRole: 'Бывший коллега',
+    personality: 'Работали вместе в корпорации до того, как вы ушли. Талантливый, но устал от офиса. Ищет, где приложить руки — и спрашивает себя, не у вас ли.',
     startRelationship: 50,
   },
   {
-    id: 'gleb',
-    name: 'Глеб Котов',
-    role: 'blogger',
-    portrait: '📱',
-    shortRole: 'Блогер',
-    personality: '23 года, 18 тысяч подписчиков в соцсетях. Пишет про жизнь района. Ищет контент — честный или скандальный, ему всё равно.',
-    startRelationship: 30,
+    id: 'mikhail',
+    name: 'Михаил Власов',
+    role: 'supplier',
+    portrait: '👨‍🦳',
+    shortRole: 'Поставщик-старичок',
+    personality: 'Работает на рынке 12 лет. Семейный человек, помнит добро и зло. Надёжный — пока не прижмут.',
+    startRelationship: 50,
+  },
+  {
+    id: 'tamara',
+    name: 'Бабушка Тамара',
+    role: 'consultant',
+    portrait: '👵',
+    shortRole: 'Постоянная клиентка',
+    personality: 'Заходит к вам каждый день в 11:00. Покупает мало, говорит много. Помнит, как тут раньше были «Хлеб» и «Овощи». Эмоциональный барометр района.',
+    startRelationship: 60,
+  },
+  {
+    id: 'gena',
+    name: 'Дядя Гена',
+    role: 'banker',
+    portrait: '🕴️',
+    shortRole: 'Дядя со схемами',
+    personality: 'Родственник, у которого «гениальная схема» меняется каждый месяц. Заработать на нём не получится. Послушать — иногда полезно: смешно, и пара трюков всё-таки рабочих.',
+    startRelationship: 45,
   },
 ]
 

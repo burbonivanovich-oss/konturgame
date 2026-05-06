@@ -13,7 +13,6 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     id: 'TAX01',
     title: 'Налоговая проверка — серьёзные нарушения',
     description: 'ФНС выявила грубые нарушения в отчётности за прошлые периоды. Требование об уплате недоимки и штрафа. Без системы отчётности разобраться почти нереально.',
-    npcId: 'petrov',
     trigger: { dayMin: 10, randomChance: 0.04, oneTime: true },
     options: [
       {
@@ -40,7 +39,6 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     title: 'Блогер привёл толпу',
     description:
       'Местный блогер упомянул вас в посте — на пороге очередь, какой не было никогда. Половина клиентов — впервые. Команда не справляется. Что делать?',
-    npcId: 'gleb',
     trigger: { randomChance: 0.03 },
     options: [
       {
@@ -109,7 +107,6 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     id: 'STAFF01',
     title: 'Бунт персонала — угроза коллективного ухода',
     description: 'Три ключевых сотрудника выставили ультиматум: повышение зарплаты на 40% или уходят всей командой. Без нормального учёта рабочего времени до этого и дошло.',
-    npcId: 'svetlana',
     trigger: { randomChance: 0.05 },
     options: [
       {
@@ -133,10 +130,10 @@ export const EVENTS_DATABASE: EventTemplate[] = [
   },
   {
     id: 'COMPETITOR01',
-    title: 'Анна открылась на той же улице',
+    title: 'Виктор открылся на той же улице',
     description:
-      'Через дорогу — баннер «Открытие». Она специально выбрала ваш район. В первый день у неё очередь, ваш зал полупустой. Это начало или конец — зависит от первой реакции.',
-    npcId: 'anna',
+      'Через дорогу — баннер «Открытие». Он специально выбрал ваш район. В первый день у него очередь, ваш зал полупустой. Это начало или конец — зависит от первой реакции.',
+    npcId: 'viktor',
     trigger: { randomChance: 0.04, oneTime: true },
     options: [
       {
@@ -151,7 +148,7 @@ export const EVENTS_DATABASE: EventTemplate[] = [
       },
       {
         id: 'visit',
-        text: 'Зайти к Анне на открытие, поздравить — установить тон отношений',
+        text: 'Зайти к Виктору на открытие, поздравить — установить тон отношений',
         consequences: { reputationDelta: 2 },
         npcRelationshipDelta: 8,
       },

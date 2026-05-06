@@ -49,26 +49,26 @@ function getNarrativeEnding(
   currentWeek: number,
 ): { title: string; text: string } {
   const mikhail = npcs.find(n => n.id === 'mikhail')
-  const svetlana = npcs.find(n => n.id === 'svetlana')
-  const anna = npcs.find(n => n.id === 'anna')
+  const artem = npcs.find(n => n.id === 'artem')
+  const viktor = npcs.find(n => n.id === 'viktor')
 
-  // Alliance ending: Mikhail trusted partner + Svetlana stayed + reputation high
+  // Alliance ending: trusted supplier + co-founder + reputation high
   if (
     mikhail && mikhail.relationshipLevel >= 70 &&
-    svetlana && svetlana.relationshipLevel >= 70 &&
+    artem && artem.relationshipLevel >= 70 &&
     reputation >= 70
   ) {
     return {
       title: 'Команда мечты',
-      text: 'Михаил поставлял лучшие товары по честным ценам. Светлана стала правой рукой. Вместе вы сделали что-то настоящее — бизнес, которому доверяют.',
+      text: 'Михаил поставлял лучшее. Артём стал партнёром по делу. Вместе вы сделали что-то настоящее — бизнес, которому доверяют.',
     }
   }
 
-  // Rivalry ending: Anna subdued
-  if (anna && anna.relationshipLevel <= 25 && completedChainIds.includes('anna_war')) {
+  // Rivalry ending: Viktor (competitor) closed
+  if (viktor && viktor.relationshipLevel <= 25 && reputation >= 60) {
     return {
       title: 'Победа в конкурентной борьбе',
-      text: 'Анна Козлова пыталась вас уничтожить. Вы устояли. Теперь её магазин закрыт, а ваш процветает. Честная победа в нечестной игре.',
+      text: 'Виктор закрылся через полгода после открытия. Не от того, что вы давили — от того, что вы оказались упорнее. Честная победа в нечестной игре.',
     }
   }
 

@@ -82,11 +82,23 @@ export function revealNPC(npcs: NPC[], npcId: string): NPC[] {
 //    → lighter drain every other week
 //  • Decay: revealed NPCs with no interaction for 4+ weeks drift 1 pt toward 50
 //
+// ─── Passive NPC effects applied each week ─────────────────────────────────
+//
+// Each NPC's passive effect maps to their archetype:
+//   • Михаил (supplier) → cheaper supplies / hostile returns
+//   • Катя (бухгалтер)  → small reputation drift (clean books matter)
+//   • Виктор (конкурент)→ active sabotage at low rel; nothing at high
+//   • Денис (инвестор) → no passive (one-shot money via arc)
+//   • Ирина (мама)     → loyalty drift (calm owner = better team)
+//   • Артём (коллега)  → loyalty / reputation when employed
+//   • Тамара (клиентка)→ reputation drift (word-of-mouth)
+//   • Гена (схемы)     → flat — always neutral noise
+//
 export function applyNPCPassiveEffects(state: GameState): void {
   const npcs = state.npcs ?? []
   const altWeek = (state.currentWeek ?? 0) % 2 === 0
 
-  // ── MIKHAIL (supplier) ─────────────────────────────────────────────────
+  // ── MIKHAIL — поставщик ────────────────────────────────────────────────
   const mikhail = npcs.find(n => n.id === 'mikhail')
   if (mikhail?.isRevealed) {
     if (mikhail.relationshipLevel >= 75) {
@@ -94,82 +106,67 @@ export function applyNPCPassiveEffects(state: GameState): void {
     } else if (mikhail.relationshipLevel >= 55 && altWeek) {
       if (state.temporaryCheckMod === 0) state.temporaryCheckMod = 0.03
     } else if (mikhail.relationshipLevel <= 25) {
-      // Bad relations → higher supply costs, returns, quality disputes
       state.balance = Math.max(0, state.balance - 800)
     } else if (mikhail.relationshipLevel <= 40 && altWeek) {
       state.balance = Math.max(0, state.balance - 300)
     }
   }
 
-  // ── SVETLANA (employee) ────────────────────────────────────────────────
-  const svetlana = npcs.find(n => n.id === 'svetlana')
-  if (svetlana?.isRevealed) {
-    if (svetlana.relationshipLevel >= 70) {
-      if (state.loyalty < 100) state.loyalty = Math.min(100, state.loyalty + 1)
-    } else if (svetlana.relationshipLevel >= 52 && altWeek) {
-      if (state.loyalty < 100) state.loyalty = Math.min(100, state.loyalty + 1)
-    }
-    // No active penalty — unmotivated employee's harm is modelled via energy cost
-  }
-
-  // ── MARINA (consultant/marketer) ───────────────────────────────────────
-  const marina = npcs.find(n => n.id === 'marina')
-  if (marina?.isRevealed) {
-    if (marina.relationshipLevel >= 65) {
+  // ── KATYA — бухгалтер ──────────────────────────────────────────────────
+  const katya = npcs.find(n => n.id === 'katya')
+  if (katya?.isRevealed) {
+    if (katya.relationshipLevel >= 70) {
       if (state.reputation < 100) state.reputation = Math.min(100, state.reputation + 1)
-    } else if (marina.relationshipLevel >= 50 && altWeek) {
+    } else if (katya.relationshipLevel >= 50 && altWeek) {
       if (state.reputation < 100) state.reputation = Math.min(100, state.reputation + 1)
     }
   }
 
-  // ── VIKTOR (banker) ────────────────────────────────────────────────────
+  // ── VIKTOR — конкурент ─────────────────────────────────────────────────
   const viktor = npcs.find(n => n.id === 'viktor')
   if (viktor?.isRevealed) {
-    if (viktor.relationshipLevel >= 70) {
-      if (state.temporaryCheckMod === 0) state.temporaryCheckMod = 0.02
-    } else if (viktor.relationshipLevel >= 55 && altWeek) {
-      if (state.temporaryCheckMod === 0) state.temporaryCheckMod = 0.01
-    }
-  }
-
-  // ── PETROV (inspector) ────────────────────────────────────────────────
-  const petrov = npcs.find(n => n.id === 'petrov')
-  if (petrov?.isRevealed) {
-    if (petrov.relationshipLevel <= 25) {
-      // Inspector actively files complaints → direct reputation damage
+    if (viktor.relationshipLevel <= 25) {
+      // Active sabotage: word-of-mouth damage
       state.reputation = Math.max(0, state.reputation - 1)
-    } else if (petrov.relationshipLevel <= 40 && altWeek) {
-      state.reputation = Math.max(0, state.reputation - 1)
-    }
-  }
-
-  // ── ANNA (competitor) ─────────────────────────────────────────────────
-  const anna = npcs.find(n => n.id === 'anna')
-  if (anna?.isRevealed) {
-    if (anna.relationshipLevel <= 25) {
-      // Active sabotage: negative word-of-mouth, luring customers
-      state.reputation = Math.max(0, state.reputation - 1)
-    }
-    // Declared truce: rivals occasionally send overflow customers
-    if (anna.relationshipLevel >= 60 && altWeek) {
+    } else if (viktor.relationshipLevel >= 65 && altWeek) {
+      // Cordial rivalry: he occasionally sends overflow customers
       if (state.reputation < 100) state.reputation = Math.min(100, state.reputation + 1)
     }
   }
 
-  // ── GLEB (blogger) ────────────────────────────────────────────────────
-  const gleb = npcs.find(n => n.id === 'gleb')
-  if (gleb?.isRevealed) {
-    if (gleb.relationshipLevel >= 65) {
-      if (state.reputation < 100) state.reputation = Math.min(100, state.reputation + 1)
-    } else if (gleb.relationshipLevel >= 50 && altWeek) {
-      if (state.reputation < 100) state.reputation = Math.min(100, state.reputation + 1)
-    } else if (gleb.relationshipLevel <= 25) {
-      // Active negative posts
-      state.reputation = Math.max(0, state.reputation - 2)
-    } else if (gleb.relationshipLevel <= 40 && altWeek) {
-      state.reputation = Math.max(0, state.reputation - 1)
+  // ── IRINA — мама-наставница ────────────────────────────────────────────
+  const irina = npcs.find(n => n.id === 'irina')
+  if (irina?.isRevealed) {
+    if (irina.relationshipLevel >= 70) {
+      if (state.loyalty < 100) state.loyalty = Math.min(100, state.loyalty + 1)
+    } else if (irina.relationshipLevel >= 50 && altWeek) {
+      if (state.loyalty < 100) state.loyalty = Math.min(100, state.loyalty + 1)
     }
   }
+
+  // ── ARTEM — бывший коллега ─────────────────────────────────────────────
+  const artem = npcs.find(n => n.id === 'artem')
+  if (artem?.isRevealed) {
+    if (artem.relationshipLevel >= 70) {
+      if (state.loyalty < 100) state.loyalty = Math.min(100, state.loyalty + 1)
+      if (state.reputation < 100 && altWeek) state.reputation = Math.min(100, state.reputation + 1)
+    } else if (artem.relationshipLevel <= 25) {
+      // Disgruntled ex-coworker tells the network — slight rep damage
+      if (altWeek) state.reputation = Math.max(0, state.reputation - 1)
+    }
+  }
+
+  // ── TAMARA — постоянная клиентка ──────────────────────────────────────
+  const tamara = npcs.find(n => n.id === 'tamara')
+  if (tamara?.isRevealed) {
+    if (tamara.relationshipLevel >= 65) {
+      // Says good things to neighbours
+      if (state.reputation < 100) state.reputation = Math.min(100, state.reputation + 1)
+    }
+  }
+
+  // ── DENIS / GENA — нет пассивных эффектов ─────────────────────────────
+  // Денис двигает сюжет деньгами через арку; Гена — сюжетный фон.
 
   // ── DECAY: drift toward neutral (50) when relationship goes stale ─────
   const currentWeek = state.currentWeek ?? 0
@@ -194,12 +191,6 @@ export function getRelationshipLabel(level: number): { text: string; color: stri
   if (level >= 40) return { text: 'Нейтрально', color: '#888' }
   if (level >= 20) return { text: 'Напряжённо', color: '#ff8c00' }
   return { text: 'Враждебно', color: '#dc3545' }
-}
-
-export function getInspectorChain2EventId(state: GameState): string {
-  const petrov = getNPC(state, 'petrov')
-  const relationship = petrov?.relationshipLevel ?? 40
-  return relationship >= 50 ? 'inspector_chain_2_good' : 'inspector_chain_2_bad'
 }
 
 export function ensureNPCsInitialized(state: GameState): void {
