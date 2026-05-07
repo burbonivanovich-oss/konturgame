@@ -985,14 +985,14 @@ export function applyEventConsequence(
   //
   // Cumulative pity bonus: for Gena specifically, each prior scheme the
   // player invested in adds +0.5 percentage points to the effective
-  // chance, capped at 15%. The more you've sunk into his schemes, the
-  // closer he gets to accidentally being right once. Numbers tuned so
-  // P(at least one hit if you invest in all 7) ≈ 14% — generous reward
-  // for full commitment, mostly losses for everyone else.
+  // chance. Tuned against a fixed pool of 7 schemes (no plans to add
+  // more): bases all 0.5%, pity +0.5pp, so the seventh scheme tops out
+  // at 3.5%. Across all 7 invested in order, P(at least one hit) ≈
+  // 13.7% — under the 14% ceiling. Cap of 5% is just a safety rail.
   if (c.randomJackpot && event.npcId) {
     const { chance: baseChance, bonus } = c.randomJackpot
     const priorInvests = event.npcId === 'gena' ? (state.genaSchemesInvested ?? 0) : 0
-    const effectiveChance = Math.min(0.15, baseChance + priorInvests * 0.005)
+    const effectiveChance = Math.min(0.05, baseChance + priorInvests * 0.005)
     const hit = Math.random() < effectiveChance
     if (hit) {
       state.balance = state.balance + bonus

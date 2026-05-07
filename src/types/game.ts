@@ -472,10 +472,9 @@ export interface GameState {
 
   // Counter for Gena's recurring "schemes" — increments each time the
   // player invests in one. Used as a cumulative pity bonus on the
-  // jackpot roll: every prior investment adds +4 percentage points to
-  // the next scheme's chance, capped at 50%. Rationale: gambler's
-  // fallacy made real — the more sunk cost, the closer Гена gets to
-  // accidentally being right once.
+  // jackpot roll (+0.5pp per prior invest). Pool is fixed at 7
+  // schemes; tuned so investing in all of them gives ≈13.7% chance of
+  // at least one paying out. Gambler's fallacy made real.
   genaSchemesInvested?: number
 
   // Onboarding
