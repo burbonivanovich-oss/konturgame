@@ -37,7 +37,7 @@ const SERVICE_COLORS: Record<string, string> = {
 
 export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
   const {
-    services, savedBalance, toggleService, balance,
+    services, savedBalance, toggleService, balance, unlockedServices,
     onboardingStage, onboardingStepIndex, onboardingCompleted,
   } = useGameStore()
 
@@ -73,14 +73,21 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
 
   const activeServiceCount = countActiveServices({ services } as any)
 
+  // Hide services that haven't been unlocked by onboarding yet — keeps
+  // the right rail clean during stage 0 (when nothing is yet open) and
+  // grows it incrementally as the player progresses. Once onboarding is
+  // completed, everything shows.
+  const unlockedSet = new Set(unlockedServices ?? [])
   const servicesList = useMemo(() => {
     return Object.entries(services)
+      .filter(([_, service]: [string, any]) => onboardingCompleted || unlockedSet.has(service.id))
       .map(([_, service]: [string, any]) => ({
         ...service,
         color: SERVICE_COLORS[service.id] ?? K.ink,
       }))
       .sort((a: any, b: any) => (b.isActive ? 1 : -1))
-  }, [services])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [services, unlockedServices, onboardingCompleted])
 
   const totalCost = servicesList
     .filter(s => s.isActive)

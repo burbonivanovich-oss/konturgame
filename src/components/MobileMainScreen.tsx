@@ -425,6 +425,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
         onAction={(action) => {
           if (action === 'buy_register') setShowCashRegisterModal(true)
         }}
+        autoCollapse={activeTab !== 'day'}
       />
       <TutorialMoments
         onNavigate={(nav) => {

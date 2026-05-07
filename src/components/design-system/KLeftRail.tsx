@@ -272,18 +272,21 @@ export function KLeftRail({
         )
       })()}
 
-      {/* Cumulative savings */}
-      <Card pad={12} radius={12} bg={K.mint} border={K.mint} style={{ color: K.white }}>
-        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-          Спасено с Контуром
-        </div>
-        <div style={{ fontSize: 22, fontWeight: 700, marginTop: 2, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
-          {formatRub(savedBalance)}
-        </div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>
-          за {currentWeek} {currentWeek === 1 ? 'неделю' : currentWeek < 5 ? 'недели' : 'недель'}
-        </div>
-      </Card>
+      {/* Cumulative savings — only after the player has saved something.
+          Otherwise the card sits at "0 ₽ за 1 неделю" and looks broken. */}
+      {savedBalance > 0 && (
+        <Card pad={12} radius={12} bg={K.mint} border={K.mint} style={{ color: K.white }}>
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            Спасено с Контуром
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 700, marginTop: 2, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+            {formatRub(savedBalance)}
+          </div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>
+            за {currentWeek} {currentWeek === 1 ? 'неделю' : currentWeek < 5 ? 'недели' : 'недель'}
+          </div>
+        </Card>
+      )}
 
       {/* Help + Settings */}
       <Row gap={6} style={{ borderTop: `1px solid ${K.lineSoft}`, paddingTop: 12 }}>

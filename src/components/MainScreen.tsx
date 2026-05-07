@@ -68,7 +68,7 @@ function DashboardView({
     currentWeek, balance, reputation, loyalty, services,
     pendingEvent, pendingEventsQueue, lastDayResult,
     entrepreneurEnergy, npcs, stockBatches, capacity, cashRegisters,
-    businessType, qualityLevel,
+    businessType, qualityLevel, unlockedServices, onboardingCompleted,
   } = store
 
   const bizConfig = BUSINESS_CONFIGS[businessType]
@@ -164,8 +164,8 @@ function DashboardView({
             </div>
 
             {[
-              { icon: '💹', label: 'Прибыль / день', value: formatRubSigned(dailyProfit), bg: dailyProfit >= 0 ? K.mint : '#c0392b', sub: 'после налогов' },
-              { icon: '💸', label: 'Расходы / день', value: formatRub(dailyExpenses), bg: K.violet, sub: lastDayResult ? 'за вчера' : 'нет данных' },
+              { icon: '💹', label: 'Прибыль / день', value: lastDayResult ? formatRubSigned(dailyProfit) : '—', bg: lastDayResult ? (dailyProfit >= 0 ? K.mint : '#c0392b') : K.muted, sub: lastDayResult ? 'после налогов' : 'появится после первого дня' },
+              { icon: '💸', label: 'Расходы / день', value: lastDayResult ? formatRub(dailyExpenses) : '—', bg: lastDayResult ? K.violet : K.muted, sub: lastDayResult ? 'за вчера' : 'появится после первого дня' },
               { icon: '👥', label: 'Клиенты', value: lastDayResult ? `${servedToday} / ${clientsToday}` : '—', bg: K.blue, sub: missedToday > 0 ? `${missedToday} ушли` : 'все обслужены' },
             ].map(t => (
               <div key={t.label} style={{
@@ -351,25 +351,62 @@ function DashboardView({
                             </span>
                           )}
                         </div>
-                        {opt.consequences?.balanceDelta != null && (
-                          <div style={{
-                            fontSize: 18, fontWeight: 800, letterSpacing: '-0.02em',
-                            fontVariantNumeric: 'tabular-nums',
-                            color: opt.isContourOption
-                              ? K.white
-                              : opt.consequences.balanceDelta >= 0 ? K.mint : '#FF8080',
-                          }}>
-                            {formatRubSigned(opt.consequences.balanceDelta)}
-                          </div>
-                        )}
-                        {opt.consequences?.reputationDelta != null && opt.consequences.reputationDelta !== 0 && (
-                          <div style={{
-                            fontSize: 11, fontWeight: 600,
-                            color: opt.isContourOption ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.45)',
-                          }}>
-                            репутация {opt.consequences.reputationDelta > 0 ? '+' : ''}{opt.consequences.reputationDelta}
-                          </div>
-                        )}
+                        {/* Consequence chips — same shape and weight for every
+                            metric so options have predictable visual height. */}
+                        {(() => {
+                          const c = opt.consequences ?? {}
+                          const chips: Array<{ key: string; label: string; tone: 'pos' | 'neg' | 'neutral' }> = []
+                          if (c.balanceDelta != null && c.balanceDelta !== 0) {
+                            chips.push({
+                              key: 'bal',
+                              label: formatRubSigned(c.balanceDelta),
+                              tone: c.balanceDelta > 0 ? 'pos' : 'neg',
+                            })
+                          }
+                          if (c.reputationDelta != null && c.reputationDelta !== 0) {
+                            chips.push({
+                              key: 'rep',
+                              label: `Реп ${c.reputationDelta > 0 ? '+' : ''}${c.reputationDelta}`,
+                              tone: c.reputationDelta > 0 ? 'pos' : 'neg',
+                            })
+                          }
+                          if (c.loyaltyDelta != null && c.loyaltyDelta !== 0) {
+                            chips.push({
+                              key: 'loy',
+                              label: `Лоял ${c.loyaltyDelta > 0 ? '+' : ''}${c.loyaltyDelta}`,
+                              tone: c.loyaltyDelta > 0 ? 'pos' : 'neg',
+                            })
+                          }
+                          if (chips.length === 0) return null
+                          const isContour = opt.isContourOption
+                          return (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+                              {chips.map(chip => {
+                                const isPos = chip.tone === 'pos'
+                                const bg = isContour
+                                  ? 'rgba(255,255,255,0.18)'
+                                  : isPos ? 'rgba(0,180,120,0.18)' : 'rgba(255,128,128,0.18)'
+                                const fg = isContour
+                                  ? K.white
+                                  : isPos ? K.mint : '#FF8080'
+                                return (
+                                  <span
+                                    key={chip.key}
+                                    style={{
+                                      fontSize: 11, fontWeight: 700,
+                                      padding: '3px 8px', borderRadius: 6,
+                                      background: bg, color: fg,
+                                      fontVariantNumeric: 'tabular-nums',
+                                      whiteSpace: 'nowrap',
+                                    }}
+                                  >
+                                    {chip.label}
+                                  </span>
+                                )
+                              })}
+                            </div>
+                          )
+                        })()}
                       </button>
                     )
                   })}
@@ -603,7 +640,9 @@ function DashboardView({
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-              {serviceOrder.map(sid => {
+              {serviceOrder.filter(sid =>
+                onboardingCompleted || (unlockedServices ?? []).includes(sid)
+              ).map(sid => {
                 const svc = services[sid]
                 const isActive = svc?.isActive
                 const accent = SERVICE_ACCENT[sid]
@@ -863,6 +902,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
           onAction={(action) => {
             if (action === 'buy_register') setShowCashRegisterModal(true)
           }}
+          autoCollapse={activeView !== 'dashboard'}
         />
 
         <TutorialMoments onNavigate={setActiveView} />

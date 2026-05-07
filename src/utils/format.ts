@@ -11,9 +11,12 @@ export function formatRub(n: number): string {
 }
 
 // Adds explicit "+" for positive amounts. Negative numbers keep their
-// natural minus from toLocaleString.
+// natural minus from toLocaleString. Zero is rendered without a sign
+// — Math.round(-0.4) returns -0 in JS, which would otherwise leak as
+// "-0 ₽" in the UI.
 export function formatRubSigned(n: number): string {
   const rounded = Math.round(n)
+  if (rounded === 0) return '0 ₽'
   const sign = rounded > 0 ? '+' : ''
   return `${sign}${rounded.toLocaleString('ru-RU')} ₽`
 }

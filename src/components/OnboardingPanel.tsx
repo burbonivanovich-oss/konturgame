@@ -14,6 +14,10 @@ import type { NavId } from './design-system/KLeftRail'
 interface OnboardingPanelProps {
   onNavigate: (nav: NavId) => void
   onAction?: (action: string) => void
+  // When true, the expanded body collapses by default — used by parent
+  // screens that aren't the dashboard, so the panel doesn't overlap
+  // their content. Player can still expand manually.
+  autoCollapse?: boolean
 }
 
 const ACTION_TO_NAV: Record<string, NavId> = {
@@ -55,8 +59,14 @@ const SERVICE_LABEL: Record<string, string> = {
 // One unified skip dialog state
 type ConfirmState = 'none' | 'skip-step' | 'skip-all'
 
-export function OnboardingPanel({ onNavigate, onAction }: OnboardingPanelProps) {
+export function OnboardingPanel({ onNavigate, onAction, autoCollapse = false }: OnboardingPanelProps) {
   const [expanded, setExpanded] = useState(true)
+  // Auto-collapse the body whenever the parent flips autoCollapse on
+  // (player navigated away from dashboard), and re-open when they
+  // come back. Player's manual toggle still works in between.
+  useEffect(() => {
+    setExpanded(!autoCollapse)
+  }, [autoCollapse])
   const [confirm, setConfirm] = useState<ConfirmState>('none')
 
   // Stage-opener modal state — pops once per stage transition
@@ -219,7 +229,12 @@ export function OnboardingPanel({ onNavigate, onAction }: OnboardingPanelProps) 
             </div>
             <div style={{
               fontSize: 15, fontWeight: 700, color: K.ink, marginTop: 2, lineHeight: 1.3,
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              // Allow up to 2 lines on narrow viewports so titles like
+              // "Добро пожаловать в бизнес!" don't clip to "Добро пожа…"
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
             }}>
               {step.title}
             </div>

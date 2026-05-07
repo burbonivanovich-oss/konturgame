@@ -37,17 +37,36 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
   const isProfitable = lastDayResult.netProfit >= 0
   const milestone = pendingMilestoneCelebration ? MILESTONE_LABELS[pendingMilestoneCelebration] : null
 
+  // Derive the rent + salary + fixed-costs bucket so the breakdown actually
+  // reconciles with the net-profit hero. weekExpenses (in DayResult.expenses)
+  // already includes pain losses; back them out so we don't double-count.
+  const knownExpenses =
+    lastDayResult.tax +
+    lastDayResult.subscriptionCost +
+    lastDayResult.purchaseCost +
+    lastDayResult.expiredLoss
+  const painTotal = lastWeekPainLosses?.total ?? 0
+  const operatingCosts = Math.max(0, Math.round(lastDayResult.expenses - knownExpenses - painTotal))
+
   const rows = [
     { label: 'Выручка', value: lastDayResult.revenue },
     ...(lastDayResult.purchaseCost > 0
       ? [{ label: 'Закупки', value: -lastDayResult.purchaseCost }]
       : []),
-    { label: 'Налог УСН 6%', value: -lastDayResult.tax },
+    ...(operatingCosts > 0
+      ? [{ label: 'Аренда, зарплаты, операционка', value: -operatingCosts }]
+      : []),
+    ...(lastDayResult.tax > 0
+      ? [{ label: 'Налог УСН 6%', value: -lastDayResult.tax }]
+      : []),
     ...(lastDayResult.subscriptionCost > 0
       ? [{ label: `Подписки Контура (${activeCount})`, value: -lastDayResult.subscriptionCost }]
       : []),
     ...(lastDayResult.expiredLoss > 0
       ? [{ label: 'Списание просрочки', value: -lastDayResult.expiredLoss }]
+      : []),
+    ...(painTotal > 0
+      ? [{ label: 'Потери без сервисов Контура', value: -painTotal }]
       : []),
   ]
 
