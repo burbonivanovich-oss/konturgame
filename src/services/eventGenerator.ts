@@ -982,15 +982,24 @@ export function applyEventConsequence(
   // "схемы" so the rare blowup payout is data-driven, not coded into
   // the event picker. Result is stamped onto the player's NPC memory
   // for the opinion stack so they can see whether they hit or missed.
+  //
+  // Cumulative pity bonus: for Gena specifically, each prior scheme the
+  // player invested in adds +4 percentage points to the effective
+  // chance, capped at 50%. The more you've sunk into his schemes, the
+  // higher the chance the *next* one accidentally pays off. Counter
+  // increments after the roll, so the first invest uses the raw chance.
   if (c.randomJackpot && event.npcId) {
-    const { chance, bonus } = c.randomJackpot
-    const hit = Math.random() < chance
+    const { chance: baseChance, bonus } = c.randomJackpot
+    const priorInvests = event.npcId === 'gena' ? (state.genaSchemesInvested ?? 0) : 0
+    const effectiveChance = Math.min(0.50, baseChance + priorInvests * 0.04)
+    const hit = Math.random() < effectiveChance
     if (hit) {
       state.balance = state.balance + bonus
     }
-    // Record the outcome on the NPC's memory so it shows up in the
-    // opinion stack. Doesn't move the relationship — the choice itself
-    // already did that via npcRelationshipDelta.
+    if (event.npcId === 'gena') {
+      state.genaSchemesInvested = priorInvests + 1
+    }
+    const pct = Math.round(effectiveChance * 100)
     applyRelationshipDeltaToState(
       state,
       event.npcId,
@@ -999,7 +1008,9 @@ export function applyEventConsequence(
         week: state.currentWeek,
         eventId: event.id,
         choiceId: optionId,
-        note: hit ? `Тема выстрелила: +${bonus.toLocaleString('ru-RU')} ₽` : 'Тема не выстрелила',
+        note: hit
+          ? `Тема выстрелила: +${bonus.toLocaleString('ru-RU')} ₽ (шанс был ${pct}%)`
+          : `Тема не выстрелила (шанс был ${pct}%)`,
       },
     )
   }

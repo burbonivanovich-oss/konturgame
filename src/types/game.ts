@@ -470,6 +470,14 @@ export interface GameState {
   hadLowReputation?: boolean
   consecutiveNoExpiry?: number
 
+  // Counter for Gena's recurring "schemes" — increments each time the
+  // player invests in one. Used as a cumulative pity bonus on the
+  // jackpot roll: every prior investment adds +4 percentage points to
+  // the next scheme's chance, capped at 50%. Rationale: gambler's
+  // fallacy made real — the more sunk cost, the closer Гена gets to
+  // accidentally being right once.
+  genaSchemesInvested?: number
+
   // Onboarding
   onboardingStage: OnboardingStage
   onboardingCompleted: boolean
