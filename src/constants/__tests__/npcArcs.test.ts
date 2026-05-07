@@ -1,26 +1,43 @@
 import { describe, it, expect } from 'vitest'
 import { NPC_ARC_EVENTS } from '../npcArcs'
+import { NPC_EVENTS } from '../npcEvents'
 import { NPC_DEFINITIONS } from '../npcs'
 
-// These tests guard the Phase C arc structure: each NPC must have
-// exactly three arc events (meet/test/resolve), each event must have
-// a matching npcId, valid trigger windows, and at least 2 options.
+// Phase D structure tests for the NPC arcs.
 //
-// They don't run gameplay simulation — they catch typos and structural
-// drift when someone edits npcArcs without realising what the contract
-// is. Rules:
-//   • Episode 1 (meet)    fires in days 21-70  (weeks 3-10)
-//   • Episode 2 (test)    fires in days 140-175 (weeks 20-25)
-//   • Episode 3 (resolve) fires in days 245-315 (weeks 35-45)
+// Most NPCs follow a 3-episode arc (meet → test → resolve) at weeks
+// 5-10 / 20-25 / 35-45. Two exceptions:
 //
-// Tamara and Gena meet earlier (days 21-49) by design — they're
-// background-flavour NPCs that should appear sooner.
+//   • Gena is intentionally recurring — one arc-meet event, then a pool
+//     of "scheme" variants in npcEvents.ts (crypto, NFT, binary options
+//     etc.). He is not arc-driven by design.
+//   • Tamara has business-type-filtered variants for her meet beat
+//     (different hooks for shop / cafe / salon) so the same arc shape
+//     produces 5+ entries in NPC_ARC_EVENTS but still 3 episodes per run.
+//
+// The progression test therefore groups events by (npcId, businessTypes)
+// before checking that windows don't overlap.
+
+const RECURRING_NPC_IDS = new Set(['gena'])
+
+function groupKey(e: { npcId?: string; trigger: { businessTypes?: string[] } }): string {
+  const bts = (e.trigger.businessTypes ?? []).slice().sort().join(',') || 'all'
+  return `${e.npcId}:${bts}`
+}
 
 describe('NPC arc structure', () => {
-  it('every NPC in roster has at least 3 arc events', () => {
+  it('every arc-driven NPC has at least 3 arc events', () => {
     for (const def of NPC_DEFINITIONS) {
+      if (RECURRING_NPC_IDS.has(def.id)) continue
       const arcs = NPC_ARC_EVENTS.filter(e => e.npcId === def.id)
       expect(arcs.length, `${def.id} should have 3 arc events, has ${arcs.length}`).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  it('recurring NPCs (Gena) still have at least one intro event', () => {
+    for (const id of RECURRING_NPC_IDS) {
+      const arcs = NPC_ARC_EVENTS.filter(e => e.npcId === id)
+      expect(arcs.length, `recurring NPC ${id} needs an intro arc event`).toBeGreaterThanOrEqual(1)
     }
   })
 
@@ -57,21 +74,27 @@ describe('NPC arc structure', () => {
     expect(new Set(ids).size, 'duplicate arc event ids').toBe(ids.length)
   })
 
-  it('episode trigger windows progress meet → test → resolve', () => {
-    // Sort each NPC's arcs by dayMin and verify they don't overlap
-    // outside the expected pattern.
-    for (const def of NPC_DEFINITIONS) {
-      const arcs = NPC_ARC_EVENTS
-        .filter(e => e.npcId === def.id)
-        .sort((a, b) => (a.trigger.dayMin ?? 0) - (b.trigger.dayMin ?? 0))
+  it('episode trigger windows progress meet → test → resolve per (NPC, businessType) group', () => {
+    // Group by (npcId, businessTypes) so business-filtered variants
+    // (e.g. Tamara's shop/cafe/salon meets) don't trip the overlap check.
+    const groups = new Map<string, typeof NPC_ARC_EVENTS>()
+    for (const e of NPC_ARC_EVENTS) {
+      const key = groupKey(e)
+      const list = groups.get(key) ?? []
+      list.push(e)
+      groups.set(key, list)
+    }
 
-      // Each subsequent episode must start after the previous one ends.
-      for (let i = 1; i < arcs.length; i++) {
-        const prev = arcs[i - 1]
-        const curr = arcs[i]
+    for (const [key, list] of groups) {
+      const sorted = list.slice().sort(
+        (a, b) => (a.trigger.dayMin ?? 0) - (b.trigger.dayMin ?? 0),
+      )
+      for (let i = 1; i < sorted.length; i++) {
+        const prev = sorted[i - 1]
+        const curr = sorted[i]
         expect(
           (curr.trigger.dayMin ?? 0) > (prev.trigger.dayMax ?? 0),
-          `${def.id}: episode ${i + 1} (${curr.id}) starts before episode ${i} (${prev.id}) ends`,
+          `${key}: ${curr.id} starts before ${prev.id} ends`,
         ).toBe(true)
       }
     }
@@ -79,14 +102,22 @@ describe('NPC arc structure', () => {
 })
 
 describe('NPC arc gating', () => {
-  it('episode 2 + 3 require requiresNpcRevealed (so they only fire after meet)', () => {
-    for (const def of NPC_DEFINITIONS) {
-      const arcs = NPC_ARC_EVENTS
-        .filter(e => e.npcId === def.id)
-        .sort((a, b) => (a.trigger.dayMin ?? 0) - (b.trigger.dayMin ?? 0))
+  it('non-meet episodes require requiresNpcRevealed', () => {
+    // For each (NPC, businessType) group, the earliest event is the
+    // meet beat — it shouldn't require revealed. Everything after must.
+    const groups = new Map<string, typeof NPC_ARC_EVENTS>()
+    for (const e of NPC_ARC_EVENTS) {
+      const key = groupKey(e)
+      const list = groups.get(key) ?? []
+      list.push(e)
+      groups.set(key, list)
+    }
 
-      // Skip the first (meet) episode — it shouldn't require revealed.
-      for (const e of arcs.slice(1)) {
+    for (const list of groups.values()) {
+      const sorted = list.slice().sort(
+        (a, b) => (a.trigger.dayMin ?? 0) - (b.trigger.dayMin ?? 0),
+      )
+      for (const e of sorted.slice(1)) {
         expect(
           e.trigger.requiresNpcRevealed,
           `${e.id} is a follow-up episode but doesn't require requiresNpcRevealed`,
@@ -97,11 +128,35 @@ describe('NPC arc gating', () => {
 })
 
 describe('Mikhail kept-cast continuity', () => {
-  // Mikhail is the only NPC carried over from the legacy roster.
-  // Make sure the new arc didn't drop his id or signature trait.
   it('Mikhail still exists with role=supplier', () => {
     const m = NPC_DEFINITIONS.find(d => d.id === 'mikhail')
     expect(m, 'Михаил dropped from the roster').toBeDefined()
     expect(m?.role).toBe('supplier')
+  })
+})
+
+describe('Gena recurring schemes', () => {
+  // Gena's design: small chance of jackpot, otherwise lose your stake.
+  // Make sure each "scheme" event actually models that — both an invest
+  // option with randomJackpot AND a refuse option.
+  it('every Gena scheme event has an invest option with randomJackpot', () => {
+    const schemes = NPC_EVENTS.filter(e => e.npcId === 'gena')
+    expect(schemes.length, 'Gena should have at least 5 scheme events').toBeGreaterThanOrEqual(5)
+    for (const s of schemes) {
+      const investOpt = s.options.find(o => o.consequences.randomJackpot !== undefined)
+      expect(investOpt, `${s.id} has no option with randomJackpot`).toBeDefined()
+      const jackpot = investOpt!.consequences.randomJackpot!
+      expect(jackpot.chance, `${s.id} jackpot chance should be small`).toBeLessThan(0.20)
+      expect(jackpot.bonus, `${s.id} jackpot bonus should be 500-700K`).toBeGreaterThanOrEqual(500000)
+      expect(jackpot.bonus, `${s.id} jackpot bonus should be 500-700K`).toBeLessThanOrEqual(700000)
+    }
+  })
+
+  it('every Gena scheme has a refuse option', () => {
+    const schemes = NPC_EVENTS.filter(e => e.npcId === 'gena')
+    for (const s of schemes) {
+      const refuse = s.options.find(o => o.consequences.randomJackpot === undefined)
+      expect(refuse, `${s.id} has no refuse option`).toBeDefined()
+    }
   })
 })

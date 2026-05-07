@@ -977,6 +977,32 @@ export function applyEventConsequence(
   if (c.balanceDelta !== undefined) {
     state.balance = state.balance + c.balanceDelta
   }
+
+  // Probabilistic jackpot — rolled once at apply time. Used by Gena's
+  // "схемы" so the rare blowup payout is data-driven, not coded into
+  // the event picker. Result is stamped onto the player's NPC memory
+  // for the opinion stack so they can see whether they hit or missed.
+  if (c.randomJackpot && event.npcId) {
+    const { chance, bonus } = c.randomJackpot
+    const hit = Math.random() < chance
+    if (hit) {
+      state.balance = state.balance + bonus
+    }
+    // Record the outcome on the NPC's memory so it shows up in the
+    // opinion stack. Doesn't move the relationship — the choice itself
+    // already did that via npcRelationshipDelta.
+    applyRelationshipDeltaToState(
+      state,
+      event.npcId,
+      0,
+      {
+        week: state.currentWeek,
+        eventId: event.id,
+        choiceId: optionId,
+        note: hit ? `Тема выстрелила: +${bonus.toLocaleString('ru-RU')} ₽` : 'Тема не выстрелила',
+      },
+    )
+  }
   if (c.reputationDelta !== undefined) {
     state.reputation = Math.max(0, Math.min(100, state.reputation + c.reputationDelta))
   }

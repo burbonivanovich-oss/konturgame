@@ -262,6 +262,15 @@ export interface EventOption {
     clientModifierDays?: number
     checkModifier?: number
     checkModifierDays?: number
+    // Probabilistic upside — used by Gena's get-rich-quick schemes.
+    // After the deterministic balanceDelta is applied, roll once: with
+    // probability `chance` (0..1), add `bonus` to the balance. Lets us
+    // model "almost always you lose your stake, but rarely you hit
+    // the jackpot" without leaking randomness into other systems.
+    randomJackpot?: {
+      chance: number
+      bonus: number
+    }
   }
   hasServiceAlternative?: boolean
   requiredService?: ServiceType

@@ -156,7 +156,7 @@ export const NPC_EVENTS: EventTemplate[] = [
   {
     id: 'NPC_TAMARA_GOSSIP',
     title: 'Тамара принесла слух',
-    description: 'Тамара заглянула, оглянулась как будто кто-то подслушивает. «Слышала, у Виктора за углом инспекция была. Не знаю, нашли что-то или нет. Просто чтоб ты знал — вот и всё».',
+    description: 'Тамара заглянула без Насти — значит серьёзно. Оглянулась как будто кто-то подслушивает. «Слышала, у Виктора за углом инспекция была. Не знаю, нашли что-то или нет. Просто чтоб ты знал — вот и всё».',
     trigger: { dayMin: 80, randomChance: 0.05, oneTime: true, requiresNpcRevealed: true },
     npcId: 'tamara',
     options: [
@@ -176,24 +176,157 @@ export const NPC_EVENTS: EventTemplate[] = [
   },
 
   // ── Гена (дядя со схемами) ────────────────────────────────────────────
+  // Гена возвращается с разными темами на протяжении всего года. Каждая
+  // одноразовая (oneTime по конкретной теме), но темы разные — крипта,
+  // НФТ, бинарные опционы, форекс, инфокурс, метавселенная, MLM. Если
+  // вложиться — мизерный шанс (5–12%) на джекпот 500–700 тыс., иначе
+  // потеря вложения. Если отказать — Гена через несколько недель
+  // приходит со следующей темой и многозначительно ухмыляется: «я же
+  // говорил» (даже если предыдущая тоже не выстрелила — это и есть шутка).
   {
-    id: 'NPC_GENA_NETWORK',
-    title: 'Дядя Гена прислал «нужного человека»',
-    description: 'Гена позвонил: «У меня товарищ — может списывать кассовые чеки задним числом. Не дорого». Не предлагает, просто упоминает. Знает, что ты откажешь — но всё равно говорит.',
-    trigger: { dayMin: 120, randomChance: 0.05, oneTime: true, requiresNpcRevealed: true },
+    id: 'NPC_GENA_SCHEME_CRYPTO',
+    title: 'Гена: «Крипта поднимется к ноябрю»',
+    description: 'Дядя Гена пришёл с распечаткой графиков. «Слушай. Я взял у мужика инсайд. Альткоин один — в ноябре в десять раз. Сейчас вход 30 тысяч, возьмёт точно. Не то что криптомат — это серьёзно». Загадочно ухмыляется. В прошлый раз тоже ухмылялся.',
+    trigger: { dayMin: 70, randomChance: 0.55, oneTime: true, requiresNpcRevealed: true },
     npcId: 'gena',
     options: [
       {
-        id: 'firm_no',
-        text: '«Гена. Нет. Никогда»',
-        consequences: { reputationDelta: 2 },
-        npcRelationshipDelta: -2,
+        id: 'invest',
+        text: 'Вложиться (−30 000 ₽, может выстрелить)',
+        consequences: { balanceDelta: -30000, randomJackpot: { chance: 0.10, bonus: 600000 } },
+        npcRelationshipDelta: 6,
       },
       {
-        id: 'humour',
-        text: 'Посмеяться — Гена и есть Гена',
+        id: 'refuse',
+        text: '«Гена. Я уже видел, как ты ухмылялся. Нет»',
         consequences: {},
-        npcRelationshipDelta: 4,
+        npcRelationshipDelta: -2,
+      },
+    ],
+  },
+  {
+    id: 'NPC_GENA_SCHEME_NFT',
+    title: 'Гена: «Мой кореш рисует НФТ»',
+    description: 'Гена приходит с телефоном, тыкает в экран. «Вот. Это НФТ. Серия про котов в очках, друг рисует. Мы их выкупаем по 5 тысяч штука — десять штук — и через два месяца на маркетплейсе они уже по 80. Это новая Мона Лиза, я тебе говорю». Кивает многозначительно.',
+    trigger: { dayMin: 105, randomChance: 0.5, oneTime: true, requiresNpcRevealed: true },
+    npcId: 'gena',
+    options: [
+      {
+        id: 'invest',
+        text: 'Купить десять (−50 000 ₽, может выстрелить)',
+        consequences: { balanceDelta: -50000, randomJackpot: { chance: 0.07, bonus: 700000 } },
+        npcRelationshipDelta: 7,
+      },
+      {
+        id: 'refuse',
+        text: '«Я не понимаю что такое НФТ. И не хочу»',
+        consequences: {},
+        npcRelationshipDelta: -1,
+      },
+    ],
+  },
+  {
+    id: 'NPC_GENA_SCHEME_BINARY',
+    title: 'Гена: «Бинарные опционы, у меня система»',
+    description: 'Гена сел напротив, разложил Excel на ноуте. «Я прогнал статистику за полгода. Если ставить только на пары после трёх красных свечей подряд — выигрыш в 70% случаев. Я лично проверил. Дай 20 тысяч на торговый счёт — за месяц будем в плюсе». Excel выглядит убедительно. Но это Гена.',
+    trigger: { dayMin: 140, randomChance: 0.55, oneTime: true, requiresNpcRevealed: true },
+    npcId: 'gena',
+    options: [
+      {
+        id: 'invest',
+        text: 'Закинуть 20 000 ₽ — пусть попробует',
+        consequences: { balanceDelta: -20000, randomJackpot: { chance: 0.05, bonus: 500000 } },
+        npcRelationshipDelta: 6,
+      },
+      {
+        id: 'refuse',
+        text: '«Бинарные опционы — это казино с другим названием. Нет»',
+        consequences: { reputationDelta: 1 },
+        npcRelationshipDelta: -2,
+      },
+    ],
+  },
+  {
+    id: 'NPC_GENA_SCHEME_FOREX',
+    title: 'Гена: «Форекс через своего человека»',
+    description: 'Гена позвонил из Москвы. «Я у одного эксперта на семинаре был. У него стратегия — даёт 3% в неделю. Через подставной счёт — никаких вопросов. 40 тысяч на старт, через год удваиваем. Это не крипта, это серьёзно — институт ВВП». Многозначительно ухмыляется в трубку, ты это слышишь.',
+    trigger: { dayMin: 175, randomChance: 0.55, oneTime: true, requiresNpcRevealed: true },
+    npcId: 'gena',
+    options: [
+      {
+        id: 'invest',
+        text: 'Закинуть 40 000 ₽ — а вдруг',
+        consequences: { balanceDelta: -40000, randomJackpot: { chance: 0.08, bonus: 650000 } },
+        npcRelationshipDelta: 8,
+      },
+      {
+        id: 'refuse',
+        text: 'Не отвечать в принципе',
+        consequences: {},
+        npcRelationshipDelta: -1,
+      },
+    ],
+  },
+  {
+    id: 'NPC_GENA_SCHEME_INFOCOURSE',
+    title: 'Гена: «Инфокурс по успеху, я уже партнёр»',
+    description: 'Гена пришёл в новой кепке. «Я попал в команду одного коуча. Курс называется "Бизнес-Прорыв". Если приведу клиентов — мне 30%. Купи у меня — 25 тысяч — и потом по партнёрке возмёшь свою долю. Это сетевой маркетинг, но для умных». Ухмыляется загадочно. Опять.',
+    trigger: { dayMin: 210, randomChance: 0.55, oneTime: true, requiresNpcRevealed: true },
+    npcId: 'gena',
+    options: [
+      {
+        id: 'invest',
+        text: 'Купить за 25 000 ₽ — кто знает',
+        consequences: { balanceDelta: -25000, randomJackpot: { chance: 0.06, bonus: 550000 } },
+        npcRelationshipDelta: 6,
+      },
+      {
+        id: 'refuse',
+        text: '«Гена. Это пирамида. Иди»',
+        consequences: { reputationDelta: 1 },
+        npcRelationshipDelta: -3,
+      },
+    ],
+  },
+  {
+    id: 'NPC_GENA_SCHEME_METAVERSE',
+    title: 'Гена: «Земля в метавселенной»',
+    description: 'Гена прислал ссылку. «Слушай. В одной метавселенной — продают участки рядом с центром. Скоро туда зайдут бренды. 35 тысяч за виртуальный гектар — через полгода Coca-Cola купит соседний за миллион. Я уже взял два». Прикрепил скриншот с иконкой "🌐". Ухмылка та же.',
+    trigger: { dayMin: 245, randomChance: 0.55, oneTime: true, requiresNpcRevealed: true },
+    npcId: 'gena',
+    options: [
+      {
+        id: 'invest',
+        text: 'Купить виртуальный гектар (−35 000 ₽)',
+        consequences: { balanceDelta: -35000, randomJackpot: { chance: 0.07, bonus: 600000 } },
+        npcRelationshipDelta: 7,
+      },
+      {
+        id: 'refuse',
+        text: '«Я не понимаю как купить землю, которой нет»',
+        consequences: {},
+        npcRelationshipDelta: -1,
+      },
+    ],
+  },
+  {
+    id: 'NPC_GENA_SCHEME_MLM',
+    title: 'Гена: «Биодобавки на грани медицины»',
+    description: 'Гена подсунул баночку с непонятной жидкостью. «Это — улучшенная версия омега-3. Я партнёр у дистрибьютора — нужно купить набор первого уровня за 15 тысяч, и потом приводить трёх клиентов в месяц. Через год выйду на пассивные 80 тысяч». Ухмыляется. Сам пьёт что-то из такой же баночки, но напиток выглядит как лимонад.',
+    trigger: { dayMin: 280, randomChance: 0.55, oneTime: true, requiresNpcRevealed: true },
+    npcId: 'gena',
+    options: [
+      {
+        id: 'invest',
+        text: 'Купить набор за 15 000 ₽ — поддержать дядю',
+        consequences: { balanceDelta: -15000, randomJackpot: { chance: 0.05, bonus: 500000 } },
+        npcRelationshipDelta: 8,
+      },
+      {
+        id: 'refuse',
+        text: '«Я не буду продавать БАДы соседям, Гена»',
+        consequences: { reputationDelta: 1 },
+        npcRelationshipDelta: -3,
       },
     ],
   },
