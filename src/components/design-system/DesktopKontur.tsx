@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useMemo, useState, useRef } from 'react'
 import { useGameStore } from '../../stores/gameStore'
 import { BUNDLE_TIERS, countActiveServices } from '../../services/synergyEngine'
 import { ONBOARDING_STAGES } from '../../constants/onboarding'
