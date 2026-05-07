@@ -193,7 +193,7 @@ export const NPC_EVENTS: EventTemplate[] = [
       {
         id: 'invest',
         text: 'Вложиться (−30 000 ₽, может выстрелить)',
-        consequences: { balanceDelta: -30000, randomJackpot: { chance: 0.10, bonus: 600000 } },
+        consequences: { balanceDelta: -30000, randomJackpot: { chance: 0.04, bonus: 600000 } },
         npcRelationshipDelta: 6,
       },
       {
@@ -214,7 +214,7 @@ export const NPC_EVENTS: EventTemplate[] = [
       {
         id: 'invest',
         text: 'Купить десять (−50 000 ₽, может выстрелить)',
-        consequences: { balanceDelta: -50000, randomJackpot: { chance: 0.07, bonus: 700000 } },
+        consequences: { balanceDelta: -50000, randomJackpot: { chance: 0.02, bonus: 700000 } },
         npcRelationshipDelta: 7,
       },
       {
@@ -235,7 +235,7 @@ export const NPC_EVENTS: EventTemplate[] = [
       {
         id: 'invest',
         text: 'Закинуть 20 000 ₽ — пусть попробует',
-        consequences: { balanceDelta: -20000, randomJackpot: { chance: 0.05, bonus: 500000 } },
+        consequences: { balanceDelta: -20000, randomJackpot: { chance: 0.02, bonus: 500000 } },
         npcRelationshipDelta: 6,
       },
       {
@@ -256,7 +256,7 @@ export const NPC_EVENTS: EventTemplate[] = [
       {
         id: 'invest',
         text: 'Закинуть 40 000 ₽ — а вдруг',
-        consequences: { balanceDelta: -40000, randomJackpot: { chance: 0.08, bonus: 650000 } },
+        consequences: { balanceDelta: -40000, randomJackpot: { chance: 0.03, bonus: 650000 } },
         npcRelationshipDelta: 8,
       },
       {
@@ -277,7 +277,7 @@ export const NPC_EVENTS: EventTemplate[] = [
       {
         id: 'invest',
         text: 'Купить за 25 000 ₽ — кто знает',
-        consequences: { balanceDelta: -25000, randomJackpot: { chance: 0.06, bonus: 550000 } },
+        consequences: { balanceDelta: -25000, randomJackpot: { chance: 0.02, bonus: 550000 } },
         npcRelationshipDelta: 6,
       },
       {
@@ -298,7 +298,7 @@ export const NPC_EVENTS: EventTemplate[] = [
       {
         id: 'invest',
         text: 'Купить виртуальный гектар (−35 000 ₽)',
-        consequences: { balanceDelta: -35000, randomJackpot: { chance: 0.07, bonus: 600000 } },
+        consequences: { balanceDelta: -35000, randomJackpot: { chance: 0.02, bonus: 600000 } },
         npcRelationshipDelta: 7,
       },
       {
@@ -319,7 +319,7 @@ export const NPC_EVENTS: EventTemplate[] = [
       {
         id: 'invest',
         text: 'Купить набор за 15 000 ₽ — поддержать дядю',
-        consequences: { balanceDelta: -15000, randomJackpot: { chance: 0.05, bonus: 500000 } },
+        consequences: { balanceDelta: -15000, randomJackpot: { chance: 0.02, bonus: 500000 } },
         npcRelationshipDelta: 8,
       },
       {
