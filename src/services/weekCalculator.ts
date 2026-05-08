@@ -26,7 +26,6 @@ import {
   checkVictory,
   resolveVictoryType,
   updateGameOverCounters,
-  getLevelForExperience,
 } from './victoryChecker'
 import { calculateSynergyModifiers } from './synergyEngine'
 import { checkNewAchievements } from './achievementChecker'
@@ -544,12 +543,7 @@ export function processWeek(state: GameState): DayResult {
     state.activeAdCampaigns = updated.filter(c => c.daysRemaining > 0)
   }
 
-  // Gain experience (7 days + profit bonus)
-  state.experience += ECONOMY_CONSTANTS.EXPERIENCE_PER_WEEK
-  if (weekNetProfit > 0) {
-    state.experience += Math.floor(weekNetProfit / 10000) * ECONOMY_CONSTANTS.EXPERIENCE_PER_10K_PROFIT
-  }
-  state.level = getLevelForExperience(state.experience)
+  // (level/experience удалены — см. удаление прогрессии в Спринте 4)
 
   // Update reputation-zero counter
   updateGameOverCounters(state)

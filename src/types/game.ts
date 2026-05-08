@@ -423,8 +423,10 @@ export interface GameState {
 
   services: Record<ServiceType, Service>
   achievements: string[]
-  level: number
-  experience: number
+  // level и experience удалены — это была дублирующая прогрессия:
+  // онбординг + tier 1→2→3 + неделя 1-52 уже покрывают «куда я двигаюсь».
+  // 15-уровневая игроковая шкала ничего не давала, кроме ачивок-вех,
+  // которые конвертированы в неделя-based.
 
   lastDayResult: DayResult | null
   pendingEvent: Event | null

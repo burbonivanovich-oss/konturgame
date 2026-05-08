@@ -75,7 +75,7 @@ function DashboardView({
     currentWeek, balance, services,
     pendingEvent, pendingEventsQueue, lastDayResult,
     entrepreneurEnergy, npcs, stockBatches, capacity, cashRegisters,
-    businessType, level, weeklyTactic, setWeeklyTactic,
+    businessType, businessTier, weeklyTactic, setWeeklyTactic,
   } = store
 
   const bizConfig = BUSINESS_CONFIGS[businessType]
@@ -127,7 +127,7 @@ function DashboardView({
   const serviceOrder: ServiceType[] = ['market', 'bank', 'ofd', 'extern', 'diadoc', 'fokus', 'elba']
 
   // Business stage (from main)
-  const stage = getBusinessStage(currentWeek, level)
+  const stage = getBusinessStage(currentWeek, businessTier)
   const stageCfg = STAGE_CONFIG[stage]
   const nextStage = getNextStage(stage)
   const nextCfg = nextStage ? STAGE_CONFIG[nextStage] : null

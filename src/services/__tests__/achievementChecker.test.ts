@@ -29,8 +29,6 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     capacity: 60,
     services: makeServices([]),
     achievements: [],
-    level: 1,
-    experience: 0,
     lastDayResult: null,
     pendingEvent: null,
     pendingEventsQueue: [],
@@ -230,16 +228,7 @@ describe('checkNewAchievements', () => {
     expect(checkNewAchievements(state)).toContain('hall_upgrade')
   })
 
-  it('grants level_5 at level 5', () => {
-    // wave 3 unlocks at week 26
-    const state = makeState({ currentWeek: 26, level: 5 })
-    expect(checkNewAchievements(state)).toContain('level_5')
-  })
-
-  it('grants level_10 at level 10', () => {
-    const state = makeState({ currentWeek: 12, level: 10 })
-    expect(checkNewAchievements(state)).toContain('level_10')
-  })
+  // level_5/level_10 удалены вместе с player level в Спринте 4.
 
   it('grants event_veteran at 10 triggered events', () => {
     const state = makeState({

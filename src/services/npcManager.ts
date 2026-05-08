@@ -45,11 +45,8 @@ export function applyRelationshipDeltaToState(
 
     const current = npc.relationshipLevel
 
-    // Overflow: positive delta when already at 100 → small XP reward
-    if (delta > 0 && current >= 100) {
-      state.experience = (state.experience ?? 0) + Math.max(1, Math.floor(delta / 5))
-    }
-
+    // Overflow at 100 раньше давал XP — система player level удалена,
+    // overflow просто игнорируется (relationshipLevel и так в [0, 100]).
     const newRel = Math.max(0, Math.min(100, current + delta))
     const newMemory = trimMemory([...npc.memory, { ...memoryEntry, isAnchor }])
 

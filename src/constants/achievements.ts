@@ -186,14 +186,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     category: 'special',
     wave: 2,
   },
-  {
-    id: 'level_10',
-    name: 'Мастер бизнеса',
-    description: 'Достичь 10-го уровня',
-    icon: '🎖️',
-    category: 'progress',
-    wave: 2,
-  },
+  // level_10/level_5/level_15 удалены вместе с системой player level
+  // в Спринте 4. Прогрессия теперь только: неделя 1-52 + business tier.
 
   // Wave 3 — unlocks week 26
   {
@@ -202,14 +196,6 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     description: 'Накопить 1 000 000 ₽ на счету',
     icon: '🤑',
     category: 'business',
-    wave: 3,
-  },
-  {
-    id: 'level_5',
-    name: 'Профессионал',
-    description: 'Достичь 5-го уровня',
-    icon: '🎖️',
-    category: 'progress',
     wave: 3,
   },
   {
@@ -252,14 +238,6 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     description: 'Пережить первый год, ни разу не уйдя в минус по балансу',
     icon: '🛡️',
     category: 'special',
-    wave: 4,
-  },
-  {
-    id: 'level_15',
-    name: 'Легенда бизнеса',
-    description: 'Достичь 15-го уровня',
-    icon: '👑',
-    category: 'progress',
     wave: 4,
   },
 

@@ -37,8 +37,6 @@ describe('Game Types', () => {
       capacity: 60,
       services: {} as any,
       achievements: [],
-      level: 1,
-      experience: 0,
       lastDayResult: null,
       pendingEvent: null,
       pendingEventsQueue: [],

@@ -57,8 +57,6 @@ const createInitialState = (businessType: BusinessType): GameState => {
 
     services: createInitialServices(),
     achievements: [],
-    level: 1,
-    experience: 0,
 
     hadLowReputation: false,
     consecutiveNoExpiry: 0,
@@ -252,10 +250,8 @@ interface GameStoreActions {
   setGameOver: (isGameOver: boolean, reason?: string) => void
   setVictory: (isVictory: boolean) => void
 
-  // Achievements and progression
+  // Achievements
   addAchievement: (achievementId: string) => void
-  addExperience: (amount: number) => void
-  setLevel: (level: number) => void
 
   // Temporary modifiers
   setTemporaryModifiers: (clientMod: number, checkMod: number, daysLeft: number) => void
@@ -795,20 +791,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }))
     },
 
-    addExperience: (amount: number) => {
-      set((state: GameState) => ({
-        experience: state.experience + amount,
-        lastUpdated: Date.now(),
-      }))
-    },
-
-    setLevel: (level: number) => {
-      set({
-        level,
-        lastUpdated: Date.now(),
-      })
-    },
-
     // Temporary modifiers
     setTemporaryModifiers: (clientMod: number, checkMod: number, daysLeft: number) => {
       set({
@@ -1102,7 +1084,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Employees
     hireEmployee: (position: EmployeePosition, _name: string, _salary: number) => {
       const state = get()
-      const stage = getBusinessStage(state.currentWeek, state.level)
+      const stage = getBusinessStage(state.currentWeek, state.businessTier)
       const maxEmployees = STAGE_CONFIG[stage].maxEmployees
       if ((state.employees ?? []).length >= maxEmployees) return
       get().spendEnergy(ECONOMY_CONSTANTS.ENERGY_COST_BASE_OPERATION)
@@ -1262,7 +1244,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Business stage helper
     getBusinessStage: () => {
       const state = get()
-      return getBusinessStage(state.currentWeek, state.level)
+      return getBusinessStage(state.currentWeek, state.businessTier)
     },
 
     // NPC system (v3.0)
@@ -1367,7 +1349,7 @@ function saveToStorage(state: GameState) {
 function extractState(state: any): GameState {
   const {
     businessType, currentWeek, dayOfWeek, balance, savedBalance, reputation, loyalty,
-    entrepreneurEnergy, stock, stockBatches, capacity, services, achievements, level, experience,
+    entrepreneurEnergy, stock, stockBatches, capacity, services, achievements,
     lastDayResult, pendingEvent, pendingEventsQueue, triggeredEventIds,
     isGameOver, isVictory, gameOverReason, consecutiveOverloadDays, daysReputationZero,
     daysSinceLastMonthly, purchaseOfferedThisDay, activeAdCampaigns, purchasedUpgrades,
@@ -1409,7 +1391,7 @@ function extractState(state: any): GameState {
     dayOfWeek: dow,
     balance, savedBalance, reputation, loyalty,
     entrepreneurEnergy: entrepreneurEnergy ?? ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY,
-    stock, stockBatches, capacity, services, achievements, level, experience,
+    stock, stockBatches, capacity, services, achievements,
     lastDayResult, pendingEvent, pendingEventsQueue: pendingEventsQueue ?? [],
     triggeredEventIds, isGameOver, isVictory, gameOverReason,
     consecutiveOverloadDays, daysReputationZero, daysSinceLastMonthly,

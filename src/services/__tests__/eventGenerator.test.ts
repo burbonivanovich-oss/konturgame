@@ -17,8 +17,6 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     capacity: 60,
     services: {} as GameState['services'],
     achievements: [],
-    level: 1,
-    experience: 0,
     lastDayResult: null,
     pendingEvent: null,
     pendingEventsQueue: [],
