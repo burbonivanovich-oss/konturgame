@@ -446,7 +446,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // Sustained overwork with many employees will gradually drain energy to 0.
       const currentEnergy = get().entrepreneurEnergy
       const restoredEnergy = Math.min(
-        currentEnergy + 40 + weeklyBonus,
+        // Спринт 5: 40 → 48. Выгорание возможно при упорной aggressive
+        // тактике, но не неизбежно. Целевой win rate ~55%.
+        currentEnergy + 48 + weeklyBonus,
         ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY
       )
 

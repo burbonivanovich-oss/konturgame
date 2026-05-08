@@ -1,6 +1,6 @@
 import type { GameState, DayResult } from '../types/game'
 import { DAILY_MICRO_EVENTS } from '../constants/dailyMicroEvents'
-import { BUSINESS_CONFIGS, ECONOMY_CONSTANTS, CAMPAIGN_DIMINISHING_FACTORS } from '../constants/business'
+import { BUSINESS_CONFIGS, ECONOMY_CONSTANTS, CAMPAIGN_DIMINISHING_FACTORS, getExpenseMultiplier } from '../constants/business'
 import { ensureNPCsInitialized, applyNPCPassiveEffects, getInspectorChain2EventId, getGenaFinalEventId } from './npcManager'
 import { getChainEvent, getChainStartEvent, CHAIN_TRIGGER_WEEKS, type ChainId } from '../constants/eventChains'
 import { templateToEvent, applyEventConsequence, generateCrisisEvent } from './eventGenerator'
@@ -235,10 +235,11 @@ export function processWeek(state: GameState): DayResult {
     // 10. Daily subscriptions (1/30 of monthly)
     const subscriptionCost = calculateDailySubscriptions(state)
 
-    // 11. Fixed daily costs
+    // 11. Fixed daily costs (apply Спринт-5 difficulty multiplier)
+    const expenseMult = getExpenseMultiplier(state.currentWeek ?? 1)
     const totalRegisters = state.cashRegisters?.reduce((s, r) => s + r.count, 0) ?? 0
-    const dailyUtilities = ECONOMY_CONSTANTS.DAILY_UTILITIES
-    const dailyRegisterMaintenance = totalRegisters * ECONOMY_CONSTANTS.DAILY_REGISTER_MAINTENANCE
+    const dailyUtilities = Math.round(ECONOMY_CONSTANTS.DAILY_UTILITIES * expenseMult)
+    const dailyRegisterMaintenance = Math.round(totalRegisters * ECONOMY_CONSTANTS.DAILY_REGISTER_MAINTENANCE * expenseMult)
     const dailyFixedCosts = dailyUtilities + dailyRegisterMaintenance
 
     // 12. Monthly fixed costs (rent + owner's base salary) — spread evenly
@@ -252,10 +253,9 @@ export function processWeek(state: GameState): DayResult {
       : 0
     state.daysSinceLastMonthly = daysAlive + 1
 
-    // 12b. Employee salary spread across the week (was previously folded into
-    // the monthly bill which under-charged it by 75%: the weekly amount only
-    // hit once per 28 days instead of every week).
-    const dailyEmployeeSalary = Math.round(weeklySalaryCost / 7)
+    // 12b. Employee salary spread across the week. Тоже подчиняется
+    // ramp-multiplier: на старте сотрудники соглашаются на меньше.
+    const dailyEmployeeSalary = Math.round((weeklySalaryCost / 7) * expenseMult)
 
     // 13. Daily profit
     const dayExpenses = dayTax + subscriptionCost + purchaseCost + monthlyExpense +
@@ -394,9 +394,9 @@ export function processWeek(state: GameState): DayResult {
   // Update state (but don't advance week yet — done at end after all checks)
   state.dayOfWeek = 0
   state.weeklyEnergyRestored = false
-  state.balance = newBalance
-  state.reputation = newReputation
-  state.loyalty = newLoyalty
+  state.balance = Math.round(newBalance)
+  state.reputation = Math.round(newReputation)
+  state.loyalty = Math.round(newLoyalty)
 
   // Loyalty sustained bonus: max loyalty generates word-of-mouth every 5 weeks.
   // Rewards players who invest in loyalty rather than just hitting the cap once.
