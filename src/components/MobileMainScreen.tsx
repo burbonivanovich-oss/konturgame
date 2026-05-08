@@ -27,6 +27,7 @@ import { DecisionLogView } from './views/DecisionLogView'
 import { WEEKLY_TACTICS, getWeeklyTacticDef } from '../constants/weeklyTactics'
 import { WeekSummaryOverlay } from './WeekSummaryOverlay'
 import { WeekResultsOverlay } from './WeekResultsOverlay'
+import { EventPhaseOverlay } from './EventPhaseOverlay'
 import { useGameStore } from '../stores/gameStore'
 import { ONBOARDING_STAGES as ONBOARDING_STAGES_FOR_HIGHLIGHT } from '../constants/onboarding'
 
@@ -540,6 +541,12 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
       {/* 4-phase weekly cycle overlays */}
       {weekPhase === 'summary' && !isGameOver && !isVictory && (
         <WeekSummaryOverlay onStart={completeSummaryPhase} />
+      )}
+      {weekPhase === 'events' && !isGameOver && !isVictory && (
+        <EventPhaseOverlay
+          onOptionSelect={handleEventOption}
+          onContinueIfNoEvent={() => useGameStore.setState({ weekPhase: 'results', lastUpdated: Date.now() })}
+        />
       )}
       {weekPhase === 'results' && !isGameOver && !isVictory && (
         <WeekResultsOverlay onContinue={completeResultsPhase} />
