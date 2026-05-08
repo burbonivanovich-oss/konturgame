@@ -341,7 +341,10 @@ export const MONTHLY_EXPENSES: Record<BusinessType, { rent: number; baseSalary: 
   // начало (W1-10), плавный ramp (W11-20).
   shop:           { rent: 22000, baseSalary: 16000 },
   cafe:           { rent: 38000, baseSalary: 28000 },
-  'beauty-salon': { rent: 36000, baseSalary: 34000 },
+  // Спринт 5b: салон зарабатывает заметно больше на чек×клиента (400×9
+  // против 112×17 / 90×18), поэтому при равных расходах он доминировал
+  // в симуляции (8/10 побед против 4-6 у других). Поднимаем rent на 4k.
+  'beauty-salon': { rent: 40000, baseSalary: 34000 },
 }
 
 /**
