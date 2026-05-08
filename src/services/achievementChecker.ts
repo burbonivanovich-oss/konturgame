@@ -20,9 +20,10 @@ const ACHIEVEMENT_CHECKS: Record<string, CheckFn> = {
   all_services: (s) => Object.values(s.services).every((sv) => sv.isActive),
   synergy: (s) => getActiveSynergies(s).length >= 3,
   first_campaign: (s) => (s.activeAdCampaigns?.length ?? 0) > 0,
-  hall_upgrade: (s) => s.purchasedUpgrades?.includes('hall-expansion') ?? false,
-  level_5: (s) => s.level >= 5,
-  level_10: (s) => s.level >= 10,
+  hall_upgrade: (s) => s.businessType === 'shop' && (s.purchasedUpgrades?.includes('hall-expansion') ?? false),
+  // level_5/level_10/level_15 удалены вместе с player level/experience.
+  // Их функцию (вехи прогрессии) теперь несут milestone_week10/20/30
+  // и survival_year_one — они привязаны к неделе, а не к скрытому числу.
   event_veteran: (s) => (s.triggeredEventIds?.length ?? 0) >= 10,
   resilient: (s) => (s.hadLowReputation ?? false) && s.reputation >= 60,
   stock_master: (s) => (s.consecutiveNoExpiry ?? 0) >= 10,
@@ -35,7 +36,6 @@ const ACHIEVEMENT_CHECKS: Record<string, CheckFn> = {
   milestone_week20: (s) => s.milestoneStatus?.week20 ?? false,
   milestone_week30: (s) => s.milestoneStatus?.week30 ?? false,
   // v4.3 new achievements
-  level_15: (s) => s.level >= 15,
   year_one_no_debt: (s) =>
     s.currentWeek >= ECONOMY_CONSTANTS.TOTAL_WEEKS_PER_YEAR
     && (s.daysBalanceNegative ?? 0) === 0

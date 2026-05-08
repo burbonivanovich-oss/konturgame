@@ -6,7 +6,6 @@ import {
   getVictoryStatus,
   getAllServicesActive,
   updateGameOverCounters,
-  getLevelForExperience,
 } from '../victoryChecker'
 import type { GameState, ServiceType } from '../../types/game'
 
@@ -27,8 +26,6 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     capacity: 60,
     services: {} as GameState['services'],
     achievements: [],
-    level: 1,
-    experience: 0,
     lastDayResult: null,
     pendingEvent: null,
     pendingEventsQueue: [],
@@ -176,7 +173,7 @@ describe('getVictoryStatus', () => {
     expect(status.weeklyProfitReached).toBe(false)
     expect(status.balanceReached).toBe(false)
     expect(status.allServicesConnected).toBe(false)
-    expect(status.levelReached).toBe(false)
+    expect(status.tierReached).toBe(false)
     expect(status.achievementsReached).toBe(false)
   })
 
@@ -186,10 +183,10 @@ describe('getVictoryStatus', () => {
     expect(status.balanceReached).toBe(true)
   })
 
-  it('levelReached true when level >= 10', () => {
-    const state = makeState({ level: 10 })
+  it('tierReached true when businessTier >= 3', () => {
+    const state = makeState({ businessTier: 3 })
     const status = getVictoryStatus(state)
-    expect(status.levelReached).toBe(true)
+    expect(status.tierReached).toBe(true)
   })
 
   it('achievementsReached true when 7+ achievements', () => {
@@ -217,7 +214,7 @@ describe('checkVictory', () => {
   it('returns true when all conditions met', () => {
     const state = makeState({
       balance: 1000000,
-      level: 10,
+      businessTier: 3,
       achievements: ['a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7'],
       services: makeActiveServices(),
       lastDayResult: makeDayResult({ netProfit: 100000, balance: 1000000 }),
@@ -240,24 +237,5 @@ describe('updateGameOverCounters', () => {
   })
 })
 
-describe('getLevelForExperience', () => {
-  it('level 1 at 0 experience', () => {
-    expect(getLevelForExperience(0)).toBe(1)
-  })
-
-  it('level 2 at 100 experience', () => {
-    expect(getLevelForExperience(100)).toBe(2)
-  })
-
-  it('level 10 at 1000 experience', () => {
-    expect(getLevelForExperience(1000)).toBe(10)
-  })
-
-  it('max level 15 even at high experience', () => {
-    expect(getLevelForExperience(9999)).toBe(15)
-  })
-
-  it('level 5 at 500 experience', () => {
-    expect(getLevelForExperience(500)).toBe(5)
-  })
-})
+// describe('getLevelForExperience') удалён вместе с системой player level
+// в Спринте 4. Прогрессия теперь только: currentWeek + businessTier.

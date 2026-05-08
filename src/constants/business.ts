@@ -294,11 +294,13 @@ export const ECONOMY_CONSTANTS = {
 
   VICTORY_WEEKLY_PROFIT: 20000,  // ↑ Было 10000 - сложнее выиграть
   VICTORY_BALANCE: 500000,  // ↑ Было 150000
-  VICTORY_LEVEL: 10,
+  // VICTORY_LEVEL: 10 — удалено вместе с player level в Спринте 4.
+  // Combined-победа теперь требует tier 3, не level 10.
   VICTORY_ACHIEVEMENTS: 7,
 
-  EXPERIENCE_PER_WEEK: 7,
-  EXPERIENCE_PER_10K_PROFIT: 2,
+  // EXPERIENCE_PER_WEEK / EXPERIENCE_PER_10K_PROFIT удалены вместе с
+  // системой player level в Спринте 4. Прогрессия теперь через
+  // currentWeek + businessTier.
 
   // Reverted to pre-tier values: were bumped during the 90% margin era.
   // With realistic 15-40% margins, these were eating tier-1 income.
@@ -327,18 +329,7 @@ export const ECONOMY_CONSTANTS = {
   GOAL_AMOUNT: 1_000_000,
 } as const
 
-export const LEVEL_TABLE: Array<{ level: number; expRequired: number }> = [
-  { level: 1, expRequired: 0 },
-  { level: 2, expRequired: 150 },  // ↑
-  { level: 3, expRequired: 300 },  // ↑
-  { level: 4, expRequired: 500 },  // ↑
-  { level: 5, expRequired: 750 },  // ↑
-  { level: 6, expRequired: 1000 },  // ↑
-  { level: 7, expRequired: 1300 },  // ↑
-  { level: 8, expRequired: 1600 },  // ↑
-  { level: 9, expRequired: 1900 },  // ↑
-  { level: 10, expRequired: 2500 },  // ↑ Было 1000
-]
+// LEVEL_TABLE удалена вместе с системой player level в Спринте 4.
 
 // Tier-1 baseline. Tier upgrades multiply these via getEffectiveRent/Salary.
 // Reduced from earlier values: at original 50K/40K shop the player was just

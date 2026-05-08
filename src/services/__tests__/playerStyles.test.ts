@@ -46,8 +46,6 @@ function makeGameState(overrides: Partial<GameState> = {}): GameState {
     capacity: 35,
     services: makeServices(),
     achievements: [],
-    level: 1,
-    experience: 0,
     hadLowReputation: false,
     consecutiveNoExpiry: 0,
     lastDayResult: null,

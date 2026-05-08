@@ -29,8 +29,6 @@ function makeState(activeServices: ServiceType[] = []): GameState {
     capacity: 60,
     services: makeServices(activeServices),
     achievements: [],
-    level: 1,
-    experience: 0,
     lastDayResult: null,
     pendingEvent: null,
     pendingEventsQueue: [],

@@ -14,7 +14,7 @@ function statusColor(value: number): string {
 export default function Indicators() {
   const {
     stockBatches, capacity, lastDayResult, balance, entrepreneurEnergy,
-    currentWeek, level,
+    currentWeek, businessTier,
   } = useGameStore()
   const { addBalance, addLoyalty } = useGameStore()
 
@@ -37,7 +37,7 @@ export default function Indicators() {
 
   const stockColorVal = statusColor(stockLevel)
   const energyColor = statusColor(entrepreneurEnergy)
-  const stage = getBusinessStage(currentWeek, level)
+  const stage = getBusinessStage(currentWeek, businessTier)
   const stageConfig = STAGE_CONFIG[stage]
   const nextStage = getNextStage(stage)
   const nextStageConfig = nextStage ? STAGE_CONFIG[nextStage] : null
@@ -51,6 +51,15 @@ export default function Indicators() {
   const servedPct = lastDayResult && lastDayResult.clients > 0
     ? Math.round((lastDayResult.served / lastDayResult.clients) * 100)
     : null
+
+  // Прогрессивное раскрытие: на старте показываем только то, что игрок
+  // успевает понять за первую сессию. Дополнительные карточки открываются
+  // вместе с механиками, к которым относятся.
+  //   W1-2: только Состояние и Энергия (2 карточки)
+  //   W3+:  + Склад (после первых закупок)
+  //   W5+:  + Стадия бизнеса
+  const showStockCard = currentWeek >= 3
+  const showStageCard = currentWeek >= 5
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -113,41 +122,45 @@ export default function Indicators() {
         </div>
       </div>
 
-      {/* Склад */}
-      <div style={{
-        background: K.white, borderRadius: 16, padding: 16,
-        display: 'flex', flexDirection: 'column', gap: 8,
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em' }}>📦 СКЛАД</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: stockColorVal }} className="k-num">
-            {stockLevel}%
-          </div>
-        </div>
+      {/* Склад — открывается на 3-й неделе (после первых закупок) */}
+      {showStockCard && (
         <div style={{
-          height: 6, background: K.line, borderRadius: 999, overflow: 'hidden',
+          background: K.white, borderRadius: 16, padding: 16,
+          display: 'flex', flexDirection: 'column', gap: 8,
         }}>
-          <div style={{
-            height: '100%', background: stockColorVal, width: `${stockLevel}%`,
-            transition: 'width 0.3s ease',
-          }}/>
-        </div>
-      </div>
-
-      {/* Стадия бизнеса */}
-      <div style={{
-        background: K.white, borderRadius: 16, padding: 16,
-        display: 'flex', flexDirection: 'column', gap: 4,
-      }}>
-        <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em' }}>🏢 СТАДИЯ</div>
-        <div style={{ fontSize: 14, fontWeight: 800 }}>{stageConfig.label}</div>
-        <div style={{ fontSize: 11, opacity: 0.7, lineHeight: 1.3 }}>{stageConfig.description}</div>
-        {nextStageConfig && (
-          <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2 }}>
-            Далее: {nextStageConfig.label}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em' }}>📦 СКЛАД</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: stockColorVal }} className="k-num">
+              {stockLevel}%
+            </div>
           </div>
-        )}
-      </div>
+          <div style={{
+            height: 6, background: K.line, borderRadius: 999, overflow: 'hidden',
+          }}>
+            <div style={{
+              height: '100%', background: stockColorVal, width: `${stockLevel}%`,
+              transition: 'width 0.3s ease',
+            }}/>
+          </div>
+        </div>
+      )}
+
+      {/* Стадия бизнеса — открывается на 5-й неделе */}
+      {showStageCard && (
+        <div style={{
+          background: K.white, borderRadius: 16, padding: 16,
+          display: 'flex', flexDirection: 'column', gap: 4,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em' }}>🏢 СТАДИЯ</div>
+          <div style={{ fontSize: 14, fontWeight: 800 }}>{stageConfig.label}</div>
+          <div style={{ fontSize: 11, opacity: 0.7, lineHeight: 1.3 }}>{stageConfig.description}</div>
+          {nextStageConfig && (
+            <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2 }}>
+              Далее: {nextStageConfig.label}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Обслуженность */}
       {lastDayResult && lastDayResult.clients > 0 && (

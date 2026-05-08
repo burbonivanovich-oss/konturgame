@@ -32,7 +32,7 @@ export default function OperationsView({ onShowHireModal }: OperationsViewProps)
     businessType, enabledCategories, services,
     toggleCategory, employees,
     fireEmployee,
-    currentWeek, level,
+    currentWeek, businessTier,
     cashRegisters,
     onboardingStage, onboardingStepIndex, onboardingCompleted,
   } = useGameStore()
@@ -41,7 +41,7 @@ export default function OperationsView({ onShowHireModal }: OperationsViewProps)
   const categories = PRODUCT_CATEGORIES[businessType] ?? []
   const state = useGameStore.getState()
 
-  const stage = getBusinessStage(currentWeek, level)
+  const stage = getBusinessStage(currentWeek, businessTier)
   const stageConfig = STAGE_CONFIG[stage]
   const nextStage = getNextStage(stage)
   const nextStageConfig = nextStage ? STAGE_CONFIG[nextStage] : null
