@@ -142,11 +142,14 @@ input, select, textarea {
 }
 
 /* Strong attention pulse — outline stays solid, ring expands outward and fades.
-   Used for "click here next" indicators in nav and action buttons. */
+   Used for "click here next" indicators in nav and action buttons.
+   Animates only box-shadow: animating background-color used to bleach
+   already-orange action buttons (e.g. "Купить кассу") into a translucent
+   wash where the white label became unreadable. */
 @keyframes navPulse {
-  0%   { box-shadow: 0 0 0 0 rgba(255, 106, 44, 0.7); background-color: rgba(255, 106, 44, 0.12); }
-  60%  { box-shadow: 0 0 0 14px rgba(255, 106, 44, 0); background-color: rgba(255, 106, 44, 0.08); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 106, 44, 0); background-color: rgba(255, 106, 44, 0.12); }
+  0%   { box-shadow: 0 0 0 0 rgba(255, 106, 44, 0.7); }
+  60%  { box-shadow: 0 0 0 14px rgba(255, 106, 44, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 106, 44, 0); }
 }
 
 @keyframes navWiggle {
@@ -159,8 +162,11 @@ input, select, textarea {
 
 .nav-pulse {
   animation: navPulse 1.6s ease-out infinite, navWiggle 2.4s ease-in-out infinite;
+  /* Outline drawn OUTSIDE the box — was inside (-2px offset) and visually
+     covered the text on small orange action buttons. Now wraps the element
+     and never overlaps content. */
   outline: 2px solid #FF6A2C;
-  outline-offset: -2px;
+  outline-offset: 2px;
   position: relative;
 }
 
@@ -177,4 +183,58 @@ input, select, textarea {
   color: #FF6A2C;
   font-weight: 800;
   animation: coachArrowBounce 0.9s ease-in-out infinite;
+}
+
+/* Confetti for VictoryModal — fall from top with horizontal drift and spin.
+   Disabled automatically by the prefers-reduced-motion media query below. */
+@keyframes confettiFall {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--drift, 60px), 110vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* Honor user's "reduce motion" OS-level preference. Disables all transitions,
+   animations and scroll-behavior smoothness. Affects vestibular-sensitive
+   users (WCAG 2.3.3) and low-end devices struggling with backdrop-blur. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Visible focus ring for keyboard users — required by WCAG 2.4.7.
+   Browser default is hidden when authors set `outline: none`. */
+:focus-visible {
+  outline: 2px solid #3D5BE6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Skip-to-content link — visually hidden until focused (WCAG 2.4.1).
+   Lets keyboard users jump past the navigation directly to the main view. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 12px 16px;
+  background: #0E1116;
+  color: #FFFFFF;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 0 0 8px 0;
+}
+
+.skip-link:focus {
+  left: 0;
 }

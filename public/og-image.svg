@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <!--
+    OG-картинка для соц-превью. SVG, чтобы не тащить отдельный PNG-asset
+    через сборку. Соц-сети по разному относятся к SVG-OG: Telegram
+    рендерит, VK тоже, Facebook требует PNG-fallback (не наша аудитория).
+  -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFE9DA"/>
+      <stop offset="100%" stop-color="#FFD3B5"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Card -->
+  <rect x="80" y="120" width="1040" height="390" rx="32" fill="#FFFFFF"/>
+  <rect x="80" y="120" width="1040" height="390" rx="32" fill="none" stroke="#0E1116" stroke-opacity="0.06" stroke-width="1"/>
+
+  <!-- Eyebrow -->
+  <text x="120" y="200" font-family="Manrope, sans-serif" font-size="20" font-weight="800" fill="#FF6A2C" letter-spacing="2">
+    БРАУЗЕРНАЯ ИГРА · 2026
+  </text>
+
+  <!-- Title -->
+  <text x="120" y="290" font-family="Manrope, sans-serif" font-size="76" font-weight="800" fill="#0E1116" letter-spacing="-2">
+    Бизнес с Контуром
+  </text>
+
+  <!-- Subtitle -->
+  <text x="120" y="360" font-family="Manrope, sans-serif" font-size="28" font-weight="500" fill="#0E1116" opacity="0.7">
+    Симулятор малого бизнеса. Магазин, кафе, салон.
+  </text>
+  <text x="120" y="400" font-family="Manrope, sans-serif" font-size="28" font-weight="500" fill="#0E1116" opacity="0.7">
+    52 недели, 8 живых персонажей, 7 сервисов Контура.
+  </text>
+
+  <!-- Footer chip -->
+  <rect x="120" y="450" width="180" height="38" rx="19" fill="#0E1116"/>
+  <text x="210" y="475" font-family="Manrope, sans-serif" font-size="16" font-weight="700" fill="#FFFFFF" text-anchor="middle">
+    PLAY · FREE · WEB
+  </text>
+
+  <!-- Decorative icons -->
+  <text x="900" y="490" font-size="120" text-anchor="middle">🏪</text>
+</svg>
