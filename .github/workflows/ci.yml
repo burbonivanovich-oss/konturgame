@@ -12,12 +12,14 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        # Node 22 LTS — Node 20 actions deprecated, GH Actions переходит на 24
+        # с июня 2026. 22 — текущий LTS до апреля 2027, безопасный выбор.
+        uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies

@@ -179,7 +179,8 @@ describe('checkExpiry', () => {
     expect(getTotalStock(state)).toBe(0)
   })
 
-  it('reduces loss to 64% with market active', () => {
+  it('reduces loss to 40% with market active', () => {
+    // EXPIRY_LOSS_RATE_WITH_MARKET = 0.40 in ECONOMY_CONSTANTS
     const state = makeState({
       currentWeek: 11,
       services: {
@@ -190,7 +191,7 @@ describe('checkExpiry', () => {
       { id: 'b1', quantity: 100, costPerUnit: 5, dayReceived: 1, expirationDays: 10 },
     ]
     const result = checkExpiry(state)
-    expect(result.loss).toBeCloseTo(100 * 5 * 0.64)
+    expect(result.loss).toBeCloseTo(100 * 5 * 0.40)
   })
 
   it('does not expire fresh batches', () => {
