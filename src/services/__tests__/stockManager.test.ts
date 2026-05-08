@@ -234,9 +234,9 @@ describe('getStockPercentage', () => {
 })
 
 describe('predictedDemand', () => {
-  it('shop: baseClients(15) * 2 days = 30', () => {
+  it('shop: baseClients(18) * 2 days = 36 (Спринт 5: 15→18)', () => {
     const state = makeState()
-    expect(predictedDemand(state)).toBe(30)
+    expect(predictedDemand(state)).toBe(36)
   })
 
   it('cafe: baseClients(18) * 2 days = 36', () => {

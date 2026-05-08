@@ -1,5 +1,5 @@
 import type { GameState, Modifiers } from '../types/game'
-import { BUSINESS_CONFIGS, MONTHLY_EXPENSES, UPGRADES_CONFIG, CAMPAIGN_DIMINISHING_FACTORS, SERVICES_CONFIG } from '../constants/business'
+import { BUSINESS_CONFIGS, MONTHLY_EXPENSES, UPGRADES_CONFIG, CAMPAIGN_DIMINISHING_FACTORS, SERVICES_CONFIG, getExpenseMultiplier } from '../constants/business'
 import { BUSINESS_TIERS, type BusinessTierConfig } from '../constants/businessTiers'
 import { LOYALTY_CAPACITY_THRESHOLDS, LOYALTY_CAPACITY_MODIFIER } from '../constants/gameBalance'
 import { calculateSynergyModifiers } from './synergyEngine'
@@ -176,8 +176,13 @@ export function calculateMonthlyExpenses(state: GameState): number {
     salary += u.monthlySalaryIncrease ?? 0
   }
 
-  // Subscriptions are already charged daily via calculateDailySubscriptions — do NOT add them here
-  return rent + salary
+  // Difficulty ramp (Спринт 5):
+  //   W1-10:  ×0.65 — арендатор/работники соглашаются на меньше, район
+  //                    помогает новичку. Ощущение «лёгкое начало».
+  //   W11-20: линейный rampup 0.65 → 1.0.
+  //   W21+:   полная стоимость.
+  const multiplier = getExpenseMultiplier(state.currentWeek ?? 1)
+  return Math.round((rent + salary) * multiplier)
 }
 
 export function buildModifiers(state: GameState): Modifiers {

@@ -4,35 +4,36 @@ export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
   shop: {
     type: 'shop',
     startBalance: 80000,
-    baseClients: 15,  // ↓ Было 25
-    avgCheck: 100,  // ↓ Было 180
+    baseClients: 18,  // ↑ 15→18 (магазин у дома — поток выше)
+    avgCheck: 115,  // ↑ 100→115 (после рекалибровки ради win-rate магазина)
     capacity: 35,
     hasStock: true,
     stockExpiry: 10,
     seasonality: {
       '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 0,
-      '7': 0.05, '8': 0.05, '9': 0, '10': 0, '11': 0, '12': 0,
+      '7': 0.05, '8': 0.05, '9': 0, '10': 0, '11': 0, '12': 0.10,  // декабрь = праздничный поток
     },
     mainService: 'market',
-    monthlyRent: 50000,  // ↑ Было 25000
-    monthlyBaseSalary: 40000,  // ↑ Было 15000
+    monthlyRent: 50000,
+    monthlyBaseSalary: 40000,
     usesAssortment: true,
   },
   cafe: {
     type: 'cafe',
     startBalance: 80000,
-    baseClients: 18,  // ↓ Было 30
-    avgCheck: 70,  // ↓ Было 150
+    baseClients: 18,
+    avgCheck: 95,  // ↑ 85→95 (кафе тяжелее всех — нужен буфер)
     capacity: 40,
     hasStock: true,
     stockExpiry: 7,
+    // Декабрь стал +0.20 (корпоративы) — было ошибочно −0.15.
     seasonality: {
-      '1': -0.15, '2': -0.15, '3': 0, '4': 0, '5': 0,
-      '6': 0.22, '7': 0.22, '8': 0.22, '9': 0, '10': 0, '11': 0, '12': -0.15,
+      '1': -0.10, '2': -0.10, '3': 0, '4': 0, '5': 0,
+      '6': 0.22, '7': 0.22, '8': 0.22, '9': 0, '10': 0, '11': 0.05, '12': 0.20,
     },
     mainService: 'market',
-    monthlyRent: 60000,  // ↑ Было 30000
-    monthlyBaseSalary: 50000,  // ↑ Было 20000
+    monthlyRent: 60000,
+    monthlyBaseSalary: 50000,
     usesAssortment: true,
   },
   'beauty-salon': {
@@ -336,9 +337,26 @@ export const ECONOMY_CONSTANTS = {
 // breaking even with 3 services + all categories — felt like treading water.
 // Now there's headroom for early-game without forcing all 7 services.
 export const MONTHLY_EXPENSES: Record<BusinessType, { rent: number; baseSalary: number }> = {
-  shop: { rent: 30000, baseSalary: 20000 },
-  cafe: { rent: 50000, baseSalary: 32000 },
-  'beauty-salon': { rent: 40000, baseSalary: 40000 },
+  // Спринт 5 ребаланс: цель — 50-60% win rate любым бизнесом, лёгкое
+  // начало (W1-10), плавный ramp (W11-20).
+  shop:           { rent: 22000, baseSalary: 16000 },
+  cafe:           { rent: 38000, baseSalary: 28000 },
+  'beauty-salon': { rent: 36000, baseSalary: 34000 },
+}
+
+/**
+ * Множитель фиксированных расходов по неделе. Реализует «лёгкое начало —
+ * плавный ramp — полная сложность»:
+ *   W1-10:   ×0.65 — sandbox-mode, новичок учится
+ *   W11-20:  линейный rampup от 0.65 → 1.0
+ *   W21+:    ×1.0 — полная стоимость
+ */
+export function getExpenseMultiplier(currentWeek: number): number {
+  if (currentWeek <= 10) return 0.60
+  if (currentWeek >= 21) return 0.95
+  // 11..20: линейная интерполяция 0.60 → 0.95
+  const t = (currentWeek - 10) / 10
+  return 0.60 + 0.35 * t
 }
 
 export const AD_CAMPAIGNS_CONFIG = [

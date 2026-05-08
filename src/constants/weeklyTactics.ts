@@ -17,9 +17,11 @@ export const WEEKLY_TACTICS: WeeklyTacticDef[] = [
     id: 'aggressive',
     icon: '🔥',
     title: 'Активная неделя',
-    blurb: '+20% выручки, но устаёшь сильнее (−2 энергии/день)',
-    revenueMultiplier: 1.20,
-    energyDelta: -2,
+    blurb: '+18% выручки, устаёте сильнее (−1 энергии/день)',
+    // -1/день вместо -2: 7×52 = 364 ед/год вместо 728 — выгорание становится
+    // выбором при долгой агрессии, а не неизбежностью на W10.
+    revenueMultiplier: 1.18,
+    energyDelta: -1,
     reputationDelta: 0,
     loyaltyDelta: 0,
   },
@@ -27,8 +29,10 @@ export const WEEKLY_TACTICS: WeeklyTacticDef[] = [
     id: 'calm',
     icon: '🌿',
     title: 'Спокойная неделя',
-    blurb: 'Отдых вместо роста: −5% выручки, +2 энергии/день',
-    revenueMultiplier: 0.95,
+    blurb: 'Отдых вместо роста: −3% выручки, +2 энергии/день',
+    // -3% вместо -5%: спокойная неделя должна быть жизнеспособна
+    // как стратегия, а не «всегда хуже всех».
+    revenueMultiplier: 0.97,
     energyDelta: 2,
     reputationDelta: 0,
     loyaltyDelta: 0,
@@ -37,8 +41,8 @@ export const WEEKLY_TACTICS: WeeklyTacticDef[] = [
     id: 'service',
     icon: '⭐',
     title: 'Качество и сервис',
-    blurb: '−3% выручки, +0.8 репутации и +0.5 лояльности в день',
-    revenueMultiplier: 0.97,
+    blurb: '−2% выручки, +0.8 репутации и +0.5 лояльности в день',
+    revenueMultiplier: 0.98,
     energyDelta: 0,
     reputationDelta: 0.8,
     loyaltyDelta: 0.5,
