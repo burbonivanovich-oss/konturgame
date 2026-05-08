@@ -1,235 +1,266 @@
 import { useGameStore } from '../stores/gameStore'
 import { K } from './design-system/tokens'
+import { getWeeklyTacticDef } from '../constants/weeklyTactics'
 
 interface WeekResultsOverlayProps {
   onContinue: () => void
 }
 
-const MILESTONE_LABELS: Record<string, { title: string; text: string; emoji: string }> = {
-  week10: {
-    emoji: '🌱',
-    title: '10 недель — вы выжили!',
-    text: 'Первый критический рубеж пройден. Бизнес стоит на ногах.',
-  },
-  week20: {
-    emoji: '🚀',
-    title: '20 недель — уже не новичок',
-    text: 'Половина года позади. Вы знаете свой бизнес изнутри.',
-  },
-  week30: {
-    emoji: '🏆',
-    title: '30 недель — настоящий предприниматель',
-    text: 'Три четверти года. Немногие доходят до этой точки.',
-  },
+/**
+ * Phase ④ «Итоги» — фаза 4 недельного цикла.
+ *
+ * Полноэкранный итог недели. Раньше показывал большой раскладок (P&L,
+ * milestone, активные NPC, диаграммы) — много информации, которую
+ * casual игрок не дочитывает. Теперь — структура «причинность за 5 строк»:
+ *
+ *   1. 3 ключевые цифры с дельтами (прибыль / клиенты / репутация)
+ *   2. «Что сработало» — 2-3 строки конкретных причин роста
+ *   3. «Что пошло не так» — 2-3 строки причин потерь
+ *   4. (опционально) Дневник, если он сработал на этой неделе
+ *   5. Кнопка «Следующая неделя →»
+ *
+ * Цель — игрок видит **что я сделал → что это дало**, а не «таблицу с
+ * 14 параметрами, в которой я должен сам найти, где плохо».
+ */
+
+const MILESTONE_LABELS: Record<string, { title: string; emoji: string }> = {
+  week10: { emoji: '🌱', title: '10 недель — вы выжили!' },
+  week20: { emoji: '🚀', title: '20 недель — уже не новичок' },
+  week30: { emoji: '🏆', title: '30 недель — настоящий предприниматель' },
+}
+
+const PAIN_LABELS: Record<string, string> = {
+  bank: 'Без Банка: клиенты ушли — нет эквайринга',
+  market: 'Без Маркета: списали просрочку',
+  ofd: 'Без ОФД: налоговая прислала штраф',
+  diadoc: 'Без Диадока: бумажные накладные опоздали',
+  fokus: 'Без Фокуса: попался плохой поставщик',
+  elba: 'Без Эльбы: пени за просроченный отчёт',
+  extern: 'Без Экстерна: расхождение по НДС',
 }
 
 export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
   const {
     currentWeek, balance, lastDayResult, services, achievements,
-    upcomingEventTeaser, pendingMilestoneCelebration,
-    lastWeekMicroEvent, npcs, lastDiaryEntry,
+    pendingMilestoneCelebration, weeklyTactic,
+    lastWeekMicroEvent, lastDiaryEntry, lastWeekPainLosses,
   } = useGameStore()
 
   if (!lastDayResult) return null
 
-  const activeCount = Object.values(services).filter(s => s.isActive).length
   const isProfitable = lastDayResult.netProfit >= 0
-  const milestone = pendingMilestoneCelebration ? MILESTONE_LABELS[pendingMilestoneCelebration] : null
+  const milestone = pendingMilestoneCelebration
+    ? MILESTONE_LABELS[pendingMilestoneCelebration]
+    : null
+  const tactic = getWeeklyTacticDef(weeklyTactic)
+  const activeCount = Object.values(services).filter(s => s.isActive).length
 
-  const rows = [
-    { label: 'Выручка', value: lastDayResult.revenue },
-    ...(lastDayResult.purchaseCost > 0
-      ? [{ label: 'Закупки', value: -lastDayResult.purchaseCost }]
-      : []),
-    { label: 'Налог УСН 6%', value: -lastDayResult.tax },
-    ...(lastDayResult.subscriptionCost > 0
-      ? [{ label: `Подписки Контура (${activeCount})`, value: -lastDayResult.subscriptionCost }]
-      : []),
-    ...(lastDayResult.expiredLoss > 0
-      ? [{ label: 'Списание просрочки', value: -lastDayResult.expiredLoss }]
-      : []),
-  ]
+  // ── Что сработало (positive causality) ──────────────────────────────
+  const positives: string[] = []
+  if (lastDayResult.revenue > 0 && isProfitable) {
+    positives.push(`Выручка ${lastDayResult.revenue.toLocaleString('ru-RU')} ₽ за неделю`)
+  }
+  if (tactic && tactic.revenueMultiplier > 1) {
+    const pct = Math.round((tactic.revenueMultiplier - 1) * 100)
+    positives.push(`Тактика «${tactic.title}»: +${pct}% к выручке`)
+  }
+  if (activeCount >= 3) {
+    const bonus = activeCount >= 7 ? 30 : activeCount >= 5 ? 20 : 10
+    positives.push(`Бандл ${activeCount}/7 сервисов: +${bonus}% выручки`)
+  }
+  if (lastWeekMicroEvent && lastWeekMicroEvent.effectText.includes('+')) {
+    positives.push(lastWeekMicroEvent.effectText)
+  }
+
+  // ── Что пошло не так (negative causality) ──────────────────────────
+  const negatives: string[] = []
+  if (lastDayResult.expiredLoss > 0) {
+    negatives.push(
+      `Просрочка: −${lastDayResult.expiredLoss.toLocaleString('ru-RU')} ₽`
+    )
+  }
+  if (lastDayResult.tax > 0) {
+    negatives.push(`Налог УСН: −${lastDayResult.tax.toLocaleString('ru-RU')} ₽`)
+  }
+  if (lastDayResult.subscriptionCost > 0 && activeCount > 0) {
+    negatives.push(
+      `Подписки Контура (${activeCount}): −${lastDayResult.subscriptionCost.toLocaleString('ru-RU')} ₽`
+    )
+  }
+  // Pain losses — самое информативное «без чего вы потеряли»
+  if (lastWeekPainLosses && lastWeekPainLosses.total > 0) {
+    const top = (Object.entries(lastWeekPainLosses) as [string, number][])
+      .filter(([k, v]) => k !== 'total' && v > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 2)
+    for (const [key, amount] of top) {
+      const label = PAIN_LABELS[key] ?? `Без сервиса ${key}`
+      negatives.push(`${label}: −${Math.round(amount).toLocaleString('ru-RU')} ₽`)
+    }
+  }
 
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 200,
-      background: 'rgba(26,26,34,0.7)',
+      background: K.bone,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      backdropFilter: 'blur(8px)',
+      overflow: 'auto', padding: 24,
+      fontFamily: 'Manrope, sans-serif',
     }}>
       <div style={{
-        background: K.white,
-        border: `1px solid ${K.line}`,
-        borderRadius: 20,
-        padding: '40px 48px',
-        width: 520,
-        maxWidth: '90vw',
-        maxHeight: '90vh',
-        overflowY: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 24,
+        width: '100%', maxWidth: 560,
+        display: 'flex', flexDirection: 'column', gap: 20,
       }}>
-        {/* Header */}
-        <div>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '4px 12px', borderRadius: 999,
-            background: K.mintSoft, marginBottom: 12,
-          }}>
-            <div style={{ width: 6, height: 6, borderRadius: 999, background: K.mint }} />
-            <span style={{ fontSize: 11, color: K.mintInk, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              Итоги
-            </span>
-          </div>
-          <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-            Неделя {currentWeek - 1} завершена
-          </div>
-        </div>
 
-        {/* Milestone celebration */}
+        {/* Header */}
+        <header style={{ textAlign: 'center' }}>
+          <div style={{
+            fontSize: 11, fontWeight: 800, color: K.mintInk,
+            letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6,
+          }}>
+            Воскресенье · Неделя {currentWeek - 1} закончилась
+          </div>
+          <h1 style={{
+            fontSize: 26, fontWeight: 800, color: K.ink,
+            letterSpacing: '-0.02em', lineHeight: 1.15, margin: 0,
+          }}>
+            {isProfitable ? 'Неделя в плюс' : 'Неделя в минус'}
+          </h1>
+        </header>
+
+        {/* Milestone — если случилось */}
         {milestone && (
           <div style={{
-            background: K.violet,
-            borderRadius: 16, padding: '18px 22px',
-            display: 'flex', alignItems: 'center', gap: 16,
+            background: K.violet, borderRadius: 14, padding: '16px 20px',
+            display: 'flex', alignItems: 'center', gap: 14,
           }}>
-            <div style={{ fontSize: 36, flexShrink: 0 }}>{milestone.emoji}</div>
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: K.white, lineHeight: 1.2 }}>
-                {milestone.title}
-              </div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>
-                {milestone.text}
-              </div>
+            <div style={{ fontSize: 30 }} aria-hidden="true">{milestone.emoji}</div>
+            <div style={{
+              fontSize: 14, fontWeight: 800, color: K.white,
+              lineHeight: 1.2,
+            }}>
+              {milestone.title}
             </div>
           </div>
         )}
 
-        {/* Net profit hero */}
-        <div style={{
-          background: isProfitable ? K.ink : K.bad,
-          borderRadius: 16,
-          padding: '20px 24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          position: 'relative',
-          overflow: 'hidden',
-        }}>
-          {isProfitable && (
-            <div style={{
-              position: 'absolute', top: -20, right: -20,
-              width: 100, height: 100, borderRadius: '50%',
-              background: K.mintSoft,
-              opacity: 0.45,
-              pointerEvents: 'none',
-            }} />
-          )}
-          <div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              Чистая прибыль
-            </div>
-            <div style={{
-              fontSize: 34, fontWeight: 700, letterSpacing: '-0.02em',
-              color: K.white, marginTop: 4, fontVariantNumeric: 'tabular-nums',
-            }}>
-              {isProfitable ? '+' : ''}{lastDayResult.netProfit.toLocaleString('ru-RU')} ₽
-            </div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>Баланс</div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: K.white, fontVariantNumeric: 'tabular-nums' }}>
-              {balance.toLocaleString('ru-RU')} ₽
-            </div>
-          </div>
-        </div>
-
-        {/* Breakdown */}
-        <div style={{
-          background: K.bone,
-          border: `1px solid ${K.lineSoft}`,
-          borderRadius: 12,
-          padding: '16px 20px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-        }}>
-          {rows.map((row, i) => (
-            <div key={i} style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              fontSize: 13,
-            }}>
-              <span style={{ color: K.muted }}>{row.label}</span>
-              <span style={{
-                fontWeight: 600,
-                color: row.value >= 0 ? K.good : K.bad,
-                fontVariantNumeric: 'tabular-nums',
-              }}>
-                {row.value >= 0 ? '+' : ''}{row.value.toLocaleString('ru-RU')} ₽
-              </span>
-            </div>
-          ))}
-          <div style={{
-            borderTop: `1px solid ${K.line}`,
-            paddingTop: 10,
-            marginTop: 4,
-            display: 'flex',
-            justifyContent: 'space-between',
-            fontSize: 14, fontWeight: 700,
-          }}>
-            <span>Итого</span>
-            <span style={{ color: isProfitable ? K.good : K.bad, fontVariantNumeric: 'tabular-nums' }}>
-              {isProfitable ? '+' : ''}{lastDayResult.netProfit.toLocaleString('ru-RU')} ₽
-            </span>
-          </div>
-        </div>
-
-        {/* Stats line */}
-        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+        {/* Three numbers — что изменилось */}
+        <section
+          aria-label="Итоги недели"
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}
+        >
           {[
-            { label: 'Клиентов обслужено', value: `${lastDayResult.served} / ${lastDayResult.clients}` },
-            ...(activeCount > 0 ? [{ label: 'Сервисов Контура', value: String(activeCount) }] : []),
-            ...(achievements.length > 0 ? [{ label: 'Достижений', value: String(achievements.length) }] : []),
-          ].map(s => (
-            <div key={s.label}>
-              <div style={{ fontSize: 10, color: K.muted, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>
-                {s.label}
+            {
+              label: 'Прибыль',
+              value: `${isProfitable ? '+' : ''}${lastDayResult.netProfit.toLocaleString('ru-RU')} ₽`,
+              icon: isProfitable ? '📈' : '📉',
+              color: isProfitable ? K.good : K.bad,
+            },
+            {
+              label: 'Клиентов',
+              value: `${lastDayResult.served}`,
+              icon: '👥',
+              color: K.ink,
+            },
+            {
+              label: 'Баланс',
+              value: `${balance.toLocaleString('ru-RU')} ₽`,
+              icon: '💰',
+              color: balance > 0 ? K.ink : K.bad,
+            },
+          ].map((m) => (
+            <div key={m.label} style={{
+              background: K.white, border: `1px solid ${K.line}`,
+              borderRadius: 12, padding: '14px 16px',
+              position: 'relative', overflow: 'hidden',
+            }}>
+              <span style={{
+                position: 'absolute', top: 8, right: 10,
+                fontSize: 16, opacity: 0.3,
+              }} aria-hidden="true">{m.icon}</span>
+              <div style={{
+                fontSize: 10, color: K.muted, fontWeight: 700,
+                letterSpacing: '0.06em', textTransform: 'uppercase',
+              }}>
+                {m.label}
               </div>
-              <div style={{ fontSize: 15, fontWeight: 700, marginTop: 2 }}>{s.value}</div>
+              <div style={{
+                fontSize: 17, fontWeight: 800, color: m.color, marginTop: 4,
+                fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.01em',
+              }}>
+                {m.value}
+              </div>
             </div>
           ))}
-        </div>
+        </section>
 
-        {/* Weekly micro event */}
-        {lastWeekMicroEvent && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            background: K.bone, border: `1px solid ${K.lineSoft}`,
-            borderRadius: 12, padding: '12px 16px',
+        {/* Что сработало */}
+        {positives.length > 0 && (
+          <section style={{
+            background: K.white, border: `1px solid ${K.line}`,
+            borderLeft: `4px solid ${K.mint}`,
+            borderRadius: 12, padding: '14px 16px',
           }}>
-            <span style={{ fontSize: 20, flexShrink: 0 }}>{lastWeekMicroEvent.icon}</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: K.ink }}>{lastWeekMicroEvent.title}</div>
-              <div style={{ fontSize: 11, color: K.muted, marginTop: 2 }}>{lastWeekMicroEvent.effectText}</div>
+            <div style={{
+              fontSize: 11, fontWeight: 800, color: K.mintInk,
+              letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8,
+            }}>
+              ✓ Что сработало
             </div>
-          </div>
+            <ul style={{
+              margin: 0, padding: 0, listStyle: 'none',
+              display: 'flex', flexDirection: 'column', gap: 4,
+            }}>
+              {positives.slice(0, 3).map((p, i) => (
+                <li key={i} style={{
+                  fontSize: 13, color: K.ink, lineHeight: 1.5,
+                }}>
+                  · {p}
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
 
-        {/* Diary entry — first-person reflection, fired every 5 weeks */}
+        {/* Что пошло не так */}
+        {negatives.length > 0 && (
+          <section style={{
+            background: K.white, border: `1px solid ${K.line}`,
+            borderLeft: `4px solid ${K.orange}`,
+            borderRadius: 12, padding: '14px 16px',
+          }}>
+            <div style={{
+              fontSize: 11, fontWeight: 800, color: K.orange,
+              letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8,
+            }}>
+              × Что пошло не так
+            </div>
+            <ul style={{
+              margin: 0, padding: 0, listStyle: 'none',
+              display: 'flex', flexDirection: 'column', gap: 4,
+            }}>
+              {negatives.slice(0, 3).map((n, i) => (
+                <li key={i} style={{
+                  fontSize: 13, color: K.ink, lineHeight: 1.5,
+                }}>
+                  · {n}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/* Diary — если сработала запись (раз в 5 недель) */}
         {lastDiaryEntry && (
-          <div style={{
+          <section style={{
             background: '#fdf6e3',
             border: `1px solid #e8dfc6`,
             borderLeft: `3px solid ${K.orange}`,
             borderRadius: 10, padding: '14px 16px',
-            display: 'flex', flexDirection: 'column', gap: 6,
           }}>
             <div style={{
               fontSize: 10, fontWeight: 700, color: K.muted,
-              textTransform: 'uppercase', letterSpacing: '0.08em',
+              textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4,
             }}>
               {lastDiaryEntry.header}
             </div>
@@ -239,68 +270,15 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
             }}>
               {lastDiaryEntry.body}
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Active NPC allies */}
-        {(() => {
-          const allies = (npcs ?? []).filter(n => n.isRevealed && n.relationshipLevel >= 60)
-          if (allies.length === 0) return null
-          const bonuses: Record<string, string> = {
-            mikhail: 'Хорошая цена на поставки',
-            svetlana: 'Команда не уходит',
-            petrov: 'Лояльность при проверках',
-            anna: 'Перемирие на улице',
-            tamara: 'Тёплое лицо вашего бизнеса',
-            gena: 'Иногда заходит — иногда полезно',
-          }
-          const visible = allies.filter(n => bonuses[n.id])
-          if (visible.length === 0) return null
-          return (
-            <div style={{
-              background: K.bone, border: `1px solid ${K.lineSoft}`,
-              borderRadius: 12, padding: '12px 16px',
-            }}>
-              <div style={{ fontSize: 10, color: K.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-                Союзники
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {visible.map(n => (
-                  <div key={n.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 16 }}>{n.portrait}</span>
-                    <span style={{ fontSize: 12, color: K.ink, fontWeight: 600, flex: 1 }}>{n.name}</span>
-                    <span style={{ fontSize: 11, color: K.good }}>{bonuses[n.id]}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )
-        })()}
-
-        {/* Cliffhanger teaser */}
-        {upcomingEventTeaser && (
+        {/* Footnote — achievements unlocked count, when relevant */}
+        {achievements.length > 0 && (
           <div style={{
-            display: 'flex', alignItems: 'flex-start', gap: 10,
-            background: K.bone,
-            border: `1px solid ${K.lineSoft}`,
-            borderRadius: 12, padding: '12px 16px',
+            fontSize: 11, color: K.muted, textAlign: 'center',
           }}>
-            <div style={{
-              width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-              background: K.lineSoft,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 14,
-            }}>
-              👁
-            </div>
-            <div>
-              <div style={{ fontSize: 10, color: K.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>
-                Следующая неделя
-              </div>
-              <div style={{ fontSize: 13, color: K.ink, lineHeight: 1.4 }}>
-                {upcomingEventTeaser}
-              </div>
-            </div>
+            Достижений всего: <strong style={{ color: K.ink }}>{achievements.length}</strong>
           </div>
         )}
 
@@ -309,11 +287,9 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
           style={{
             width: '100%', border: 'none', cursor: 'pointer',
             fontFamily: 'inherit',
-            background: K.ink,
-            color: K.white,
-            padding: '14px 24px',
-            borderRadius: 12,
-            fontSize: 15, fontWeight: 700, letterSpacing: '-0.01em',
+            background: K.ink, color: K.white,
+            padding: '16px 24px', borderRadius: 12,
+            fontSize: 15, fontWeight: 800, letterSpacing: '-0.01em',
           }}
         >
           Следующая неделя →
