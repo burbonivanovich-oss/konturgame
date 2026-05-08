@@ -18,6 +18,7 @@ import HireEmployeeModal from './modals/HireEmployeeModal'
 import OwnerInvestmentsModal from './modals/OwnerInvestmentsModal'
 import { WeekSummaryOverlay } from './WeekSummaryOverlay'
 import { WeekResultsOverlay } from './WeekResultsOverlay'
+import { EventPhaseOverlay } from './EventPhaseOverlay'
 import { DesktopKontur } from './design-system/DesktopKontur'
 import { WarehouseView } from './views/WarehouseView'
 import { FinanceView } from './views/FinanceView'
@@ -1047,6 +1048,12 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       {/* 4-phase weekly cycle overlays */}
       {weekPhase === 'summary' && !isGameOver && !isVictory && (
         <WeekSummaryOverlay onStart={completeSummaryPhase} />
+      )}
+      {weekPhase === 'events' && !isGameOver && !isVictory && (
+        <EventPhaseOverlay
+          onOptionSelect={handleEventOption}
+          onContinueIfNoEvent={() => useGameStore.setState({ weekPhase: 'results', lastUpdated: Date.now() })}
+        />
       )}
       {weekPhase === 'results' && !isGameOver && !isVictory && (
         <WeekResultsOverlay onContinue={completeResultsPhase} />
