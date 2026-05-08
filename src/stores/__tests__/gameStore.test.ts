@@ -19,7 +19,7 @@ describe('GameStore', () => {
       expect(state.currentWeek).toBe(1)
       expect(state.balance).toBe(80000)
       expect(state.reputation).toBe(50)
-      expect(state.loyalty).toBe(50)
+      expect(state.loyalty).toBe(55)
     })
 
     it('should initialize different business types correctly', () => {

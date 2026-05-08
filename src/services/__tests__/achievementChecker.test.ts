@@ -154,22 +154,24 @@ describe('checkNewAchievements', () => {
   })
 
   it('grants big_profit when netProfit >= 100000', () => {
-    const state = makeState({ lastDayResult: makeDayResult({ netProfit: 100000 }) })
+    // wave 2 unlocks at week 12
+    const state = makeState({ currentWeek: 12, lastDayResult: makeDayResult({ netProfit: 100000 }) })
     expect(checkNewAchievements(state)).toContain('big_profit')
   })
 
   it('grants millionaire at balance 1 000 000', () => {
-    const state = makeState({ balance: 1000000 })
+    // wave 3 unlocks at week 26
+    const state = makeState({ currentWeek: 26, balance: 1000000 })
     expect(checkNewAchievements(state)).toContain('millionaire')
   })
 
   it('grants high_rep at reputation 90', () => {
-    const state = makeState({ reputation: 90 })
+    const state = makeState({ currentWeek: 12, reputation: 90 })
     expect(checkNewAchievements(state)).toContain('high_rep')
   })
 
   it('grants loyal_staff at loyalty 90', () => {
-    const state = makeState({ loyalty: 90 })
+    const state = makeState({ currentWeek: 12, loyalty: 90 })
     expect(checkNewAchievements(state)).toContain('loyal_staff')
   })
 
@@ -188,17 +190,19 @@ describe('checkNewAchievements', () => {
   })
 
   it('grants first_service when one service active', () => {
-    const state = makeState({ services: makeServices(['market']) })
+    const state = makeState({ currentWeek: 12, services: makeServices(['market']) })
     expect(checkNewAchievements(state)).toContain('first_service')
   })
 
   it('grants three_services when 3 services active', () => {
-    const state = makeState({ services: makeServices(['market', 'ofd', 'bank']) })
+    const state = makeState({ currentWeek: 12, services: makeServices(['market', 'ofd', 'bank']) })
     expect(checkNewAchievements(state)).toContain('three_services')
   })
 
   it('grants all_services when all 7 active', () => {
+    // wave 3 unlocks at week 26
     const state = makeState({
+      currentWeek: 26,
       services: makeServices(['market', 'bank', 'ofd', 'diadoc', 'fokus', 'elba', 'extern']),
     })
     expect(checkNewAchievements(state)).toContain('all_services')
@@ -222,17 +226,18 @@ describe('checkNewAchievements', () => {
   })
 
   it('grants hall_upgrade when upgrade purchased', () => {
-    const state = makeState({ purchasedUpgrades: ['hall-expansion'] })
+    const state = makeState({ currentWeek: 12, purchasedUpgrades: ['hall-expansion'] })
     expect(checkNewAchievements(state)).toContain('hall_upgrade')
   })
 
   it('grants level_5 at level 5', () => {
-    const state = makeState({ level: 5 })
+    // wave 3 unlocks at week 26
+    const state = makeState({ currentWeek: 26, level: 5 })
     expect(checkNewAchievements(state)).toContain('level_5')
   })
 
   it('grants level_10 at level 10', () => {
-    const state = makeState({ level: 10 })
+    const state = makeState({ currentWeek: 12, level: 10 })
     expect(checkNewAchievements(state)).toContain('level_10')
   })
 
@@ -244,7 +249,7 @@ describe('checkNewAchievements', () => {
   })
 
   it('grants resilient when hadLowReputation and rep >= 60', () => {
-    const state = makeState({ hadLowReputation: true, reputation: 60 })
+    const state = makeState({ currentWeek: 12, hadLowReputation: true, reputation: 60 })
     expect(checkNewAchievements(state)).toContain('resilient')
   })
 

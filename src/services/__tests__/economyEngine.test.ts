@@ -202,8 +202,9 @@ describe('calculateCapacity', () => {
   })
 
   it('adds hall-expansion upgrade', () => {
+    // hall-expansion capacityBonus = 0.6 in current UPGRADES_CONFIG
     const state = makeState({ purchasedUpgrades: ['hall-expansion'] })
-    expect(calculateCapacity(state)).toBe(Math.round(BASE * (1 + 0.4)))
+    expect(calculateCapacity(state)).toBe(Math.round(BASE * (1 + 0.6)))
   })
 })
 
@@ -267,18 +268,22 @@ describe('calculateDailySubscriptions', () => {
 describe('calculateMonthlyExpenses', () => {
   it('returns rent + salary for shop with no upgrades', () => {
     const state = makeState()
-    // shop: 50000 rent + 40000 salary = 90000 (subscriptions excluded — charged daily)
-    expect(calculateMonthlyExpenses(state)).toBe(90000)
+    // shop tier-1 base: 30000 rent + 20000 baseSalary = 50000
+    // (subscriptions excluded — charged daily)
+    expect(calculateMonthlyExpenses(state)).toBe(50000)
   })
 
   it('adds hall-expansion rent increase', () => {
+    // hall-expansion: monthlyRentIncrease = 15000
     const state = makeState({ purchasedUpgrades: ['hall-expansion'] })
-    expect(calculateMonthlyExpenses(state)).toBe(90000 + 15000)
+    expect(calculateMonthlyExpenses(state)).toBe(50000 + 15000)
   })
 
-  it('adds hire-admin salary increase', () => {
-    const state = makeState({ purchasedUpgrades: ['hire-admin'] })
-    expect(calculateMonthlyExpenses(state)).toBe(90000 + 5000)
+  it('adds hire-cashier salary increase', () => {
+    // hire-cashier (renamed from hire-admin in current config):
+    // monthlySalaryIncrease = 12000
+    const state = makeState({ purchasedUpgrades: ['hire-cashier'] })
+    expect(calculateMonthlyExpenses(state)).toBe(50000 + 12000)
   })
 
   it('does NOT include active service subscriptions (charged daily instead)', () => {
@@ -287,7 +292,7 @@ describe('calculateMonthlyExpenses', () => {
         bank: { id: 'bank', name: '', description: '', annualPrice: 36000, isActive: true, effects: {} },
       } as GameState['services'],
     })
-    expect(calculateMonthlyExpenses(state)).toBe(90000)
+    expect(calculateMonthlyExpenses(state)).toBe(50000)
   })
 })
 
