@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import { K } from '../design-system/tokens'
 
 interface ModalProps {
@@ -16,6 +16,9 @@ const sizeMap = {
   lg: { width: '900px', maxWidth: '90vw' },
 }
 
+const FOCUSABLE_SELECTOR =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
 export default function Modal({
   isOpen,
   title,
@@ -24,15 +27,60 @@ export default function Modal({
   size = 'md',
   closeButton = true,
 }: ModalProps) {
+  const titleId = useId()
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null)
+
+  // Esc to close
   useEffect(() => {
+    if (!isOpen) return
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
     }
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape)
-      return () => document.removeEventListener('keydown', handleEscape)
-    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
   }, [isOpen, onClose])
+
+  // Focus management: trap focus inside the dialog and restore on close.
+  useEffect(() => {
+    if (!isOpen) return
+    previouslyFocusedRef.current = document.activeElement as HTMLElement | null
+
+    // Move focus to the first focusable element inside the dialog.
+    const root = dialogRef.current
+    if (root) {
+      const focusable = root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+      if (focusable.length > 0) {
+        focusable[0].focus()
+      } else {
+        root.focus()
+      }
+    }
+
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab' || !dialogRef.current) return
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+      )
+      if (focusable.length === 0) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      const active = document.activeElement as HTMLElement | null
+      if (e.shiftKey && active === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+    document.addEventListener('keydown', handleTab)
+    return () => {
+      document.removeEventListener('keydown', handleTab)
+      // Restore focus to the previously-focused element.
+      previouslyFocusedRef.current?.focus?.()
+    }
+  }, [isOpen])
 
   if (!isOpen) return null
 
@@ -42,36 +90,49 @@ export default function Modal({
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: 16, fontFamily: 'Manrope, sans-serif',
     }}>
-      {/* Backdrop */}
+      {/* Backdrop — clicking dismisses; not in tab order. fadeOverlay
+          animation is auto-disabled by globals.css @media (prefers-reduced-motion). */}
       <div
+        aria-hidden="true"
         style={{
           position: 'absolute', inset: 0,
           background: 'rgba(14,17,22,0.72)',
           backdropFilter: 'blur(4px)',
+          animation: 'fadeOverlay 160ms ease-out',
         }}
         onClick={onClose}
       />
 
-      {/* Modal content */}
-      <div style={{
-        position: 'relative', zIndex: 10,
-        background: K.white, color: K.ink,
-        borderRadius: 20, padding: 24,
-        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-        ...sizeMap[size],
-        maxHeight: '90vh', overflowY: 'auto',
-      }}>
+      {/* Dialog */}
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        style={{
+          position: 'relative', zIndex: 10,
+          background: K.white, color: K.ink,
+          borderRadius: 20, padding: 24,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          ...sizeMap[size],
+          maxHeight: '90vh', overflowY: 'auto',
+          outline: 'none',
+          animation: 'fadeIn 200ms ease-out',
+        }}
+      >
         {/* Header */}
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           marginBottom: 20, paddingBottom: 16, borderBottom: `1px solid ${K.line}`,
         }}>
-          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em', margin: 0 }}>
+          <h2 id={titleId} style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em', margin: 0 }}>
             {title}
-          </div>
+          </h2>
           {closeButton && (
             <button
               onClick={onClose}
+              aria-label="Закрыть"
               style={{
                 width: 32, height: 32, borderRadius: 8,
                 background: K.bone, border: 'none',
@@ -83,7 +144,7 @@ export default function Modal({
               onMouseEnter={(e) => (e.currentTarget.style.background = K.paper)}
               onMouseLeave={(e) => (e.currentTarget.style.background = K.bone)}
             >
-              ✕
+              <span aria-hidden="true">✕</span>
             </button>
           )}
         </div>
