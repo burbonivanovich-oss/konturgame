@@ -4,8 +4,8 @@ export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
   shop: {
     type: 'shop',
     startBalance: 80000,
-    baseClients: 18,  // ↑ 15→18 (магазин у дома — поток выше)
-    avgCheck: 115,  // ↑ 100→115 (после рекалибровки ради win-rate магазина)
+    baseClients: 17,
+    avgCheck: 112,
     capacity: 35,
     hasStock: true,
     stockExpiry: 10,
@@ -22,7 +22,7 @@ export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
     type: 'cafe',
     startBalance: 80000,
     baseClients: 18,
-    avgCheck: 95,  // ↑ 85→95 (кафе тяжелее всех — нужен буфер)
+    avgCheck: 90,
     capacity: 40,
     hasStock: true,
     stockExpiry: 7,
@@ -352,11 +352,11 @@ export const MONTHLY_EXPENSES: Record<BusinessType, { rent: number; baseSalary: 
  *   W21+:    ×1.0 — полная стоимость
  */
 export function getExpenseMultiplier(currentWeek: number): number {
-  if (currentWeek <= 10) return 0.60
-  if (currentWeek >= 21) return 0.95
-  // 11..20: линейная интерполяция 0.60 → 0.95
+  if (currentWeek <= 10) return 0.65
+  if (currentWeek >= 21) return 1.05  // финальный год — небольшая надбавка для напряжения
+  // 11..20: линейная интерполяция 0.65 → 1.05
   const t = (currentWeek - 10) / 10
-  return 0.60 + 0.35 * t
+  return 0.65 + 0.40 * t
 }
 
 export const AD_CAMPAIGNS_CONFIG = [

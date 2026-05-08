@@ -446,9 +446,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // Sustained overwork with many employees will gradually drain energy to 0.
       const currentEnergy = get().entrepreneurEnergy
       const restoredEnergy = Math.min(
-        // Спринт 5: 40 → 48. Выгорание возможно при упорной aggressive
-        // тактике, но не неизбежно. Целевой win rate ~55%.
-        currentEnergy + 48 + weeklyBonus,
+        // Спринт 5b: 43. С базовой стоимостью (shop/salon 35 = 20+15 solo,
+        // cafe 42 = 27+15) + aggressive -7/нед + микрособытий (-1.5/нед):
+        //   • shop/salon solo+aggressive: 35+7-43 = -1, -2.5 с микро →
+        //     выгорание реально к W40 при упорстве (но не неизбежно).
+        //   • cafe solo+aggressive: 42+7-43 = +6/нед нетто, -7.5 с микро
+        //     → выгорание к W14 — общепит выматывает быстрее.
+        //   • calm/service во всех типах остаются устойчивы.
+        currentEnergy + 43 + weeklyBonus,
         ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY
       )
 

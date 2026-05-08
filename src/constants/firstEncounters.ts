@@ -17,13 +17,13 @@ import type { EventTemplate } from '../types/game'
 export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
 
   // ── Контур.Банк (36 000 ₽) — расчётный счёт + эквайринг ─────────────
-  // Обязательный для эквайринга, но не критичный — без банка можно
-  // принимать только наличку, теряя ~30% клиентов.
+  // ОБЯЗАТЕЛЬНЫЙ. Срабатывает с первой недели, randomChance высокий —
+  // эквайринг — это базовая гигиена малого бизнеса.
   {
     id: 'FIRST_BANK',
     title: 'Третья пара уходит без покупки',
     description: 'Молодая пара минут двадцать выбирала, в итоге на кассе: «А картой можно?» — «Только наличные» — «Извините». Уходят. За неделю это уже третий раз. Соседняя кофейня поставила терминал в прошлом месяце, у них теперь очередь.',
-    trigger: { dayMin: 21, randomChance: 0.15, noService: 'bank', oneTime: true },
+    trigger: { dayMin: 1, randomChance: 0.5, noService: 'bank', oneTime: true },
     options: [
       {
         id: 'wait_it_out',
@@ -40,12 +40,12 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
   },
 
   // ── Контур.ОФД (12 000 ₽) — онлайн-касса ────────────────────────────
-  // Обязательный по 54-ФЗ. Без него реальные штрафы.
+  // ОБЯЗАТЕЛЬНЫЙ по 54-ФЗ. Срабатывает на W2 — стартовое условие.
   {
     id: 'FIRST_OFD',
     title: 'Сосед-предприниматель про штраф',
     description: 'Заходит сосед — у него такая же точка через дорогу. Бледный: «Слушай, мне на той неделе штраф 30 тысяч прилетел. Касса есть, ОФД не подключил. Они теперь по каждому чеку штрафуют». Делает паузу. «Ты сам как, подключил?»',
-    trigger: { dayMin: 28, randomChance: 0.18, noService: 'ofd', oneTime: true },
+    trigger: { dayMin: 8, randomChance: 0.5, noService: 'ofd', oneTime: true },
     options: [
       {
         id: 'maybe_later',
@@ -62,13 +62,12 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
   },
 
   // ── Контур.Маркет (48 000 ₽) — учёт товаров ─────────────────────────
-  // Опциональный. Без него — лишняя порча и упускание остатков, но
-  // прожить можно с тетрадкой.
+  // Опциональный. W12 — первый из растянутого ряда W12 → W17 → W21 → W24 → W28.
   {
     id: 'FIRST_MARKET',
     title: 'Опять кончилось то, что покупали',
     description: 'Постоянная клиентка с порога: «Хлеба не привезли?» — а у вас он стоит, просто за стеллажом, не доглядели. «Я могла бы догадаться. У вас вечно так». Уходит. Складские остатки вы ведёте на бумажке, на бумажке же забываете.',
-    trigger: { dayMin: 56, randomChance: 0.10, noService: 'market', oneTime: true },
+    trigger: { dayMin: 84, randomChance: 0.12, noService: 'market', oneTime: true },
     options: [
       {
         id: 'excel',
@@ -85,12 +84,12 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
   },
 
   // ── Контур.Диадок (24 000 ₽) — ЭДО ──────────────────────────────────
-  // Опциональный.
+  // Опциональный. W17 — второй в ряду опциональных, не пара с маркетом.
   {
     id: 'FIRST_DIADOC',
     title: 'Налоговая просит первичку за квартал',
     description: 'Запрос из налоговой: предоставить копии всех первичных документов с поставщиками за последние три месяца. Срок — три рабочих дня. Половина накладных у вас на бумаге, разбросана по папкам, часть отдана в копии и не вернулась. Ночь предстоит длинная.',
-    trigger: { dayMin: 84, randomChance: 0.10, noService: 'diadoc', oneTime: true },
+    trigger: { dayMin: 119, randomChance: 0.12, noService: 'diadoc', oneTime: true },
     options: [
       {
         id: 'crawl_through_papers',
@@ -107,12 +106,12 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
   },
 
   // ── Контур.Фокус (24 000 ₽) — проверка контрагентов ─────────────────
-  // Опциональный.
+  // Опциональный. W21 — третий в ряду.
   {
     id: 'FIRST_FOKUS',
     title: 'Поставщик-новичок со скидкой',
     description: 'В WhatsApp написал незнакомый поставщик: «Партия со скидкой 30%, остатки прошлого года, нужно срочно». ИНН прислал, документы выглядят нормально. Проверять руками — это в реестры лезть, вёрстку штудировать, и всё равно неуверенно. А срок — до завтра.',
-    trigger: { dayMin: 91, randomChance: 0.10, noService: 'fokus', oneTime: true },
+    trigger: { dayMin: 147, randomChance: 0.12, noService: 'fokus', oneTime: true },
     options: [
       {
         id: 'gut_call',
@@ -134,12 +133,12 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
   },
 
   // ── Контур.Эльба (36 000 ₽) — бухгалтерия ───────────────────────────
-  // Опциональный.
+  // Опциональный. W24 — четвёртый.
   {
     id: 'FIRST_ELBA',
     title: 'Светлана просит расчётный лист',
     description: 'Светлана подходит вечером после смены: «Я тут кредит беру, банк просит расчётку за прошлый месяц. У вас же есть?» Расчётки у вас нет. Зарплата в чёрной тетради, реквизитов нет, печатей нет. Светлана терпеливо ждёт ответа.',
-    trigger: { dayMin: 105, randomChance: 0.12, noService: 'elba', oneTime: true },
+    trigger: { dayMin: 168, randomChance: 0.12, noService: 'elba', oneTime: true },
     options: [
       {
         id: 'manual_paper',
@@ -156,12 +155,12 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
   },
 
   // ── Контур.Экстерн (48 000 ₽) — отчётность ФНС ──────────────────────
-  // Опциональный.
+  // Опциональный. W28 — последний в ряду опциональных.
   {
     id: 'FIRST_EXTERN',
     title: 'Декларация на следующей неделе',
     description: 'В чате предпринимателей паника: декларация по УСН до 30-го, штраф за просрочку — 5% от суммы налога за каждый месяц, минимум 1 000 ₽. На сайте ФНС форма требует электронную подпись и не загружается с третьего раза. Бухгалтерская контора в районе берёт 8 000 ₽ за разовую сдачу — но у них тоже очередь.',
-    trigger: { dayMin: 119, randomChance: 0.12, noService: 'extern', oneTime: true },
+    trigger: { dayMin: 196, randomChance: 0.12, noService: 'extern', oneTime: true },
     options: [
       {
         id: 'one_time_accountant',
@@ -187,7 +186,7 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
     id: 'PAIN_DIADOC',
     title: 'Штраф за «нарушение документооборота»',
     description: 'Камеральная проверка по контрагенту, у которого вы закупались. Налоговая выявила расхождения в первичке: часть оригиналов не нашлась, часть — без подписи. Вешают 18 000 ₽ штрафа.',
-    trigger: { dayMin: 105, randomChance: 0.04, noService: 'diadoc', oneTime: false },
+    trigger: { dayMin: 154, randomChance: 0.04, noService: 'diadoc', oneTime: false },
     options: [
       {
         id: 'pay',
@@ -207,7 +206,7 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
     id: 'PAIN_FOKUS',
     title: 'Поставщик оказался в реестре недобросовестных',
     description: 'Партия пришла бракованная, поставщик пропал. Через знакомого юриста выясняется: ИП в реестре «фирм-однодневок». Деньги вернуть нереально.',
-    trigger: { dayMin: 119, randomChance: 0.04, noService: 'fokus', oneTime: false },
+    trigger: { dayMin: 175, randomChance: 0.04, noService: 'fokus', oneTime: false },
     options: [
       {
         id: 'eat_loss',
@@ -227,7 +226,7 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
     id: 'PAIN_ELBA',
     title: 'Ошибка в декларации — штраф',
     description: 'Налоговая нашла недоплату по УСН за прошлый квартал. Штраф 15 000 ₽ + пени.',
-    trigger: { dayMin: 133, randomChance: 0.04, noService: 'elba', oneTime: false },
+    trigger: { dayMin: 196, randomChance: 0.04, noService: 'elba', oneTime: false },
     options: [
       {
         id: 'pay_fine',
@@ -247,7 +246,7 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
     id: 'PAIN_EXTERN',
     title: 'Блокировка счёта за просрочку отчётности',
     description: 'Утром не проходит платёж поставщику. Звонок в банк: «Счёт ограничен по требованию ФНС». В налоговой: «Отчёт не сдан в срок, разблокируем после сдачи».',
-    trigger: { dayMin: 147, randomChance: 0.04, noService: 'extern', oneTime: false },
+    trigger: { dayMin: 224, randomChance: 0.04, noService: 'extern', oneTime: false },
     options: [
       {
         id: 'rush_courier',

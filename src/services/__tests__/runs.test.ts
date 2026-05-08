@@ -137,8 +137,8 @@ function runSimulation(
     if (state.isGameOver || state.isVictory) break
     state.pendingEvent = null
     state.pendingEventsQueue = []
-    // Mirror gameStore.completeResultsPhase restoration (now +55 in Спринт 5).
-    state.entrepreneurEnergy = Math.min(100, state.entrepreneurEnergy + 48)
+    // Mirror gameStore.completeResultsPhase restoration (Спринт 5b: +43).
+    state.entrepreneurEnergy = Math.min(100, state.entrepreneurEnergy + 43)
     state.weeklyTactic = tactic
 
     try {
