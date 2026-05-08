@@ -19,6 +19,7 @@ import OwnerInvestmentsModal from './modals/OwnerInvestmentsModal'
 import { WeekSummaryOverlay } from './WeekSummaryOverlay'
 import { WeekResultsOverlay } from './WeekResultsOverlay'
 import { EventPhaseOverlay } from './EventPhaseOverlay'
+import { SimulationOverlay } from './SimulationOverlay'
 import { DesktopKontur } from './design-system/DesktopKontur'
 import { WarehouseView } from './views/WarehouseView'
 import { FinanceView } from './views/FinanceView'
@@ -789,7 +790,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
     isGameOver, isVictory, savedBalance, promoCodesRevealed,
     addBalance, addReputation, addLoyalty, markEventAsResolved, activateService,
     addSavedBalance, setTemporaryModifiers, advanceDay,
-    weekPhase, completeActionsPhase, completeResultsPhase, completeSummaryPhase,
+    weekPhase, completeActionsPhase, completeResultsPhase, completeSummaryPhase, completeSimulationPhase,
     onboardingStage, onboardingStepIndex, onboardingCompleted,
     businessType, npcs, personalGoal,
     updateNPCRelationship: storeUpdateNPCRelationship,
@@ -1052,8 +1053,11 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
       {weekPhase === 'events' && !isGameOver && !isVictory && (
         <EventPhaseOverlay
           onOptionSelect={handleEventOption}
-          onContinueIfNoEvent={() => useGameStore.setState({ weekPhase: 'results', lastUpdated: Date.now() })}
+          onContinueIfNoEvent={() => useGameStore.setState({ weekPhase: 'simulation', lastUpdated: Date.now() })}
         />
+      )}
+      {weekPhase === 'simulation' && !isGameOver && !isVictory && (
+        <SimulationOverlay onContinue={completeSimulationPhase} />
       )}
       {weekPhase === 'results' && !isGameOver && !isVictory && (
         <WeekResultsOverlay onContinue={completeResultsPhase} />

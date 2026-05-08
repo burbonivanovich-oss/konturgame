@@ -197,6 +197,9 @@ interface GameStoreActions {
   completeActionsPhase: () => { blocked: boolean; reason?: string }
   completeResultsPhase: () => void
   completeSummaryPhase: () => void
+  // Phase ③ «Симуляция» → ④ «Итоги». Просто переключатель фазы;
+  // вычисления уже сделаны в processWeek, симуляция — это анимация.
+  completeSimulationPhase: () => void
   setWeeklyTactic: (tactic: WeeklyTactic | null) => void
 
   // Balance and metrics
@@ -402,17 +405,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return { blocked: false }
     },
 
-    // 4-phase weekly cycle actions
+    // 5-phase weekly cycle actions (with simulation phase between events and results)
     completeActionsPhase: () => {
       const store = get()
       const stateCopy = JSON.parse(JSON.stringify(extractState(store))) as GameState
       const { blocked, reason } = checkWeekBlocked(stateCopy)
       if (blocked) return { blocked: true, reason }
       processWeek(stateCopy)
+      // Если есть событие — идём в фазу events, оттуда после решения
+      // → simulation. Если событий нет — сразу в simulation.
       const hasPendingEvents = (stateCopy.pendingEventsQueue?.length ?? 0) > 0 || stateCopy.pendingEvent !== null
-      stateCopy.weekPhase = (hasPendingEvents ? 'events' : 'results') as WeekPhase
+      stateCopy.weekPhase = (hasPendingEvents ? 'events' : 'simulation') as WeekPhase
       set({ ...stateCopy })
       return { blocked: false }
+    },
+
+    completeSimulationPhase: () => {
+      // Анимация симуляции закончилась (или была проскипнута). Переходим
+      // в фазу итогов. Вычисления уже выполнены в processWeek — мы только
+      // переключаем UI-фазу.
+      set({ weekPhase: 'results' as WeekPhase, lastUpdated: Date.now() })
     },
 
     completeResultsPhase: () => {
@@ -708,7 +720,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
             : [...state.triggeredEventIds, eventId],
           pendingEvent: nextEvent,
           pendingEventsQueue: queue.slice(1),
-          weekPhase: (allCleared && state.weekPhase === 'events' ? 'results' : state.weekPhase) as WeekPhase,
+          // Когда последнее событие разрешено в фазе events — идём в
+          // simulation (анимация недели), а не сразу в results.
+          weekPhase: (allCleared && state.weekPhase === 'events' ? 'simulation' : state.weekPhase) as WeekPhase,
           lastUpdated: Date.now(),
         }
       })

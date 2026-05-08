@@ -10,10 +10,11 @@ interface PhaseConfig {
 }
 
 const PHASES: Record<WeekPhase, PhaseConfig> = {
-  summary: { label: 'СВОДКА',   text: 'Итоги прошлой недели',  tone: K.blue,   soft: K.blueSoft   },
-  actions: { label: 'ДЕЙСТВИЯ', text: 'Управляйте бизнесом',   tone: K.violet, soft: K.violetSoft },
-  events:  { label: 'СОБЫТИЯ',  text: 'Требуется решение',     tone: K.violet, soft: K.violetSoft },
-  results: { label: 'ИТОГИ',    text: 'Неделя завершается',    tone: K.mint,   soft: K.mintSoft   },
+  summary:    { label: 'СВОДКА',    text: 'Итоги прошлой недели',  tone: K.blue,   soft: K.blueSoft   },
+  actions:    { label: 'ДЕЙСТВИЯ',  text: 'Управляйте бизнесом',   tone: K.violet, soft: K.violetSoft },
+  events:     { label: 'СОБЫТИЯ',   text: 'Требуется решение',     tone: K.violet, soft: K.violetSoft },
+  simulation: { label: 'СИМУЛЯЦИЯ', text: 'Неделя идёт',           tone: K.orange, soft: K.orangeSoft },
+  results:    { label: 'ИТОГИ',     text: 'Неделя завершается',    tone: K.mint,   soft: K.mintSoft   },
 }
 
 const BIZ_LABEL: Record<BusinessType, string> = {

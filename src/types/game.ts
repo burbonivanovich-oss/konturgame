@@ -69,7 +69,14 @@ export type CashRegisterType = 'mobile' | 'reliable' | 'fast'
 
 export type EmployeePosition = 'cashier' | 'assistant' | 'manager' | 'specialist' | 'supervisor' | 'trainer'
 
-export type WeekPhase = 'summary' | 'actions' | 'events' | 'results'
+// Фазы недельного цикла:
+//   summary    — Обзор: 3 цифры + обязательный выбор тактики (поне­дельник)
+//   actions    — Свободное окно: дашборд, можно открывать модалки, в конце —
+//                «Прожить неделю» (вторник-пятница ощущение)
+//   events     — Решения: полноэкранный блокирующий event/dilemma/crisis (среда)
+//   simulation — Симуляция: 15-секундный анимированный показ 7 дней (пт-вс)
+//   results    — Итоги: 3 цифры + причинность (воскресенье)
+export type WeekPhase = 'summary' | 'actions' | 'events' | 'simulation' | 'results'
 
 export type BusinessStage = 'startup' | 'small' | 'growing' | 'medium' | 'large'
 

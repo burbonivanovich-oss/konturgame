@@ -28,6 +28,7 @@ import { WEEKLY_TACTICS, getWeeklyTacticDef } from '../constants/weeklyTactics'
 import { WeekSummaryOverlay } from './WeekSummaryOverlay'
 import { WeekResultsOverlay } from './WeekResultsOverlay'
 import { EventPhaseOverlay } from './EventPhaseOverlay'
+import { SimulationOverlay } from './SimulationOverlay'
 import { useGameStore } from '../stores/gameStore'
 import { ONBOARDING_STAGES as ONBOARDING_STAGES_FOR_HIGHLIGHT } from '../constants/onboarding'
 
@@ -51,7 +52,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
 
   const {
     pendingEvent, pendingEventsQueue, isGameOver, isVictory, businessType, achievements, promoCodesRevealed,
-    weekPhase, completeResultsPhase, completeSummaryPhase, lastDayResult, balance,
+    weekPhase, completeResultsPhase, completeSummaryPhase, completeSimulationPhase, lastDayResult, balance,
     weeklyTactic, setWeeklyTactic, personalGoal, currentWeek, npcs,
     onboardingStage, onboardingStepIndex, onboardingCompleted,
   } = useGameStore()
@@ -545,8 +546,11 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
       {weekPhase === 'events' && !isGameOver && !isVictory && (
         <EventPhaseOverlay
           onOptionSelect={handleEventOption}
-          onContinueIfNoEvent={() => useGameStore.setState({ weekPhase: 'results', lastUpdated: Date.now() })}
+          onContinueIfNoEvent={() => useGameStore.setState({ weekPhase: 'simulation', lastUpdated: Date.now() })}
         />
+      )}
+      {weekPhase === 'simulation' && !isGameOver && !isVictory && (
+        <SimulationOverlay onContinue={completeSimulationPhase} />
       )}
       {weekPhase === 'results' && !isGameOver && !isVictory && (
         <WeekResultsOverlay onContinue={completeResultsPhase} />
