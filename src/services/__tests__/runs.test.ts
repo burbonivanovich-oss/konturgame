@@ -159,6 +159,7 @@ function runSimulation(
     if (state.gameOverReason === 'bankruptcy') ended = 'bankrupt'
     else if (state.gameOverReason === 'reputation') ended = 'reputation'
     else if (state.gameOverReason === 'burnout') ended = 'burnout'
+    else if (state.gameOverReason === 'year_end') ended = state.balance > 0 ? 'survived' : 'bankrupt'
     else ended = 'unknown'
   }
 
@@ -220,8 +221,8 @@ const SCENARIOS: Array<() => { name: string; state: GameState; tactic: WeeklyTac
     tactic: 'calm',
   }),
   () => ({
-    name: 'Магазин · Банк+Маркет+ОФД+POS · агрессивно',
-    state: makeGameState('shop', ['bank', 'market', 'ofd'], ['cold-case', 'pos-terminal'], ['basic', 'dairy']),
+    name: 'Магазин · Банк+Маркет+Диадок · агрессивно',
+    state: makeGameState('shop', ['bank', 'market', 'diadoc'], ['cold-case'], ['basic', 'dairy']),
     tactic: 'aggressive',
   }),
   () => ({

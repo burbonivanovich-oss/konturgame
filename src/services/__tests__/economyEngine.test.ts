@@ -293,11 +293,11 @@ describe('calculateMonthlyExpenses', () => {
     expect(calculateMonthlyExpenses(state)).toBe(24700)
   })
 
-  it('full difficulty after week 21 (multiplier 1.05)', () => {
-    // Тест ramp: на W21+ multiplier = 1.05.
-    // (22000 + 16000) × 1.05 = 39900.
+  it('full difficulty after week 21 (multiplier 1.02)', () => {
+    // Тест ramp: на W21+ multiplier = 1.02 (полная стоимость + 2%).
+    // (22000 + 16000) × 1.02 = 38760.
     const state = makeState({ currentWeek: 21 })
-    expect(calculateMonthlyExpenses(state)).toBe(39900)
+    expect(calculateMonthlyExpenses(state)).toBe(38760)
   })
 })
 

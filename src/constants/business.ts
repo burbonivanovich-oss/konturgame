@@ -349,17 +349,17 @@ export const MONTHLY_EXPENSES: Record<BusinessType, { rent: number; baseSalary: 
 
 /**
  * Множитель фиксированных расходов по неделе. Реализует «лёгкое начало —
- * плавный ramp — полная сложность»:
+ * плавный ramp — полная стоимость»:
  *   W1-10:   ×0.65 — sandbox-mode, новичок учится
- *   W11-20:  линейный rampup от 0.65 → 1.0
- *   W21+:    ×1.0 — полная стоимость
+ *   W11-20:  линейный rampup от 0.65 → 1.02
+ *   W21+:    ×1.02 — полная стоимость (аренда/рынок чуть давит сильнее)
  */
 export function getExpenseMultiplier(currentWeek: number): number {
   if (currentWeek <= 10) return 0.65
-  if (currentWeek >= 21) return 1.05  // финальный год — небольшая надбавка для напряжения
-  // 11..20: линейная интерполяция 0.65 → 1.05
+  if (currentWeek >= 21) return 1.02
+  // 11..20: линейная интерполяция 0.65 → 1.02
   const t = (currentWeek - 10) / 10
-  return 0.65 + 0.40 * t
+  return 0.65 + 0.37 * t
 }
 
 export const AD_CAMPAIGNS_CONFIG = [

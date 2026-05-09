@@ -176,11 +176,10 @@ export function calculateMonthlyExpenses(state: GameState): number {
     salary += u.monthlySalaryIncrease ?? 0
   }
 
-  // Difficulty ramp (Спринт 5):
-  //   W1-10:  ×0.65 — арендатор/работники соглашаются на меньше, район
-  //                    помогает новичку. Ощущение «лёгкое начало».
-  //   W11-20: линейный rampup 0.65 → 1.0.
-  //   W21+:   полная стоимость.
+  // Difficulty ramp:
+  //   W1-10:  ×0.65 — арендатор/работники соглашаются на меньше.
+  //   W11-20: линейный rampup 0.65 → 1.02.
+  //   W21+:   ×1.02 — полная стоимость.
   const multiplier = getExpenseMultiplier(state.currentWeek ?? 1)
   return Math.round((rent + salary) * multiplier)
 }
