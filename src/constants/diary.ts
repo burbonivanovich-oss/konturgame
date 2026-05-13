@@ -237,23 +237,23 @@ export const DIARY_ENTRIES: DiaryEntry[] = [
       body: 'Перевёл аванс за семестр — 80 тысяч. Брат позвонил подтвердить, говорил быстро, смущённо. Сказал не «спасибо», а «считаю, что должен». Это вернее благодарности.',
     }),
   },
-  // buy_premises — выкуп помещения, стратегический выход из аренды.
+  // own_apartment — первый взнос на свою квартиру, личное будущее.
   {
-    id: 'diary_goal_premises_visit',
+    id: 'diary_goal_apartment_visit',
     specificity: 6,
-    matches: (s) => s.personalGoal?.id === 'buy_premises' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    matches: (s) => s.personalGoal?.id === 'own_apartment' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
     compose: (s) => ({
       header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Хозяин зашёл по делу — без повода, просто «посмотреть». Поговорили о погоде. Под конец сказал, мимоходом: «Думаю продавать, дочка из Сочи зовёт». Цифру не назвал. Я тоже не спросил. Пока.',
+      body: 'Съездили посмотреть студию ещё раз. Подъезд старый, но чистый. С 18-го этажа видно всё до Камы. Кухня шесть метров — спросил соседку напротив, можно ли поставить компактный гарнитур, та засмеялась: «Так и поставите». Молчит, потом: «Сами хозяин будете — поставите как хотите». Сами хозяин. Странно звучит, но правильно.',
     }),
   },
   {
-    id: 'diary_goal_premises_realtor',
+    id: 'diary_goal_apartment_calc',
     specificity: 6,
-    matches: (s) => s.personalGoal?.id === 'buy_premises' && s.currentWeek >= 20 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    matches: (s) => s.personalGoal?.id === 'own_apartment' && s.currentWeek >= 20 && !s.personalGoal.achieved && !s.personalGoal.missed,
     compose: (s) => ({
       header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Договорился с риелтором. Назвала цифру: 400. Уточнила: «Если до декабря — он держит. Дальше — на свободный рынок, и там уже от 450». Записал. Считаю недели до декабря.',
+      body: 'Залез в ипотечный калькулятор банка. 4.6 миллиона на 20 лет под 9.8% — платёж 43 тысячи в месяц. Тяжеловато, но реально, если бизнес идёт. Откладываю 80 тысяч в месяц — ещё четыре месяца до взноса. Закрыл калькулятор. Открыл управленческий отчёт.',
     }),
   },
 

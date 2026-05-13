@@ -17,6 +17,7 @@ import { describe, it } from 'vitest'
 import { processWeek } from '../weekCalculator'
 import type { GameState, ServiceType, BusinessType, WeeklyTactic } from '../../types/game'
 import { SERVICES_CONFIG } from '../../constants/business'
+import { PRODUCT_CATEGORIES, isCategoryAllowed } from '../assortmentEngine'
 
 function makeServices(activeIds: ServiceType[] = []): GameState['services'] {
   const services = {} as GameState['services']
@@ -229,6 +230,16 @@ function runMixed(businessType: BusinessType, strategy: Strategy): MixedResult {
     for (const u of upgs) {
       if (state.currentWeek === u.week && !state.purchasedUpgrades.includes(u.id)) {
         state.purchasedUpgrades.push(u.id)
+      }
+    }
+
+    // Авто-активация всех доступных категорий: разумный игрок включает
+    // категорию сразу как появляются прерeq (сервисы + апгрейды). Без этого
+    // симуляция сильно недооценивает доход — категории = главный источник.
+    const allCats = PRODUCT_CATEGORIES[businessType] ?? []
+    for (const cat of allCats) {
+      if (!state.enabledCategories.includes(cat.id) && isCategoryAllowed(cat, state)) {
+        state.enabledCategories.push(cat.id)
       }
     }
 
