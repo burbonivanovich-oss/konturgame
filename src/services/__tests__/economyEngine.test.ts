@@ -264,24 +264,25 @@ describe('calculateDailySubscriptions', () => {
 })
 
 describe('calculateMonthlyExpenses', () => {
-  // Спринт 5b: shop rent 22000 + salary 16000 = 38000 base
-  // × 0.65 (W1-10 grace multiplier) = 24700.
+  // Спринт 5d: shop rent 18000 + salary 14000 = 32000 base (снижено
+  // для выравнивания магазина с кафе/салоном по достижимости 1М₽-целей).
+  // × 0.65 (W1-10 grace multiplier) = 20800.
   it('returns rent + salary for shop with no upgrades (W1 grace)', () => {
     const state = makeState()
-    expect(calculateMonthlyExpenses(state)).toBe(24700)
+    expect(calculateMonthlyExpenses(state)).toBe(20800)
   })
 
   it('adds hall-expansion rent increase (W1 grace)', () => {
     // hall-expansion: monthlyRentIncrease = 15000
-    // (22000 + 15000 + 16000) × 0.65 = 34450
+    // (18000 + 15000 + 14000) × 0.65 = 30550
     const state = makeState({ purchasedUpgrades: ['hall-expansion'] })
-    expect(calculateMonthlyExpenses(state)).toBe(34450)
+    expect(calculateMonthlyExpenses(state)).toBe(30550)
   })
 
   it('adds hire-cashier salary increase (W1 grace)', () => {
-    // (22000 + 16000 + 12000) × 0.65 = 32500
+    // (18000 + 14000 + 12000) × 0.65 = 28600
     const state = makeState({ purchasedUpgrades: ['hire-cashier'] })
-    expect(calculateMonthlyExpenses(state)).toBe(32500)
+    expect(calculateMonthlyExpenses(state)).toBe(28600)
   })
 
   it('does NOT include active service subscriptions (charged daily instead)', () => {
@@ -290,15 +291,14 @@ describe('calculateMonthlyExpenses', () => {
         bank: { id: 'bank', name: '', description: '', annualPrice: 36000, isActive: true, effects: {} },
       } as GameState['services'],
     })
-    expect(calculateMonthlyExpenses(state)).toBe(24700)
+    expect(calculateMonthlyExpenses(state)).toBe(20800)
   })
 
-  it('full difficulty after week 21 (multiplier 0.95)', () => {
-    // Тест ramp: на W21+ multiplier = 0.95 (chuть-чуть ниже полной — освобождает
-    // буфер на личные цели 1М ₽).
-    // (22000 + 16000) × 0.95 = 36100.
+  it('full difficulty after week 21 (multiplier 1.0)', () => {
+    // Тест ramp: на W21+ multiplier = 1.0 (полная стоимость).
+    // (18000 + 14000) × 1.0 = 32000.
     const state = makeState({ currentWeek: 21 })
-    expect(calculateMonthlyExpenses(state)).toBe(36100)
+    expect(calculateMonthlyExpenses(state)).toBe(32000)
   })
 })
 
