@@ -4,7 +4,14 @@ import type { EventTemplate } from '../types/game'
 // chainId + chainStep identify the event's position in its narrative arc.
 // chainFollowUpId on each option tells the engine which event fires next.
 
+import { FIRST_HIRE_OPTIONS } from './firstHireEvents'
+
 export const CHAIN_EVENTS: EventTemplate[] = [
+  // first_hire — чейн «Первый сотрудник», запускается из SOLO_OVERLOAD_EVENTS.
+  // Не имеет chain start event (не появляется сам через triggerNewChainStarts),
+  // только как follow-up из overload-события.
+  FIRST_HIRE_OPTIONS,
+
 
   // ── CHAIN 1: Михаил в кризисе (mikhail_crisis) ─────────────────────────────
   // Trigger: week 3–5. Михаил просит предоплату — у него семейные проблемы.
@@ -688,11 +695,14 @@ export const CHAIN_EVENTS: EventTemplate[] = [
 
 export const CHAIN_IDS = [
   'mikhail_crisis', 'svetlana_growth', 'inspector_chain', 'anna_war', 'legacy',
-  'tamara_arc', 'gena_arc',
+  'tamara_arc', 'gena_arc', 'first_hire',
 ] as const
 export type ChainId = typeof CHAIN_IDS[number]
 
-// Which week each chain's first event can trigger
+// Which week each chain's first event can trigger.
+// first_hire не имеет авто-старта — запускается только из SOLO_OVERLOAD-события,
+// поэтому ставим заведомо большую неделю (52+), чтобы triggerNewChainStarts
+// никогда не пытался его запустить как обычный chain.
 export const CHAIN_TRIGGER_WEEKS: Record<ChainId, number> = {
   mikhail_crisis: 3,
   svetlana_growth: 6,
@@ -701,6 +711,7 @@ export const CHAIN_TRIGGER_WEEKS: Record<ChainId, number> = {
   legacy: 15,
   tamara_arc: 8,
   gena_arc: 8,
+  first_hire: 999,
 }
 
 // Delay in weeks before the follow-up fires after the triggering choice
@@ -721,6 +732,9 @@ export const CHAIN_FOLLOWUP_DELAY: Record<string, number> = {
   tamara_arc_2: 17,
   tamara_arc_3a: 15,
   tamara_arc_3b: 15,
+  // first_hire — между overload-событием и выбором кандидата должно
+  // пройти ~неделю-полторы (объявления, собеседования). Реалистично.
+  first_hire_options: 2,
   // Гена: появляется примерно раз в 8 недель, финал ~13 недель
   // после 4-го эпизода — лотерея ложится на нед. 47-49.
   gena_arc_2: 8,

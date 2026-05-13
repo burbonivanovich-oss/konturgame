@@ -262,6 +262,17 @@ export interface EventOption {
     clientModifierDays?: number
     checkModifier?: number
     checkModifierDays?: number
+    // Найм первого сотрудника через событие (Спринт 5e). Каждый кандидат
+    // в чейне «Первый сотрудник» — это option с этим полем; consequences
+    // обрабатывает создание Employee и (опционально) reveal связанного NPC.
+    hireEmployee?: {
+      position: EmployeePosition
+      salary: number          // Месячная ЗП (для отображения и расчётов)
+      efficiency: number       // Множитель пропускной способности
+      energyCost: number       // Энергозатраты на управление (нед.)
+      name?: string            // Конкретное имя кандидата (иначе случайное)
+      linkNpcId?: string       // Если найм привязан к существующему NPC — раскрыть
+    }
   }
   hasServiceAlternative?: boolean
   requiredService?: ServiceType

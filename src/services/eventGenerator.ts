@@ -4,10 +4,12 @@ import { PERSONAL_BACKSTORY_EVENTS } from '../constants/personalEvents'
 import { NPC_ARC_EVENTS } from '../constants/npcArcs'
 import { CRISIS_EVENTS } from '../constants/crisisEvents'
 import { FIRST_ENCOUNTER_EVENTS } from '../constants/firstEncounters'
+import { SOLO_OVERLOAD_EVENTS } from '../constants/firstHireEvents'
 import { getChainEvent, CHAIN_FOLLOWUP_DELAY } from '../constants/eventChains'
 import { RECURRING_CUSTOMER_EVENTS } from '../constants/recurringCustomers'
 import { NPC_EVENTS } from '../constants/npcEvents'
-import { applyRelationshipDeltaToState } from './npcManager'
+import { applyRelationshipDeltaToState, revealNPC } from './npcManager'
+import { createEmployee, EMPLOYEE_BUSINESS_LABELS } from '../constants/employees'
 
 export const EVENTS_DATABASE: EventTemplate[] = [
   {
@@ -856,6 +858,7 @@ export function generateEvent(day: number, state: GameState): Event | null {
   const allTemplates = [
     ...EVENTS_DATABASE,
     ...FIRST_ENCOUNTER_EVENTS,
+    ...SOLO_OVERLOAD_EVENTS,
     ...MORAL_DILEMMA_EVENTS,
     ...RECURRING_CUSTOMER_EVENTS,
     ...NPC_EVENTS,
@@ -1017,6 +1020,40 @@ export function applyEventConsequence(
     if (!(state.unlockedServices ?? []).includes(c.serviceId)) {
       state.unlockedServices = [...(state.unlockedServices ?? []), c.serviceId]
     }
+  }
+
+  // Найм сотрудника через событие (Спринт 5e). В отличие от ручного найма
+  // через HireEmployeeModal, тут параметры (efficiency, energyCost, ЗП)
+  // зашиты в опции — это конкретный кандидат с конкретной историей.
+  // Балансовое списание (стоимость найма / первый аванс) уже обработано
+  // через balanceDelta выше; здесь — только создание Employee.
+  if (c.hireEmployee) {
+    const h = c.hireEmployee
+    if (!state.employees) state.employees = []
+    const businessLabels = EMPLOYEE_BUSINESS_LABELS[state.businessType] ?? {}
+    const positionLabel = businessLabels[h.position] ?? h.position
+    // Используем createEmployee для генерации id, но переопределяем
+    // salary/efficiency/energyCost — они зашиты в кандидата (не базовые).
+    const baseDay = state.currentWeek * 7
+    const emp = createEmployee(h.position, baseDay, h.efficiency)
+    emp.salary = h.salary
+    emp.energyCost = h.energyCost
+    if (h.name) emp.name = h.name
+    state.employees.push(emp)
+    // Если найм связан с NPC (например, Светлана) — раскрываем его.
+    // С этого момента появляется portrait, чейн svetlana_growth уже
+    // имеет нарративный контекст «вы её наняли», а не «она из воздуха».
+    if (h.linkNpcId && state.npcs) {
+      state.npcs = revealNPC(state.npcs, h.linkNpcId)
+    }
+    // Косметика: подпись наёма в лог, чтобы игрок видел кого взял
+    if (!state.decisionLog) state.decisionLog = []
+    state.decisionLog.push({
+      week: state.currentWeek,
+      text: `Наняли: ${emp.name} (${positionLabel}, ${emp.salary.toLocaleString('ru-RU')} ₽/мес)`,
+      type: 'choice',
+      impact: 'positive',
+    })
   }
 
   // NPC relationship delta — anchors large decisions, converts overflow to XP

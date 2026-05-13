@@ -888,6 +888,19 @@ function triggerNewChainStarts(state: GameState): void {
     // Special condition for 'legacy' chain: requires reputation >= 70
     if (chainId === 'legacy' && state.reputation < 70) continue
 
+    // svetlana_growth — нарративная зависимость от найма Светланы.
+    // Раньше чейн стартовал автоматически с W6, даже если игрок никого не
+    // нанимал, и Светлана появлялась «из воздуха». Теперь — только если
+    // её действительно наняли через first_hire (NPC revealed).
+    if (chainId === 'svetlana_growth') {
+      const svetlana = (state.npcs ?? []).find(n => n.id === 'svetlana')
+      if (!svetlana?.isRevealed) continue
+    }
+
+    // first_hire — не запускается автоматически. Чейн срабатывает только
+    // как chainFollowUp из SOLO_OVERLOAD-события.
+    if (chainId === 'first_hire') continue
+
     const startEvent = getChainStartEvent(chainId)
     if (!startEvent) continue
     if (triggered.includes(startEvent.id)) continue
