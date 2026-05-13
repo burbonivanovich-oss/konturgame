@@ -748,9 +748,12 @@ export function processWeek(state: GameState): DayResult {
 }
 
 function generateNextWeekTeaser(state: GameState): string | null {
-  const nextDay = state.currentWeek * 7
+  // Спринт 5e: расширенные тизеры с контекстом. Сначала срочные (займы,
+  // crisis), потом риски (отсутствие сервисов), потом сезонность,
+  // потом контекстные подсказки на основе состояния (баланс/энергия/
+  // цель/tier), потом нейтральные.
 
-  // Upcoming loan repayment
+  // ── Приоритет 1: срочные финансовые обязательства ─────────────────
   if (state.loans?.length) {
     const urgentLoan = state.loans.find(l => !l.isRepaid && l.dueWeek === state.currentWeek + 1)
     if (urgentLoan) {
@@ -762,34 +765,98 @@ function generateNextWeekTeaser(state: GameState): string | null {
     }
   }
 
-  // Risk warnings (probabilistic — no fixed schedule)
-  if (!state.services?.fokus?.isActive) {
-    return `⚠️ Без Контур.Фокуса есть риск мошенничества со стороны поставщика`
-  }
-  if (!state.services?.extern?.isActive) {
-    return `🔒 Без Контур.Экстерна возможна блокировка счёта налоговой`
-  }
-
-  // Seasonal hint
-  const nextMonth = Math.ceil(((state.currentWeek + 1) / 52) * 12)
-  const config = state.businessType
-  if (config === 'cafe' && nextMonth === 6) return `☀️ Лето приближается — сезон роста для кафе`
-  if (config === 'cafe' && nextMonth === 12) return `❄️ Зима снизит поток клиентов — подготовьтесь заранее`
-  if (config === 'beauty-salon' && nextMonth === 3) return `🌸 Весна — сезонный рост для салона красоты`
-  if (config === 'shop' && nextMonth === 7) return `🏖️ Летний сезон даёт небольшой рост — пользуйтесь`
-
-  // Crisis week hint — сильнее, чтобы игрок планировал тактику
+  // ── Приоритет 2: crisis week ──────────────────────────────────────
   if ((state.currentWeek + 1) % 9 === 0) {
     return `🌩️ Кризисная неделя — будет 2 события подряд. Подумайте о тактике (calm/service помогут) и энергии заранее`
   }
 
-  // Generic encouragement
+  // ── Приоритет 3: личная цель и её дедлайн ─────────────────────────
+  if (state.personalGoal && !state.personalGoal.achieved && !state.personalGoal.missed) {
+    const weeksLeft = state.personalGoal.deadlineWeek - state.currentWeek
+    const gap = state.personalGoal.targetAmount - state.balance
+    if (weeksLeft === 4 && gap > 0) {
+      return `🎯 До цели «${state.personalGoal.shortLabel}» — 4 недели. Не хватает ${gap.toLocaleString('ru-RU')} ₽. Считайте темп.`
+    }
+    if (weeksLeft === 8 && gap > 200000) {
+      return `🎯 Через 2 месяца дедлайн «${state.personalGoal.shortLabel}». Сейчас отстаёте на ${gap.toLocaleString('ru-RU')} ₽`
+    }
+    if (weeksLeft === 1 && gap > 0) {
+      return `⚠️ Дедлайн «${state.personalGoal.shortLabel}» — на следующей неделе. Не хватает ${gap.toLocaleString('ru-RU')} ₽`
+    }
+  }
+
+  // ── Приоритет 4: энергия и burnout ────────────────────────────────
+  if (state.burnoutWarningActive) {
+    return `🔥 Энергия была на нуле — следующее обнуление = конец. Выберите спокойную неделю или отдохните в Личных тратах`
+  }
+  if ((state.entrepreneurEnergy ?? 100) < 35) {
+    return `🪫 Энергия низкая (${state.entrepreneurEnergy}). На следующей неделе — calm-тактика и отказ от агрессивных решений`
+  }
+
+  // ── Приоритет 5: подсказки про сервисы ────────────────────────────
+  if (!state.services?.fokus?.isActive && state.currentWeek >= 12) {
+    return `⚠️ Без Контур.Фокуса есть риск нарваться на недобросовестного поставщика`
+  }
+  if (!state.services?.diadoc?.isActive && state.currentWeek >= 16) {
+    return `📁 Без Контур.Диадока бумажные накладные накапливаются — может прилететь штраф`
+  }
+
+  // ── Приоритет 6: сезонность ───────────────────────────────────────
+  const nextMonth = Math.ceil(((state.currentWeek + 1) / 52) * 12)
+  const config = state.businessType
+  if (config === 'cafe' && nextMonth === 6) return `☀️ Лето приближается — сезон роста для кафе`
+  if (config === 'cafe' && nextMonth === 12) return `❄️ Январь-февраль снизят поток клиентов кафе — подготовьтесь`
+  if (config === 'beauty-salon' && nextMonth === 3) return `🌸 Весна — сезонный рост для салона красоты`
+  if (config === 'shop' && nextMonth === 7) return `🏖️ Летний сезон даёт небольшой рост магазину`
+
+  // ── Приоритет 7: контекстные подсказки по состоянию ──────────────
+  const balance = state.balance
+  const tier = state.businessTier ?? 1
+  const employees = state.employees?.length ?? 0
+  const upgradesCount = state.purchasedUpgrades?.length ?? 0
+
+  // Накопил, но не растёт
+  if (balance >= 600000 && tier < 3 && state.currentWeek >= 25) {
+    return `🏢 На счету ${balance.toLocaleString('ru-RU')} ₽ — может, пора подумать о следующем тире бизнеса (Развитие)`
+  }
+  // Много денег, мало апгрейдов
+  if (balance >= 400000 && upgradesCount < 3 && state.currentWeek >= 15) {
+    return `💼 На балансе ${balance.toLocaleString('ru-RU')} ₽. Куда вложить? Загляните в Развитие → Улучшения`
+  }
+  // Solo долго
+  if (employees === 0 && state.currentWeek >= 10) {
+    return `👥 Десятая неделя в одиночку. Если будете расти — без помощника тяжело`
+  }
+  // Высокая репутация — реклама работает лучше
+  if (state.reputation >= 75 && state.currentWeek >= 8) {
+    return `💡 Репутация ${state.reputation} — отличный момент для рекламной кампании (Маркетинг)`
+  }
+  // Низкая лояльность
+  if (state.loyalty < 40 && state.currentWeek >= 6) {
+    return `💛 Лояльность падает (${state.loyalty}). Service-тактика и качество — главные лекарства`
+  }
+  // Конкурент в районе
+  if ((state.temporaryClientMod ?? 0) < -0.05) {
+    return `⚡ Конкурент держит вас в напряжении. Подумайте об улучшении сервиса`
+  }
+  // Tier 1 после W20 — застой
+  if (tier === 1 && state.currentWeek >= 25 && balance >= 300000) {
+    return `📈 Tier 1 уже четвёртый месяц. Условия для роста смотрите в Развитие → Уровень`
+  }
+
+  // ── Приоритет 8: финальный месяц — пора собрать достижения ────────
+  if (state.currentWeek >= 45 && (state.achievements?.length ?? 0) < 5) {
+    return `🏅 До конца года ${52 - state.currentWeek} недель. Достижения дают бонусы — стоит посмотреть в Достижения`
+  }
+
+  // ── Приоритет 9: нейтральные подсказки ────────────────────────────
   const tips = [
     `📊 Загляните в Финансы — стоит проверить динамику прибыли`,
-    `🤝 Хороший момент пересмотреть список поставщиков`,
-    `💡 Если репутация выше 70 — это хорошее время для рекламы`,
-    null,
-    null,
+    `🤝 Хороший момент пересмотреть список поставщиков (Управление)`,
+    `📝 Дневник в Сводке — иногда там полезные мысли`,
+    `🌿 Calm-неделя — недооценённый ход для накопления`,
+    `⭐ Service-тактика без штрафа к выручке — главный режим для роста репутации`,
+    null,  // 25% шанс на пустой тизер
   ]
   return tips[Math.floor(Math.random() * tips.length)]
 }
@@ -823,9 +890,53 @@ function accumulateServiceSavings(state: GameState, weekRevenue: number, weekNet
 }
 
 function applyWeeklyMicroEvent(state: GameState): void {
-  const idx = (state.currentWeek - 1) % DAILY_MICRO_EVENTS.length
-  const micro = DAILY_MICRO_EVENTS[idx]
+  // Спринт 5e: state-aware picker.
+  //   • Низкая энергия / burnoutWarning → bias на 'good' (восстановление)
+  //   • Высокая энергия → больше 'rough' допустимо («жизнь продолжается»)
+  //   • Не повторяем события из state.seenMicroEvents в текущем цикле
+  //   • Когда все события показаны — массив сбрасывается, начинается новый цикл
+  // Раньше picker был детерминированным: (week-1) % len → одна и та же
+  // последовательность между прогонами, что делало баланс предсказуемым.
+  const energy = state.entrepreneurEnergy ?? 100
+  const burnoutWarn = state.burnoutWarningActive === true
+
+  // Распределение vibe по состоянию игрока
+  let vibeWeights: Record<'good' | 'neutral' | 'rough', number>
+  if (burnoutWarn) {
+    vibeWeights = { good: 0.75, neutral: 0.25, rough: 0 }
+  } else if (energy < 40) {
+    vibeWeights = { good: 0.6, neutral: 0.3, rough: 0.1 }
+  } else if (energy > 75) {
+    vibeWeights = { good: 0.3, neutral: 0.35, rough: 0.35 }
+  } else {
+    vibeWeights = { good: 0.4, neutral: 0.35, rough: 0.25 }
+  }
+
+  // Выбираем vibe по распределению
+  const r = Math.random()
+  const targetVibe: 'good' | 'neutral' | 'rough' =
+    r < vibeWeights.good ? 'good'
+    : r < vibeWeights.good + vibeWeights.neutral ? 'neutral'
+    : 'rough'
+
+  const seen = new Set(state.seenMicroEvents ?? [])
+  // Фильтр: нужный vibe + не показывался в текущем цикле
+  let candidates = DAILY_MICRO_EVENTS.filter(m => m.vibe === targetVibe && !seen.has(m.id))
+  // Если все события этого vibe показаны — сбрасываем seen и пробуем снова
+  if (candidates.length === 0) {
+    state.seenMicroEvents = []
+    candidates = DAILY_MICRO_EVENTS.filter(m => m.vibe === targetVibe)
+  }
+  // Если совсем нет (vibe пустой) — fallback на любое неувиденное
+  if (candidates.length === 0) {
+    candidates = DAILY_MICRO_EVENTS.filter(m => !seen.has(m.id))
+    if (candidates.length === 0) candidates = DAILY_MICRO_EVENTS
+  }
+
+  const micro = candidates[Math.floor(Math.random() * candidates.length)]
   if (!micro) return
+
+  state.seenMicroEvents = [...(state.seenMicroEvents ?? []), micro.id]
 
   const option = micro.options[0]
   if (!option) return

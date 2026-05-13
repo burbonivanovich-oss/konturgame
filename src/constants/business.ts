@@ -293,10 +293,16 @@ export const ECONOMY_CONSTANTS = {
   LOYALTY_BONUS_PREMIUM: 15,
   PREMIUM_COST_RATE: 0.08,  // ↑ Было 0.05
 
-  VICTORY_WEEKLY_PROFIT: 20000,  // ↑ Было 10000 - сложнее выиграть
-  VICTORY_BALANCE: 500000,  // ↑ Было 150000
-  // VICTORY_LEVEL: 10 — удалено вместе с player level в Спринте 4.
-  // Combined-победа теперь требует tier 3, не level 10.
+  // Спринт 5e: combined-победа должна быть достижимой целью для
+  // продвинутого игрока (не «выживание»), но не тривиальной для PRO.
+  // Старые 500K balance + 20K weekly profit пересекались у PRO-стратегий
+  // уже к W30 — победа ощущалась как побочка. Подняли:
+  //   • balance 500K → 800K (PRO достигает к W40-42, тоже не подарок)
+  //   • weekly profit 20K → 30K
+  // Year_one теперь тоже строже (см. resolveVictoryType): не просто
+  // «дожил с балансом > 0», а balance > 200K и reputation > 50.
+  VICTORY_WEEKLY_PROFIT: 30000,
+  VICTORY_BALANCE: 800000,
   VICTORY_ACHIEVEMENTS: 7,
 
   // EXPERIENCE_PER_WEEK / EXPERIENCE_PER_10K_PROFIT удалены вместе с

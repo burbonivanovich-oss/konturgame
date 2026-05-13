@@ -546,6 +546,9 @@ export interface GameState {
 
   // Weekly micro event (passive, shown in results)
   lastWeekMicroEvent?: { icon: string; title: string; effectText: string } | null
+  // Микрособытия которые игрок уже видел в этом цикле. Когда все показаны —
+  // массив сбрасывается. Используется picker'ом чтобы не повторять подряд.
+  seenMicroEvents?: string[]
 
   // Last diary entry (passive, first-person reflection — v5.0)
   // Picked every 5 weeks based on backstory/state, shown in WeekResults.

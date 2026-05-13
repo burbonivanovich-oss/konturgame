@@ -197,9 +197,9 @@ describe('getVictoryStatus', () => {
     expect(status.achievementsReached).toBe(true)
   })
 
-  it('weeklyProfitReached true when last result netProfit >= 20000', () => {
+  it('weeklyProfitReached true when last result netProfit >= 30000 (Спринт 5e)', () => {
     const state = makeState({
-      lastDayResult: makeDayResult({ netProfit: 20000 }),
+      lastDayResult: makeDayResult({ netProfit: 30000 }),
     })
     const status = getVictoryStatus(state)
     expect(status.weeklyProfitReached).toBe(true)

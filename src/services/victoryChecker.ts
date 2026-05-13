@@ -1,7 +1,8 @@
 import type { GameState, ServiceType } from '../types/game'
 import { ECONOMY_CONSTANTS } from '../constants/business'
 
-const ALL_SERVICES: ServiceType[] = ['market', 'bank', 'ofd', 'diadoc', 'fokus', 'elba', 'extern']
+// Спринт 5e: Экстерн скрыт из UI, combined-победа требует 6 сервисов, не 7.
+const ALL_SERVICES: ServiceType[] = ['market', 'bank', 'ofd', 'diadoc', 'fokus', 'elba']
 
 export function checkBankruptcy(state: GameState): boolean {
   // Bankruptcy after 3 consecutive weeks with negative balance
@@ -55,9 +56,19 @@ export function updateGameOverCounters(state: GameState): void {
 
 export type VictoryType = 'year_one' | 'combined'
 
+// Спринт 5e: пороги year_one ужесточены — раньше «дожил с balance > 0»
+// автоматически делал победителем, что обесценивало достижение.
+// Теперь требуется balance > 200К ₽ И reputation > 50 — нормально закончил
+// год, не «протянул на нуле». Personal goal (1М) — отдельный трек, который
+// игрок видит как «главную ставку».
+const YEAR_ONE_MIN_BALANCE = 200000
+const YEAR_ONE_MIN_REPUTATION = 50
+
 // Returns HOW the player won, or null if no victory condition is met.
-// 'combined' = all 5 non-year conditions met before week 52 (harder path).
-// 'year_one' = survived the full year with positive balance and reputation.
+// 'combined' = все 5 не-year условий выполнены до W52 (главный путь к
+//              «полной» победе). Требует: 800К ₽, 30К/нед прибыли,
+//              6 сервисов, tier 3, 7 достижений.
+// 'year_one' = достойно закончил год (>200К balance, >50 reputation).
 export function resolveVictoryType(state: GameState): VictoryType | null {
   const status = getVictoryStatus(state)
   const combinedMet = status.weeklyProfitReached
@@ -66,6 +77,10 @@ export function resolveVictoryType(state: GameState): VictoryType | null {
     && status.tierReached
     && status.achievementsReached
   if (combinedMet) return 'combined'
-  if (status.yearOneComplete && state.balance > 0 && state.reputation > 0) return 'year_one'
+  if (
+    status.yearOneComplete &&
+    state.balance >= YEAR_ONE_MIN_BALANCE &&
+    state.reputation >= YEAR_ONE_MIN_REPUTATION
+  ) return 'year_one'
   return null
 }

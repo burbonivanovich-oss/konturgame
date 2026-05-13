@@ -1532,6 +1532,8 @@ function extractState(state: any): GameState {
     chosenEventOptions: (state as any).chosenEventOptions ?? {},
     lastDiaryEntry: (state as any).lastDiaryEntry ?? null,
     diaryEntryWeeks: (state as any).diaryEntryWeeks ?? [],
+    // Спринт 5e: state-aware microevent picker
+    seenMicroEvents: (state as any).seenMicroEvents ?? [],
   }
 }
 

@@ -16,17 +16,24 @@ export interface DailyMicroEvent {
   title: string
   description: string
   icon: string
+  // Тональность события — используется state-aware picker'ом для bias по
+  // настроению игрока. При низкой энергии чаще выпадают 'good' (восстановление),
+  // при burnoutWarning — никаких 'rough'. См. applyWeeklyMicroEvent.
+  vibe: 'rough' | 'neutral' | 'good'
   options: MicroEventOption[]
 }
 
 export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
+  // ═══════════════════════════════════════════════════════════════════
   // Понедельник (0)
+  // ═══════════════════════════════════════════════════════════════════
   {
     id: 'mon_motivation',
     dayOfWeek: 0,
     title: '💪 Мотивация на неделю',
     description: 'Прочитал вдохновляющую историю успеха другого предпринимателя.',
     icon: '💪',
+    vibe: 'good',
     options: [
       {
         id: 'accept_motivation',
@@ -46,6 +53,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     title: '😴 Плохой сон',
     description: 'Выспался плохо, чувствуешь себя разбитым.',
     icon: '😴',
+    vibe: 'rough',
     options: [
       {
         id: 'rest_at_lunch',
@@ -65,6 +73,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     title: '👥 Линейка команды',
     description: 'Собрал сотрудников, поговорил о целях на неделю.',
     icon: '👥',
+    vibe: 'good',
     options: [
       {
         id: 'inspiring_talk',
@@ -78,14 +87,53 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
       },
     ],
   },
+  // НОВОЕ
+  {
+    id: 'mon_overslept',
+    dayOfWeek: 0,
+    title: '😩 Проспал',
+    description: 'Будильник прозвонил три раза. Открылись на 40 минут позже — пара постоянников ушли.',
+    icon: '😩',
+    vibe: 'rough',
+    options: [
+      {
+        id: 'apologize',
+        text: 'Извиниться в районном чате',
+        effects: { energyDelta: -5, reputationDelta: -1 },
+      },
+      {
+        id: 'ignore',
+        text: 'Сделать вид, что ничего не было',
+        effects: { reputationDelta: -3 },
+      },
+    ],
+  },
+  {
+    id: 'mon_coffee_compliment',
+    dayOfWeek: 0,
+    title: '☕ Кофе у соседей',
+    description: 'Зашёл к соседу-предпринимателю за кофе. Он похвалил вашу точку: «у тебя по-человечески сделано».',
+    icon: '☕',
+    vibe: 'good',
+    options: [
+      {
+        id: 'accept_compliment',
+        text: 'Принять и пойти работать',
+        effects: { energyDelta: 8 },
+      },
+    ],
+  },
 
+  // ═══════════════════════════════════════════════════════════════════
   // Вторник (1)
+  // ═══════════════════════════════════════════════════════════════════
   {
     id: 'tue_supplier',
     dayOfWeek: 1,
     title: '📦 Новое предложение поставщика',
     description: 'Поставщик предлагает партию товара со скидкой 15%.',
     icon: '📦',
+    vibe: 'neutral',
     options: [
       {
         id: 'buy_stock',
@@ -105,6 +153,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     title: '⚠️ Товар просрочился',
     description: 'Обнаружил, что часть товара истекла (не заметили при приёмке).',
     icon: '⚠️',
+    vibe: 'rough',
     options: [
       {
         id: 'write_off',
@@ -124,6 +173,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     title: '🚚 Задержка доставки',
     description: 'Поставщик задерживает доставку на день.',
     icon: '🚚',
+    vibe: 'rough',
     options: [
       {
         id: 'accept_delay',
@@ -137,14 +187,53 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
       },
     ],
   },
+  // НОВОЕ
+  {
+    id: 'tue_quick_delivery',
+    dayOfWeek: 1,
+    title: '⚡ Привезли раньше',
+    description: 'Поставщик пришёл на день раньше. Можно выложить свежее в витрину сразу.',
+    icon: '⚡',
+    vibe: 'good',
+    options: [
+      {
+        id: 'restock',
+        text: 'Выложить, обновить витрину',
+        effects: { clientModifierPercent: 0.05, clientModifierDays: 5 },
+      },
+    ],
+  },
+  {
+    id: 'tue_pipe',
+    dayOfWeek: 1,
+    title: '💧 Соседи протекли',
+    description: 'Сверху потекло, на потолке пятно. Сразу остановили, но потолок надо красить.',
+    icon: '💧',
+    vibe: 'rough',
+    options: [
+      {
+        id: 'paint',
+        text: 'Покрасить за свой счёт (-2000₽)',
+        effects: { balanceDelta: -2000 },
+      },
+      {
+        id: 'wait',
+        text: 'Подождать пока сверху починят',
+        effects: { reputationDelta: -1 },
+      },
+    ],
+  },
 
+  // ═══════════════════════════════════════════════════════════════════
   // Среда (2)
+  // ═══════════════════════════════════════════════════════════════════
   {
     id: 'wed_complaint',
     dayOfWeek: 2,
     title: '😠 Жалоба клиента',
     description: 'Клиент вернул товар и требует вернуть деньги. Качество его не устроило.',
     icon: '😠',
+    vibe: 'neutral',
     options: [
       {
         id: 'refund',
@@ -164,6 +253,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     title: '⚡ Конкурент открылся рядом',
     description: 'В соседнем помещении открыли похожий магазин.',
     icon: '⚡',
+    vibe: 'neutral',
     options: [
       {
         id: 'improve_service',
@@ -183,6 +273,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     title: '⭐ Вирусный отзыв',
     description: 'Один клиент поделился в соцсетях хорошим отзывом. Его друзья пришли к тебе!',
     icon: '⭐',
+    vibe: 'good',
     options: [
       {
         id: 'thank_client',
@@ -196,14 +287,53 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
       },
     ],
   },
+  // НОВОЕ
+  {
+    id: 'wed_thanks_in_person',
+    dayOfWeek: 2,
+    title: '🙏 «Спасибо, что вы тут»',
+    description: 'Постоянная клиентка тётя Галя со словами «у вас тут как дома, спасибо» оставила на прилавке домашние пирожки.',
+    icon: '🙏',
+    vibe: 'good',
+    options: [
+      {
+        id: 'accept',
+        text: 'Поблагодарить, угостить чаем',
+        effects: { energyDelta: 6, reputationDelta: 2 },
+      },
+    ],
+  },
+  {
+    id: 'wed_equipment_break',
+    dayOfWeek: 2,
+    title: '🔧 Что-то сломалось',
+    description: 'Морозильник / кофемашина / окрасочная станция начала странно жужжать. Ремонт срочный.',
+    icon: '🔧',
+    vibe: 'rough',
+    options: [
+      {
+        id: 'fix_fast',
+        text: 'Вызвать мастера срочно (-4500₽)',
+        effects: { balanceDelta: -4500 },
+      },
+      {
+        id: 'fix_slow',
+        text: 'Подождать недорогого, два дня без оборудования',
+        effects: { balanceDelta: -1500, clientModifierPercent: -0.08, clientModifierDays: 5 },
+      },
+    ],
+  },
 
+  // ═══════════════════════════════════════════════════════════════════
   // Четверг (3)
+  // ═══════════════════════════════════════════════════════════════════
   {
     id: 'thu_social_idea',
     dayOfWeek: 3,
     title: '📱 Идея для соцсетей',
     description: 'Придумал прикольный контент про твой бизнес.',
     icon: '📱',
+    vibe: 'neutral',
     options: [
       {
         id: 'post_social',
@@ -223,6 +353,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     title: '🌟 Инфлюэнсер город заметил',
     description: 'Инфлюэнсер вашего города захотел у тебя что-то купить.',
     icon: '🌟',
+    vibe: 'good',
     options: [
       {
         id: 'impress_influencer',
@@ -242,6 +373,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     title: '🪧 Объявление упало',
     description: 'Из-за сильного ветра объявление на улице оборвалось.',
     icon: '🪧',
+    vibe: 'rough',
     options: [
       {
         id: 'fix_banner',
@@ -255,14 +387,53 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
       },
     ],
   },
+  // НОВОЕ
+  {
+    id: 'thu_resume',
+    dayOfWeek: 3,
+    title: '📝 Резюме на двери',
+    description: 'На двери приклеен листок: «здравствуйте, я школьница на каникулах, готова помочь за небольшие деньги».',
+    icon: '📝',
+    vibe: 'neutral',
+    options: [
+      {
+        id: 'call_back',
+        text: 'Перезвонить, обсудить условия',
+        effects: { energyDelta: -3 },
+      },
+      {
+        id: 'pass',
+        text: 'Сейчас не до этого',
+        effects: { reputationDelta: 0 },
+      },
+    ],
+  },
+  {
+    id: 'thu_blogger_pass',
+    dayOfWeek: 3,
+    title: '📷 Блогер прошёл мимо',
+    description: 'Локальный блогер с миллионом подписчиков обещал заехать. Не доехал. Написал «в следующий раз».',
+    icon: '📷',
+    vibe: 'rough',
+    options: [
+      {
+        id: 'shake_off',
+        text: 'Поработать дальше',
+        effects: { clientModifierPercent: -0.03, clientModifierDays: 7 },
+      },
+    ],
+  },
 
+  // ═══════════════════════════════════════════════════════════════════
   // Пятница (4)
+  // ═══════════════════════════════════════════════════════════════════
   {
     id: 'fri_bonus_order',
     dayOfWeek: 4,
     title: '🤑 Оптовый заказ в конце недели',
     description: 'Старый клиент заказал большую партию в конце недели!',
     icon: '🤑',
+    vibe: 'good',
     options: [
       {
         id: 'accept_big_order',
@@ -282,6 +453,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     title: '📋 Письмо из налоговой',
     description: 'ФНС отправила письмо про проверку на следующую неделю.',
     icon: '📋',
+    vibe: 'rough',
     options: [
       {
         id: 'prepare_docs',
@@ -301,6 +473,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     title: '💰 Зарплата сотрудникам',
     description: 'Конец недели - нужно платить зарплату персоналу. (Уже учтена в расходах)',
     icon: '💰',
+    vibe: 'neutral',
     options: [
       {
         id: 'pay_ontime',
@@ -314,14 +487,53 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
       },
     ],
   },
+  // НОВОЕ
+  {
+    id: 'fri_partner_call',
+    dayOfWeek: 4,
+    title: '📞 Партнёрский заказ',
+    description: 'Знакомый из соседнего бизнеса просит подобрать заказ на корпоратив. Деньги хорошие, делать быстро.',
+    icon: '📞',
+    vibe: 'good',
+    options: [
+      {
+        id: 'accept',
+        text: 'Принять заказ (+4000₽, −5 энергии)',
+        effects: { balanceDelta: 4000, energyDelta: -5 },
+      },
+      {
+        id: 'decline',
+        text: 'Сейчас не вытяну',
+        effects: { reputationDelta: -1 },
+      },
+    ],
+  },
+  {
+    id: 'fri_card_charge',
+    dayOfWeek: 4,
+    title: '💳 Списали по подписке',
+    description: 'Банк списал годовую подписку на онлайн-сервис, про который вы забыли.',
+    icon: '💳',
+    vibe: 'rough',
+    options: [
+      {
+        id: 'shrug',
+        text: 'Ну ладно, отменю — потом',
+        effects: { balanceDelta: -3500, energyDelta: -3 },
+      },
+    ],
+  },
 
+  // ═══════════════════════════════════════════════════════════════════
   // Суббота (5)
+  // ═══════════════════════════════════════════════════════════════════
   {
     id: 'sat_rest',
     dayOfWeek: 5,
     title: '☀️ День отдыха',
     description: 'Закрыл магазин, отдохнул, зарядился энергией.',
     icon: '☀️',
+    vibe: 'good',
     options: [
       {
         id: 'full_rest',
@@ -341,6 +553,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     title: '😓 Срочный вызов',
     description: 'Позвонили - нужно срочно открыть из-за праздника или события.',
     icon: '😓',
+    vibe: 'neutral',
     options: [
       {
         id: 'open_emergency',
@@ -360,6 +573,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     title: '💭 Размышления о неделе',
     description: 'Обдумал неделю. Кое-что пошло не так, но понял, где ошибка.',
     icon: '💭',
+    vibe: 'good',
     options: [
       {
         id: 'learn_from_mistake',
@@ -373,14 +587,48 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
       },
     ],
   },
+  // НОВОЕ
+  {
+    id: 'sat_park_walk',
+    dayOfWeek: 5,
+    title: '🌳 Прогулка в парке',
+    description: 'Закрыли точку на час, прошлись по парку. Дорога обратно — впервые за месяц спокойствие.',
+    icon: '🌳',
+    vibe: 'good',
+    options: [
+      {
+        id: 'breathe',
+        text: 'Подышать, не думать о работе',
+        effects: { energyDelta: 12 },
+      },
+    ],
+  },
+  {
+    id: 'sat_argument',
+    dayOfWeek: 5,
+    title: '😤 Скандал в зале',
+    description: 'Двое клиентов поскандалили между собой в очереди. Пришлось выгонять — оба обиделись на вас.',
+    icon: '😤',
+    vibe: 'rough',
+    options: [
+      {
+        id: 'absorb',
+        text: 'Усвоить и идти дальше',
+        effects: { energyDelta: -10, reputationDelta: -2 },
+      },
+    ],
+  },
 
+  // ═══════════════════════════════════════════════════════════════════
   // Воскресенье (6)
+  // ═══════════════════════════════════════════════════════════════════
   {
     id: 'sun_planning',
     dayOfWeek: 6,
     title: '📋 Планирование недели',
     description: 'Спланировал новую неделю, поставил цели и приоритеты.',
     icon: '📋',
+    vibe: 'good',
     options: [
       {
         id: 'serious_planning',
@@ -400,6 +648,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     title: '🎉 Семейный праздник',
     description: 'Семья хочет выгулять. Потратишь время на семью, но настроение улучшится.',
     icon: '🎉',
+    vibe: 'good',
     options: [
       {
         id: 'spend_time_family',
@@ -419,6 +668,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     title: '😰 Предчувствие',
     description: 'Чувствуешь, что на следующей неделе что-то изменится. Волнение.',
     icon: '😰',
+    vibe: 'neutral',
     options: [
       {
         id: 'embrace_change',
@@ -429,6 +679,37 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
         id: 'worry',
         text: 'Волноваться (-энергия)',
         effects: { energyDelta: -15, balanceDelta: 0 },
+      },
+    ],
+  },
+  // НОВОЕ
+  {
+    id: 'sun_neighbors',
+    dayOfWeek: 6,
+    title: '🤝 Соседи похвалили',
+    description: 'Встретили бабушку из соседнего двора. «Вы такая молодец, у вас все приходят». Улыбнулись неделю.',
+    icon: '🤝',
+    vibe: 'good',
+    options: [
+      {
+        id: 'accept_warmth',
+        text: 'Принять тепло',
+        effects: { energyDelta: 5, reputationDelta: 2 },
+      },
+    ],
+  },
+  {
+    id: 'sun_lonely_evening',
+    dayOfWeek: 6,
+    title: '😔 Тяжёлое воскресенье',
+    description: 'Один. Все занятые своим, у вас тоже своё — но молчит телефон, и в окно дождь.',
+    icon: '😔',
+    vibe: 'rough',
+    options: [
+      {
+        id: 'tough_it_out',
+        text: 'Заварить чай, переждать',
+        effects: { energyDelta: -5 },
       },
     ],
   },
