@@ -75,7 +75,8 @@ export function shouldAdvanceStage(state: GameState): boolean {
   const currentStage = state.onboardingStage
   if (currentStage >= 4) return false
 
-  if (!ONBOARDING_STAGES[currentStage + 1]) return false
+  const nextStageConfig = ONBOARDING_STAGES[currentStage + 1]
+  if (!nextStageConfig) return false
 
   const currentStageConfig = ONBOARDING_STAGES[currentStage]
   const currentDay = (state.currentWeek - 1) * 7 + (state.dayOfWeek ?? 0) + 1
@@ -87,25 +88,31 @@ export function shouldAdvanceStage(state: GameState): boolean {
   const daysInStage = currentDay - stageStartDay + 1
   if (daysInStage < MIN_DAYS_IN_STAGE) return false
 
+  // Hard gate: не продвигаться в стадию N+1 до её dayRange[0]. Без этого
+  // онбординг сваливается на игрока в первые 1-2 недели, опережая
+  // first-encounter события сервисов (Market дн.84, Diadoc дн.119 и т.д.).
+  if (currentDay < nextStageConfig.dayRange[0]) return false
+
   // Stage 0 → 1: advance purely by time (tutorial is educational only)
   if (currentStage === 0) return true
 
   const skipped = new Set(state.skippedOnboardingActions ?? [])
 
-  // Stage 1 → 2: bank + register + ofd (each counts as done if active OR skipped)
+  // Stage 1 → 2: bank + register + ofd (each counts as done if active OR skipped).
+  // ID шагов привязаны к ONBOARDING_STAGES[1].steps: '1-1' bank, '1-2' register, '1-3' ofd.
   if (currentStage === 1) {
     const bankOk = (state.services?.bank?.isActive ?? false) || skipped.has('1-1')
-    const registerOk = (state.cashRegisters?.length ?? 0) > 0 || skipped.has('1-3')
-    const ofdOk = (state.services?.ofd?.isActive ?? false) || skipped.has('1-5')
+    const registerOk = (state.cashRegisters?.length ?? 0) > 0 || skipped.has('1-2')
+    const ofdOk = (state.services?.ofd?.isActive ?? false) || skipped.has('1-3')
     return bankOk && registerOk && ofdOk
   }
-  // Stage 2 → 3: Market active or skipped
+  // Stage 2 → 3: Market active or skipped ('2-1')
   if (currentStage === 2) {
-    return (state.services?.market?.isActive ?? false) || skipped.has('2-2')
+    return (state.services?.market?.isActive ?? false) || skipped.has('2-1')
   }
-  // Stage 3 → 4: Diadoc active or skipped
+  // Stage 3 → 4: Diadoc active or skipped ('3-1'; '3-2' Fokus optional)
   if (currentStage === 3) {
-    return (state.services?.diadoc?.isActive ?? false) || skipped.has('3-3')
+    return (state.services?.diadoc?.isActive ?? false) || skipped.has('3-1')
   }
 
   return false

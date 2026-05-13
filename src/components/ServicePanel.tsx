@@ -25,9 +25,9 @@ const SERVICE_ICONS: Record<string, string> = {
   extern: '⚖️',
 }
 
-// When each locked service unlocks
+// When each locked service unlocks (must match SERVICE_UNLOCK_MAP).
 const SERVICE_UNLOCK_STAGE: Record<string, OnboardingStage> = {
-  bank: 0,
+  bank: 1,
   ofd: 1,
   market: 2,
   diadoc: 3,

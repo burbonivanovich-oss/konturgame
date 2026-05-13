@@ -1005,6 +1005,20 @@ export function applyEventConsequence(
     )
   }
 
+  // Service activation from first-encounter / pain events. UI path (MainScreen,
+  // MobileMainScreen) ALSO activates via store.activateService — но при
+  // прямом вызове (auto-resolve декшнов, тесты, NPC-цепочки) этот блок
+  // обеспечивает, что выбор «Подключить Контур.X» реально включает сервис.
+  if (c.serviceId && state.services?.[c.serviceId]) {
+    const service = state.services[c.serviceId]
+    if (!service.isActive) {
+      state.services[c.serviceId] = { ...service, isActive: true }
+    }
+    if (!(state.unlockedServices ?? []).includes(c.serviceId)) {
+      state.unlockedServices = [...(state.unlockedServices ?? []), c.serviceId]
+    }
+  }
+
   // NPC relationship delta — anchors large decisions, converts overflow to XP
   if (option.npcRelationshipDelta !== undefined && event.npcId) {
     applyRelationshipDeltaToState(
