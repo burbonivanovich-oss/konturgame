@@ -11,6 +11,7 @@ import { CASH_REGISTER_CONFIGS, REGISTER_COMBO_DISCOUNTS } from '../constants/ca
 import { getDefaultCategories } from '../services/assortmentEngine'
 import { createEmployee } from '../constants/employees'
 import { checkWeekBlocked, processWeek } from '../services/weekCalculator'
+import { applyEventConsequence } from '../services/eventGenerator'
 import { getBusinessStage, STAGE_CONFIG } from '../constants/businessStages'
 import { OWNER_INVESTMENTS_MAP } from '../constants/ownerInvestments'
 import type { OwnerInvestmentId } from '../constants/ownerInvestments'
@@ -237,6 +238,12 @@ interface GameStoreActions {
   setPendingEvent: (event: Event | null) => void
   markEventAsResolved: (eventId: string) => void
   deferEvent: () => void
+  // Применить consequences опции через единый пайплайн applyEventConsequence.
+  // Был баг — UI MainScreen/MobileMainScreen вручную обрабатывали только
+  // subset consequences (balanceDelta/reputationDelta/loyaltyDelta/etc.),
+  // молча игнорируя hireEmployee, fireEmployee, energyDelta. Из-за этого
+  // first_hire / Svetlana / Oleg-арки не работали при resolve через клик.
+  resolveEventOption: (optionId: string) => void
   // Record which option the player picked for an event — feeds achievements
   // + postmortem timeline. Idempotent; first choice wins per event id.
   recordEventChoice: (eventId: string, choiceId: string) => void
@@ -730,6 +737,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
           weekPhase: (allCleared && state.weekPhase === 'events' ? 'simulation' : state.weekPhase) as WeekPhase,
           lastUpdated: Date.now(),
         }
+      })
+    },
+
+    // Унифицированный resolve опции — применяет ВСЕ consequences через
+    // applyEventConsequence (incl. hireEmployee, fireEmployee, energyDelta,
+    // serviceId, npcRelationshipDelta, chainFollowUpId). UI должен ВСЕГДА
+    // вызывать этот action вместо ручной обработки полей consequences.
+    resolveEventOption: (optionId) => {
+      set((state) => {
+        if (!state.pendingEvent) return state
+        const stateCopy = JSON.parse(JSON.stringify(extractState(state))) as GameState
+        applyEventConsequence(stateCopy, stateCopy.pendingEvent!, optionId)
+        return { ...stateCopy, lastUpdated: Date.now() }
       })
     },
 
@@ -1491,6 +1511,18 @@ function extractState(state: any): GameState {
     // v4.3 progression fixes
     burnoutWarningActive: burnoutWarningActive ?? false,
     victoryType: victoryType ?? null,
+    // v5.0 — persisted fields that were lost on reload (audit fix):
+    //   • personalGoal — главная цель игрока (квартира/долг/брат)
+    //   • weeklyTactic — выбранная тактика недели (aggressive/calm/service)
+    //   • businessTier — текущий tier бизнеса (1/2/3)
+    //   • chosenEventOptions — что игрок выбирал на событиях (для NPC arc)
+    //   • lastDiaryEntry / diaryEntryWeeks — дневниковые записи
+    personalGoal: (state as any).personalGoal ?? null,
+    weeklyTactic: (state as any).weeklyTactic ?? null,
+    businessTier: (state as any).businessTier ?? 1,
+    chosenEventOptions: (state as any).chosenEventOptions ?? {},
+    lastDiaryEntry: (state as any).lastDiaryEntry ?? null,
+    diaryEntryWeeks: (state as any).diaryEntryWeeks ?? [],
   }
 }
 

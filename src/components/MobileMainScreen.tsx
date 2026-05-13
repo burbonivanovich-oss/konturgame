@@ -81,35 +81,20 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
 
   const handleEventOption = (optionId: string) => {
     const state = useGameStore.getState()
-    const { pendingEvent, markEventAsResolved, setTemporaryModifiers, activateService, addSavedBalance } = state
+    const { pendingEvent, markEventAsResolved, addSavedBalance, resolveEventOption, recordEventChoice } = state
 
     if (!pendingEvent) return
     const option = pendingEvent.options.find((o) => o.id === optionId)
     if (!option) return
-
     const c = option.consequences
-    const { addBalance, addReputation, addLoyalty } = useGameStore.getState()
 
-    if (c.balanceDelta !== undefined) addBalance(c.balanceDelta)
-    if (c.reputationDelta !== undefined) addReputation(c.reputationDelta)
-    if (c.loyaltyDelta !== undefined) addLoyalty(c.loyaltyDelta)
+    recordEventChoice(pendingEvent.id, optionId)
 
-    if (c.clientModifier !== undefined || c.checkModifier !== undefined) {
-      const currentState = useGameStore.getState()
-      setTemporaryModifiers(
-        (currentState.temporaryClientMod ?? 0) + (c.clientModifier ?? 0),
-        (currentState.temporaryCheckMod ?? 0) + (c.checkModifier ?? 0),
-        Math.max(
-          currentState.temporaryModDaysLeft ?? 0,
-          c.clientModifierDays ?? c.checkModifierDays ?? 1,
-        ),
-      )
-    }
+    // ВСЕ consequences через единый пайплайн (incl. hireEmployee, fireEmployee,
+    // energyDelta, serviceId, npcRelationshipDelta, chainFollowUpId).
+    resolveEventOption(optionId)
 
-    if (c.serviceId) {
-      activateService(c.serviceId)
-    }
-
+    // Контур-опция → savings toast
     if (option.isContourOption && c.balanceDelta !== undefined) {
       const nonKontourOptions = pendingEvent.options.filter((o) => !o.isContourOption)
       if (nonKontourOptions.length > 0) {
