@@ -9,11 +9,15 @@ import type { EventTemplate } from '../types/game'
  *   1) На W5-6 (после mikhail_crisis W3-5, до svetlana_growth W6-9) срабатывает
  *      бизнес-специфичное событие «не справились в одиночку» (3 версии:
  *      shop/cafe/salon). Опция «Подумать о найме» запускает чейн first_hire.
- *   2) Через 1-2 недели приходит событие с 3 кандидатами на найм — разные
- *      по цене, эффективности, потребляемой энергии:
- *        • Дальний родственник (25К/мес, eff 0.7, energy 9) — дёшево, плохо
- *        • Студент (35К, 0.95, 6) — баланс цена/качество
- *        • Светлана (70К, 1.5, 3) — реальный NPC из набора npcs.ts
+ *   2) Через 1-2 недели приходит событие с 4 кандидатами на найм — разные
+ *      по цене, эффективности, потребляемой энергии и влиянию на лояльность:
+ *        • Дальний родственник (25К/мес, eff 0.7, energy 9, лоял -3)
+ *        • Студент              (35К, 0.95, 6, лоял 0)
+ *        • Бывший профи         (50К, 1.2, 5, лоял +5) — бизнес-специфичный:
+ *            cafe: повар из закрывшегося ресторана
+ *            shop: продавец из обанкротившегося «Магнита»
+ *            salon: парикмахер из закрытого салона
+ *        • Светлана (NPC)       (70К, 1.5, 3, лоял +8)
  *      Плюс опция «Пока никого» — отказ.
  *
  * Все параметры зашиты в hireEmployee-опции (см. EventOption.consequences),
@@ -137,12 +141,13 @@ export const FIRST_HIRE_OPTIONS: EventTemplate = {
       id: 'hire_relative',
       text: '👨 Дальний родственник: 25 000 ₽/мес, без опыта' + SALARY_NOTE_SUFFIX,
       consequences: {
-        balanceDelta: -3000,  // первая выплата авансом
+        balanceDelta: -3000,
+        loyaltyDelta: -3,  // первые недели клиенты чувствуют неловкость
         hireEmployee: {
           position: 'assistant',
           salary: 25000,
           efficiency: 0.7,
-          energyCost: 9,  // приходится постоянно перепроверять
+          energyCost: 9,
           name: 'Андрей',
         },
       },
@@ -153,12 +158,69 @@ export const FIRST_HIRE_OPTIONS: EventTemplate = {
       text: '👨‍🎓 Студент, 3-й курс: 35 000 ₽/мес, подработка 4 ч/день' + SALARY_NOTE_SUFFIX,
       consequences: {
         balanceDelta: -4000,
+        loyaltyDelta: 0,  // нейтрально — молодой, но без явных косяков
         hireEmployee: {
           position: 'assistant',
           salary: 35000,
           efficiency: 0.95,
-          energyCost: 6,  // быстро учится, мало контроля
+          energyCost: 6,
           name: 'Никита',
+        },
+      },
+    },
+    // ── Бывший профи: бизнес-специфичный (cafe) ───────────────────────
+    {
+      id: 'hire_pro_cafe',
+      text: '🍳 Сергей, повар из закрывшегося ресторана: 50 000 ₽/мес, 12 лет в общепите' + SALARY_NOTE_SUFFIX,
+      requiredBusinessTypes: ['cafe'],
+      consequences: {
+        balanceDelta: -6000,
+        loyaltyDelta: 5,  // постоянники сразу замечают разницу в качестве
+        reputationDelta: 2,
+        hireEmployee: {
+          position: 'specialist',
+          salary: 50000,
+          efficiency: 1.2,
+          energyCost: 5,
+          name: 'Сергей',
+        },
+      },
+    },
+    // ── Бывший профи: бизнес-специфичный (shop) ───────────────────────
+    {
+      id: 'hire_pro_shop',
+      text: '🏪 Алла, продавец из обанкротившегося «Магнита»: 50 000 ₽/мес, 10 лет на кассе' + SALARY_NOTE_SUFFIX,
+      requiredBusinessTypes: ['shop'],
+      consequences: {
+        balanceDelta: -6000,
+        loyaltyDelta: 5,
+        reputationDelta: 2,
+        hireEmployee: {
+          position: 'specialist',
+          salary: 50000,
+          efficiency: 1.2,
+          energyCost: 5,
+          name: 'Алла',
+        },
+      },
+    },
+    // ── Бывший профи: бизнес-специфичный (salon) ──────────────────────
+    {
+      id: 'hire_pro_salon',
+      text: '💇 Лариса, парикмахер из закрытого салона: 50 000 ₽/мес, своя клиентура с прошлого места' + SALARY_NOTE_SUFFIX,
+      requiredBusinessTypes: ['beauty-salon'],
+      consequences: {
+        balanceDelta: -6000,
+        loyaltyDelta: 5,
+        reputationDelta: 2,
+        clientModifier: 0.10,  // часть постоянников переходит вместе с ней
+        clientModifierDays: 28,
+        hireEmployee: {
+          position: 'specialist',
+          salary: 50000,
+          efficiency: 1.2,
+          energyCost: 5,
+          name: 'Лариса',
         },
       },
     },
@@ -168,22 +230,27 @@ export const FIRST_HIRE_OPTIONS: EventTemplate = {
       text: '⭐ Светлана, 35, опыт продаж: 70 000 ₽/мес, готова брать управление',
       consequences: {
         balanceDelta: -9000,
+        loyaltyDelta: 8,  // личность + долгий опыт работы с клиентами
+        reputationDelta: 3,
         hireEmployee: {
           position: 'manager',
           salary: 70000,
           efficiency: 1.5,
-          energyCost: 3,  // снимает часть управленческой нагрузки
+          energyCost: 3,
           name: 'Светлана',
           linkNpcId: 'svetlana',
         },
       },
-      npcRelationshipDelta: 5,  // хорошее первое впечатление
+      npcRelationshipDelta: 5,
     },
     // ── Отказать: остаться solo ───────────────────────────────────────
     {
       id: 'refuse_all',
       text: 'Пока никого — справлюсь сам',
-      consequences: { reputationDelta: -1 },
+      consequences: {
+        reputationDelta: -1,
+        loyaltyDelta: -2,  // одиночное обслуживание = ниже качество, постоянники недовольны
+      },
     },
   ],
 }

@@ -279,6 +279,11 @@ export interface EventOption {
   isContourOption?: boolean
   npcRelationshipDelta?: number
   chainFollowUpId?: string
+  // Бизнес-специфичные опции (Спринт 5e): отфильтровываются в UI, если
+  // текущий businessType не входит в список. Используется в first_hire,
+  // где «бывший повар» показывается только для cafe, «парикмахер» для
+  // salon и т.д.
+  requiredBusinessTypes?: BusinessType[]
 }
 
 export interface Event {

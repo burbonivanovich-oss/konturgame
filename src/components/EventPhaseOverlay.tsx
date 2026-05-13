@@ -42,7 +42,7 @@ interface EventPhaseOverlayProps {
  */
 export function EventPhaseOverlay({ onOptionSelect, onContinueIfNoEvent }: EventPhaseOverlayProps) {
   const {
-    pendingEvent, pendingEventsQueue, npcs, currentWeek, deferEvent,
+    pendingEvent, pendingEventsQueue, npcs, currentWeek, businessType, deferEvent,
     balance, entrepreneurEnergy, reputation, loyalty,
   } = useGameStore()
 
@@ -51,6 +51,12 @@ export function EventPhaseOverlay({ onOptionSelect, onContinueIfNoEvent }: Event
   if (!pendingEvent) {
     return <QuietWeekScreen onContinue={onContinueIfNoEvent} week={currentWeek} />
   }
+
+  // Опции с requiredBusinessTypes показываем только если совпадает —
+  // используется в first_hire chain (бывший повар только для cafe и т.д.)
+  const visibleOptions = pendingEvent.options.filter(
+    o => !o.requiredBusinessTypes || o.requiredBusinessTypes.includes(businessType),
+  )
 
   const totalEvents = 1 + (pendingEventsQueue?.length ?? 0)
   const npcDef = pendingEvent.npcId ? getNPCDefinition(pendingEvent.npcId) : null
@@ -169,7 +175,7 @@ export function EventPhaseOverlay({ onOptionSelect, onContinueIfNoEvent }: Event
             display: 'flex', flexDirection: 'column', gap: 8,
           }}
         >
-          {pendingEvent.options.map((opt) => (
+          {visibleOptions.map((opt) => (
             <OptionButton
               key={opt.id}
               option={opt}
