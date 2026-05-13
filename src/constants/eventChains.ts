@@ -106,23 +106,23 @@ export const CHAIN_EVENTS: EventTemplate[] = [
   {
     id: 'svetlana_growth_1',
     title: 'Светлана хочет учиться',
-    description: 'Светлана уже несколько недель в команде — изменилось всё. Подходит после смены: "Я нашла курсы по управлению продажами, 15 000 ₽. Если вы оплатите, я останусь здесь и применю всё у вас. Если нет — мне сделали предложение в другом месте. Решайте."',
+    description: 'Светлана уже несколько недель в команде — и видно, как точка ожила. После закрытия осталась поговорить, мнётся.\n\n«Слушайте, я нашла курсы по управлению продажами, 15 тысяч. Мне очень хочется попробовать — и я бы применила всё здесь, у вас. Я не давлю, просто чтобы вы знали: мне сделали предложение в одном месте на районе, надо ответить до конца месяца. Я бы хотела остаться, если есть смысл вкладываться в моё обучение. Но решение ваше — я пойму любой ответ.»',
     trigger: { dayMin: 126, dayMax: 161, randomChance: 1.0, oneTime: true, chainId: 'svetlana_growth', chainStep: 1 },
     npcId: 'svetlana',
-    decisionDeadlineWeeks: 1,
+    decisionDeadlineWeeks: 2,
     options: [
       {
         id: 'invest',
-        text: 'Оплатить курсы (−15 000 ₽)',
+        text: 'Оплатить курсы (−15 000 ₽) — она того стоит',
         consequences: { balanceDelta: -15000 },
         npcRelationshipDelta: 15,
         chainFollowUpId: 'svetlana_growth_2a',
       },
       {
         id: 'refuse',
-        text: 'Отказать ("Это твои инвестиции")',
+        text: 'Сейчас не потянем — пусть копит сама, потом обсудим',
         consequences: {},
-        npcRelationshipDelta: -15,
+        npcRelationshipDelta: -10,
         chainFollowUpId: 'svetlana_growth_2b',
       },
     ],
@@ -130,14 +130,14 @@ export const CHAIN_EVENTS: EventTemplate[] = [
 
   {
     id: 'svetlana_growth_2a',
-    title: 'Светлана вернулась с результатами',
-    description: 'Три недели спустя Светлана вышла на работу другим человеком. Перестроила выкладку, обучила двух коллег, привела троих постоянных клиентов от подруг. "Я никуда не ухожу. Хочу вырасти здесь — и помочь вам вырасти тоже."',
+    title: 'Светлана вернулась с курсов',
+    description: 'Три недели спустя Светлана вышла на работу другим человеком. Перестроила выкладку, обучила двух коллег, привела троих постоянных клиентов от подруг. На вашу благодарность только смущённо: «Я просто хочу, чтобы у нас тут было хорошо. Никуда я не ухожу».',
     trigger: { dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true, chainId: 'svetlana_growth', chainStep: 2 },
     npcId: 'svetlana',
     options: [
       {
         id: 'great',
-        text: 'Поблагодарить и дать ей больше ответственности',
+        text: 'Дать ей больше ответственности — она готова',
         consequences: { clientModifier: 0.08, clientModifierDays: 42, loyaltyDelta: 12 },
         npcRelationshipDelta: 10,
       },
@@ -146,16 +146,16 @@ export const CHAIN_EVENTS: EventTemplate[] = [
 
   {
     id: 'svetlana_growth_2b',
-    title: 'Светлана ушла',
-    description: 'Светлана пришла утром, собрала вещи и ушла. Молча. Через неделю вы видите её в новом кафе напротив. Оно открылось только что — там написано "Анна Козлова, управляющий". Ваши клиенты замечают, что обслуживание стало хуже.',
+    title: 'Светлана попрощалась',
+    description: 'Через две недели подошла после смены. «Я приняла то предложение — извините, надо двигаться». Поблагодарила за время и тёплое отношение. Через месяц увидели её в инсте — фото из новой команды на районе, улыбается. Пара постоянников ещё несколько недель спрашивают «а где та девушка?».',
     trigger: { dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true, chainId: 'svetlana_growth', chainStep: 2 },
     npcId: 'svetlana',
     options: [
       {
         id: 'accept',
-        text: 'Начать поиск нового сотрудника',
-        consequences: { clientModifier: -0.15, clientModifierDays: 21, loyaltyDelta: -8 },
-        npcRelationshipDelta: -15,
+        text: 'Пожать ей руку и пожелать удачи',
+        consequences: { clientModifier: -0.08, clientModifierDays: 28, loyaltyDelta: -4 },
+        npcRelationshipDelta: -5,
       },
     ],
   },
