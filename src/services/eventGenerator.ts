@@ -4,7 +4,7 @@ import { PERSONAL_BACKSTORY_EVENTS } from '../constants/personalEvents'
 import { NPC_ARC_EVENTS } from '../constants/npcArcs'
 import { CRISIS_EVENTS } from '../constants/crisisEvents'
 import { FIRST_ENCOUNTER_EVENTS } from '../constants/firstEncounters'
-import { SOLO_OVERLOAD_EVENTS } from '../constants/firstHireEvents'
+import { SOLO_OVERLOAD_EVENTS, MIKHAIL_RECOMMENDS_SVETLANA } from '../constants/firstHireEvents'
 import { getChainEvent, CHAIN_FOLLOWUP_DELAY } from '../constants/eventChains'
 import { RECURRING_CUSTOMER_EVENTS } from '../constants/recurringCustomers'
 import { NPC_EVENTS } from '../constants/npcEvents'
@@ -859,6 +859,7 @@ export function generateEvent(day: number, state: GameState): Event | null {
     ...EVENTS_DATABASE,
     ...FIRST_ENCOUNTER_EVENTS,
     ...SOLO_OVERLOAD_EVENTS,
+    MIKHAIL_RECOMMENDS_SVETLANA,
     ...MORAL_DILEMMA_EVENTS,
     ...RECURRING_CUSTOMER_EVENTS,
     ...NPC_EVENTS,
