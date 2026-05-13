@@ -9,16 +9,21 @@ import type { EventTemplate } from '../types/game'
  *   1) На W5-6 (после mikhail_crisis W3-5, до svetlana_growth W6-9) срабатывает
  *      бизнес-специфичное событие «не справились в одиночку» (3 версии:
  *      shop/cafe/salon). Опция «Подумать о найме» запускает чейн first_hire.
- *   2) Через 1-2 недели приходит событие с 4 кандидатами на найм — разные
+ *   2) Через 1-2 недели приходит событие с 5 кандидатами на найм — разные
  *      по цене, эффективности, потребляемой энергии и влиянию на лояльность:
  *        • Дальний родственник (25К/мес, eff 0.7, energy 9, лоял -3)
- *        • Студент              (35К, 0.95, 6, лоял 0)
- *        • Бывший профи         (50К, 1.2, 5, лоял +5) — бизнес-специфичный:
+ *        • Студент              (35К, 0.85, 6, лоял 0)
+ *        • Знакомый Дмитрий    (42К, 1.05, 7, лоял +1) — обычный мужик после сокращения
+ *        • Бывший профи         (55К, 1.2, 5, лоял +5) — бизнес-специфичный:
  *            cafe: повар из закрывшегося ресторана
  *            shop: продавец из обанкротившегося «Магнита»
  *            salon: парикмахер из закрытого салона
- *        • Светлана (NPC)       (70К, 1.5, 3, лоял +8)
+ *        • Светлана (NPC)       (90К, 1.5, 3, лоял +8)
  *      Плюс опция «Пока никого» — отказ.
+ *
+ *   3) Если игрок выбрал НЕ Светлану (или отказал вообще), через 3 недели
+ *      срабатывает событие «Светлана к Анне» — она устроилась к конкуренту,
+ *      часть клиентов уходит. Так выбор «брать ли её» становится осмысленным.
  *
  * Все параметры зашиты в hireEmployee-опции (см. EventOption.consequences),
  * создание Employee происходит в applyEventConsequence.
@@ -142,7 +147,7 @@ export const FIRST_HIRE_OPTIONS: EventTemplate = {
       text: '👨 Дальний родственник: 25 000 ₽/мес, без опыта' + SALARY_NOTE_SUFFIX,
       consequences: {
         balanceDelta: -3000,
-        loyaltyDelta: -3,  // первые недели клиенты чувствуют неловкость
+        loyaltyDelta: -3,
         hireEmployee: {
           position: 'assistant',
           salary: 25000,
@@ -151,90 +156,113 @@ export const FIRST_HIRE_OPTIONS: EventTemplate = {
           name: 'Андрей',
         },
       },
+      chainFollowUpId: 'svetlana_to_anna',
     },
-    // ── Студент: дёшево, средне, схватывает быстро ────────────────────
+    // ── Студент: дёшево, ещё учится ───────────────────────────────────
     {
       id: 'hire_student',
       text: '👨‍🎓 Студент, 3-й курс: 35 000 ₽/мес, подработка 4 ч/день' + SALARY_NOTE_SUFFIX,
       consequences: {
         balanceDelta: -4000,
-        loyaltyDelta: 0,  // нейтрально — молодой, но без явных косяков
+        loyaltyDelta: 0,
         hireEmployee: {
           position: 'assistant',
           salary: 35000,
-          efficiency: 0.95,
+          efficiency: 0.85,  // ещё учится, не всё схватывает с первого раза
           energyCost: 6,
           name: 'Никита',
         },
       },
+      chainFollowUpId: 'svetlana_to_anna',
+    },
+    // ── Дмитрий: середняк, обычный мужик после сокращения ─────────────
+    {
+      id: 'hire_friend',
+      text: '👨 Дмитрий, 38, после сокращения: 42 000 ₽/мес, без особых амбиций, надёжный' + SALARY_NOTE_SUFFIX,
+      consequences: {
+        balanceDelta: -5000,
+        loyaltyDelta: 1,
+        hireEmployee: {
+          position: 'assistant',
+          salary: 42000,
+          efficiency: 1.05,
+          energyCost: 7,
+          name: 'Дмитрий',
+        },
+      },
+      chainFollowUpId: 'svetlana_to_anna',
     },
     // ── Бывший профи: бизнес-специфичный (cafe) ───────────────────────
     {
       id: 'hire_pro_cafe',
-      text: '🍳 Сергей, повар из закрывшегося ресторана: 50 000 ₽/мес, 12 лет в общепите' + SALARY_NOTE_SUFFIX,
+      text: '🍳 Сергей, повар из закрывшегося ресторана: 55 000 ₽/мес, 12 лет в общепите' + SALARY_NOTE_SUFFIX,
       requiredBusinessTypes: ['cafe'],
       consequences: {
-        balanceDelta: -6000,
-        loyaltyDelta: 5,  // постоянники сразу замечают разницу в качестве
+        balanceDelta: -7000,
+        loyaltyDelta: 5,
         reputationDelta: 2,
         hireEmployee: {
           position: 'specialist',
-          salary: 50000,
+          salary: 55000,
           efficiency: 1.2,
           energyCost: 5,
           name: 'Сергей',
         },
       },
+      chainFollowUpId: 'svetlana_to_anna',
     },
     // ── Бывший профи: бизнес-специфичный (shop) ───────────────────────
     {
       id: 'hire_pro_shop',
-      text: '🏪 Алла, продавец из обанкротившегося «Магнита»: 50 000 ₽/мес, 10 лет на кассе' + SALARY_NOTE_SUFFIX,
+      text: '🏪 Алла, продавец из обанкротившегося «Магнита»: 55 000 ₽/мес, 10 лет на кассе' + SALARY_NOTE_SUFFIX,
       requiredBusinessTypes: ['shop'],
       consequences: {
-        balanceDelta: -6000,
+        balanceDelta: -7000,
         loyaltyDelta: 5,
         reputationDelta: 2,
         hireEmployee: {
           position: 'specialist',
-          salary: 50000,
+          salary: 55000,
           efficiency: 1.2,
           energyCost: 5,
           name: 'Алла',
         },
       },
+      chainFollowUpId: 'svetlana_to_anna',
     },
     // ── Бывший профи: бизнес-специфичный (salon) ──────────────────────
     {
       id: 'hire_pro_salon',
-      text: '💇 Лариса, парикмахер из закрытого салона: 50 000 ₽/мес, своя клиентура с прошлого места' + SALARY_NOTE_SUFFIX,
+      text: '💇 Лариса, парикмахер из закрытого салона: 55 000 ₽/мес, своя клиентура с прошлого места' + SALARY_NOTE_SUFFIX,
       requiredBusinessTypes: ['beauty-salon'],
       consequences: {
-        balanceDelta: -6000,
+        balanceDelta: -7000,
         loyaltyDelta: 5,
         reputationDelta: 2,
-        clientModifier: 0.10,  // часть постоянников переходит вместе с ней
+        clientModifier: 0.10,
         clientModifierDays: 28,
         hireEmployee: {
           position: 'specialist',
-          salary: 50000,
+          salary: 55000,
           efficiency: 1.2,
           energyCost: 5,
           name: 'Лариса',
         },
       },
+      chainFollowUpId: 'svetlana_to_anna',
     },
     // ── Светлана: дорого, лучший вариант, реальный NPC ────────────────
+    // НЕТ chainFollowUpId — если выбрали её, события «ушла к Анне» не будет.
     {
       id: 'hire_svetlana',
-      text: '⭐ Светлана, 35, опыт продаж: 70 000 ₽/мес, готова брать управление',
+      text: '⭐ Светлана, 35, опыт продаж: 90 000 ₽/мес, готова брать управление',
       consequences: {
-        balanceDelta: -9000,
-        loyaltyDelta: 8,  // личность + долгий опыт работы с клиентами
+        balanceDelta: -12000,
+        loyaltyDelta: 8,
         reputationDelta: 3,
         hireEmployee: {
           position: 'manager',
-          salary: 70000,
+          salary: 90000,
           efficiency: 1.5,
           energyCost: 3,
           name: 'Светлана',
@@ -249,8 +277,46 @@ export const FIRST_HIRE_OPTIONS: EventTemplate = {
       text: 'Пока никого — справлюсь сам',
       consequences: {
         reputationDelta: -1,
-        loyaltyDelta: -2,  // одиночное обслуживание = ниже качество, постоянники недовольны
+        loyaltyDelta: -2,
       },
+      chainFollowUpId: 'svetlana_to_anna',
+    },
+  ],
+}
+
+/**
+ * Светлана у конкурента — последствие отказа от её найма.
+ * Срабатывает через 3 недели после first_hire_options (если игрок выбрал
+ * не Светлану или вообще отказал). Реализовано через chainFollowUpId на
+ * ВСЕХ не-Светлана опциях first_hire_options.
+ *
+ * Эффекты:
+ *  • clientModifier −0.08 на 42 дня — её клиенты переходят к Анне
+ *  • reputation −2 — в районе говорят «отличного человека упустили»
+ *  • Светлана revealed с relationship 35 (стартовые 60 минус 25) — она
+ *    больше не нейтральна, могут быть событийные последствия позже
+ */
+export const SVETLANA_TO_ANNA: EventTemplate = {
+  id: 'svetlana_to_anna',
+  title: 'Анна объявила о новой управляющей',
+  description:
+    'Через четыре дня — пост в районном чате от Анны. Селфи на фоне её точки, рядом знакомое лицо. «Рада представить новую управляющую — Светлана О., 10 лет в продажах». 47 реакций. К концу недели у вас стало чуть тише — пара постоянников зашли, кивнули, ничего не купили, ушли. Один написал в ВК: «А правда что у Анны теперь Света? Я туда».',
+  trigger: {
+    dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true,
+    chainId: 'first_hire',
+    chainStep: 2,
+  },
+  npcId: 'svetlana',
+  options: [
+    {
+      id: 'accept_loss',
+      text: 'Бывает. Поработаем дальше',
+      consequences: {
+        reputationDelta: -2,
+        clientModifier: -0.08,
+        clientModifierDays: 42,
+      },
+      npcRelationshipDelta: -25,  // 60 → 35 — больше не нейтральна
     },
   ],
 }

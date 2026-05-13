@@ -4,13 +4,15 @@ import type { EventTemplate } from '../types/game'
 // chainId + chainStep identify the event's position in its narrative arc.
 // chainFollowUpId on each option tells the engine which event fires next.
 
-import { FIRST_HIRE_OPTIONS } from './firstHireEvents'
+import { FIRST_HIRE_OPTIONS, SVETLANA_TO_ANNA } from './firstHireEvents'
 
 export const CHAIN_EVENTS: EventTemplate[] = [
   // first_hire — чейн «Первый сотрудник», запускается из SOLO_OVERLOAD_EVENTS.
   // Не имеет chain start event (не появляется сам через triggerNewChainStarts),
   // только как follow-up из overload-события.
   FIRST_HIRE_OPTIONS,
+  // Последствие отказа от Светланы — она уходит к конкуренту через 3 недели.
+  SVETLANA_TO_ANNA,
 
 
   // ── CHAIN 1: Михаил в кризисе (mikhail_crisis) ─────────────────────────────
@@ -735,6 +737,8 @@ export const CHAIN_FOLLOWUP_DELAY: Record<string, number> = {
   // first_hire — между overload-событием и выбором кандидата должно
   // пройти ~неделю-полторы (объявления, собеседования). Реалистично.
   first_hire_options: 2,
+  // Светлана к Анне — через 3 недели после отказа от её найма
+  svetlana_to_anna: 3,
   // Гена: появляется примерно раз в 8 недель, финал ~13 недель
   // после 4-го эпизода — лотерея ложится на нед. 47-49.
   gena_arc_2: 8,
