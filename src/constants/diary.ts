@@ -198,62 +198,89 @@ export const DIARY_ENTRIES: DiaryEntry[] = [
     }),
   },
 
-  // ── Goal-specific reflections (v5.3) ───────────────────────────────
-  // Parent renovation — a small but persistent weight
+  // ── Goal-specific reflections — обновлены под новый сет мотиваций (v5.4) ──
+  // close_debt — кредитка, висящая с 2022-го. Тихий, личный груз.
   {
-    id: 'diary_goal_parent_call',
+    id: 'diary_goal_debt_balance_check',
     specificity: 6,
-    matches: (s) => s.personalGoal?.id === 'parent_reno' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    matches: (s) => s.personalGoal?.id === 'close_debt' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
     compose: (s) => ({
       header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Позвонили домой. Папа сказал, в ванной снова капает — «труба немного, несущественно». Положил трубку. Открыл сайт ремонтных бригад. Закрыл. Пока рано. Но не совсем рано.',
+      body: 'Открыл приложение банка. Долг по кредитке — 312 000. Прокрутил историю платежей за полгода: 35 тысяч ушло, тело уменьшилось на семь. Закрыл приложение. Открыл управленческий отчёт. Считаю, сколько недель.',
     }),
   },
   {
-    id: 'diary_goal_parent_estimate',
+    id: 'diary_goal_debt_partial',
     specificity: 6,
-    matches: (s) => s.personalGoal?.id === 'parent_reno' && s.currentWeek >= 18 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    matches: (s) => s.personalGoal?.id === 'close_debt' && s.currentWeek >= 18 && !s.personalGoal.achieved && !s.personalGoal.missed,
     compose: (s) => ({
       header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Прислали смету из бригады — мама сфотографировала и отправила в вотсапе. Смотришь на цифры, прикидываешь. Реально. Если продолжить в том же темпе — реально.',
+      body: 'Перевёл 60 тысяч в счёт основного долга. Не зарплата за месяц — просто перевод. Банк прислал «Остаток 250 000». Цифра. Без эмоций. Это и есть прогресс — когда цифра становится просто цифрой.',
     }),
   },
-  // Katya's deposit — quiet countdown to her fresh start
+  // brother_tuition — оплата института младшего. Близкие.
   {
-    id: 'diary_goal_katya_photo',
+    id: 'diary_goal_brother_schedule',
     specificity: 6,
-    matches: (s) => s.personalGoal?.id === 'katya_deposit' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    matches: (s) => s.personalGoal?.id === 'brother_tuition' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
     compose: (s) => ({
       header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Катя прислала фото — квартира на Советской, третий этаж, вид во двор. «Вот такая. Хозяйка нормальная». Сохранили в телефон. Считаете недели.',
-    }),
-  },
-  {
-    id: 'diary_goal_katya_viewing',
-    specificity: 6,
-    matches: (s) => s.personalGoal?.id === 'katya_deposit' && s.currentWeek >= 22 && !s.personalGoal.achieved && !s.personalGoal.missed,
-    compose: (s) => ({
-      header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Съездили с Катей смотреть квартиру — формально она уже решила, просто хотела, чтобы кто-то был рядом. На кухне дочка спросила: «А тут мы будем жить?» Катя ответила: «Посмотрим». Оба понимают, что посмотрит в первую очередь цифра.',
-    }),
-  },
-  // Courtyard — the trees are still there, for now
-  {
-    id: 'diary_goal_courtyard_walk',
-    specificity: 6,
-    matches: (s) => s.personalGoal?.id === 'courtyard_save' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
-    compose: (s) => ({
-      header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Прошли через двор вечером. Берёзы стоят, лавочки на месте. Детский голос где-то из-за угла. Всё как обычно — пока. Комиссия соберётся через полтора месяца.',
+      body: 'Брат прислал скрин расписания — серьёзный такой, со списком предметов на семестр. Подписал: «спасибо, не подведу». Хорошо, что не «не подведу тебя». Когда младший хочет доказать сам себе — это надёжнее благодарности.',
     }),
   },
   {
-    id: 'diary_goal_courtyard_lawyer',
+    id: 'diary_goal_brother_advance',
     specificity: 6,
-    matches: (s) => s.personalGoal?.id === 'courtyard_save' && s.currentWeek >= 20 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    matches: (s) => s.personalGoal?.id === 'brother_tuition' && s.currentWeek >= 20 && !s.personalGoal.achieved && !s.personalGoal.missed,
     compose: (s) => ({
       header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Юрист из инициативной группы сказал: «Шансы есть, если подадим полный пакет до пятницы». Я перевела часть суммы. Он сказал спасибо. Я сказала — за дело.',
+      body: 'Перевёл аванс за семестр — 80 тысяч. Брат позвонил подтвердить, говорил быстро, смущённо. Сказал не «спасибо», а «считаю, что должен». Это вернее благодарности.',
+    }),
+  },
+  // own_apartment — первый взнос на свою квартиру, личное будущее.
+  {
+    id: 'diary_goal_apartment_visit',
+    specificity: 6,
+    matches: (s) => s.personalGoal?.id === 'own_apartment' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    compose: (s) => ({
+      header: `Дневник · Неделя ${s.currentWeek}`,
+      body: 'Съездили посмотреть студию ещё раз. Подъезд старый, но чистый. С 18-го этажа видно всё до Камы. Кухня шесть метров — спросил соседку напротив, можно ли поставить компактный гарнитур, та засмеялась: «Так и поставите». Молчит, потом: «Сами хозяин будете — поставите как хотите». Сами хозяин. Странно звучит, но правильно.',
+    }),
+  },
+  {
+    id: 'diary_goal_apartment_calc',
+    specificity: 6,
+    matches: (s) => s.personalGoal?.id === 'own_apartment' && s.currentWeek >= 20 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    compose: (s) => ({
+      header: `Дневник · Неделя ${s.currentWeek}`,
+      body: 'Залез в ипотечный калькулятор банка. 4.6 миллиона на 20 лет под 9.8% — платёж 43 тысячи в месяц. Тяжеловато, но реально, если бизнес идёт. Откладываю 80 тысяч в месяц — ещё четыре месяца до взноса. Закрыл калькулятор. Открыл управленческий отчёт.',
+    }),
+  },
+
+  // ── Подвод к найму второго (Спринт 5e) ─────────────────────────────
+  // На W17-18 — игрок задумывается о расширении штата. Две версии:
+  // если уже нанимал кого-то и если до сих пор solo. Через 1-2 недели
+  // (W19) приходит Михаил с рекомендацией про племянницу. На W20
+  // появляется сама Светлана (svetlana_intro).
+  // Дневник срабатывает в недели, кратные 5. Самое близкое к svetlana_intro
+  // (W20) — это W15. 5 недель форы хватает на: дневник W15 → Михаил W19 →
+  // Светлана W20.
+  {
+    id: 'diary_pre_svetlana_with_team',
+    specificity: 7,
+    matches: (s) => s.currentWeek === 15 && (s.employees?.length ?? 0) > 0,
+    compose: (s) => ({
+      header: `Дневник · Неделя ${s.currentWeek}`,
+      body: 'Один сотрудник вытягивает смену, но я тяну всё остальное: закупки, бухгалтерия, переговоры, ремонт когда сломается. Вечером сижу с тетрадкой — третий раз за месяц забыл оплатить интернет. Кажется, нужен кто-то, кто будет не на смене, а в голове.',
+    }),
+  },
+  {
+    id: 'diary_pre_svetlana_solo',
+    specificity: 7,
+    matches: (s) => s.currentWeek === 15 && (s.employees?.length ?? 0) === 0,
+    compose: (s) => ({
+      header: `Дневник · Неделя ${s.currentWeek}`,
+      body: 'Никого так и не нанял из первой партии — справлялся сам, тянул как мог. Цифры неплохие, но я вижу — расти не получается. Один человек не может одновременно стоять у кассы и думать о развитии. Может, всё-таки уже пора?',
     }),
   },
 

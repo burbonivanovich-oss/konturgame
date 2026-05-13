@@ -4,10 +4,12 @@ import { PERSONAL_BACKSTORY_EVENTS } from '../constants/personalEvents'
 import { NPC_ARC_EVENTS } from '../constants/npcArcs'
 import { CRISIS_EVENTS } from '../constants/crisisEvents'
 import { FIRST_ENCOUNTER_EVENTS } from '../constants/firstEncounters'
+import { SOLO_OVERLOAD_EVENTS, MIKHAIL_RECOMMENDS_SVETLANA } from '../constants/firstHireEvents'
 import { getChainEvent, CHAIN_FOLLOWUP_DELAY } from '../constants/eventChains'
 import { RECURRING_CUSTOMER_EVENTS } from '../constants/recurringCustomers'
 import { NPC_EVENTS } from '../constants/npcEvents'
-import { applyRelationshipDeltaToState } from './npcManager'
+import { applyRelationshipDeltaToState, revealNPC } from './npcManager'
+import { createEmployee, EMPLOYEE_BUSINESS_LABELS } from '../constants/employees'
 
 export const EVENTS_DATABASE: EventTemplate[] = [
   {
@@ -856,6 +858,8 @@ export function generateEvent(day: number, state: GameState): Event | null {
   const allTemplates = [
     ...EVENTS_DATABASE,
     ...FIRST_ENCOUNTER_EVENTS,
+    ...SOLO_OVERLOAD_EVENTS,
+    MIKHAIL_RECOMMENDS_SVETLANA,
     ...MORAL_DILEMMA_EVENTS,
     ...RECURRING_CUSTOMER_EVENTS,
     ...NPC_EVENTS,
@@ -1003,6 +1007,92 @@ export function applyEventConsequence(
       state.temporaryModDaysLeft ?? 0,
       c.checkModifierDays ?? 1,
     )
+  }
+
+  // Service activation from first-encounter / pain events. UI path (MainScreen,
+  // MobileMainScreen) ALSO activates via store.activateService — но при
+  // прямом вызове (auto-resolve декшнов, тесты, NPC-цепочки) этот блок
+  // обеспечивает, что выбор «Подключить Контур.X» реально включает сервис.
+  if (c.serviceId && state.services?.[c.serviceId]) {
+    const service = state.services[c.serviceId]
+    if (!service.isActive) {
+      state.services[c.serviceId] = { ...service, isActive: true }
+    }
+    if (!(state.unlockedServices ?? []).includes(c.serviceId)) {
+      state.unlockedServices = [...(state.unlockedServices ?? []), c.serviceId]
+    }
+  }
+
+  // Найм сотрудника через событие (Спринт 5e). В отличие от ручного найма
+  // через HireEmployeeModal, тут параметры (efficiency, energyCost, ЗП)
+  // зашиты в опции — это конкретный кандидат с конкретной историей.
+  // Балансовое списание (стоимость найма / первый аванс) уже обработано
+  // через balanceDelta выше; здесь — только создание Employee.
+  // Увольнение сотрудника через событие — убираем по имени
+  if (c.fireEmployee?.name && state.employees) {
+    const targetName = c.fireEmployee.name
+    state.employees = state.employees.filter(e => e.name !== targetName)
+    if (!state.decisionLog) state.decisionLog = []
+    state.decisionLog.push({
+      week: state.currentWeek,
+      text: `Расстались: ${targetName}`,
+      type: 'choice',
+      impact: 'neutral',
+    })
+  }
+
+  if (c.hireEmployee) {
+    const h = c.hireEmployee
+    if (!state.employees) state.employees = []
+    const businessLabels = EMPLOYEE_BUSINESS_LABELS[state.businessType] ?? {}
+    const positionLabel = businessLabels[h.position] ?? h.position
+    // Используем createEmployee для генерации id, но переопределяем
+    // salary/efficiency/energyCost — они зашиты в кандидата (не базовые).
+    const baseDay = state.currentWeek * 7
+    const emp = createEmployee(h.position, baseDay, h.efficiency)
+    emp.salary = h.salary
+    emp.energyCost = h.energyCost
+    if (h.name) emp.name = h.name
+    if (h.growthRate !== undefined) emp.growthRate = h.growthRate
+    if (h.growthLimit !== undefined) emp.growthLimit = h.growthLimit
+    if (h.dislikesManager !== undefined) emp.dislikesManager = h.dislikesManager
+    if (h.growthLimitUnderManager !== undefined) emp.growthLimitUnderManager = h.growthLimitUnderManager
+    state.employees.push(emp)
+    // Если найм связан с NPC (например, Светлана) — раскрываем его.
+    if (h.linkNpcId && state.npcs) {
+      state.npcs = revealNPC(state.npcs, h.linkNpcId)
+    }
+    // Спринт 5e: реакция Светланы на состав команды при её найме.
+    //  • Если игрок был solo (только Светлана появилась) — она требует
+    //    дополнительного найма через 2 недели (svetlana_demands_hire).
+    //  • Если в команде есть Олег — через 4 недели начинается чейн
+    //    его проблем (oleg_trouble_1).
+    if (h.linkNpcId === 'svetlana' && h.position === 'manager') {
+      const teamWithoutHer = state.employees.filter(e => e.name !== 'Светлана')
+      const wasSolo = teamWithoutHer.length === 0
+      const hasOleg = teamWithoutHer.some(e => e.name === 'Олег')
+      if (!state.pendingChainFollowUps) state.pendingChainFollowUps = []
+      if (wasSolo) {
+        state.pendingChainFollowUps.push({
+          chainEventId: 'svetlana_demands_hire',
+          triggerWeek: state.currentWeek + 2,
+        })
+      }
+      if (hasOleg) {
+        state.pendingChainFollowUps.push({
+          chainEventId: 'oleg_trouble_1',
+          triggerWeek: state.currentWeek + 4,
+        })
+      }
+    }
+    // Косметика: подпись наёма в лог, чтобы игрок видел кого взял
+    if (!state.decisionLog) state.decisionLog = []
+    state.decisionLog.push({
+      week: state.currentWeek,
+      text: `Наняли: ${emp.name} (${positionLabel}, ${emp.salary.toLocaleString('ru-RU')} ₽/мес)`,
+      type: 'choice',
+      impact: 'positive',
+    })
   }
 
   // NPC relationship delta — anchors large decisions, converts overflow to XP

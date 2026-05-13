@@ -3,16 +3,19 @@ import { useGameStore } from '../stores/gameStore'
 import { SYNERGIES_CONFIG } from '../constants/business'
 import { ONBOARDING_STAGE_LABELS } from '../constants/onboarding'
 import type { OnboardingStage } from '../types/game'
-import { K } from './design-system/tokens'
+import { K, PRODUCT_COLORS } from './design-system/tokens'
 
+// Бренд-цвета каждого продукта Контура — из фирменных иконок (PRODUCT_COLORS).
+// Синхронизировано с DesktopKontur.tsx: один и тот же сервис подсвечивается
+// одним цветом во всех точках UI.
 const SERVICE_COLORS: Record<string, string> = {
-  market: K.orange,
-  bank: K.blue,
-  ofd: K.violet,
-  diadoc: K.mint,
-  fokus: K.orange,
-  elba: K.blue,
-  extern: K.mint,
+  market: PRODUCT_COLORS.market,
+  bank:   PRODUCT_COLORS.bank,
+  ofd:    PRODUCT_COLORS.ofd,
+  diadoc: PRODUCT_COLORS.diadoc,
+  fokus:  PRODUCT_COLORS.fokus,
+  elba:   PRODUCT_COLORS.elba,
+  extern: PRODUCT_COLORS.extern,
 }
 
 const SERVICE_ICONS: Record<string, string> = {
@@ -25,9 +28,9 @@ const SERVICE_ICONS: Record<string, string> = {
   extern: '⚖️',
 }
 
-// When each locked service unlocks
+// When each locked service unlocks (must match SERVICE_UNLOCK_MAP).
 const SERVICE_UNLOCK_STAGE: Record<string, OnboardingStage> = {
-  bank: 0,
+  bank: 1,
   ofd: 1,
   market: 2,
   diadoc: 3,
@@ -153,7 +156,9 @@ export default function ServicePanel() {
             key={service.id}
             style={{
               background: service.isActive ? service.color : K.white,
-              color: service.isActive ? (service.color === K.orange || service.color === K.mint ? K.ink : '#fff') : K.ink,
+              // Контрастный текст: на оранжевом ОФД нужна тёмная типографика
+              // (светлый фон), на остальных продуктовых цветах — белая.
+              color: service.isActive ? (service.color === PRODUCT_COLORS.ofd ? K.ink : '#fff') : K.ink,
               borderRadius: 12, padding: 12, border: service.isActive ? 'none' : `1px solid ${K.line}`,
               display: 'flex', flexDirection: 'column', gap: 8,
               opacity: isUnlocked ? 1 : 0.5,

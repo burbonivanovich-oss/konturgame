@@ -389,4 +389,120 @@ describe('GameStore', () => {
       expect(updatedTime).toBeGreaterThanOrEqual(initialTime)
     })
   })
+
+  // Спринт 5e: resolveEventOption — UI-flow для всех consequences через
+  // единый пайплайн applyEventConsequence. Раньше UI обходил его руками
+  // и пропускал hireEmployee/fireEmployee/energyDelta.
+  describe('resolveEventOption (UI flow)', () => {
+    it('applies balanceDelta', () => {
+      const store = useGameStore.getState()
+      const initialBalance = store.balance
+      // Мокаем простое событие
+      useGameStore.setState({
+        pendingEvent: {
+          id: 'TEST_EVENT_1',
+          day: 7,
+          title: 'Test',
+          description: '',
+          options: [
+            { id: 'pay', text: 'Pay', consequences: { balanceDelta: -5000 } },
+          ],
+          isResolved: false,
+        },
+      })
+      useGameStore.getState().resolveEventOption('pay')
+      expect(useGameStore.getState().balance).toBe(initialBalance - 5000)
+    })
+
+    it('applies energyDelta (regression test for handleEventOption fix)', () => {
+      const store = useGameStore.getState()
+      const initialEnergy = store.entrepreneurEnergy
+      useGameStore.setState({
+        pendingEvent: {
+          id: 'TEST_EVENT_2',
+          day: 7,
+          title: 'Test',
+          description: '',
+          options: [
+            { id: 'tire', text: 'Tire', consequences: { energyDelta: -15 } },
+          ],
+          isResolved: false,
+        },
+      })
+      useGameStore.getState().resolveEventOption('tire')
+      expect(useGameStore.getState().entrepreneurEnergy).toBe(initialEnergy - 15)
+    })
+
+    it('creates Employee from hireEmployee consequence (regression test)', () => {
+      const initialEmployees = useGameStore.getState().employees.length
+      useGameStore.setState({
+        pendingEvent: {
+          id: 'TEST_EVENT_3',
+          day: 7,
+          title: 'Test',
+          description: '',
+          options: [
+            {
+              id: 'hire',
+              text: 'Hire',
+              consequences: {
+                hireEmployee: {
+                  position: 'assistant',
+                  salary: 30000,
+                  efficiency: 1.0,
+                  energyCost: 5,
+                  name: 'TestEmployee',
+                },
+              },
+            },
+          ],
+          isResolved: false,
+        },
+      })
+      useGameStore.getState().resolveEventOption('hire')
+      const state = useGameStore.getState()
+      expect(state.employees.length).toBe(initialEmployees + 1)
+      const hired = state.employees.find(e => e.name === 'TestEmployee')
+      expect(hired).toBeDefined()
+      expect(hired?.position).toBe('assistant')
+      expect(hired?.salary).toBe(30000)
+    })
+
+    it('removes Employee on fireEmployee consequence', () => {
+      // Сначала создаём сотрудника
+      useGameStore.setState((s) => ({
+        employees: [
+          ...s.employees,
+          {
+            id: 'test_emp',
+            position: 'assistant',
+            name: 'FireMe',
+            salary: 30000,
+            efficiency: 1.0,
+            hireDay: 1,
+            energyCost: 5,
+          },
+        ],
+      }))
+      useGameStore.setState({
+        pendingEvent: {
+          id: 'TEST_EVENT_4',
+          day: 7,
+          title: 'Test',
+          description: '',
+          options: [
+            {
+              id: 'fire',
+              text: 'Fire',
+              consequences: { fireEmployee: { name: 'FireMe' } },
+            },
+          ],
+          isResolved: false,
+        },
+      })
+      useGameStore.getState().resolveEventOption('fire')
+      const state = useGameStore.getState()
+      expect(state.employees.find(e => e.name === 'FireMe')).toBeUndefined()
+    })
+  })
 })

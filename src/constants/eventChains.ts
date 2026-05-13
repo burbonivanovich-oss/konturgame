@@ -4,7 +4,26 @@ import type { EventTemplate } from '../types/game'
 // chainId + chainStep identify the event's position in its narrative arc.
 // chainFollowUpId on each option tells the engine which event fires next.
 
+import {
+  FIRST_HIRE_OPTIONS,
+  SVETLANA_INTRO,
+  SVETLANA_DEMANDS_HIRE,
+  OLEG_TROUBLE_1,
+  OLEG_TROUBLE_2,
+  SVETLANA_TO_ANNA,
+} from './firstHireEvents'
+
 export const CHAIN_EVENTS: EventTemplate[] = [
+  FIRST_HIRE_OPTIONS,
+  SVETLANA_INTRO,
+  // Светлана требует второго сотрудника если её наняли в solo-команду.
+  // Автопланируется в applyEventConsequence через 2 недели после её найма.
+  SVETLANA_DEMANDS_HIRE,
+  // Олег скисает под Светланой — двухступенчатый чейн увольнения.
+  OLEG_TROUBLE_1,
+  OLEG_TROUBLE_2,
+  SVETLANA_TO_ANNA,
+
 
   // ── CHAIN 1: Михаил в кризисе (mikhail_crisis) ─────────────────────────────
   // Trigger: week 3–5. Михаил просит предоплату — у него семейные проблемы.
@@ -88,27 +107,29 @@ export const CHAIN_EVENTS: EventTemplate[] = [
   },
 
   // ── CHAIN 2: Рост Светланы (svetlana_growth) ────────────────────────────────
-  // Trigger: week 6–9. Светлана хочет учиться — инвестируй или потеряй.
+  // Trigger: ~W28-33 (через 6-8 недель после svetlana_intro на W20). К этому
+  // моменту видны её результаты — есть нарративный фундамент под «хочу
+  // расти ещё».
   {
     id: 'svetlana_growth_1',
     title: 'Светлана хочет учиться',
-    description: 'Светлана Орлова — ваш лучший продавец — попросила поговорить. "Я нашла курсы по управлению продажами, 15 000 ₽. Если вы оплатите, я останусь здесь и применю всё у вас. Если нет — мне сделали предложение в другом месте. Решайте."',
-    trigger: { dayMin: 42, dayMax: 63, randomChance: 1.0, oneTime: true, chainId: 'svetlana_growth', chainStep: 1 },
+    description: 'Светлана уже несколько недель в команде — и видно, как точка ожила. После закрытия осталась поговорить, мнётся.\n\n«Слушайте, я нашла курсы по управлению продажами, 15 тысяч. Мне очень хочется попробовать — и я бы применила всё здесь, у вас. Я не давлю, просто чтобы вы знали: мне сделали предложение в одном месте на районе, надо ответить до конца месяца. Я бы хотела остаться, если есть смысл вкладываться в моё обучение. Но решение ваше — я пойму любой ответ.»',
+    trigger: { dayMin: 196, dayMax: 231, randomChance: 1.0, oneTime: true, chainId: 'svetlana_growth', chainStep: 1 },
     npcId: 'svetlana',
-    decisionDeadlineWeeks: 1,
+    decisionDeadlineWeeks: 2,
     options: [
       {
         id: 'invest',
-        text: 'Оплатить курсы (−15 000 ₽)',
+        text: 'Оплатить курсы (−15 000 ₽) — она того стоит',
         consequences: { balanceDelta: -15000 },
         npcRelationshipDelta: 15,
         chainFollowUpId: 'svetlana_growth_2a',
       },
       {
         id: 'refuse',
-        text: 'Отказать ("Это твои инвестиции")',
+        text: 'Сейчас не потянем — пусть копит сама, потом обсудим',
         consequences: {},
-        npcRelationshipDelta: -15,
+        npcRelationshipDelta: -10,
         chainFollowUpId: 'svetlana_growth_2b',
       },
     ],
@@ -116,14 +137,14 @@ export const CHAIN_EVENTS: EventTemplate[] = [
 
   {
     id: 'svetlana_growth_2a',
-    title: 'Светлана вернулась с результатами',
-    description: 'Три недели спустя Светлана вышла на работу другим человеком. Перестроила выкладку, обучила двух коллег, привела троих постоянных клиентов от подруг. "Я никуда не ухожу. Хочу вырасти здесь — и помочь вам вырасти тоже."',
+    title: 'Светлана вернулась с курсов',
+    description: 'Три недели спустя Светлана вышла на работу другим человеком. Перестроила выкладку, обучила двух коллег, привела троих постоянных клиентов от подруг. На вашу благодарность только смущённо: «Я просто хочу, чтобы у нас тут было хорошо. Никуда я не ухожу».',
     trigger: { dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true, chainId: 'svetlana_growth', chainStep: 2 },
     npcId: 'svetlana',
     options: [
       {
         id: 'great',
-        text: 'Поблагодарить и дать ей больше ответственности',
+        text: 'Дать ей больше ответственности — она готова',
         consequences: { clientModifier: 0.08, clientModifierDays: 42, loyaltyDelta: 12 },
         npcRelationshipDelta: 10,
       },
@@ -132,16 +153,16 @@ export const CHAIN_EVENTS: EventTemplate[] = [
 
   {
     id: 'svetlana_growth_2b',
-    title: 'Светлана ушла',
-    description: 'Светлана пришла утром, собрала вещи и ушла. Молча. Через неделю вы видите её в новом кафе напротив. Оно открылось только что — там написано "Анна Козлова, управляющий". Ваши клиенты замечают, что обслуживание стало хуже.',
+    title: 'Светлана попрощалась',
+    description: 'Через две недели подошла после смены. «Я приняла то предложение — извините, надо двигаться». Поблагодарила за время и тёплое отношение. Через месяц увидели её в инсте — фото из новой команды на районе, улыбается. Пара постоянников ещё несколько недель спрашивают «а где та девушка?».',
     trigger: { dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true, chainId: 'svetlana_growth', chainStep: 2 },
     npcId: 'svetlana',
     options: [
       {
         id: 'accept',
-        text: 'Начать поиск нового сотрудника',
-        consequences: { clientModifier: -0.15, clientModifierDays: 21, loyaltyDelta: -8 },
-        npcRelationshipDelta: -15,
+        text: 'Пожать ей руку и пожелать удачи',
+        consequences: { clientModifier: -0.08, clientModifierDays: 28, loyaltyDelta: -4 },
+        npcRelationshipDelta: -5,
       },
     ],
   },
@@ -688,19 +709,29 @@ export const CHAIN_EVENTS: EventTemplate[] = [
 
 export const CHAIN_IDS = [
   'mikhail_crisis', 'svetlana_growth', 'inspector_chain', 'anna_war', 'legacy',
-  'tamara_arc', 'gena_arc',
+  'tamara_arc', 'gena_arc', 'first_hire', 'svetlana_intro',
 ] as const
 export type ChainId = typeof CHAIN_IDS[number]
 
-// Which week each chain's first event can trigger
+// Which week each chain's first event can trigger.
+// first_hire не имеет авто-старта — запускается только из SOLO_OVERLOAD-события,
+// поэтому ставим заведомо большую неделю (52+), чтобы triggerNewChainStarts
+// никогда не пытался его запустить как обычный chain.
 export const CHAIN_TRIGGER_WEEKS: Record<ChainId, number> = {
   mikhail_crisis: 3,
-  svetlana_growth: 6,
+  // svetlana_growth (W28+) — стартует ПОСЛЕ svetlana_intro (W20+).
+  // Гейтится в weekCalculator: чейн ждёт пока Светлана revealed И в employees.
+  svetlana_growth: 28,
   inspector_chain: 8,
   anna_war: 10,
   legacy: 15,
   tamara_arc: 8,
   gena_arc: 8,
+  first_hire: 999,
+  // svetlana_intro — стартует с W20 (раньше было W12, но к 12-й неделе
+  // игрок ещё не вышел на стабильный доход — 60К/мес Светланы душили).
+  // На W20 MID-стратегия даёт ~250-300К накоплений, её ЗП терпима.
+  svetlana_intro: 20,
 }
 
 // Delay in weeks before the follow-up fires after the triggering choice
@@ -721,6 +752,20 @@ export const CHAIN_FOLLOWUP_DELAY: Record<string, number> = {
   tamara_arc_2: 17,
   tamara_arc_3a: 15,
   tamara_arc_3b: 15,
+  // first_hire — между overload-событием и выбором кандидата должно
+  // пройти ~неделю-полторы (объявления, собеседования). Реалистично.
+  first_hire_options: 2,
+  // Светлана к Анне — через 3 недели после отказа от её найма
+  svetlana_to_anna: 3,
+  // Олег скисает — финальный косяк через неделю после первого предупреждения
+  oleg_trouble_2: 1,
+  // Светлана требует второго — обычно ставится напрямую в applyEventConsequence,
+  // но если вдруг попадает в pendingChainFollowUps через chainFollowUpId,
+  // лимит делёжки даём 2 недели как по умолчанию.
+  svetlana_demands_hire: 2,
+  // Олег под Светланой — расписание набора (если игрок выбирает Олега
+  // через svetlana_demands_hire, начинается цепочка проблем)
+  oleg_trouble_1: 4,
   // Гена: появляется примерно раз в 8 недель, финал ~13 недель
   // после 4-го эпизода — лотерея ложится на нед. 47-49.
   gena_arc_2: 8,

@@ -76,6 +76,7 @@ function DashboardView({
     pendingEvent, pendingEventsQueue, lastDayResult,
     entrepreneurEnergy, npcs, stockBatches, capacity, cashRegisters,
     businessType, businessTier, weeklyTactic, setWeeklyTactic,
+    burnoutWarningActive,
   } = store
 
   const bizConfig = BUSINESS_CONFIGS[businessType]
@@ -124,7 +125,8 @@ function DashboardView({
     market: 'Маркет', bank: 'Банк', ofd: 'ОФД',
     diadoc: 'Диадок', fokus: 'Фокус', elba: 'Эльба', extern: 'Экстерн',
   }
-  const serviceOrder: ServiceType[] = ['market', 'bank', 'ofd', 'extern', 'diadoc', 'fokus', 'elba']
+  // Спринт 5e: Экстерн скрыт из списка
+  const serviceOrder: ServiceType[] = ['market', 'bank', 'ofd', 'diadoc', 'fokus', 'elba']
 
   // Business stage (from main)
   const stage = getBusinessStage(currentWeek, businessTier)
@@ -168,26 +170,54 @@ function DashboardView({
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                {WEEKLY_TACTICS.map(t => (
-                  <button
-                    key={t.id}
-                    onClick={() => setWeeklyTactic(t.id)}
-                    style={{
-                      textAlign: 'left', padding: '10px 12px',
-                      background: K.bone, border: `1px solid ${K.lineSoft}`,
-                      borderRadius: 10, cursor: 'pointer',
-                      fontFamily: 'inherit',
-                      display: 'flex', flexDirection: 'column', gap: 4,
-                      transition: 'all 0.15s',
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = K.orange }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = K.lineSoft }}
-                  >
-                    <div style={{ fontSize: 18 }}>{t.icon}</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: K.ink }}>{t.title}</div>
-                    <div style={{ fontSize: 11, color: K.muted, lineHeight: 1.4 }}>{t.blurb}</div>
-                  </button>
-                ))}
+                {WEEKLY_TACTICS.map(t => {
+                  // Прогноз энергии на конец недели: грубо current + delta×7.
+                  // Не учитывает базовую trate бизнеса/сотрудников — это
+                  // намеренное упрощение: цифра показывает дельту тактики,
+                  // а не точный итог. Warning рисуется когда выбор тактики
+                  // ставит игрока в зону риска burnout.
+                  const weekDelta = Math.round(t.energyDelta * 7)
+                  const isRisky = t.id === 'aggressive' && (entrepreneurEnergy < 50 || burnoutWarningActive)
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => setWeeklyTactic(t.id)}
+                      style={{
+                        textAlign: 'left', padding: '10px 12px',
+                        background: K.bone,
+                        border: isRisky ? `1px solid ${K.bad}` : `1px solid ${K.lineSoft}`,
+                        borderRadius: 10, cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        display: 'flex', flexDirection: 'column', gap: 4,
+                        transition: 'all 0.15s',
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = isRisky ? K.bad : K.orange }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = isRisky ? K.bad : K.lineSoft }}
+                    >
+                      <div style={{ fontSize: 18 }}>{t.icon}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: K.ink }}>{t.title}</div>
+                      <div style={{ fontSize: 11, color: K.muted, lineHeight: 1.4 }}>{t.blurb}</div>
+                      <div style={{
+                        fontSize: 10, fontWeight: 700, marginTop: 4,
+                        color: weekDelta > 0 ? K.mint : weekDelta < 0 ? K.bad : K.muted,
+                      }}>
+                        {weekDelta > 0 ? '+' : ''}{weekDelta} энергии / нед
+                      </div>
+                      {isRisky && (
+                        <div style={{
+                          fontSize: 10, fontWeight: 800, color: K.bad,
+                          background: 'rgba(255,90,90,0.10)',
+                          borderRadius: 6, padding: '4px 6px', marginTop: 2,
+                          lineHeight: 1.3,
+                        }}>
+                          {burnoutWarningActive
+                            ? '⚠️ После 0 энергии — риск выгорания'
+                            : `⚠️ Энергии всего ${entrepreneurEnergy}`}
+                        </div>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           ) : (() => {
@@ -797,6 +827,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
     addChainFollowUp,
     addDecisionLogEntry,
     recordEventChoice,
+    resolveEventOption,
   } = useGameStore()
 
   const activeServiceIds = Object.values(services).filter(s => s.isActive).map(s => s.id)
@@ -817,48 +848,20 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
     if (!pendingEvent) return
     const option = pendingEvent.options.find((o) => o.id === optionId)
     if (!option) return
-    // Record the choice before applying consequences — used by achievements
-    // and the postmortem timeline.
-    recordEventChoice(pendingEvent.id, optionId)
     const c = option.consequences
-    if (c.balanceDelta !== undefined) addBalance(c.balanceDelta)
-    if (c.reputationDelta !== undefined) addReputation(c.reputationDelta)
-    if (c.loyaltyDelta !== undefined) addLoyalty(c.loyaltyDelta)
-    if (c.clientModifier !== undefined || c.checkModifier !== undefined) {
-      const cur = useGameStore.getState()
-      setTemporaryModifiers(
-        (cur.temporaryClientMod ?? 0) + (c.clientModifier ?? 0),
-        (cur.temporaryCheckMod ?? 0) + (c.checkModifier ?? 0),
-        Math.max(cur.temporaryModDaysLeft ?? 0, c.clientModifierDays ?? c.checkModifierDays ?? 1),
-      )
-    }
-    if (c.serviceId) activateService(c.serviceId)
 
-    // NPC relationship update
-    if (option.npcRelationshipDelta !== undefined && pendingEvent.npcId) {
-      storeUpdateNPCRelationship(pendingEvent.npcId, option.npcRelationshipDelta)
-    }
+    // Record choice before consequences — used by achievements / postmortem
+    recordEventChoice(pendingEvent.id, optionId)
 
-    // Chain follow-up scheduling
-    if (option.chainFollowUpId) {
-      const delay = CHAIN_FOLLOWUP_DELAY[option.chainFollowUpId] ?? 2
-      addChainFollowUp(option.chainFollowUpId, currentWeek + delay)
-    }
+    // ВСЕ consequences через единый пайплайн (incl. hireEmployee, fireEmployee,
+    // energyDelta, serviceId, npcRelationshipDelta, chainFollowUpId).
+    // Раньше тут был ручной subset, из-за чего first_hire/Светлана/Олег
+    // не работали через UI.
+    resolveEventOption(optionId)
 
-    // Log the decision
-    const logImpact = (c.balanceDelta ?? 0) > 0 || (c.reputationDelta ?? 0) > 0 || (c.loyaltyDelta ?? 0) > 0
-      ? 'positive'
-      : (c.balanceDelta ?? 0) < 0 || (c.reputationDelta ?? 0) < 0 || (c.loyaltyDelta ?? 0) < 0
-        ? 'negative'
-        : 'neutral'
-    addDecisionLogEntry({
-      week: currentWeek,
-      text: `${pendingEvent.title} → ${option.text}`,
-      type: pendingEvent.npcId ? 'npc' : pendingEvent.isMoralDilemma ? 'choice' : 'choice',
-      impact: logImpact as 'positive' | 'negative' | 'neutral',
-      npcId: pendingEvent.npcId,
-    })
+    // UI-only side effects ниже:
 
+    // Контур-опция → savings toast (расчёт vs альтернатив)
     if (option.isContourOption && c.balanceDelta !== undefined) {
       const nonKontour = pendingEvent.options.filter((o) => !o.isContourOption)
       if (nonKontour.length > 0) {
@@ -874,6 +877,21 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
         }
       }
     }
+
+    // Лог решения (summary в timeline)
+    const logImpact = (c.balanceDelta ?? 0) > 0 || (c.reputationDelta ?? 0) > 0 || (c.loyaltyDelta ?? 0) > 0
+      ? 'positive'
+      : (c.balanceDelta ?? 0) < 0 || (c.reputationDelta ?? 0) < 0 || (c.loyaltyDelta ?? 0) < 0
+        ? 'negative'
+        : 'neutral'
+    addDecisionLogEntry({
+      week: currentWeek,
+      text: `${pendingEvent.title} → ${option.text}`,
+      type: pendingEvent.npcId ? 'npc' : 'choice',
+      impact: logImpact as 'positive' | 'negative' | 'neutral',
+      npcId: pendingEvent.npcId,
+    })
+
     markEventAsResolved(pendingEvent.id)
   }
 

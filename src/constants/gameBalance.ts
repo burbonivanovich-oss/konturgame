@@ -97,9 +97,10 @@ export const PAIN_LOSSES = {
 } as const
 
 // Bank: payment ratio when bank service is inactive.
-// Спринт 5: 0.6 → 0.75. Без эквайринга 25% клиентов уходят (раньше 40%).
-// Это соответствует claim «без сервисов можно играть, но тяжело».
+// Спринт 5b: 0.75 → 0.70. Без эквайринга 30% клиентов уходят.
+// Это «тяжело без банка», но по-прежнему играбельно. 0.75 был слишком
+// мягким — без сервисов выигрывалось как с ними.
 export const BANK_PAYMENT_RATIO = {
   WITH_BANK: 1.0,
-  WITHOUT_BANK: 0.75,
+  WITHOUT_BANK: 0.70,
 } as const

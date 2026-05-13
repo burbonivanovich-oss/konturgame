@@ -24,7 +24,7 @@ export const TUTORIAL_MOMENTS: TutorialMoment[] = [
     id: 'tactic-chooser',
     icon: '🎯',
     title: 'Тактика на неделю',
-    body: 'Каждую неделю выбирайте фокус — он влияет на всю неделю целиком.\n\n• Активная: +20% выручки, но −2 энергии/день\n• Спокойная: −8% выручки, +2 энергии/день\n• Качество: −5% выручки, но +0.5 репутации и +1 лояльности/день\n\nЕсли не выбрать — −5% выручки за рассеянность.',
+    body: 'Каждую неделю выбирайте фокус — он влияет на всю неделю целиком.\n\n• 🔥 Активная: +18% выручки, но −9 энергии/нед, −1.4 репутации, −1 лояльности\n• 🌿 Спокойная: −3% выручки, +17 энергии/нед, +0.7 репутации\n• ⭐ Качество: без штрафа к выручке, +5.6 репутации и +3.5 лояльности/нед\n\nЕсли не выбрать — −5% выручки за рассеянность.',
     shouldShow: (s) =>
       (s.currentWeek ?? 1) === 1 &&
       (s.dayOfWeek ?? 0) >= 1 &&
@@ -73,11 +73,44 @@ export const TUTORIAL_MOMENTS: TutorialMoment[] = [
     targetNav: 'development',
     ctaLabel: 'К уровням',
     shouldShow: (s) => {
-      // Inline check: don't import canUpgradeTier to avoid circular dep
       const tier = s.businessTier ?? 1
       if (tier >= 3) return false
-      // Crude condition: weeks 12+ and balance > 200K and rep > 60
       return (s.currentWeek ?? 1) >= 12 && (s.balance ?? 0) > 200_000 && (s.reputation ?? 0) >= 60
+    },
+  },
+  // Спринт 5e: новые моменты для механик, которые не объясняются явно.
+  {
+    id: 'fiscal-drive-purchased',
+    icon: '🧾',
+    title: 'Фискальный накопитель',
+    body: 'К первой кассе докупили фискальный накопитель (+8 000 ₽).\n\nЭто обязательное по 54-ФЗ устройство — оно подписывает каждый чек электронной подписью и хранит данные для ФНС. Без него ОФД не может передавать чеки, и был бы штраф 10 000 ₽ за каждую продажу.\n\nРеальная вещь, не игровая абстракция.',
+    shouldShow: (s) =>
+      s.fiscalDriveOwned === true &&
+      (s.cashRegisters?.length ?? 0) >= 1 &&
+      (s.currentWeek ?? 1) <= 6,
+  },
+  {
+    id: 'svetlana-manager-boost',
+    icon: '⭐',
+    title: 'Светлана разгрузила вас',
+    body: 'Светлана как управленец усиливает всю команду:\n\n• +25% к эффективности обычных сотрудников (Никита, Олег, Андрей)\n• +40% к специалистам (бывшие профи: Сергей/Алла/Лариса)\n\nПлюс она берёт часть рутинных вопросов на себя — у вас тратится меньше энергии в неделю.\n\nПочему так? Она разруливает в смены поставщиков, договорённости, текучку — то, что раньше тащили вы.',
+    shouldShow: (s) =>
+      (s.employees ?? []).some(e => e.name === 'Светлана' && e.position === 'manager') &&
+      (s.currentWeek ?? 0) <= ((s.employees ?? []).find(e => e.name === 'Светлана')?.hireDay ?? 0) / 7 + 2,
+  },
+  {
+    id: 'oleg-svetlana-friction',
+    icon: '⚠️',
+    title: 'Олег и Светлана не сработались',
+    body: 'Олег плохо переносит управление в команде. Когда есть менеджер (Светлана), он:\n\n• Работает на 10% хуже («давят сверху»)\n• Скисает быстрее обычного — может скатиться до 0.75 эффективности (вместо обычных 0.9)\n\nЕсли видите его прогулы и косяки — скоро прилетит событие с предложением расстаться. Через 4 недели после прихода Светланы.',
+    shouldShow: (s) => {
+      const hasSvetlana = (s.employees ?? []).some(e => e.name === 'Светлана' && e.position === 'manager')
+      const hasOleg = (s.employees ?? []).some(e => e.name === 'Олег')
+      if (!hasSvetlana || !hasOleg) return false
+      // Show within 2 weeks of Svetlana hire (when player has just both)
+      const svetlanaHireDay = (s.employees ?? []).find(e => e.name === 'Светлана')?.hireDay ?? 0
+      const weeksSince = ((s.currentWeek ?? 0) * 7 - svetlanaHireDay) / 7
+      return weeksSince >= 0 && weeksSince <= 2
     },
   },
 ]

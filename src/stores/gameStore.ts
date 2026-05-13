@@ -11,6 +11,7 @@ import { CASH_REGISTER_CONFIGS, REGISTER_COMBO_DISCOUNTS } from '../constants/ca
 import { getDefaultCategories } from '../services/assortmentEngine'
 import { createEmployee } from '../constants/employees'
 import { checkWeekBlocked, processWeek } from '../services/weekCalculator'
+import { applyEventConsequence } from '../services/eventGenerator'
 import { getBusinessStage, STAGE_CONFIG } from '../constants/businessStages'
 import { OWNER_INVESTMENTS_MAP } from '../constants/ownerInvestments'
 import type { OwnerInvestmentId } from '../constants/ownerInvestments'
@@ -64,6 +65,7 @@ const createInitialState = (businessType: BusinessType): GameState => {
     lastDayResult: null,
     pendingEvent: null,
     pendingEventsQueue: [],
+    deferredEvents: [],
     triggeredEventIds: [],
 
     isGameOver: false,
@@ -102,6 +104,7 @@ const createInitialState = (businessType: BusinessType): GameState => {
 
     // Cash registers
     cashRegisters: [],
+    fiscalDriveOwned: false,
 
     // Assortment
     enabledCategories: getDefaultCategories(businessType),
@@ -235,6 +238,13 @@ interface GameStoreActions {
   // Events
   setPendingEvent: (event: Event | null) => void
   markEventAsResolved: (eventId: string) => void
+  deferEvent: () => void
+  // Применить consequences опции через единый пайплайн applyEventConsequence.
+  // Был баг — UI MainScreen/MobileMainScreen вручную обрабатывали только
+  // subset consequences (balanceDelta/reputationDelta/loyaltyDelta/etc.),
+  // молча игнорируя hireEmployee, fireEmployee, energyDelta. Из-за этого
+  // first_hire / Svetlana / Oleg-арки не работали при resolve через клик.
+  resolveEventOption: (optionId: string) => void
   // Record which option the player picked for an event — feeds achievements
   // + postmortem timeline. Idempotent; first choice wins per event id.
   recordEventChoice: (eventId: string, choiceId: string) => void
@@ -446,9 +456,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // Sustained overwork with many employees will gradually drain energy to 0.
       const currentEnergy = get().entrepreneurEnergy
       const restoredEnergy = Math.min(
-        // Спринт 5: 40 → 48. Выгорание возможно при упорной aggressive
-        // тактике, но не неизбежно. Целевой win rate ~55%.
-        currentEnergy + 48 + weeklyBonus,
+        // Спринт 5b: 42. С базовой стоимостью (shop/salon 35 = 20+15 solo,
+        // cafe 42 = 27+15) + aggressive -7/нед + микрособытий (-1.5/нед):
+        //   • shop/salon solo+aggressive: 35+7-42 = 0, -1.5 с микро →
+        //     устойчивы при aggressive, риск к концу года.
+        //   • cafe solo+aggressive: 42+7-42 = 7/нед нетто, -8.5 с микро
+        //     → выгорание к W12-15 — общепит выматывает быстрее.
+        //   • calm/service во всех типах остаются устойчивы.
+        currentEnergy + 42 + weeklyBonus,
         ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY
       )
 
@@ -720,6 +735,43 @@ export const useGameStore = create<GameStore>((set, get) => ({
           pendingEventsQueue: queue.slice(1),
           // Когда последнее событие разрешено в фазе events — идём в
           // simulation (анимация недели), а не сразу в results.
+          weekPhase: (allCleared && state.weekPhase === 'events' ? 'simulation' : state.weekPhase) as WeekPhase,
+          lastUpdated: Date.now(),
+        }
+      })
+    },
+
+    // Унифицированный resolve опции — применяет ВСЕ consequences через
+    // applyEventConsequence (incl. hireEmployee, fireEmployee, energyDelta,
+    // serviceId, npcRelationshipDelta, chainFollowUpId). UI должен ВСЕГДА
+    // вызывать этот action вместо ручной обработки полей consequences.
+    resolveEventOption: (optionId) => {
+      set((state) => {
+        if (!state.pendingEvent) return state
+        const stateCopy = JSON.parse(JSON.stringify(extractState(state))) as GameState
+        applyEventConsequence(stateCopy, stateCopy.pendingEvent!, optionId)
+        return { ...stateCopy, lastUpdated: Date.now() }
+      })
+    },
+
+    // «Подумаю позже» — откладывает текущее событие на следующую неделю.
+    // На следующей неделе событие появится снова с флагом wasDeferred=true,
+    // и кнопка отсрочки уже не отрисуется — игрок обязан принять решение.
+    // Если у события есть decisionDeadlineWeek и срок истечёт во время
+    // отсрочки, autoResolveExpiredDecisions сам резолвит его дефолтной
+    // опцией (первая не-Контур или первая) — это сознательная цена отсрочки.
+    deferEvent: () => {
+      set((state) => {
+        if (!state.pendingEvent) return state
+        const deferred: Event = { ...state.pendingEvent, wasDeferred: true }
+        const queue = state.pendingEventsQueue ?? []
+        const nextEvent = queue.length > 0 ? queue[0] : null
+        const allCleared = nextEvent === null
+        return {
+          deferredEvents: [...(state.deferredEvents ?? []), deferred],
+          pendingEvent: nextEvent,
+          pendingEventsQueue: queue.slice(1),
+          // Если очередь опустела — фаза events закрывается как при resolve.
           weekPhase: (allCleared && state.weekPhase === 'events' ? 'simulation' : state.weekPhase) as WeekPhase,
           lastUpdated: Date.now(),
         }
@@ -1024,7 +1076,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (totalExisting >= 2) cost = Math.round(cost * (1 - (REGISTER_COMBO_DISCOUNTS[3] ?? 0)))
       else if (totalExisting >= 1) cost = Math.round(cost * (1 - (REGISTER_COMBO_DISCOUNTS[2] ?? 0)))
 
-      if (state.balance < cost) return false
+      // Спринт 5e: к ПЕРВОЙ кассе обязательно покупается фискальный
+      // накопитель (54-ФЗ требует). +8 000₽ к стоимости первой покупки.
+      const FISCAL_DRIVE_COST = 8000
+      const isFirstRegister = totalExisting === 0 && !state.fiscalDriveOwned
+      const totalCost = isFirstRegister ? cost + FISCAL_DRIVE_COST : cost
+
+      if (state.balance < totalCost) return false
 
       set((s) => {
         const existing = s.cashRegisters.find((r) => r.type === type)
@@ -1041,7 +1099,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         }
         return {
           cashRegisters: newRegisters,
-          balance: s.balance - cost,
+          fiscalDriveOwned: isFirstRegister ? true : s.fiscalDriveOwned,
+          balance: s.balance - totalCost,
           lastUpdated: Date.now(),
         }
       })
@@ -1352,7 +1411,7 @@ function extractState(state: any): GameState {
   const {
     businessType, currentWeek, dayOfWeek, balance, savedBalance, reputation, loyalty,
     entrepreneurEnergy, stock, stockBatches, capacity, services, achievements,
-    lastDayResult, pendingEvent, pendingEventsQueue, triggeredEventIds,
+    lastDayResult, pendingEvent, pendingEventsQueue, deferredEvents, triggeredEventIds,
     isGameOver, isVictory, gameOverReason, consecutiveOverloadDays, daysReputationZero,
     daysSinceLastMonthly, purchaseOfferedThisDay, activeAdCampaigns, purchasedUpgrades,
     temporaryClientMod, temporaryCheckMod, temporaryModDaysLeft, createdAt, lastUpdated,
@@ -1395,6 +1454,7 @@ function extractState(state: any): GameState {
     entrepreneurEnergy: entrepreneurEnergy ?? ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY,
     stock, stockBatches, capacity, services, achievements,
     lastDayResult, pendingEvent, pendingEventsQueue: pendingEventsQueue ?? [],
+    deferredEvents: state.deferredEvents ?? [],
     triggeredEventIds, isGameOver, isVictory, gameOverReason,
     consecutiveOverloadDays, daysReputationZero, daysSinceLastMonthly,
     purchaseOfferedThisDay, activeAdCampaigns, purchasedUpgrades,
@@ -1411,6 +1471,7 @@ function extractState(state: any): GameState {
     unlockedServices: unlockedServices ?? SERVICE_UNLOCK_MAP[0],
     serviceDeactivatedWeeks: (state as any).serviceDeactivatedWeeks ?? {},
     cashRegisters: cashRegisters ?? [],
+    fiscalDriveOwned: (state as any).fiscalDriveOwned ?? false,
     enabledCategories: enabledCategories ?? [],
     promoCodesRevealed: promoCodesRevealed ?? [],
     pendingPromoCode: null, // Never persist pending promo
@@ -1459,6 +1520,20 @@ function extractState(state: any): GameState {
     // v4.3 progression fixes
     burnoutWarningActive: burnoutWarningActive ?? false,
     victoryType: victoryType ?? null,
+    // v5.0 — persisted fields that were lost on reload (audit fix):
+    //   • personalGoal — главная цель игрока (квартира/долг/брат)
+    //   • weeklyTactic — выбранная тактика недели (aggressive/calm/service)
+    //   • businessTier — текущий tier бизнеса (1/2/3)
+    //   • chosenEventOptions — что игрок выбирал на событиях (для NPC arc)
+    //   • lastDiaryEntry / diaryEntryWeeks — дневниковые записи
+    personalGoal: (state as any).personalGoal ?? null,
+    weeklyTactic: (state as any).weeklyTactic ?? null,
+    businessTier: (state as any).businessTier ?? 1,
+    chosenEventOptions: (state as any).chosenEventOptions ?? {},
+    lastDiaryEntry: (state as any).lastDiaryEntry ?? null,
+    diaryEntryWeeks: (state as any).diaryEntryWeeks ?? [],
+    // Спринт 5e: state-aware microevent picker
+    seenMicroEvents: (state as any).seenMicroEvents ?? [],
   }
 }
 

@@ -42,7 +42,7 @@ import {
 } from '../constants/gameBalance'
 import { getTotalThroughput, calculateRegisterPenalty, checkRegisterBreakdown } from './cashRegisterEngine'
 import { calculateCategoryRevenue } from './assortmentEngine'
-import { initializeEmployees, getWeeklySalaryCost, getWeeklyEnergyCost, getEmployeeCapacityBonus, getUpgradeEnergyBonus } from './employeeManager'
+import { initializeEmployees, getWeeklySalaryCost, getWeeklyEnergyCost, getEmployeeCapacityBonus, getUpgradeEnergyBonus, updateEmployeeGrowth } from './employeeManager'
 import { initializeQuality, updateQualityWeekly, getQualityReputationBonus, getQualityLoyaltyBonus, getQualityPricePremium } from './qualityManager'
 import { getQualityClientModifier, getBrandEffect } from './qualityModifier'
 
@@ -366,6 +366,9 @@ export function processWeek(state: GameState): DayResult {
   // Update quality weekly
   updateQualityWeekly(state)
 
+  // Сдвиг эффективности сотрудников за неделю (учится / халтурит)
+  updateEmployeeGrowth(state)
+
   // Deduct weekly employee energy cost, minus upgrade bonuses
   const upgradeEnergyBonus = getUpgradeEnergyBonus(state)
   const actualEnergyCost = Math.max(0, weeklyEnergyCost - upgradeEnergyBonus)
@@ -663,6 +666,21 @@ export function processWeek(state: GameState): DayResult {
   // Pick 1 micro event per week (passive, no modal — shown in WeekResults)
   applyWeeklyMicroEvent(state)
 
+  // Restore deferred events from previous week. They come back first
+  // (priority over random/crisis generation) with wasDeferred=true,
+  // so UI hides the «Подумаю позже» button — игрок обязан их решить.
+  if (state.deferredEvents && state.deferredEvents.length > 0 && !state.isGameOver && !state.isVictory) {
+    const [first, ...rest] = state.deferredEvents
+    if (!state.pendingEvent) {
+      state.pendingEvent = first
+      state.pendingEventsQueue = [...rest, ...(state.pendingEventsQueue ?? [])]
+    } else {
+      // Уже есть событие из цепочки/кризиса — отложенные идут в очередь
+      state.pendingEventsQueue = [...state.deferredEvents, ...(state.pendingEventsQueue ?? [])]
+    }
+    state.deferredEvents = []
+  }
+
   // Generate 1-2 events every week (crisis weeks always get 2)
   if (!state.isGameOver && !state.isVictory && !state.pendingEvent) {
     const firstEvent = generateEvent(state.currentWeek * 7, state)
@@ -699,6 +717,20 @@ export function processWeek(state: GameState): DayResult {
     }
   }
 
+  // Спринт 5e: ограничиваем очередь событий за неделю — 3 события максимум
+  // (pendingEvent + 2 в queue). При комбинации deferred + chain + crisis +
+  // random могла набираться очередь из 4-5, что перегружало игрока.
+  // Лишние события переносятся на следующую неделю через deferredEvents
+  // (но без флага wasDeferred — это «отложено системой», не игроком).
+  const MAX_EVENTS_PER_WEEK = 3  // 1 pendingEvent + 2 в queue
+  if ((state.pendingEventsQueue?.length ?? 0) > MAX_EVENTS_PER_WEEK - 1) {
+    const queue = state.pendingEventsQueue ?? []
+    const keep = queue.slice(0, MAX_EVENTS_PER_WEEK - 1)
+    const overflow = queue.slice(MAX_EVENTS_PER_WEEK - 1)
+    state.pendingEventsQueue = keep
+    state.deferredEvents = [...(state.deferredEvents ?? []), ...overflow]
+  }
+
   // Advance week AFTER all checks (events, milestones, etc.) have used current week number
   state.currentWeek += 1
 
@@ -730,9 +762,12 @@ export function processWeek(state: GameState): DayResult {
 }
 
 function generateNextWeekTeaser(state: GameState): string | null {
-  const nextDay = state.currentWeek * 7
+  // Спринт 5e: расширенные тизеры с контекстом. Сначала срочные (займы,
+  // crisis), потом риски (отсутствие сервисов), потом сезонность,
+  // потом контекстные подсказки на основе состояния (баланс/энергия/
+  // цель/tier), потом нейтральные.
 
-  // Upcoming loan repayment
+  // ── Приоритет 1: срочные финансовые обязательства ─────────────────
   if (state.loans?.length) {
     const urgentLoan = state.loans.find(l => !l.isRepaid && l.dueWeek === state.currentWeek + 1)
     if (urgentLoan) {
@@ -744,34 +779,98 @@ function generateNextWeekTeaser(state: GameState): string | null {
     }
   }
 
-  // Risk warnings (probabilistic — no fixed schedule)
-  if (!state.services?.fokus?.isActive) {
-    return `⚠️ Без Контур.Фокуса есть риск мошенничества со стороны поставщика`
-  }
-  if (!state.services?.extern?.isActive) {
-    return `🔒 Без Контур.Экстерна возможна блокировка счёта налоговой`
+  // ── Приоритет 2: crisis week ──────────────────────────────────────
+  if ((state.currentWeek + 1) % 9 === 0) {
+    return `🌩️ Кризисная неделя — будет 2 события подряд. Подумайте о тактике (calm/service помогут) и энергии заранее`
   }
 
-  // Seasonal hint
+  // ── Приоритет 3: личная цель и её дедлайн ─────────────────────────
+  if (state.personalGoal && !state.personalGoal.achieved && !state.personalGoal.missed) {
+    const weeksLeft = state.personalGoal.deadlineWeek - state.currentWeek
+    const gap = state.personalGoal.targetAmount - state.balance
+    if (weeksLeft === 4 && gap > 0) {
+      return `🎯 До цели «${state.personalGoal.shortLabel}» — 4 недели. Не хватает ${gap.toLocaleString('ru-RU')} ₽. Считайте темп.`
+    }
+    if (weeksLeft === 8 && gap > 200000) {
+      return `🎯 Через 2 месяца дедлайн «${state.personalGoal.shortLabel}». Сейчас отстаёте на ${gap.toLocaleString('ru-RU')} ₽`
+    }
+    if (weeksLeft === 1 && gap > 0) {
+      return `⚠️ Дедлайн «${state.personalGoal.shortLabel}» — на следующей неделе. Не хватает ${gap.toLocaleString('ru-RU')} ₽`
+    }
+  }
+
+  // ── Приоритет 4: энергия и burnout ────────────────────────────────
+  if (state.burnoutWarningActive) {
+    return `🔥 Энергия была на нуле — следующее обнуление = конец. Выберите спокойную неделю или отдохните в Личных тратах`
+  }
+  if ((state.entrepreneurEnergy ?? 100) < 35) {
+    return `🪫 Энергия низкая (${state.entrepreneurEnergy}). На следующей неделе — calm-тактика и отказ от агрессивных решений`
+  }
+
+  // ── Приоритет 5: подсказки про сервисы ────────────────────────────
+  if (!state.services?.fokus?.isActive && state.currentWeek >= 12) {
+    return `⚠️ Без Контур.Фокуса есть риск нарваться на недобросовестного поставщика`
+  }
+  if (!state.services?.diadoc?.isActive && state.currentWeek >= 16) {
+    return `📁 Без Контур.Диадока бумажные накладные накапливаются — может прилететь штраф`
+  }
+
+  // ── Приоритет 6: сезонность ───────────────────────────────────────
   const nextMonth = Math.ceil(((state.currentWeek + 1) / 52) * 12)
   const config = state.businessType
   if (config === 'cafe' && nextMonth === 6) return `☀️ Лето приближается — сезон роста для кафе`
-  if (config === 'cafe' && nextMonth === 12) return `❄️ Зима снизит поток клиентов — подготовьтесь заранее`
+  if (config === 'cafe' && nextMonth === 12) return `❄️ Январь-февраль снизят поток клиентов кафе — подготовьтесь`
   if (config === 'beauty-salon' && nextMonth === 3) return `🌸 Весна — сезонный рост для салона красоты`
-  if (config === 'shop' && nextMonth === 7) return `🏖️ Летний сезон даёт небольшой рост — пользуйтесь`
+  if (config === 'shop' && nextMonth === 7) return `🏖️ Летний сезон даёт небольшой рост магазину`
 
-  // Crisis week hint
-  if ((state.currentWeek + 1) % 9 === 0) {
-    return `🌩️ Следующая неделя может быть напряжённой — ожидается несколько событий сразу`
+  // ── Приоритет 7: контекстные подсказки по состоянию ──────────────
+  const balance = state.balance
+  const tier = state.businessTier ?? 1
+  const employees = state.employees?.length ?? 0
+  const upgradesCount = state.purchasedUpgrades?.length ?? 0
+
+  // Накопил, но не растёт
+  if (balance >= 600000 && tier < 3 && state.currentWeek >= 25) {
+    return `🏢 На счету ${balance.toLocaleString('ru-RU')} ₽ — может, пора подумать о следующем тире бизнеса (Развитие)`
+  }
+  // Много денег, мало апгрейдов
+  if (balance >= 400000 && upgradesCount < 3 && state.currentWeek >= 15) {
+    return `💼 На балансе ${balance.toLocaleString('ru-RU')} ₽. Куда вложить? Загляните в Развитие → Улучшения`
+  }
+  // Solo долго
+  if (employees === 0 && state.currentWeek >= 10) {
+    return `👥 Десятая неделя в одиночку. Если будете расти — без помощника тяжело`
+  }
+  // Высокая репутация — реклама работает лучше
+  if (state.reputation >= 75 && state.currentWeek >= 8) {
+    return `💡 Репутация ${state.reputation} — отличный момент для рекламной кампании (Маркетинг)`
+  }
+  // Низкая лояльность
+  if (state.loyalty < 40 && state.currentWeek >= 6) {
+    return `💛 Лояльность падает (${state.loyalty}). Service-тактика и качество — главные лекарства`
+  }
+  // Конкурент в районе
+  if ((state.temporaryClientMod ?? 0) < -0.05) {
+    return `⚡ Конкурент держит вас в напряжении. Подумайте об улучшении сервиса`
+  }
+  // Tier 1 после W20 — застой
+  if (tier === 1 && state.currentWeek >= 25 && balance >= 300000) {
+    return `📈 Tier 1 уже четвёртый месяц. Условия для роста смотрите в Развитие → Уровень`
   }
 
-  // Generic encouragement
+  // ── Приоритет 8: финальный месяц — пора собрать достижения ────────
+  if (state.currentWeek >= 45 && (state.achievements?.length ?? 0) < 5) {
+    return `🏅 До конца года ${52 - state.currentWeek} недель. Достижения дают бонусы — стоит посмотреть в Достижения`
+  }
+
+  // ── Приоритет 9: нейтральные подсказки ────────────────────────────
   const tips = [
     `📊 Загляните в Финансы — стоит проверить динамику прибыли`,
-    `🤝 Хороший момент пересмотреть список поставщиков`,
-    `💡 Если репутация выше 70 — это хорошее время для рекламы`,
-    null,
-    null,
+    `🤝 Хороший момент пересмотреть список поставщиков (Управление)`,
+    `📝 Дневник в Сводке — иногда там полезные мысли`,
+    `🌿 Calm-неделя — недооценённый ход для накопления`,
+    `⭐ Service-тактика без штрафа к выручке — главный режим для роста репутации`,
+    null,  // 25% шанс на пустой тизер
   ]
   return tips[Math.floor(Math.random() * tips.length)]
 }
@@ -805,9 +904,60 @@ function accumulateServiceSavings(state: GameState, weekRevenue: number, weekNet
 }
 
 function applyWeeklyMicroEvent(state: GameState): void {
-  const idx = (state.currentWeek - 1) % DAILY_MICRO_EVENTS.length
-  const micro = DAILY_MICRO_EVENTS[idx]
+  // Спринт 5e: state-aware picker.
+  //   • Низкая энергия / burnoutWarning → bias на 'good' (восстановление)
+  //   • Высокая энергия → больше 'rough' допустимо («жизнь продолжается»)
+  //   • Не повторяем события из state.seenMicroEvents в текущем цикле
+  //   • Когда все события показаны — массив сбрасывается, начинается новый цикл
+  // Раньше picker был детерминированным: (week-1) % len → одна и та же
+  // последовательность между прогонами, что делало баланс предсказуемым.
+  const energy = state.entrepreneurEnergy ?? 100
+  const burnoutWarn = state.burnoutWarningActive === true
+
+  // Распределение vibe по состоянию игрока
+  let vibeWeights: Record<'good' | 'neutral' | 'rough', number>
+  if (burnoutWarn) {
+    vibeWeights = { good: 0.75, neutral: 0.25, rough: 0 }
+  } else if (energy < 40) {
+    vibeWeights = { good: 0.6, neutral: 0.3, rough: 0.1 }
+  } else if (energy > 75) {
+    vibeWeights = { good: 0.3, neutral: 0.35, rough: 0.35 }
+  } else {
+    vibeWeights = { good: 0.4, neutral: 0.35, rough: 0.25 }
+  }
+
+  // Выбираем vibe по распределению
+  const r = Math.random()
+  const targetVibe: 'good' | 'neutral' | 'rough' =
+    r < vibeWeights.good ? 'good'
+    : r < vibeWeights.good + vibeWeights.neutral ? 'neutral'
+    : 'rough'
+
+  const seen = new Set(state.seenMicroEvents ?? [])
+  // Фильтр: нужный vibe + не показывался в текущем цикле
+  let candidates = DAILY_MICRO_EVENTS.filter(m => m.vibe === targetVibe && !seen.has(m.id))
+  // Если все события этого vibe показаны — сбрасываем seen и пробуем снова
+  if (candidates.length === 0) {
+    state.seenMicroEvents = []
+    candidates = DAILY_MICRO_EVENTS.filter(m => m.vibe === targetVibe)
+  }
+  // Если совсем нет (vibe пустой) — fallback на любое неувиденное
+  if (candidates.length === 0) {
+    candidates = DAILY_MICRO_EVENTS.filter(m => !seen.has(m.id))
+    if (candidates.length === 0) candidates = DAILY_MICRO_EVENTS
+  }
+
+  const micro = candidates[Math.floor(Math.random() * candidates.length)]
   if (!micro) return
+
+  // Ограничиваем массив seenMicroEvents — в длинной игре может расти
+  // безгранично. Храним последние 50 (больше чем общее количество событий 35),
+  // этого достаточно чтобы отслеживать «текущий цикл».
+  const SEEN_CAP = 50
+  const updatedSeen = [...(state.seenMicroEvents ?? []), micro.id]
+  state.seenMicroEvents = updatedSeen.length > SEEN_CAP
+    ? updatedSeen.slice(-SEEN_CAP)
+    : updatedSeen
 
   const option = micro.options[0]
   if (!option) return
@@ -872,6 +1022,28 @@ function triggerNewChainStarts(state: GameState): void {
 
     // Special condition for 'legacy' chain: requires reputation >= 70
     if (chainId === 'legacy' && state.reputation < 70) continue
+
+    // svetlana_growth — нарративная зависимость от найма Светланы.
+    // Раньше чейн стартовал автоматически с W6, даже если игрок никого не
+    // нанимал, и Светлана появлялась «из воздуха». Теперь — только если
+    // её действительно наняли через svetlana_intro (NPC revealed как hired).
+    if (chainId === 'svetlana_growth') {
+      const svetlana = (state.npcs ?? []).find(n => n.id === 'svetlana')
+      if (!svetlana?.isRevealed) continue
+      // Гейтим ещё и наличием Светланы в employees — на случай если
+      // svetlana_to_anna её revealed (там она у Анны, а не у нас).
+      const haveSvetlana = (state.employees ?? []).some(e => e.name === 'Светлана')
+      if (!haveSvetlana) continue
+    }
+
+    // first_hire — не запускается автоматически. Срабатывает только
+    // как chainFollowUp из SOLO_OVERLOAD-события.
+    if (chainId === 'first_hire') continue
+
+    // svetlana_intro — стартует автоматически с W12+, независимо от того
+    // нанимал ли игрок кого-то до этого. Если он solo, Светлана при найме
+    // ПОТРЕБУЕТ дополнительного человека — это обрабатывается в
+    // applyEventConsequence (см. svetlana_demands_hire follow-up).
 
     const startEvent = getChainStartEvent(chainId)
     if (!startEvent) continue

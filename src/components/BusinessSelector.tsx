@@ -14,7 +14,7 @@ const BUSINESS_INFO: Record<BusinessType, { icon: string; title: string; descrip
     icon: '☕',
     title: 'Кафе',
     description: 'Общественное питание. Сезонный бизнес, зависит от погоды.',
-    season: 'Летом +22% клиентов, зимой −15%',
+    season: 'Летом +22% клиентов, в январе-феврале −10%',
   },
   'beauty-salon': {
     icon: '💅',

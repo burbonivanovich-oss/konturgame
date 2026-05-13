@@ -46,7 +46,7 @@ export interface PlayerBackstory {
  */
 export interface PersonalGoal {
   // Stable id used for ending text and analytics
-  id: 'parent_reno' | 'katya_deposit' | 'courtyard_save'
+  id: 'close_debt' | 'brother_tuition' | 'own_apartment'
   // Short label shown in the UI ("Своя квартира")
   shortLabel: string
   // Full sentence shown in dashboard ("Накопить 500 000 ₽ на квартиру в новом районе")
@@ -94,6 +94,19 @@ export interface Employee {
   efficiency: number       // 0.5 to 1.5 (affects capacity)
   hireDay: number
   energyCost: number       // energy cost per week to manage
+  // Спринт 5e: динамика эффективности через неделю.
+  //  • Положительный growthRate (студент) — учится, растёт до growthLimit
+  //  • Отрицательный (Олег) — выгорает/халтурит, падает до growthLimit
+  //  • Если не задано — сотрудник стабилен, эффективность не меняется
+  growthRate?: number
+  growthLimit?: number     // потолок если growthRate>0, пол если <0
+  // Сотрудник плохо переносит менеджера в команде — при его наличии:
+  //   • не получает team boost, а имеет −10% penalty к эффективности
+  //   • growthRate (если отрицательный) удваивается — быстрее «скисает»
+  //   • growthLimit заменяется на growthLimitUnderManager (глубже)
+  // Используется для Олега и подобных «без энтузиазма» работников.
+  dislikesManager?: boolean
+  growthLimitUnderManager?: number  // более низкий пол при наличии менеджера
 }
 
 export interface ProductCategory {
@@ -262,12 +275,35 @@ export interface EventOption {
     clientModifierDays?: number
     checkModifier?: number
     checkModifierDays?: number
+    // Найм первого сотрудника через событие (Спринт 5e). Каждый кандидат
+    // в чейне «Первый сотрудник» — это option с этим полем; consequences
+    // обрабатывает создание Employee и (опционально) reveal связанного NPC.
+    hireEmployee?: {
+      position: EmployeePosition
+      salary: number          // Месячная ЗП (для отображения и расчётов)
+      efficiency: number       // Множитель пропускной способности
+      energyCost: number       // Энергозатраты на управление (нед.)
+      name?: string            // Конкретное имя кандидата (иначе случайное)
+      linkNpcId?: string       // Если найм привязан к существующему NPC — раскрыть
+      growthRate?: number      // Изменение эффективности за неделю (+ растёт, − падает)
+      growthLimit?: number     // Потолок/пол для роста/деградации
+      dislikesManager?: boolean  // Под управленцем скисает быстрее
+      growthLimitUnderManager?: number  // более низкий пол при наличии менеджера
+    }
+    // Увольнение через событие (Спринт 5e): убирает сотрудника из state.employees
+    // по имени. Используется в чейне Олег-троублс (oleg_trouble_1/2).
+    fireEmployee?: { name?: string }
   }
   hasServiceAlternative?: boolean
   requiredService?: ServiceType
   isContourOption?: boolean
   npcRelationshipDelta?: number
   chainFollowUpId?: string
+  // Бизнес-специфичные опции (Спринт 5e): отфильтровываются в UI, если
+  // текущий businessType не входит в список. Используется в first_hire,
+  // где «бывший повар» показывается только для cafe, «парикмахер» для
+  // salon и т.д.
+  requiredBusinessTypes?: BusinessType[]
 }
 
 export interface Event {
@@ -280,6 +316,9 @@ export interface Event {
   npcId?: string
   isMoralDilemma?: boolean
   decisionDeadlineWeek?: number
+  // Set to true when the player chose "Подумаю позже" — the event resurfaces
+  // on the next week and the defer button is hidden (один раз можно отложить).
+  wasDeferred?: boolean
 }
 
 export interface EventTemplate {
@@ -431,6 +470,9 @@ export interface GameState {
   lastDayResult: DayResult | null
   pendingEvent: Event | null
   pendingEventsQueue: Event[]
+  // Events the player deferred via "Подумаю позже" — restored at the start
+  // of the next week's event phase and shown without the defer option.
+  deferredEvents?: Event[]
   triggeredEventIds: string[]
 
   isGameOver: boolean
@@ -478,6 +520,10 @@ export interface GameState {
 
   // Cash registers
   cashRegisters: CashRegister[]
+  // Спринт 5e: фискальный накопитель — обязательный по 54-ФЗ компонент.
+  // Покупается ВМЕСТЕ с первой кассой (бандл, +8 000₽). Без него ОФД
+  // не может передавать чеки в ФНС, штраф до 10К за каждый чек.
+  fiscalDriveOwned?: boolean
 
   // Assortment categories
   enabledCategories: string[]
@@ -500,6 +546,9 @@ export interface GameState {
 
   // Weekly micro event (passive, shown in results)
   lastWeekMicroEvent?: { icon: string; title: string; effectText: string } | null
+  // Микрособытия которые игрок уже видел в этом цикле. Когда все показаны —
+  // массив сбрасывается. Используется picker'ом чтобы не повторять подряд.
+  seenMicroEvents?: string[]
 
   // Last diary entry (passive, first-person reflection — v5.0)
   // Picked every 5 weeks based on backstory/state, shown in WeekResults.

@@ -55,6 +55,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
     weekPhase, completeResultsPhase, completeSummaryPhase, completeSimulationPhase, lastDayResult, balance,
     weeklyTactic, setWeeklyTactic, personalGoal, currentWeek, npcs,
     onboardingStage, onboardingStepIndex, onboardingCompleted,
+    entrepreneurEnergy, burnoutWarningActive,
   } = useGameStore()
   const [savingsToast, setSavingsToast] = useState<number | null>(null)
 
@@ -80,35 +81,20 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
 
   const handleEventOption = (optionId: string) => {
     const state = useGameStore.getState()
-    const { pendingEvent, markEventAsResolved, setTemporaryModifiers, activateService, addSavedBalance } = state
+    const { pendingEvent, markEventAsResolved, addSavedBalance, resolveEventOption, recordEventChoice } = state
 
     if (!pendingEvent) return
     const option = pendingEvent.options.find((o) => o.id === optionId)
     if (!option) return
-
     const c = option.consequences
-    const { addBalance, addReputation, addLoyalty } = useGameStore.getState()
 
-    if (c.balanceDelta !== undefined) addBalance(c.balanceDelta)
-    if (c.reputationDelta !== undefined) addReputation(c.reputationDelta)
-    if (c.loyaltyDelta !== undefined) addLoyalty(c.loyaltyDelta)
+    recordEventChoice(pendingEvent.id, optionId)
 
-    if (c.clientModifier !== undefined || c.checkModifier !== undefined) {
-      const currentState = useGameStore.getState()
-      setTemporaryModifiers(
-        (currentState.temporaryClientMod ?? 0) + (c.clientModifier ?? 0),
-        (currentState.temporaryCheckMod ?? 0) + (c.checkModifier ?? 0),
-        Math.max(
-          currentState.temporaryModDaysLeft ?? 0,
-          c.clientModifierDays ?? c.checkModifierDays ?? 1,
-        ),
-      )
-    }
+    // ВСЕ consequences через единый пайплайн (incl. hireEmployee, fireEmployee,
+    // energyDelta, serviceId, npcRelationshipDelta, chainFollowUpId).
+    resolveEventOption(optionId)
 
-    if (c.serviceId) {
-      activateService(c.serviceId)
-    }
-
+    // Контур-опция → savings toast
     if (option.isContourOption && c.balanceDelta !== undefined) {
       const nonKontourOptions = pendingEvent.options.filter((o) => !o.isContourOption)
       if (nonKontourOptions.length > 0) {
@@ -286,25 +272,37 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
                   Тактика на неделю
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {WEEKLY_TACTICS.map(t => (
-                    <button
-                      key={t.id}
-                      onClick={() => setWeeklyTactic(t.id)}
-                      style={{
-                        textAlign: 'left', padding: '10px 12px',
-                        background: K.bone, border: `1px solid ${K.lineSoft}`,
-                        borderRadius: 10, cursor: 'pointer',
-                        fontFamily: 'inherit',
-                        display: 'flex', alignItems: 'center', gap: 10,
-                      }}
-                    >
-                      <span style={{ fontSize: 18, flexShrink: 0 }}>{t.icon}</span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: K.ink }}>{t.title}</div>
-                        <div style={{ fontSize: 10, color: K.muted, lineHeight: 1.3 }}>{t.blurb}</div>
-                      </div>
-                    </button>
-                  ))}
+                  {WEEKLY_TACTICS.map(t => {
+                    const weekDelta = Math.round(t.energyDelta * 7)
+                    const isRisky = t.id === 'aggressive' && (entrepreneurEnergy < 50 || burnoutWarningActive)
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => setWeeklyTactic(t.id)}
+                        style={{
+                          textAlign: 'left', padding: '10px 12px',
+                          background: K.bone,
+                          border: isRisky ? `1px solid ${K.bad}` : `1px solid ${K.lineSoft}`,
+                          borderRadius: 10, cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          display: 'flex', alignItems: 'center', gap: 10,
+                        }}
+                      >
+                        <span style={{ fontSize: 18, flexShrink: 0 }}>{t.icon}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: K.ink }}>{t.title}</div>
+                          <div style={{ fontSize: 10, color: K.muted, lineHeight: 1.3 }}>{t.blurb}</div>
+                          <div style={{
+                            fontSize: 10, fontWeight: 700, marginTop: 3,
+                            color: weekDelta > 0 ? K.mint : weekDelta < 0 ? K.bad : K.muted,
+                          }}>
+                            {weekDelta > 0 ? '+' : ''}{weekDelta} энергии / нед
+                            {isRisky && ` · ⚠️ риск выгорания`}
+                          </div>
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             ) : (() => {
@@ -451,7 +449,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
 
         {activeTab === 'stats' && (
           <>
-            <Indicators />
+            <Indicators onOpenOwnerInvestments={() => setShowOwnerInvestmentsModal(true)} />
           </>
         )}
 

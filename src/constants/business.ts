@@ -4,8 +4,8 @@ export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
   shop: {
     type: 'shop',
     startBalance: 80000,
-    baseClients: 18,  // ↑ 15→18 (магазин у дома — поток выше)
-    avgCheck: 115,  // ↑ 100→115 (после рекалибровки ради win-rate магазина)
+    baseClients: 17,
+    avgCheck: 112,
     capacity: 35,
     hasStock: true,
     stockExpiry: 10,
@@ -22,7 +22,7 @@ export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
     type: 'cafe',
     startBalance: 80000,
     baseClients: 18,
-    avgCheck: 95,  // ↑ 85→95 (кафе тяжелее всех — нужен буфер)
+    avgCheck: 90,
     capacity: 40,
     hasStock: true,
     stockExpiry: 7,
@@ -293,10 +293,16 @@ export const ECONOMY_CONSTANTS = {
   LOYALTY_BONUS_PREMIUM: 15,
   PREMIUM_COST_RATE: 0.08,  // ↑ Было 0.05
 
-  VICTORY_WEEKLY_PROFIT: 20000,  // ↑ Было 10000 - сложнее выиграть
-  VICTORY_BALANCE: 500000,  // ↑ Было 150000
-  // VICTORY_LEVEL: 10 — удалено вместе с player level в Спринте 4.
-  // Combined-победа теперь требует tier 3, не level 10.
+  // Спринт 5e: combined-победа должна быть достижимой целью для
+  // продвинутого игрока (не «выживание»), но не тривиальной для PRO.
+  // Старые 500K balance + 20K weekly profit пересекались у PRO-стратегий
+  // уже к W30 — победа ощущалась как побочка. Подняли:
+  //   • balance 500K → 800K (PRO достигает к W40-42, тоже не подарок)
+  //   • weekly profit 20K → 30K
+  // Year_one теперь тоже строже (см. resolveVictoryType): не просто
+  // «дожил с балансом > 0», а balance > 200K и reputation > 50.
+  VICTORY_WEEKLY_PROFIT: 30000,
+  VICTORY_BALANCE: 800000,
   VICTORY_ACHIEVEMENTS: 7,
 
   // EXPERIENCE_PER_WEEK / EXPERIENCE_PER_10K_PROFIT удалены вместе с
@@ -337,26 +343,38 @@ export const ECONOMY_CONSTANTS = {
 // breaking even with 3 services + all categories — felt like treading water.
 // Now there's headroom for early-game without forcing all 7 services.
 export const MONTHLY_EXPENSES: Record<BusinessType, { rent: number; baseSalary: number }> = {
-  // Спринт 5 ребаланс: цель — 50-60% win rate любым бизнесом, лёгкое
-  // начало (W1-10), плавный ramp (W11-20).
-  shop:           { rent: 22000, baseSalary: 16000 },
+  // Спринт 5d: магазин слегка облегчён (rent 22→18, salary 16→14).
+  // Раньше для цели 1М₽ магазину требовалось ~90% от PRO-оптимизации,
+  // тогда как кафе/салон — 65-70%. Снижение фикс-расходов на ~16% даёт
+  // магазину дополнительные ~1.4К₽/нед, выравнивая трасс к финалу года.
+  // Магазин всё ещё самый «суровый» бизнес (требует 75-80% оптимизации
+  // против 60-65% у кафе/салона), но цели становятся реально достижимы.
+  shop:           { rent: 18000, baseSalary: 14000 },
   cafe:           { rent: 38000, baseSalary: 28000 },
-  'beauty-salon': { rent: 36000, baseSalary: 34000 },
+  // Спринт 5b: салон зарабатывает заметно больше на чек×клиента (400×9
+  // против 112×17 / 90×18), поэтому при равных расходах он доминировал
+  // в симуляции (8/10 побед против 4-6 у других). Поднимаем rent на 4k.
+  'beauty-salon': { rent: 40000, baseSalary: 34000 },
 }
 
 /**
  * Множитель фиксированных расходов по неделе. Реализует «лёгкое начало —
- * плавный ramp — полная сложность»:
+ * плавный ramp — полная стоимость»:
  *   W1-10:   ×0.65 — sandbox-mode, новичок учится
  *   W11-20:  линейный rampup от 0.65 → 1.0
  *   W21+:    ×1.0 — полная стоимость
+ *
+ * Спринт 5d: вернули к 1.0 после короткой попытки 0.95 — последняя
+ * слишком сильно ослабила бaнкротства (с 27% до 13%). Поддержка целей
+ * 1М₽ обеспечивается через сниженные shop-расходы и service-тактику
+ * без штрафа, не глобальным скидыванием.
  */
 export function getExpenseMultiplier(currentWeek: number): number {
-  if (currentWeek <= 10) return 0.60
-  if (currentWeek >= 21) return 0.95
-  // 11..20: линейная интерполяция 0.60 → 0.95
+  if (currentWeek <= 10) return 0.65
+  if (currentWeek >= 21) return 1.0
+  // 11..20: линейная интерполяция 0.65 → 1.0
   const t = (currentWeek - 10) / 10
-  return 0.60 + 0.35 * t
+  return 0.65 + 0.35 * t
 }
 
 export const AD_CAMPAIGNS_CONFIG = [
@@ -391,43 +409,43 @@ export const UPGRADES_CONFIG: Record<BusinessType, Array<{
   monthlySalaryIncrease?: number
   monthlyRentIncrease?: number
   energyBonus?: number
+  // Зависимости — UI рисует бэдж «требует X» с галочкой/крестом.
+  // Если апгрейд купить раньше зависимости, его эффект всё равно начисляется
+  // (механика не блокируется), но категория/связанная фича не откроется,
+  // пока требование не выполнено. Бэдж предупреждает игрока заранее.
+  requiresUpgrade?: string
+  requiresServices?: ServiceType[]
 }>> = {
+  // Спринт 5e: убраны hire-* апгрейды (наём только через события).
+  // Лицензионные категории (alcohol/bar) больше не требуют Экстерн.
   shop: [
-    // Equipment that gates categories
     { id: 'cold-case', name: '❄️ Холодильная витрина', cost: 40000, effect: 'Открывает молочку, +10% вместимость', capacityBonus: 0.1 },
-    { id: 'freezer', name: '🧊 Морозильник', cost: 60000, effect: 'Открывает мясо/рыбу при наличии холодильной витрины', capacityBonus: 0.05 },
-    { id: 'liquor-cabinet', name: '🍷 Алкошкаф с замком', cost: 50000, effect: 'Открывает алкогольную лицензию (нужен ОФД+Экстерн)' },
+    { id: 'freezer', name: '🧊 Морозильник', cost: 60000, effect: 'Открывает мясо/рыбу при наличии холодильной витрины', capacityBonus: 0.05, requiresUpgrade: 'cold-case' },
+    { id: 'liquor-cabinet', name: '🍷 Алкошкаф с замком', cost: 50000, effect: 'Открывает алкогольную лицензию (нужен ОФД)', requiresServices: ['ofd'] },
     { id: 'tobacco-display', name: '🚬 Витрина для табака', cost: 35000, effect: 'Открывает табачку (закрытый шкаф по закону)' },
-    // General upgrades
     { id: 'cctv', name: '📹 Видеонаблюдение', cost: 65000, effect: '+2% выручка, защита от краж', checkBonus: 0.02, energyBonus: 5 },
     { id: 'pos-terminal', name: '💳 POS-терминал', cost: 75000, effect: '+25% клиентов, удобнее работа', clientBonus: 0.25, checkBonus: 0.05, energyBonus: 4 },
-    { id: 'hire-cashier', name: '👥 Наём кассира', cost: 60000, effect: '+50% пропускная способность', capacityBonus: 0.5, monthlySalaryIncrease: 12000, energyBonus: 12 },
     { id: 'hall-expansion', name: '📏 Расширение зала', cost: 120000, effect: '+60% вместимость', capacityBonus: 0.6, monthlyRentIncrease: 15000, energyBonus: 8 },
     { id: 'premium-categories', name: '⭐ Премиум-полка', cost: 70000, effect: '+20% маржа на премиум товарах', checkBonus: 0.15 },
   ],
   cafe: [
-    // Equipment that gates categories
     { id: 'espresso-machine', name: '☕ Кофемашина эспрессо', cost: 60000, effect: 'База кафе. +5% выручка, +6 энергии', checkBonus: 0.05, energyBonus: 6 },
     { id: 'oven', name: '🥐 Печь / духовка', cost: 50000, effect: 'Открывает десерты и выпечку', capacityBonus: 0.05 },
-    { id: 'kitchen', name: '🍳 Полноценная кухня', cost: 90000, effect: 'Открывает готовую еду (нужен Маркет)', capacityBonus: 0.1, energyBonus: 4 },
-    { id: 'bar-counter', name: '🍹 Барная стойка', cost: 75000, effect: 'Открывает барную карту (нужны ОФД+Экстерн)' },
-    // General upgrades
+    { id: 'kitchen', name: '🍳 Полноценная кухня', cost: 90000, effect: 'Открывает готовую еду (нужен Маркет)', capacityBonus: 0.1, energyBonus: 4, requiresServices: ['market'] },
+    { id: 'bar-counter', name: '🍹 Барная стойка', cost: 75000, effect: 'Открывает барную карту (нужен ОФД)', requiresServices: ['ofd'] },
     { id: 'cooler', name: '❄️ Холодильник', cost: 40000, effect: '+5% вместимость', capacityBonus: 0.05 },
     { id: 'seasonal-menu', name: '🍽️ Сезонное меню', cost: 50000, effect: '+25% выручка летом/весной', checkBonus: 0.1 },
-    { id: 'hire-barista', name: '👨‍💼 Наём баристы', cost: 70000, effect: '+40% пропускная способность', capacityBonus: 0.4, monthlySalaryIncrease: 15000, energyBonus: 14 },
     { id: 'summer-terrace', name: '🏕️ Летняя веранда', cost: 110000, effect: '+40% мест летом', capacityBonus: 0.4, monthlyRentIncrease: 12000, energyBonus: 10 },
+    { id: 'sound-system', name: '🎵 Аудио-система', cost: 45000, effect: '+5% средний чек: атмосфера задерживает гостей', checkBonus: 0.05, energyBonus: 3 },
   ],
   'beauty-salon': [
-    // Equipment that gates categories
     { id: 'manicure-station', name: '💅 Станция маникюра', cost: 50000, effect: 'База — открывает базовые услуги полностью. +20% клиентов, +15% маржа', clientBonus: 0.2, checkBonus: 0.15 },
-    { id: 'coloring-station', name: '💇 Окрасочная станция', cost: 80000, effect: 'Открывает премиум-услуги (нужен Маркет)', checkBonus: 0.05 },
-    { id: 'cosmetics-shelf', name: '🛍️ Витрина косметики', cost: 45000, effect: 'Открывает продажу косметики (нужны Маркет+ОФД)' },
+    { id: 'coloring-station', name: '💇 Окрасочная станция', cost: 80000, effect: 'Открывает премиум-услуги (нужен Маркет)', checkBonus: 0.05, requiresServices: ['market'] },
+    { id: 'cosmetics-shelf', name: '🛍️ Витрина косметики', cost: 45000, effect: 'Открывает продажу косметики (нужны Маркет+ОФД)', requiresServices: ['market', 'ofd'] },
     { id: 'spa-room', name: '🧖 SPA-комната', cost: 110000, effect: 'Открывает SPA-процедуры', capacityBonus: 0.1, monthlyRentIncrease: 8000 },
-    // General upgrades
     { id: 'massage-chair', name: '💆 Массажное кресло', cost: 70000, effect: '+25% клиентов, релаксация', clientBonus: 0.25, energyBonus: 16 },
     { id: 'uv-lamps', name: '💡 УФ-лампы', cost: 55000, effect: '+10% клиентов, безопасность', clientBonus: 0.1, energyBonus: 4 },
     { id: 'crm-system', name: '📊 CRM-система', cost: 60000, effect: '+3% чек, аналитика', checkBonus: 0.03, energyBonus: 8 },
-    { id: 'hire-master', name: '👨‍🎓 Наём мастера', cost: 100000, effect: '+50% пропускная способность', capacityBonus: 0.5, monthlySalaryIncrease: 25000, energyBonus: 15 },
     { id: 'vip-room', name: '👑 VIP-кабинет', cost: 140000, effect: '+30% среднего чека', checkBonus: 0.3, monthlyRentIncrease: 15000, energyBonus: 12 },
   ],
 }

@@ -137,8 +137,8 @@ function runSimulation(
     if (state.isGameOver || state.isVictory) break
     state.pendingEvent = null
     state.pendingEventsQueue = []
-    // Mirror gameStore.completeResultsPhase restoration (now +55 in Спринт 5).
-    state.entrepreneurEnergy = Math.min(100, state.entrepreneurEnergy + 48)
+    // Mirror gameStore.completeResultsPhase restoration (Спринт 5b: +42).
+    state.entrepreneurEnergy = Math.min(100, state.entrepreneurEnergy + 42)
     state.weeklyTactic = tactic
 
     try {
@@ -159,6 +159,7 @@ function runSimulation(
     if (state.gameOverReason === 'bankruptcy') ended = 'bankrupt'
     else if (state.gameOverReason === 'reputation') ended = 'reputation'
     else if (state.gameOverReason === 'burnout') ended = 'burnout'
+    else if (state.gameOverReason === 'year_end') ended = state.balance > 0 ? 'survived' : 'bankrupt'
     else ended = 'unknown'
   }
 
@@ -179,11 +180,11 @@ function runSimulation(
 }
 
 // ───────────────────────────────────────────────────────────────────
-// 18 strategies × 3 business types
+// 30 strategies × 3 business types (10 each)
 // ───────────────────────────────────────────────────────────────────
 
 const SCENARIOS: Array<() => { name: string; state: GameState; tactic: WeeklyTactic | null }> = [
-  // ── SHOP ──────────────────────────────────────────────────────
+  // ── SHOP (10) ─────────────────────────────────────────────────
   () => ({
     name: 'Магазин · только Банк · спокойно',
     state: makeGameState('shop', ['bank'], [], ['basic']),
@@ -219,8 +220,28 @@ const SCENARIOS: Array<() => { name: string; state: GameState; tactic: WeeklyTac
     state: makeGameState('shop', ['elba', 'extern'], [], ['basic']),
     tactic: 'calm',
   }),
+  () => ({
+    name: 'Магазин · Банк+Маркет+Диадок · агрессивно',
+    state: makeGameState('shop', ['bank', 'market', 'diadoc'], ['cold-case'], ['basic', 'dairy']),
+    tactic: 'aggressive',
+  }),
+  () => ({
+    name: 'Магазин · Банк · агрессивно',
+    state: makeGameState('shop', ['bank'], [], ['basic']),
+    tactic: 'aggressive',
+  }),
+  () => ({
+    name: 'Магазин · Банк+ОФД+Маркет · качество',
+    state: makeGameState('shop', ['bank', 'ofd', 'market'], ['cold-case', 'cctv'], ['basic', 'dairy']),
+    tactic: 'service',
+  }),
+  () => ({
+    name: 'Магазин · Банк+Фокус+Эльба · спокойно',
+    state: makeGameState('shop', ['bank', 'fokus', 'elba'], [], ['basic']),
+    tactic: 'calm',
+  }),
 
-  // ── CAFE ──────────────────────────────────────────────────────
+  // ── CAFE (10) ─────────────────────────────────────────────────
   () => ({
     name: 'Кафе · только Банк · спокойно',
     state: makeGameState('cafe', ['bank'], [], ['beverages']),
@@ -256,8 +277,28 @@ const SCENARIOS: Array<() => { name: string; state: GameState; tactic: WeeklyTac
     state: makeGameState('cafe', ['bank', 'ofd'], [], ['beverages', 'desserts']),
     tactic: 'service',
   }),
+  () => ({
+    name: 'Кафе · Банк+ОФД · агрессивно',
+    state: makeGameState('cafe', ['bank', 'ofd'], ['espresso-machine'], ['beverages', 'desserts']),
+    tactic: 'aggressive',
+  }),
+  () => ({
+    name: 'Кафе · Банк+Маркет+ОФД · агрессивно',
+    state: makeGameState('cafe', ['bank', 'market', 'ofd'], ['oven', 'kitchen', 'espresso-machine'], ['beverages', 'desserts', 'ready-food']),
+    tactic: 'aggressive',
+  }),
+  () => ({
+    name: 'Кафе · Банк+Маркет+Эльба · качество',
+    state: makeGameState('cafe', ['bank', 'market', 'elba'], ['oven', 'kitchen'], ['beverages', 'desserts', 'ready-food']),
+    tactic: 'service',
+  }),
+  () => ({
+    name: 'Кафе · Банк+Фокус · спокойно',
+    state: makeGameState('cafe', ['bank', 'fokus'], ['espresso-machine'], ['beverages']),
+    tactic: 'calm',
+  }),
 
-  // ── BEAUTY SALON ─────────────────────────────────────────────
+  // ── BEAUTY SALON (10) ─────────────────────────────────────────
   () => ({
     name: 'Салон · только Банк · спокойно',
     state: makeGameState('beauty-salon', ['bank'], [], ['basic-services']),
@@ -291,6 +332,31 @@ const SCENARIOS: Array<() => { name: string; state: GameState; tactic: WeeklyTac
   () => ({
     name: 'Салон · Эльба+Фокус · агрессивно',
     state: makeGameState('beauty-salon', ['elba', 'fokus'], [], ['basic-services', 'spa']),
+    tactic: 'aggressive',
+  }),
+  () => ({
+    name: 'Салон · Банк+Эльба · качество',
+    state: makeGameState('beauty-salon', ['bank', 'elba'], ['spa-room'], ['basic-services', 'spa']),
+    tactic: 'service',
+  }),
+  () => ({
+    name: 'Салон · все 7 сервисов · агрессивно',
+    state: makeGameState(
+      'beauty-salon',
+      ['bank', 'market', 'ofd', 'diadoc', 'fokus', 'elba', 'extern'],
+      ['spa-room', 'coloring-station'],
+      ['basic-services', 'spa', 'premium-services', 'cosmetics'],
+    ),
+    tactic: 'aggressive',
+  }),
+  () => ({
+    name: 'Салон · Банк+Фокус · спокойно',
+    state: makeGameState('beauty-salon', ['bank', 'fokus'], [], ['basic-services']),
+    tactic: 'calm',
+  }),
+  () => ({
+    name: 'Салон · Банк+Маркет · агрессивно',
+    state: makeGameState('beauty-salon', ['bank', 'market'], [], ['basic-services', 'spa']),
     tactic: 'aggressive',
   }),
 ]

@@ -7,8 +7,13 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
       id: 'basic',
       name: 'Бакалея',
       description: 'Крупы, консервы, макароны. Базовая категория — есть всегда.',
-      margin: 0.35,
-      dailyCost: 4550,
+      margin: 0.39,
+      // Спринт 5d: dailyCost снижен 4550→4250 для уровнения магазина с
+      // кафе/салоном по достижимости 1М₽-целей (раньше магазину требовалось
+      // ~80% от PRO-оптимизации, теперь ~73%). Маржа поднялась с 35% до 39%
+      // — это всё равно ниже кафе (50-65%) и салона (55-60%), магазин
+      // остаётся «самым низкомаржинальным» по дизайну.
+      dailyCost: 4250,
       baseRevenue: 7000,
       requiredServices: [],
       icon: '🏪',
@@ -39,11 +44,11 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
     {
       id: 'alcohol',
       name: 'Алкоголь',
-      description: 'Самая высокая маржа. Нужен алкошкаф + лицензия (ОФД+Экстерн).',
+      description: 'Самая высокая маржа. Нужен алкошкаф + ОФД (для ЕГАИС).',
       margin: 0.4,
       dailyCost: 6000,
       baseRevenue: 10000,
-      requiredServices: ['ofd', 'extern'],
+      requiredServices: ['ofd'],
       requiredUpgradeIds: ['liquor-cabinet'],
       requiresEgais: true,
       icon: '🍷',
@@ -65,8 +70,10 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
       id: 'beverages',
       name: 'Напитки',
       description: 'Кофе, чай, соки. Базовая категория. С кофемашиной — выручка ×1.5.',
-      margin: 0.65,
-      dailyCost: 1750,
+      // Спринт 5e: dailyCost снижен 1750→1550 чтобы casual-cafe не уходил
+      // в минус по году. Маржа с 65% выросла до 69%.
+      margin: 0.69,
+      dailyCost: 1550,
       baseRevenue: 5000,
       requiredServices: [],
       icon: '☕',
@@ -96,11 +103,11 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
     {
       id: 'alcohol-cafe',
       name: 'Барная карта',
-      description: 'Пиво, вино, коктейли. Нужна барная стойка + лицензия (ОФД+Экстерн).',
+      description: 'Пиво, вино, коктейли. Нужна барная стойка + ОФД (для ЕГАИС).',
       margin: 0.45,
       dailyCost: 4400,
       baseRevenue: 8000,
-      requiredServices: ['ofd', 'extern'],
+      requiredServices: ['ofd'],
       requiredUpgradeIds: ['bar-counter'],
       requiresEgais: true,
       icon: '🍹',
@@ -111,8 +118,10 @@ export const PRODUCT_CATEGORIES: Record<BusinessType, ProductCategory[]> = {
       id: 'basic-services',
       name: 'Базовые услуги',
       description: 'Стрижки, укладки. Базовая категория — кресло, ножницы, фен.',
-      margin: 0.6,
-      dailyCost: 2400,
+      // Спринт 5e: dailyCost снижен 2400→2200 чтобы casual-salon не уходил
+      // в минус по году. Маржа с 60% выросла до 63%.
+      margin: 0.63,
+      dailyCost: 2200,
       baseRevenue: 6000,
       requiredServices: [],
       icon: '✂️',

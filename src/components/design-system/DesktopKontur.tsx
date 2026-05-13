@@ -2,7 +2,7 @@ import React, { useMemo, useState, useRef } from 'react'
 import { useGameStore } from '../../stores/gameStore'
 import { SYNERGIES_CONFIG } from '../../constants/business'
 import { ONBOARDING_STAGES } from '../../constants/onboarding'
-import { K } from './tokens'
+import { K, PRODUCT_COLORS } from './tokens'
 
 const ACTIVATION_TOAST: Record<string, { headline: string; detail: string }> = {
   market:  { headline: 'Контур.Маркет подключён!',  detail: '+20% клиентов · +15% к среднему чеку · списания -20%' },
@@ -24,14 +24,18 @@ const ONBOARDING_ACTION_SERVICE: Record<string, string> = {
   activate_extern:  'extern',
 }
 
+// Бренд-цвета продуктов Контура — взяты из фирменных иконок (см. PRODUCT_COLORS).
+// Раньше тут была случайная палитра (Маркет оранжевый, ОФД фиолетовый, Эльба
+// синяя, Фокус оранжевый), что путалось с реальным UI Контура. Теперь каждый
+// сервис в эко-панели подсвечивается ровно тем же цветом, что и в продакте.
 const SERVICE_COLORS: Record<string, string> = {
-  market: K.orange,
-  bank: K.blue,
-  ofd: K.violet,
-  diadoc: K.mint,
-  fokus: K.orange,
-  elba: K.blue,
-  extern: K.mint,
+  market: PRODUCT_COLORS.market,
+  bank:   PRODUCT_COLORS.bank,
+  ofd:    PRODUCT_COLORS.ofd,
+  diadoc: PRODUCT_COLORS.diadoc,
+  fokus:  PRODUCT_COLORS.fokus,
+  elba:   PRODUCT_COLORS.elba,
+  extern: PRODUCT_COLORS.extern,
 }
 
 export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {

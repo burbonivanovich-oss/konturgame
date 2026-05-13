@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { useGameStore } from '../../stores/gameStore'
 import {
   AD_CAMPAIGNS_CONFIG, MAX_ACTIVE_CAMPAIGNS, CAMPAIGN_DIMINISHING_FACTORS,
-  getUpgradesForBusiness,
+  getUpgradesForBusiness, SERVICES_CONFIG,
 } from '../../constants/business'
 import { getCampaignStats } from '../../services/weekCalculator'
 import { getCurrentTier, getNextTier, canUpgradeTier } from '../../services/economyEngine'
 import { getDimensionStatus } from '../../services/businessHealth'
 import { K } from '../design-system/tokens'
+import type { ServiceType } from '../../types/game'
 
 type DevTab = 'marketing' | 'upgrades' | 'tier' | 'roi'
 
@@ -490,9 +491,19 @@ function MarketingSection() {
 }
 
 function UpgradesSection() {
-  const { balance, businessType, purchasedUpgrades, purchaseUpgrade, setBalance } = useGameStore()
+  const { balance, businessType, purchasedUpgrades, purchaseUpgrade, setBalance, services } = useGameStore()
   const [selectedUpgrade, setSelectedUpgrade] = useState<string | null>(null)
   const upgrades = getUpgradesForBusiness(businessType)
+
+  // helper: имя апгрейда-зависимости (для бейджа «требует X»)
+  const getUpgradeName = (id: string): string => {
+    const u = upgrades.find(u => u.id === id)
+    return u ? u.name : id
+  }
+  // helper: проверка активности сервиса (для requiresServices)
+  const isServiceActive = (id: ServiceType): boolean => {
+    return services?.[id]?.isActive ?? false
+  }
 
   const handlePurchase = (upgrade: typeof upgrades[0]) => {
     if (balance >= upgrade.cost && !purchasedUpgrades.includes(upgrade.id)) {
@@ -519,6 +530,30 @@ function UpgradesSection() {
           const canAfford = balance >= upgrade.cost
           const isSelected = selectedUpgrade === upgrade.id
 
+          // Зависимости: апгрейд требует другого апгрейда (cold-case для морозильника)
+          // или активных сервисов (Маркет для кухни, ОФД+Экстерн для барной стойки).
+          const reqUpgradeOk = !upgrade.requiresUpgrade || purchasedUpgrades.includes(upgrade.requiresUpgrade)
+          const missingServices = (upgrade.requiresServices ?? []).filter(s => !isServiceActive(s))
+          const allReqsOk = reqUpgradeOk && missingServices.length === 0
+
+          // Скрытые ежемесячные расходы — игрок не видел их раньше,
+          // покупал кассира за 60K и удивлялся минусу 15K/мес.
+          const monthlyExtra = (upgrade.monthlySalaryIncrease ?? 0) + (upgrade.monthlyRentIncrease ?? 0)
+
+          // Определяем категории-теги. Один апгрейд может относиться к
+          // нескольким: например, «Наём кассира» — это и Вместимость
+          // (capacityBonus), и Энергия (energyBonus), и Персонал
+          // (monthlySalaryIncrease). Тегов мало, читать их быстро —
+          // это лучше, чем читать описание сначала.
+          const opensCategory = /открывает/i.test(upgrade.effect)
+          const tags: Array<{ icon: string; label: string }> = []
+          if (opensCategory) tags.push({ icon: '🔓', label: 'Категория' })
+          if (upgrade.capacityBonus) tags.push({ icon: '📦', label: 'Вместимость' })
+          if (upgrade.clientBonus) tags.push({ icon: '👥', label: 'Клиенты' })
+          if (upgrade.checkBonus) tags.push({ icon: '💰', label: 'Чек' })
+          if (upgrade.energyBonus) tags.push({ icon: '🔋', label: 'Энергия' })
+          if (upgrade.monthlySalaryIncrease) tags.push({ icon: '👨‍💼', label: 'Найм' })
+
           return (
             <div
               key={upgrade.id}
@@ -544,18 +579,88 @@ function UpgradesSection() {
                 {isPurchased && <span style={{ fontSize: 18, color: K.mint }}>✓</span>}
               </div>
 
+              {/* Категории-теги для быстрого сканирования. Лежат под
+                  названием, до описания — глаз цепляется в первую очередь. */}
+              {tags.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  {tags.map((tag, i) => (
+                    <span key={i} style={{
+                      fontSize: 9, fontWeight: 700,
+                      padding: '2px 7px', borderRadius: 999,
+                      background: K.bone, color: K.ink2,
+                      letterSpacing: '0.02em',
+                    }}>
+                      {tag.icon} {tag.label}
+                    </span>
+                  ))}
+                </div>
+              )}
+
               <p style={{ fontSize: 12, color: K.ink2, margin: 0, lineHeight: 1.4 }}>
                 {upgrade.effect}
               </p>
 
+              {/* Точные числовые эффекты — что именно прибавится. Размещены
+                  под описанием, потому что описание объясняет «что это»,
+                  а числа — «сколько именно». */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {upgrade.capacityBonus ? (
+                  <EffectLine label="Вместимость" value={`+${Math.round(upgrade.capacityBonus * 100)}%`} />
+                ) : null}
+                {upgrade.clientBonus ? (
+                  <EffectLine label="Клиенты" value={`+${Math.round(upgrade.clientBonus * 100)}%`} />
+                ) : null}
+                {upgrade.checkBonus ? (
+                  <EffectLine label="Средний чек" value={`+${Math.round(upgrade.checkBonus * 100)}%`} />
+                ) : null}
+                {upgrade.energyBonus ? (
+                  <EffectLine label="Восстановление энергии" value={`+${upgrade.energyBonus} / нед`} />
+                ) : null}
+              </div>
+
+              {/* Бэджи зависимостей: галочка если выполнено, крест если нет.
+                  Купить можно всегда (механика не блокирует), но игрок видит
+                  что эффект работать не будет, пока зависимость не выполнена. */}
+              {!isPurchased && upgrade.requiresUpgrade && (
+                <RequirementBadge
+                  met={reqUpgradeOk}
+                  label="Требует"
+                  value={getUpgradeName(upgrade.requiresUpgrade)}
+                />
+              )}
+              {!isPurchased && upgrade.requiresServices && upgrade.requiresServices.length > 0 && (
+                <RequirementBadge
+                  met={missingServices.length === 0}
+                  label={upgrade.requiresServices.length > 1 ? 'Нужны сервисы' : 'Нужен сервис'}
+                  value={upgrade.requiresServices.map(s => SERVICES_CONFIG[s]?.name ?? s).join(', ')}
+                />
+              )}
+
               {!isPurchased && (
                 <div style={{
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: canAfford ? K.orange : K.bad,
+                  display: 'flex', flexDirection: 'column', gap: 4,
                   marginTop: 'auto',
                 }}>
-                  {upgrade.cost.toLocaleString('ru-RU')} ₽
+                  <div style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: canAfford ? K.orange : K.bad,
+                  }}>
+                    {upgrade.cost.toLocaleString('ru-RU')} ₽
+                  </div>
+                  {/* Скрытые ежемесячные расходы. Показываем красным —
+                      это то, что кусает баланс долго после разовой покупки. */}
+                  {monthlyExtra > 0 && (
+                    <div style={{
+                      fontSize: 10, fontWeight: 700,
+                      color: K.bad,
+                      letterSpacing: '0.02em',
+                    }}>
+                      ⚠️ +{monthlyExtra.toLocaleString('ru-RU')} ₽/мес постоянно
+                      {upgrade.monthlySalaryIncrease ? ' (зарплата)' : ''}
+                      {upgrade.monthlyRentIncrease ? ' (аренда)' : ''}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -579,7 +684,7 @@ function UpgradesSection() {
                     transition: 'all 0.2s',
                   }}
                 >
-                  Купить сейчас
+                  {allReqsOk ? 'Купить сейчас' : 'Купить (требования не выполнены)'}
                 </button>
               )}
             </div>
@@ -592,6 +697,36 @@ function UpgradesSection() {
           Нет доступных улучшений для этого типа бизнеса
         </div>
       )}
+    </div>
+  )
+}
+
+function EffectLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'space-between',
+      fontSize: 11, lineHeight: 1.3,
+      fontVariantNumeric: 'tabular-nums',
+    }}>
+      <span style={{ color: K.muted }}>{label}</span>
+      <span style={{ color: K.mint, fontWeight: 800 }}>{value}</span>
+    </div>
+  )
+}
+
+function RequirementBadge({ met, label, value }: { met: boolean; label: string; value: string }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 6,
+      fontSize: 11, fontWeight: 700,
+      color: met ? K.mint : K.bad,
+      padding: '4px 8px', borderRadius: 8,
+      background: met ? 'rgba(34,197,94,0.07)' : 'rgba(220,38,38,0.07)',
+      border: `1px solid ${met ? 'rgba(34,197,94,0.25)' : 'rgba(220,38,38,0.25)'}`,
+    }}>
+      <span aria-hidden="true">{met ? '✓' : '✕'}</span>
+      <span style={{ opacity: 0.8 }}>{label}:</span>
+      <span style={{ fontWeight: 800 }}>{value}</span>
     </div>
   )
 }
