@@ -35,9 +35,6 @@ export function canUpgradeTier(state: GameState): { ok: boolean; reason?: string
   if (state.reputation < next.unlockReputation) {
     return { ok: false, reason: `Нужна репутация от ${next.unlockReputation}` }
   }
-  if (next.unlockQuality !== undefined && (state.qualityLevel ?? 0) < next.unlockQuality) {
-    return { ok: false, reason: `Нужно качество от ${next.unlockQuality}` }
-  }
   return { ok: true }
 }
 

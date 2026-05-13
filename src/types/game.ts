@@ -559,8 +559,10 @@ export interface GameState {
   // Employees system (NEW v2.0)
   employees: Employee[]
 
-  // Quality of service/product (NEW v2.0) - affects reputation and loyalty
-  qualityLevel: number  // 0-100, starts at 50
+  // qualityLevel оставлен как optional для совместимости со старыми
+  // сэйвами. Скаляр выпилен: его эффекты дублировали репутацию и
+  // мерджнуты обратно в неё. Не читается нигде в продакшене.
+  qualityLevel?: number
 
   // Competitor events tracking (UPDATED v2.0)
   weeksSinceCompetitorEvent: number  // Track weeks since last competitor event

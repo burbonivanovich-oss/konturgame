@@ -41,8 +41,7 @@ import {
 } from '../constants/gameBalance'
 import { calculateCategoryRevenue } from './assortmentEngine'
 import { initializeEmployees, getWeeklySalaryCost, getWeeklyEnergyCost, getEmployeeCapacityBonus, getUpgradeEnergyBonus, updateEmployeeGrowth } from './employeeManager'
-import { initializeQuality, updateQualityWeekly, getQualityReputationBonus, getQualityLoyaltyBonus, getQualityPricePremium } from './qualityManager'
-import { getQualityClientModifier, getBrandEffect } from './qualityModifier'
+import { getBrandEffect } from './qualityModifier'
 
 export function checkWeekBlocked(state: GameState): { blocked: boolean; reason?: string } {
   if (state.pendingEvent) {
@@ -70,9 +69,8 @@ export function processWeek(state: GameState): DayResult {
   if (!state.employees) {
     state.employees = initializeEmployees()
   }
-  if (state.qualityLevel === undefined) {
-    state.qualityLevel = initializeQuality()
-  }
+  // qualityLevel удалён — был дублирующим скаляром, эффекты теперь
+  // идут напрямую в репутацию (через Fokus, синергии, тактику, события).
   if (state.weeksSinceCompetitorEvent === undefined) {
     state.weeksSinceCompetitorEvent = 0
   }
@@ -123,18 +121,11 @@ export function processWeek(state: GameState): DayResult {
     weeklyEventSum += modifiers.event
     const synergyMods = calculateSynergyModifiers(state)
 
-    // Quality price premium
-    const qualityPricePremium = getQualityPricePremium(state)
-
     // 2. Stock expiry — must run before revenue to account for lost inventory
     const { loss: expiredLoss } = checkExpiry(state)
 
     // 3. Calculate daily metrics
     let totalClients = calculateClients(getEffectiveBaseClients(state), modifiers)
-
-    // Apply quality modifier (affects client acquisition)
-    const qualityClientMod = getQualityClientModifier(state.qualityLevel)
-    totalClients = Math.round(totalClients * (1 + qualityClientMod))
 
     // Apply brand effect (reputation + loyalty synergy)
     const brandEffect = getBrandEffect(state.reputation, state.loyalty)
@@ -162,13 +153,11 @@ export function processWeek(state: GameState): DayResult {
     const bankPaymentRatio = getBankPaymentRatio(state)
     const effectiveServed = Math.floor(served * bankPaymentRatio)
 
-    // 5. Average check with quality and brand premiums
+    // 5. Average check with brand premium (репутация × лояльность синергия).
+    // Раньше тут был ещё qualityPricePremium — выпилен вместе со скаляром
+    // качества: при высокой репутации brand effect уже даёт +чек, дублирование убрано.
     let avgCheck = calculateAverageCheck(getEffectiveAvgCheck(state), modifiers)
-
-    // Add quality price premium + brand effect (skip getQualityPriceModifier to avoid double-counting)
-    const totalPriceModifier = qualityPricePremium + brandEffect.priceMod
-
-    avgCheck = Math.round(avgCheck * (1 + totalPriceModifier))
+    avgCheck = Math.round(avgCheck * (1 + brandEffect.priceMod))
 
     // 6. Revenue (daily)
     let dailyRevenue: number
@@ -263,10 +252,11 @@ export function processWeek(state: GameState): DayResult {
     const fokusRepBonus = state.services?.fokus?.isActive
       ? (state.services.fokus.effects.reputationBonus ?? 0)
       : 0
-    const qualityRepBonus = getQualityReputationBonus(state)
-    const dayRepChange = Math.round(repFromMissed + fokusRepBonus + synergyMods.reputationBonus + qualityRepBonus + tacticRepPerDay)
+    // Качество как отдельный скаляр выпилено — его вклад в репутацию
+     // (±2/±1) дублировал то, что уже даёт сервисная тактика и Фокус.
+    const dayRepChange = Math.round(repFromMissed + fokusRepBonus + synergyMods.reputationBonus + tacticRepPerDay)
 
-    // 16. Loyalty change with quality bonus
+    // 16. Loyalty change
     const elbaActive = state.services?.elba?.isActive ?? false
     let dayLoyaltyChange = 0
     const load = capacity > 0 ? served / capacity : 0
@@ -283,8 +273,7 @@ export function processWeek(state: GameState): DayResult {
       state.consecutiveOverloadDays = 0
     }
     const elbaLoyaltyBonus = elbaActive ? (state.services.elba.effects.loyaltyBonus ?? 0) : 0
-    const qualityLoyaltyBonus = getQualityLoyaltyBonus(state)
-    dayLoyaltyChange += elbaLoyaltyBonus + synergyMods.loyaltyBonus + qualityLoyaltyBonus + loyaltyUpgradesBonus + tacticLoyaltyPerDay
+    dayLoyaltyChange += elbaLoyaltyBonus + synergyMods.loyaltyBonus + loyaltyUpgradesBonus + tacticLoyaltyPerDay
 
     // Loyalty soft-cap decay above 70 — without active maintenance, customer
     // loyalty drifts down. At 70: no decay; at 100: 3/day pull. To plateau
@@ -344,9 +333,6 @@ export function processWeek(state: GameState): DayResult {
   const newBalance = state.balance + weekNetProfit
   const newReputation = Math.max(0, Math.min(100, state.reputation + weekRepChange))
   const newLoyalty = Math.max(0, Math.min(100, state.loyalty + weekLoyaltyChange))
-
-  // Update quality weekly
-  updateQualityWeekly(state)
 
   // Сдвиг эффективности сотрудников за неделю (учится / халтурит)
   updateEmployeeGrowth(state)

@@ -136,9 +136,6 @@ const createInitialState = (businessType: BusinessType): GameState => {
     // Employees system (NEW v2.0)
     employees: [],
 
-    // Quality of service/product (NEW v2.0)
-    qualityLevel: 50,
-
     // Competitor events tracking (UPDATED v2.0)
     weeksSinceCompetitorEvent: 0,
 
@@ -316,7 +313,7 @@ interface GameStoreActions {
   runTrainingSession: () => boolean  // costs 20 energy, +0.1 efficiency to all employees (capped at max)
 
   // Quality level
-  adjustQualityLevel: (delta: number) => void
+  // adjustQualityLevel удалён вместе со скаляром качества.
 
   // Loans
   takeLoan: (amount: number, type: 'micro' | 'standard' | 'long-term') => boolean
@@ -1159,13 +1156,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return true
     },
 
-    // Quality level
-    adjustQualityLevel: (delta: number) => {
-      set((state) => ({
-        qualityLevel: Math.max(0, Math.min(100, state.qualityLevel + delta)),
-        lastUpdated: Date.now(),
-      }))
-    },
 
     // Loans
     takeLoan: (amount: number, type: 'micro' | 'standard' | 'long-term') => {
@@ -1397,7 +1387,7 @@ function extractState(state: any): GameState {
     cashRegisters, enabledCategories, promoCodesRevealed,
     daysBalanceNegative, competitorEventTriggered, lastDayPainLosses, bundlePromoShown,
     // v2.0 new fields
-    employees, qualityLevel, weeksSinceCompetitorEvent,
+    employees, weeksSinceCompetitorEvent,
     // v2.1 new fields
     loans,
     // v2.2 new fields
@@ -1456,7 +1446,6 @@ function extractState(state: any): GameState {
     lastWeekMicroEvent: null,
     // v2.0 fields with defaults for save compatibility
     employees: employees ?? [],
-    qualityLevel: qualityLevel ?? 50,
     weeksSinceCompetitorEvent: weeksSinceCompetitorEvent ?? 0,
     // v2.1 fields with defaults
     loans: loans ?? [],

@@ -21,17 +21,19 @@ export interface BusinessHealth {
 export function getBusinessHealth(state: GameState): BusinessHealth {
   const rep = state.reputation ?? 50
   const loy = state.loyalty ?? 50
-  const qual = state.qualityLevel ?? 50
-  const score = (rep + loy + qual) / 3
+  // Скаляр качества выпилен и мерджнут в репутацию; здоровье считается
+  // как (rep + loyalty) / 2. После удаления лояльности (следующий коммит)
+  // здесь останется только репутация.
+  const score = (rep + loy) / 2
 
   // Hard floors — any single dimension going critical pulls the whole
   // descriptor down. Reputation under 20 means people are actively
-  // avoiding you; that overrides good loyalty/quality averages.
-  if (rep < 20 || loy < 20 || qual < 20) {
+  // avoiding you; that overrides good loyalty averages.
+  if (rep < 20 || loy < 20) {
     return {
       label: 'Тревожно',
       tone: 'bad',
-      hint: 'Где-то протекает — клиенты, команда или сервис',
+      hint: 'Где-то протекает — клиенты или команда',
     }
   }
 
