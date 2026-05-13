@@ -778,9 +778,9 @@ function generateNextWeekTeaser(state: GameState): string | null {
   if (config === 'beauty-salon' && nextMonth === 3) return `🌸 Весна — сезонный рост для салона красоты`
   if (config === 'shop' && nextMonth === 7) return `🏖️ Летний сезон даёт небольшой рост — пользуйтесь`
 
-  // Crisis week hint
+  // Crisis week hint — сильнее, чтобы игрок планировал тактику
   if ((state.currentWeek + 1) % 9 === 0) {
-    return `🌩️ Следующая неделя может быть напряжённой — ожидается несколько событий сразу`
+    return `🌩️ Кризисная неделя — будет 2 события подряд. Подумайте о тактике (calm/service помогут) и энергии заранее`
   }
 
   // Generic encouragement
