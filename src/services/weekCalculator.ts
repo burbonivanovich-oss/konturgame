@@ -717,6 +717,20 @@ export function processWeek(state: GameState): DayResult {
     }
   }
 
+  // Спринт 5e: ограничиваем очередь событий за неделю — 3 события максимум
+  // (pendingEvent + 2 в queue). При комбинации deferred + chain + crisis +
+  // random могла набираться очередь из 4-5, что перегружало игрока.
+  // Лишние события переносятся на следующую неделю через deferredEvents
+  // (но без флага wasDeferred — это «отложено системой», не игроком).
+  const MAX_EVENTS_PER_WEEK = 3  // 1 pendingEvent + 2 в queue
+  if ((state.pendingEventsQueue?.length ?? 0) > MAX_EVENTS_PER_WEEK - 1) {
+    const queue = state.pendingEventsQueue ?? []
+    const keep = queue.slice(0, MAX_EVENTS_PER_WEEK - 1)
+    const overflow = queue.slice(MAX_EVENTS_PER_WEEK - 1)
+    state.pendingEventsQueue = keep
+    state.deferredEvents = [...(state.deferredEvents ?? []), ...overflow]
+  }
+
   // Advance week AFTER all checks (events, milestones, etc.) have used current week number
   state.currentWeek += 1
 
@@ -936,7 +950,14 @@ function applyWeeklyMicroEvent(state: GameState): void {
   const micro = candidates[Math.floor(Math.random() * candidates.length)]
   if (!micro) return
 
-  state.seenMicroEvents = [...(state.seenMicroEvents ?? []), micro.id]
+  // Ограничиваем массив seenMicroEvents — в длинной игре может расти
+  // безгранично. Храним последние 50 (больше чем общее количество событий 35),
+  // этого достаточно чтобы отслеживать «текущий цикл».
+  const SEEN_CAP = 50
+  const updatedSeen = [...(state.seenMicroEvents ?? []), micro.id]
+  state.seenMicroEvents = updatedSeen.length > SEEN_CAP
+    ? updatedSeen.slice(-SEEN_CAP)
+    : updatedSeen
 
   const option = micro.options[0]
   if (!option) return
