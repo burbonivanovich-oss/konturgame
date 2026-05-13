@@ -10,8 +10,23 @@ const ACTIVATION_TOAST: Record<string, { headline: string; detail: string }> = {
   ofd:     { headline: 'Контур.ОФД подключён!',     detail: 'Онлайн-касса в порядке — штрафы ФНС не страшны' },
   diadoc:  { headline: 'Контур.Диадок подключён!',  detail: '+2% клиентов · защита от штрафов до −30 000 ₽' },
   fokus:   { headline: 'Контур.Фокус подключён!',   detail: '+1 репутация/день · защита от мошенников до −55 000 ₽' },
-  elba:    { headline: 'Контур.Эльба подключена!',  detail: '+1 лояльность/день · бухгалтерия автоматически' },
+  elba:    { headline: 'Контур.Эльба подключена!',  detail: '+0.5 репутации/день · бухгалтерия автоматически' },
   extern:  { headline: 'Контур.Экстерн подключён!', detail: 'Налоговая нагрузка -2% — отчёты сдаются онлайн' },
+}
+
+// Одна строчка под inactive сервисом: что игрок теряет, если не подключит.
+// Раньше эта информация жила в отдельной Pain Engine панели и в дневном
+// штрафе к балансу — обе панели уехали, осталась только подсказка на
+// карточке сервиса как ROI-аргумент. Цифры — реалистичные оценки для
+// малого бизнеса (магазин/кафе/салон) на середине игры, не привязаны к
+// дневной выручке игрока (Pain Engine как штраф отключён).
+const SERVICE_PAIN_HINT: Record<string, string> = {
+  market: 'Без него ~10 000 ₽/мес уходит на ручной учёт и списания',
+  bank:   'Без него 30% клиентов уходят — некому платить наличкой',
+  ofd:    'Без него штраф до 10 000 ₽ за каждый чек (54-ФЗ)',
+  diadoc: 'Без него ~5 000 ₽/мес — потерянные накладные и просрочки',
+  fokus:  'Без него ~6 000 ₽/мес — нарываетесь на плохих поставщиков',
+  elba:   'Без него ~4 000 ₽/мес — ошибки в декларациях и пени',
 }
 
 const ONBOARDING_ACTION_SERVICE: Record<string, string> = {
@@ -281,11 +296,22 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: isOnboardingTarget ? 12 : 0 }}>
-                <div>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.02em' }}>{s.name}</div>
                   <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.75, marginTop: 2, lineHeight: 1.3 }}>
                     {s.description}
                   </div>
+                  {!s.isActive && SERVICE_PAIN_HINT[s.id] && (
+                    <div style={{
+                      fontSize: 11, fontWeight: 600, marginTop: 8, lineHeight: 1.3,
+                      padding: '6px 9px', borderRadius: 8,
+                      background: 'rgba(255,107,0,0.08)', color: K.orange,
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                    }}>
+                      <span>⚠️</span>
+                      <span>{SERVICE_PAIN_HINT[s.id]}</span>
+                    </div>
+                  )}
                 </div>
                 {s.isActive ? (
                   <div style={{
@@ -293,11 +319,13 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
                     background: s.color === K.orange || s.color === K.mint ? K.ink : '#fff',
                     color: s.color === K.orange || s.color === K.mint ? s.color : K.ink,
                     fontSize: 9, fontWeight: 800, letterSpacing: '0.05em',
+                    flexShrink: 0,
                   }}>ON</div>
                 ) : (
                   <div style={{
                     width: 14, height: 14, borderRadius: 4,
                     border: `1.5px solid ${K.muted2}`,
+                    flexShrink: 0,
                   }}/>
                 )}
               </div>

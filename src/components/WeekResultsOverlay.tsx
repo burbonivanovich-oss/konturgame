@@ -29,21 +29,13 @@ const MILESTONE_LABELS: Record<string, { title: string; emoji: string }> = {
   week30: { emoji: '🏆', title: '30 недель — настоящий предприниматель' },
 }
 
-const PAIN_LABELS: Record<string, string> = {
-  bank: 'Без Банка: клиенты ушли — нет эквайринга',
-  market: 'Без Маркета: списали просрочку',
-  ofd: 'Без ОФД: налоговая прислала штраф',
-  diadoc: 'Без Диадока: бумажные накладные опоздали',
-  fokus: 'Без Фокуса: попался плохой поставщик',
-  elba: 'Без Эльбы: пени за просроченный отчёт',
-  extern: 'Без Экстерна: расхождение по НДС',
-}
+// PAIN_LABELS удалены вместе с Pain Engine штрафами.
 
 export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
   const {
     currentWeek, balance, lastDayResult, services, achievements,
     pendingMilestoneCelebration, weeklyTactic,
-    lastWeekMicroEvent, lastDiaryEntry, lastWeekPainLosses,
+    lastWeekMicroEvent, lastDiaryEntry,
   } = useGameStore()
 
   if (!lastDayResult) return null
@@ -87,17 +79,9 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
       `Подписки Контура (${activeCount}): −${lastDayResult.subscriptionCost.toLocaleString('ru-RU')} ₽`
     )
   }
-  // Pain losses — самое информативное «без чего вы потеряли»
-  if (lastWeekPainLosses && lastWeekPainLosses.total > 0) {
-    const top = (Object.entries(lastWeekPainLosses) as [string, number][])
-      .filter(([k, v]) => k !== 'total' && v > 0)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 2)
-    for (const [key, amount] of top) {
-      const label = PAIN_LABELS[key] ?? `Без сервиса ${key}`
-      negatives.push(`${label}: −${Math.round(amount).toLocaleString('ru-RU')} ₽`)
-    }
-  }
+  // Pain Engine как ежедневный штраф к балансу выпилен; раньше тут
+  // показывались top-2 потери от отсутствующих сервисов. Теперь оценка
+  // живёт одной строчкой на карточке сервиса в экране «Экосистема».
 
   return (
     <div style={{
