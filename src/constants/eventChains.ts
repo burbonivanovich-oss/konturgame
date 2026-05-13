@@ -107,15 +107,14 @@ export const CHAIN_EVENTS: EventTemplate[] = [
   },
 
   // ── CHAIN 2: Рост Светланы (svetlana_growth) ────────────────────────────────
-  // Trigger: ~W18-23 (после svetlana_intro на W12-15 и нескольких недель работы).
-  // Раньше стартовал с W6, но Светлана теперь приходит сюжетно на W12+ через
-  // svetlana_intro — её просьба про курсы должна быть ПОСЛЕ knockout-первого
-  // впечатления, когда видны её результаты.
+  // Trigger: ~W28-33 (через 6-8 недель после svetlana_intro на W20). К этому
+  // моменту видны её результаты — есть нарративный фундамент под «хочу
+  // расти ещё».
   {
     id: 'svetlana_growth_1',
     title: 'Светлана хочет учиться',
     description: 'Светлана уже несколько недель в команде — и видно, как точка ожила. После закрытия осталась поговорить, мнётся.\n\n«Слушайте, я нашла курсы по управлению продажами, 15 тысяч. Мне очень хочется попробовать — и я бы применила всё здесь, у вас. Я не давлю, просто чтобы вы знали: мне сделали предложение в одном месте на районе, надо ответить до конца месяца. Я бы хотела остаться, если есть смысл вкладываться в моё обучение. Но решение ваше — я пойму любой ответ.»',
-    trigger: { dayMin: 126, dayMax: 161, randomChance: 1.0, oneTime: true, chainId: 'svetlana_growth', chainStep: 1 },
+    trigger: { dayMin: 196, dayMax: 231, randomChance: 1.0, oneTime: true, chainId: 'svetlana_growth', chainStep: 1 },
     npcId: 'svetlana',
     decisionDeadlineWeeks: 2,
     options: [
@@ -720,19 +719,19 @@ export type ChainId = typeof CHAIN_IDS[number]
 // никогда не пытался его запустить как обычный chain.
 export const CHAIN_TRIGGER_WEEKS: Record<ChainId, number> = {
   mikhail_crisis: 3,
-  // svetlana_growth (W18+) — стартует ПОСЛЕ svetlana_intro (W12+).
+  // svetlana_growth (W28+) — стартует ПОСЛЕ svetlana_intro (W20+).
   // Гейтится в weekCalculator: чейн ждёт пока Светлана revealed И в employees.
-  svetlana_growth: 18,
+  svetlana_growth: 28,
   inspector_chain: 8,
   anna_war: 10,
   legacy: 15,
   tamara_arc: 8,
   gena_arc: 8,
   first_hire: 999,
-  // svetlana_intro — стартует с W12, но triggerNewChainStarts требует
-  // employees.length >= 1 (см. weekCalculator). Если игрок до W12 не
-  // нанял никого, чейн ждёт пока появится сотрудник.
-  svetlana_intro: 12,
+  // svetlana_intro — стартует с W20 (раньше было W12, но к 12-й неделе
+  // игрок ещё не вышел на стабильный доход — 60К/мес Светланы душили).
+  // На W20 MID-стратегия даёт ~250-300К накоплений, её ЗП терпима.
+  svetlana_intro: 20,
 }
 
 // Delay in weeks before the follow-up fires after the triggering choice
