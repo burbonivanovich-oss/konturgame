@@ -180,7 +180,7 @@ export const FIRST_HIRE_OPTIONS: EventTemplate = {
     },
     {
       id: 'hire_friend',
-      text: '👨 Олег, 39: 38 000 ₽/мес — работает нормально, но без огонька, не любит командование' + SALARY_NOTE_SUFFIX,
+      text: '👨 Олег, 39: 38 000 ₽/мес — работает нормально, но без огонька' + SALARY_NOTE_SUFFIX,
       consequences: {
         balanceDelta: -4500,
         loyaltyDelta: 0,
@@ -365,7 +365,7 @@ export const SVETLANA_DEMANDS_HIRE: EventTemplate = {
     },
     {
       id: 'hire_oleg_via_svetlana',
-      text: '👨 Олег, 39: 38 000 ₽/мес — работает нормально, но без огонька, не любит командование' + SALARY_NOTE_SUFFIX,
+      text: '👨 Олег, 39: 38 000 ₽/мес — работает нормально, но без огонька' + SALARY_NOTE_SUFFIX,
       consequences: {
         balanceDelta: -4500,
         loyaltyDelta: 0,
