@@ -850,16 +850,44 @@ function accumulateServiceSavings(state: GameState, weekRevenue: number, weekNet
   }
 }
 
+// Какие контексты сейчас активны — picker отдаст приоритет событиям,
+// привязанным к ним. Цель: «мир реагирует». После выгорания тебе
+// предложат отдохнуть; после увольнения — одинокий вечер с раздумьями;
+// на пик-неделе — благодарный клиент. Без контекста привязки события
+// остаются в обычном vibe-pool.
+function getActiveMicroContexts(state: GameState): Set<string> {
+  const ctx = new Set<string>()
+  if (state.burnoutWarningActive === true) ctx.add('after_burnout')
+  if ((state.consecutiveOverloadDays ?? 0) >= 3) ctx.add('after_overload')
+  if ((state.reputation ?? 50) < 35) ctx.add('after_low_rep')
+  // «Крупная неделя» — выручка значимо выше базовой нормы
+  // (baseClients × avgCheck × 7 × 1.5 как порог).
+  const cfg = (BUSINESS_CONFIGS as any)[state.businessType]
+  const expectedWeekly = cfg ? cfg.baseClients * cfg.avgCheck * 7 : 50000
+  if ((state.lastDayResult?.revenue ?? 0) > expectedWeekly * 1.5) ctx.add('after_big_week')
+  // Свежий найм / увольнение — за последние 2 недели.
+  const currentDay = (state.currentWeek ?? 1) * 7
+  if ((state.employees ?? []).some(e => currentDay - (e.hireDay ?? 0) < 14)) {
+    ctx.add('after_hire')
+  }
+  const recentFire = (state.decisionLog ?? [])
+    .slice(-5)
+    .some(e => e.text?.startsWith('Расстались:') && (state.currentWeek - e.week) <= 2)
+  if (recentFire) ctx.add('after_fire')
+  return ctx
+}
+
 function applyWeeklyMicroEvent(state: GameState): void {
   // Спринт 5e: state-aware picker.
   //   • Низкая энергия / burnoutWarning → bias на 'good' (восстановление)
   //   • Высокая энергия → больше 'rough' допустимо («жизнь продолжается»)
+  //   • Контекстные триггеры (after_burnout/after_fire/...) поднимают
+  //     соответствующие события в приоритет: 70% шанс выбрать из них.
   //   • Не повторяем события из state.seenMicroEvents в текущем цикле
   //   • Когда все события показаны — массив сбрасывается, начинается новый цикл
-  // Раньше picker был детерминированным: (week-1) % len → одна и та же
-  // последовательность между прогонами, что делало баланс предсказуемым.
   const energy = state.entrepreneurEnergy ?? 100
   const burnoutWarn = state.burnoutWarningActive === true
+  const activeContexts = getActiveMicroContexts(state)
 
   // Распределение vibe по состоянию игрока
   let vibeWeights: Record<'good' | 'neutral' | 'rough', number>
@@ -881,20 +909,33 @@ function applyWeeklyMicroEvent(state: GameState): void {
     : 'rough'
 
   const seen = new Set(state.seenMicroEvents ?? [])
-  // Фильтр: нужный vibe + не показывался в текущем цикле
-  let candidates = DAILY_MICRO_EVENTS.filter(m => m.vibe === targetVibe && !seen.has(m.id))
-  // Если все события этого vibe показаны — сбрасываем seen и пробуем снова
-  if (candidates.length === 0) {
-    state.seenMicroEvents = []
-    candidates = DAILY_MICRO_EVENTS.filter(m => m.vibe === targetVibe)
-  }
-  // Если совсем нет (vibe пустой) — fallback на любое неувиденное
-  if (candidates.length === 0) {
-    candidates = DAILY_MICRO_EVENTS.filter(m => !seen.has(m.id))
-    if (candidates.length === 0) candidates = DAILY_MICRO_EVENTS
+
+  // 1) Сначала ищем события с активным контекстом (не показанные).
+  //    70% шанс взять из контекстных кандидатов, если они есть — это
+  //    делает реакцию мира заметной, но не предсказуемой.
+  let micro: typeof DAILY_MICRO_EVENTS[0] | undefined
+  if (activeContexts.size > 0 && Math.random() < 0.70) {
+    const contextual = DAILY_MICRO_EVENTS.filter(
+      m => m.contextTrigger && activeContexts.has(m.contextTrigger) && !seen.has(m.id),
+    )
+    if (contextual.length > 0) {
+      micro = contextual[Math.floor(Math.random() * contextual.length)]
+    }
   }
 
-  const micro = candidates[Math.floor(Math.random() * candidates.length)]
+  // 2) Иначе — обычный vibe-пул (как раньше).
+  if (!micro) {
+    let candidates = DAILY_MICRO_EVENTS.filter(m => m.vibe === targetVibe && !seen.has(m.id))
+    if (candidates.length === 0) {
+      state.seenMicroEvents = []
+      candidates = DAILY_MICRO_EVENTS.filter(m => m.vibe === targetVibe)
+    }
+    if (candidates.length === 0) {
+      candidates = DAILY_MICRO_EVENTS.filter(m => !seen.has(m.id))
+      if (candidates.length === 0) candidates = DAILY_MICRO_EVENTS as any
+    }
+    micro = candidates[Math.floor(Math.random() * candidates.length)]
+  }
   if (!micro) return
 
   // Ограничиваем массив seenMicroEvents — в длинной игре может расти

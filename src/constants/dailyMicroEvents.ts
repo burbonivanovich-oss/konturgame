@@ -10,6 +10,20 @@ export interface MicroEventOption {
   }
 }
 
+// Контекстные триггеры — picker отдаёт приоритет событиям, чей контекст
+// сейчас активен. Это превращает «случайный фон» в «мир реагирует на
+// то, что случилось»: после выгорания приходит сосед поддержать, после
+// увольнения — одинокий вечер с раздумьями, после крупной выручки —
+// благодарный клиент. Если контекст не активен — событие участвует в
+// обычном vibe-pool (привязка не блокирует событие).
+export type MicroEventContext =
+  | 'after_burnout'    // state.burnoutWarningActive === true
+  | 'after_overload'   // consecutiveOverloadDays >= 3
+  | 'after_low_rep'    // reputation < 35
+  | 'after_big_week'   // lastDayResult.revenue > 2× нормы
+  | 'after_fire'       // на этой неделе уволили сотрудника
+  | 'after_hire'       // на этой неделе наняли сотрудника
+
 export interface DailyMicroEvent {
   id: string
   dayOfWeek: number  // 0 = Пн, 6 = Вс
@@ -20,6 +34,8 @@ export interface DailyMicroEvent {
   // настроению игрока. При низкой энергии чаще выпадают 'good' (восстановление),
   // при burnoutWarning — никаких 'rough'. См. applyWeeklyMicroEvent.
   vibe: 'rough' | 'neutral' | 'good'
+  // Опциональный триггер — если контекст активен, событие в приоритете.
+  contextTrigger?: MicroEventContext
   options: MicroEventOption[]
 }
 
@@ -34,6 +50,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Прочитал вдохновляющую историю успеха другого предпринимателя.',
     icon: '💪',
     vibe: 'good',
+    contextTrigger: 'after_low_rep',  // когда репа упала — нужна мотивация
     options: [
       {
         id: 'accept_motivation',
@@ -54,6 +71,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Выспался плохо, чувствуешь себя разбитым.',
     icon: '😴',
     vibe: 'rough',
+    contextTrigger: 'after_overload',
     options: [
       {
         id: 'rest_at_lunch',
@@ -210,6 +228,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Сверху потекло, на потолке пятно. Сразу остановили, но потолок надо красить.',
     icon: '💧',
     vibe: 'rough',
+    contextTrigger: 'after_overload',  // когда перегруз, проблемы накладываются
     options: [
       {
         id: 'paint',
@@ -295,6 +314,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Постоянная клиентка тётя Галя со словами «у вас тут как дома, спасибо» оставила на прилавке домашние пирожки.',
     icon: '🙏',
     vibe: 'good',
+    contextTrigger: 'after_big_week',  // на пик-неделе приходит благодарный клиент
     options: [
       {
         id: 'accept',
@@ -495,6 +515,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Знакомый из соседнего бизнеса просит подобрать заказ на корпоратив. Деньги хорошие, делать быстро.',
     icon: '📞',
     vibe: 'good',
+    contextTrigger: 'after_hire',  // когда команда выросла — могут крупные заказы потянуть
     options: [
       {
         id: 'accept',
@@ -595,6 +616,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Закрыли точку на час, прошлись по парку. Дорога обратно — впервые за месяц спокойствие.',
     icon: '🌳',
     vibe: 'good',
+    contextTrigger: 'after_burnout',  // после первого 0 энергии — обязательно дать выдохнуть
     options: [
       {
         id: 'breathe',
@@ -705,6 +727,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Один. Все занятые своим, у вас тоже своё — но молчит телефон, и в окно дождь.',
     icon: '😔',
     vibe: 'rough',
+    contextTrigger: 'after_fire',  // после увольнения сотрудника одиночество острее
     options: [
       {
         id: 'tough_it_out',
