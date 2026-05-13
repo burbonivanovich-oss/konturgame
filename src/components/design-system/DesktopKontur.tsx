@@ -74,18 +74,45 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
   })()
 
   const handleToggle = (serviceId: string, currentlyActive: boolean) => {
+    // Снимок активных синергий ДО переключения — после toggleService
+    // сравним с новым состоянием, чтобы поймать только что открывшиеся
+    // синергии и показать их персональный toast (раньше синергии
+    // активировались молча, игрок не понимал, что произошло).
+    const before = new Set(
+      SYNERGIES_CONFIG
+        .filter((syn: any) => syn.requiredServices.every((id: any) => (services as any)[id]?.isActive === true))
+        .map((syn: any) => syn.id),
+    )
     toggleService(serviceId as any)
     if (!currentlyActive) {
-      const msg = ACTIVATION_TOAST[serviceId]
-      if (msg) {
-        if (toastTimer.current) clearTimeout(toastTimer.current)
-        setToast(msg)
-        setJustActivated(serviceId)
-        toastTimer.current = setTimeout(() => {
-          setToast(null)
-          setJustActivated(null)
-        }, 4000)
+      // Сравниваем после применения — берём актуальный state из store
+      // (services из замыкания может быть stale).
+      const afterState = useGameStore.getState().services
+      const newlyOpened = SYNERGIES_CONFIG.filter((syn: any) =>
+        !before.has(syn.id) &&
+        syn.requiredServices.every((id: any) => (afterState as any)[id]?.isActive === true),
+      )
+
+      if (toastTimer.current) clearTimeout(toastTimer.current)
+      setJustActivated(serviceId)
+
+      if (newlyOpened.length > 0) {
+        // Синергия важнее — показываем её, не дефолтный сервис-toast.
+        const syn = newlyOpened[0]
+        const otherIds: string[] = syn.requiredServices.filter((id: string) => id !== serviceId)
+        const otherNames = otherIds.map(id => (afterState as any)[id]?.name ?? id).join(' + ')
+        setToast({
+          headline: `🎯 Синергия: ${syn.name}`,
+          detail: `${otherNames} + ${(afterState as any)[serviceId]?.name ?? serviceId} → ${syn.description}`,
+        })
+      } else {
+        const msg = ACTIVATION_TOAST[serviceId]
+        if (msg) setToast(msg)
       }
+      toastTimer.current = setTimeout(() => {
+        setToast(null)
+        setJustActivated(null)
+      }, 5000)
     }
   }
 
@@ -93,6 +120,27 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
     return SYNERGIES_CONFIG.filter((syn: any) =>
       syn.requiredServices.every((id: any) => (services as any)[id]?.isActive === true),
     )
+  }, [services])
+
+  // Для каждого inactive сервиса вычисляем синергии, которые откроет его
+  // подключение (партнёр уже активен). Pull-фактор «вместе с ОФД откроет
+  // Кассовый порядок» — главный аргумент для последовательного подключения.
+  const synergyPullByService: Record<string, { name: string; description: string }[]> = useMemo(() => {
+    const acc: Record<string, { name: string; description: string }[]> = {}
+    for (const syn of SYNERGIES_CONFIG as any[]) {
+      // Полный Контур (7 сервисов) пропускаем — слишком далёкая цель.
+      if (syn.requiredServices.length > 2) continue
+      for (const sid of syn.requiredServices) {
+        const partners: string[] = syn.requiredServices.filter((x: string) => x !== sid)
+        const partnersActive = partners.every((p: string) => (services as any)[p]?.isActive === true)
+        const selfInactive = !(services as any)[sid]?.isActive
+        if (selfInactive && partnersActive) {
+          if (!acc[sid]) acc[sid] = []
+          acc[sid].push({ name: syn.name, description: syn.description })
+        }
+      }
+    }
+    return acc
   }, [services])
 
   const servicesList = useMemo(() => {
@@ -191,47 +239,51 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', opacity: 0.5 }}>
             СИНЕРГИИ · {activeSynergies.length}/{SYNERGIES_CONFIG.length}
           </div>
-          {SYNERGIES_CONFIG.map((s: any) => (
-            <div key={s.id} style={{
-              padding: '10px 12px', borderRadius: 12,
-              background: activeSynergies.some((syn: any) => syn.id === s.id)
-                ? K.mintSoft
-                : K.bone,
-              border: activeSynergies.some((syn: any) => syn.id === s.id)
-                ? 'none'
-                : `1.5px dashed ${K.line}`,
-              display: 'flex', alignItems: 'center', gap: 10,
-              opacity: activeSynergies.some((syn: any) => syn.id === s.id) ? 1 : 0.6,
-            }}>
-              <div style={{ display: 'flex', gap: 4 }}>
-                <span style={{
-                  padding: '2px 6px', borderRadius: 4,
-                  background: activeSynergies.some((syn: any) => syn.id === s.id)
-                    ? K.ink
-                    : K.line,
-                  color: activeSynergies.some((syn: any) => syn.id === s.id)
-                    ? '#fff'
-                    : K.muted,
-                  fontSize: 9, fontWeight: 800,
-                }}>{s.requiredServices[0]}</span>
-                <span style={{ fontSize: 10, opacity: 0.5, alignSelf: 'center' }}>+</span>
-                <span style={{
-                  padding: '2px 6px', borderRadius: 4,
-                  background: activeSynergies.some((syn: any) => syn.id === s.id)
-                    ? K.ink
-                    : K.line,
-                  color: activeSynergies.some((syn: any) => syn.id === s.id)
-                    ? '#fff'
-                    : K.muted,
-                  fontSize: 9, fontWeight: 800,
-                }}>{s.requiredServices[1]}</span>
+          {SYNERGIES_CONFIG.map((s: any) => {
+            const isActive = activeSynergies.some((syn: any) => syn.id === s.id)
+            // Сколько сервисов из связки уже активно (для визуального
+            // «1/2» прогресса на inactive синергиях).
+            const activeCount = s.requiredServices.filter(
+              (id: string) => (services as any)[id]?.isActive === true,
+            ).length
+            const total = s.requiredServices.length
+            return (
+              <div key={s.id} style={{
+                padding: '10px 12px', borderRadius: 12,
+                background: isActive ? K.mintSoft : K.bone,
+                border: isActive ? 'none' : `1.5px dashed ${K.line}`,
+                display: 'flex', flexDirection: 'column', gap: 6,
+                opacity: isActive ? 1 : 0.75,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {s.requiredServices.slice(0, 2).map((sid: string) => (
+                      <span key={sid} style={{
+                        padding: '2px 6px', borderRadius: 4,
+                        background: isActive ? K.ink : K.line,
+                        color: isActive ? '#fff' : K.muted,
+                        fontSize: 9, fontWeight: 800,
+                      }}>{sid}</span>
+                    ))}
+                    {s.requiredServices.length > 2 && (
+                      <span style={{ fontSize: 9, opacity: 0.5, alignSelf: 'center' }}>+{s.requiredServices.length - 2}</span>
+                    )}
+                  </div>
+                  <div style={{ flex: 1, fontSize: 11, fontWeight: 700 }}>{s.name}</div>
+                  {isActive ? (
+                    <span style={{ fontSize: 10, fontWeight: 800, color: K.good }}>✓</span>
+                  ) : (
+                    <span style={{ fontSize: 9, fontWeight: 700, color: K.muted }}>{activeCount}/{total}</span>
+                  )}
+                </div>
+                {/* Формула эффекта — раньше была скрыта, игрок не понимал,
+                    что даёт синергия. Теперь видна и активным, и pending. */}
+                <div style={{ fontSize: 10, lineHeight: 1.4, color: isActive ? K.ink : K.muted }}>
+                  {s.description}
+                </div>
               </div>
-              <div style={{ flex: 1, fontSize: 11, fontWeight: 700 }}>{s.name}</div>
-              {activeSynergies.some((syn: any) => syn.id === s.id) && (
-                <span style={{ fontSize: 10, fontWeight: 800, color: K.good }}>✓</span>
-              )}
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
 
@@ -310,6 +362,22 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
                     }}>
                       <span>⚠️</span>
                       <span>{SERVICE_PAIN_HINT[s.id]}</span>
+                    </div>
+                  )}
+                  {!s.isActive && (synergyPullByService[s.id]?.length ?? 0) > 0 && (
+                    <div style={{
+                      fontSize: 11, fontWeight: 600, marginTop: 6, lineHeight: 1.3,
+                      padding: '6px 9px', borderRadius: 8,
+                      background: 'rgba(0,200,150,0.10)', color: K.good,
+                      display: 'flex', flexDirection: 'column', gap: 2,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>🎯</span>
+                        <span>Откроет синергию: {synergyPullByService[s.id]![0].name}</span>
+                      </div>
+                      <div style={{ fontSize: 10, opacity: 0.85, paddingLeft: 22 }}>
+                        {synergyPullByService[s.id]![0].description}
+                      </div>
                     </div>
                   )}
                 </div>
