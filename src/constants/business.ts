@@ -312,7 +312,6 @@ export const ECONOMY_CONSTANTS = {
   // Reverted to pre-tier values: were bumped during the 90% margin era.
   // With realistic 15-40% margins, these were eating tier-1 income.
   DAILY_UTILITIES: 500,
-  DAILY_REGISTER_MAINTENANCE: 300,
   WEEKS_BALANCE_NEGATIVE_FOR_GAMEOVER: 3,
 
   ENERGY_COST_BASE_OPERATION: 15,

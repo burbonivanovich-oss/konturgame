@@ -85,7 +85,6 @@ export function FinanceView() {
     ...(lastDayResult.monthlyExpense > 0 ? [{ label: 'Аренда и зарплата (плановый платёж)', value: lastDayResult.monthlyExpense }] : []),
     ...(lastDayResult.subscriptionCost > 0 ? [{ label: 'Подписки Контур', value: lastDayResult.subscriptionCost }] : []),
     ...(lastDayResult.expiredLoss > 0 ? [{ label: 'Списание просрочки', value: lastDayResult.expiredLoss }] : []),
-    ...(lastDayResult.registerOverflowPenalty > 0 ? [{ label: 'Штраф за очередь (касса)', value: lastDayResult.registerOverflowPenalty }] : []),
   ] : []
 
   // Pain losses retired (step 6) — kept the empty array for the JSX guard.

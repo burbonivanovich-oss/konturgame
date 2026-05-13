@@ -518,11 +518,11 @@ export interface GameState {
   // Cooldown: week when each service was last deactivated (can't re-enable for 2 weeks)
   serviceDeactivatedWeeks?: Partial<Record<ServiceType, number>>
 
-  // Cash registers
+  // Касса + фискальный накопитель — одноразовая 54-ФЗ покупка (24 000₽).
+  // Раньше было 3 типа касс с throughput-механикой и поломками; теперь это
+  // compliance-флаг (купил → закон выполнен, ФНС не штрафует). Поле
+  // cashRegisters оставлено для совместимости со старыми сэйвами, всегда [].
   cashRegisters: CashRegister[]
-  // Спринт 5e: фискальный накопитель — обязательный по 54-ФЗ компонент.
-  // Покупается ВМЕСТЕ с первой кассой (бандл, +8 000₽). Без него ОФД
-  // не может передавать чеки в ФНС, штраф до 10К за каждый чек.
   fiscalDriveOwned?: boolean
 
   // Assortment categories

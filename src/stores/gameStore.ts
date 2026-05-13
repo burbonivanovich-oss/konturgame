@@ -1,13 +1,12 @@
 import { create } from 'zustand'
 import type {
   GameState, BusinessType, ServiceType, Service, DayResult, Event,
-  AdCampaign, CashRegisterType, CashRegister, OnboardingStage,
+  AdCampaign, OnboardingStage,
   CampaignROI, MilestoneStatus, WeekPhase, NPC, PlayerBackstory, NpcMemoryEntry,
   DecisionLogEntry, WeeklyTactic, EmployeePosition,
 } from '../types/game'
 import { SERVICES_CONFIG, BUSINESS_CONFIGS, ECONOMY_CONSTANTS, MAX_ACTIVE_CAMPAIGNS } from '../constants/business'
 import { ONBOARDING_STAGES, SERVICE_UNLOCK_MAP } from '../constants/onboarding'
-import { CASH_REGISTER_CONFIGS, REGISTER_COMBO_DISCOUNTS } from '../constants/cashRegisters'
 import { getDefaultCategories } from '../services/assortmentEngine'
 import { createEmployee } from '../constants/employees'
 import { checkWeekBlocked, processWeek } from '../services/weekCalculator'
@@ -102,7 +101,7 @@ const createInitialState = (businessType: BusinessType): GameState => {
     unlockedServices: SERVICE_UNLOCK_MAP[0],
     serviceDeactivatedWeeks: {},
 
-    // Cash registers
+    // Касса + ФН: один compliance-флаг по 54-ФЗ.
     cashRegisters: [],
     fiscalDriveOwned: false,
 
@@ -299,8 +298,9 @@ interface GameStoreActions {
   skipOnboardingStep: () => void
   claimEmergencyGrant: () => void
 
-  // Cash registers
-  buyCashRegister: (type: CashRegisterType) => boolean
+  // Cash register compliance — one-time 54-ФЗ покупка (ККТ + ФН).
+  // Раньше было 3 типа касс с throughput-механикой; теперь это compliance-шаг.
+  purchaseFiscalCompliance: () => boolean
 
   // Assortment
   toggleCategory: (categoryId: string) => void
@@ -1065,45 +1065,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }))
     },
 
-    // Cash registers
-    buyCashRegister: (type: CashRegisterType): boolean => {
+    // 54-ФЗ compliance: одна покупка ККТ + фискальный накопитель.
+    // Никаких типов, throughput, поломок, апгрейдов — это шаг про закон,
+    // не про развитие. После покупки выручка не блокируется штрафами ФНС.
+    purchaseFiscalCompliance: (): boolean => {
       const state = get()
-      const config = CASH_REGISTER_CONFIGS[type]
-      if (!config) return false
-
-      const totalExisting = state.cashRegisters.reduce((s, r) => s + r.count, 0)
-      let cost = config.cost
-      if (totalExisting >= 2) cost = Math.round(cost * (1 - (REGISTER_COMBO_DISCOUNTS[3] ?? 0)))
-      else if (totalExisting >= 1) cost = Math.round(cost * (1 - (REGISTER_COMBO_DISCOUNTS[2] ?? 0)))
-
-      // Спринт 5e: к ПЕРВОЙ кассе обязательно покупается фискальный
-      // накопитель (54-ФЗ требует). +8 000₽ к стоимости первой покупки.
-      const FISCAL_DRIVE_COST = 8000
-      const isFirstRegister = totalExisting === 0 && !state.fiscalDriveOwned
-      const totalCost = isFirstRegister ? cost + FISCAL_DRIVE_COST : cost
-
-      if (state.balance < totalCost) return false
-
-      set((s) => {
-        const existing = s.cashRegisters.find((r) => r.type === type)
-        let newRegisters: CashRegister[]
-        if (existing) {
-          newRegisters = s.cashRegisters.map((r) =>
-            r.type === type ? { ...r, count: r.count + 1 } : r
-          )
-        } else {
-          newRegisters = [
-            ...s.cashRegisters,
-            { type, count: 1, purchaseDay: s.currentWeek * 7 + s.dayOfWeek },
-          ]
-        }
-        return {
-          cashRegisters: newRegisters,
-          fiscalDriveOwned: isFirstRegister ? true : s.fiscalDriveOwned,
-          balance: s.balance - totalCost,
-          lastUpdated: Date.now(),
-        }
-      })
+      if (state.fiscalDriveOwned) return false
+      const COMPLIANCE_COST = 24000
+      if (state.balance < COMPLIANCE_COST) return false
+      set((s) => ({
+        fiscalDriveOwned: true,
+        balance: s.balance - COMPLIANCE_COST,
+        lastUpdated: Date.now(),
+      }))
       return true
     },
 

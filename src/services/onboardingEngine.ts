@@ -61,7 +61,7 @@ export function isStepActionDone(state: GameState, step: OnboardingStep): boolea
     case 'activate_fokus':  return state.services?.fokus?.isActive  ?? false
     case 'activate_elba':   return state.services?.elba?.isActive   ?? false
     case 'activate_extern': return state.services?.extern?.isActive ?? false
-    case 'buy_register':    return (state.cashRegisters?.length ?? 0) > 0
+    case 'buy_register':    return !!state.fiscalDriveOwned
     default:                return true
   }
 }
@@ -103,7 +103,7 @@ export function shouldAdvanceStage(state: GameState): boolean {
   // ID шагов привязаны к ONBOARDING_STAGES[1].steps: '1-1' bank, '1-2' register, '1-3' ofd.
   if (currentStage === 1) {
     const bankOk = (state.services?.bank?.isActive ?? false) || skipped.has('1-1')
-    const registerOk = (state.cashRegisters?.length ?? 0) > 0 || skipped.has('1-2')
+    const registerOk = !!state.fiscalDriveOwned || skipped.has('1-2')
     const ofdOk = (state.services?.ofd?.isActive ?? false) || skipped.has('1-3')
     return bankOk && registerOk && ofdOk
   }

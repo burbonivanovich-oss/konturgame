@@ -41,7 +41,6 @@ import { getGroupForNav, getSubTabsForGroup } from './design-system/KLeftRail'
 import { KIcon } from './design-system/KIcon'
 import { getActiveSynergies } from '../services/synergyEngine'
 import { getBusinessHealth } from '../services/businessHealth'
-import { getTotalThroughput } from '../services/cashRegisterEngine'
 import type { ServiceType } from '../types/game'
 
 const ONBOARDING_ACTION_TO_NAV: Record<string, NavId> = {
@@ -74,7 +73,7 @@ function DashboardView({
   const {
     currentWeek, balance, services,
     pendingEvent, pendingEventsQueue, lastDayResult,
-    entrepreneurEnergy, npcs, stockBatches, capacity, cashRegisters,
+    entrepreneurEnergy, npcs, stockBatches, capacity,
     businessType, businessTier, weeklyTactic, setWeeklyTactic,
     burnoutWarningActive,
   } = store
@@ -91,13 +90,8 @@ function DashboardView({
   const stockPct = capacity > 0 ? Math.round((totalStock / capacity) * 100) : 0
   const stockLow = bizConfig.hasStock && stockPct < 25
 
-  // Day metrics for top KPI strip and viz
-  const servedToday = lastDayResult?.served ?? 0
+  // Day metrics (used in event dilemma forecast etc.)
   const missedToday = lastDayResult?.missed ?? 0
-  const clientsToday = lastDayResult?.clients ?? 0
-  const throughput = cashRegisters && cashRegisters.length > 0
-    ? getTotalThroughput(cashRegisters, store)
-    : bizConfig.capacity
 
   // Active synergies (for right panel)
   const synergies = getActiveSynergies(store)
@@ -504,84 +498,15 @@ function DashboardView({
             )
           })()}
 
-          {/* ── Widget row: Queue + Stock ── */}
+          {/* ── Widget row: Stock (касса как механика развития удалена,
+              очередь больше не показываем — теперь компонент 54-ФЗ
+              compliance, без throughput) ── */}
+          {bizConfig.hasStock && (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: bizConfig.hasStock ? '1fr 1fr' : '1fr',
+            gridTemplateColumns: '1fr',
             gap: 12,
           }}>
-            {/* QUEUE: served/missed dot grid */}
-            <div style={{
-              background: K.white, border: `1px solid ${K.line}`,
-              borderRadius: 14, padding: 16,
-              display: 'flex', flexDirection: 'column', gap: 10,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: 10, color: K.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                  Пропускная · очередь
-                </div>
-                {missedToday > 0 && (
-                  <span style={{
-                    fontSize: 10, padding: '2px 8px', borderRadius: 999,
-                    background: K.orangeSoft, color: K.orange, fontWeight: 700,
-                  }}>
-                    {missedToday} ушли
-                  </span>
-                )}
-              </div>
-              <div style={{
-                fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em',
-                fontVariantNumeric: 'tabular-nums',
-              }}>
-                <span style={{ color: K.ink }}>{servedToday}</span>
-                <span style={{ color: K.muted, fontWeight: 600 }}> / {clientsToday || '—'}</span>
-              </div>
-              {/* Dot grid */}
-              {clientsToday > 0 ? (
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: `repeat(${Math.min(clientsToday, 20)}, 1fr)`,
-                  gap: 3,
-                }}>
-                  {Array.from({ length: Math.min(clientsToday, 60) }).map((_, i) => {
-                    const isServed = i < Math.min(servedToday, 60)
-                    return (
-                      <div key={i} style={{
-                        aspectRatio: '1',
-                        borderRadius: 3,
-                        background: isServed ? K.mint : K.orange,
-                      }} />
-                    )
-                  })}
-                </div>
-              ) : (
-                <div style={{ fontSize: 11, color: K.muted }}>
-                  День ещё не завершён
-                </div>
-              )}
-              {/* Market hint if no market and missing clients */}
-              {!services.market?.isActive && missedToday > 0 && (
-                <div style={{
-                  marginTop: 4, padding: '8px 10px', borderRadius: 8,
-                  background: K.orangeSoft,
-                  display: 'flex', alignItems: 'center', gap: 8,
-                }}>
-                  <span style={{
-                    fontSize: 9, padding: '2px 7px', borderRadius: 999,
-                    background: K.orange, color: K.white, fontWeight: 700, letterSpacing: '0.06em',
-                  }}>
-                    МАРКЕТ
-                  </span>
-                  <span style={{ fontSize: 11, color: K.ink, fontWeight: 500 }}>
-                    +20% пропускной — очередь исчезает
-                  </span>
-                </div>
-              )}
-              <div style={{ fontSize: 10, color: K.muted }}>
-                касса: {throughput} чел/день
-              </div>
-            </div>
-
             {/* STOCK: batches with expiry */}
             {bizConfig.hasStock && (
               <div style={{
@@ -645,6 +570,7 @@ function DashboardView({
               </div>
             )}
           </div>
+          )}
 
         </div>
 

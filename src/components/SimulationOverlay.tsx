@@ -66,12 +66,9 @@ export function SimulationOverlay({ onContinue }: SimulationOverlayProps) {
         amount: -lastDayResult.subscriptionCost, color: K.muted, day: 0,
       })
     }
-    if (lastDayResult.registerOverflowPenalty > 0) {
-      out.push({
-        emoji: '⏳', label: 'Очередь упустила клиентов',
-        amount: -lastDayResult.registerOverflowPenalty, color: K.orange, day: 2,
-      })
-    }
+    // Раньше тут была строка «Очередь упустила клиентов» по
+    // registerOverflowPenalty — мех. кассы как throughput удалена,
+    // штраф теперь всегда 0.
 
     // Pain losses (top-2 most painful) — переведённые на человеческий язык
     if (lastWeekPainLosses && lastWeekPainLosses.total > 0) {

@@ -35,12 +35,10 @@ import {
   ENERGY_THRESHOLDS,
   ENERGY_REVENUE_MULTIPLIER,
   REPUTATION_LOSS_PER_MISSED_CLIENT,
-  REGISTER_BREAKDOWN_PENALTY_RATE,
   ELBA_LOYALTY_PENALTY_REDUCTION,
   COMPETITOR_CYCLE,
   SERVICE_SAVINGS_RATES,
 } from '../constants/gameBalance'
-import { getTotalThroughput, calculateRegisterPenalty, checkRegisterBreakdown } from './cashRegisterEngine'
 import { calculateCategoryRevenue } from './assortmentEngine'
 import { initializeEmployees, getWeeklySalaryCost, getWeeklyEnergyCost, getEmployeeCapacityBonus, getUpgradeEnergyBonus, updateEmployeeGrowth } from './employeeManager'
 import { initializeQuality, updateQualityWeekly, getQualityReputationBonus, getQualityLoyaltyBonus, getQualityPricePremium } from './qualityManager'
@@ -98,7 +96,6 @@ export function processWeek(state: GameState): DayResult {
   let weekLoyaltyChange = 0
   let totalDaysWithoutExpiry = 0
   let weekExpiredLoss = 0
-  let weekRegisterOverflow = 0
   const weekPain = { bank: 0, market: 0, ofd: 0, diadoc: 0, fokus: 0, elba: 0, extern: 0, total: 0 }
   let weeklySeasonalSum = 0
   let weeklyEventSum = 0
@@ -155,14 +152,10 @@ export function processWeek(state: GameState): DayResult {
       capacity = Math.round(capacity * (1 + employeeCapacityBonus * 0.1))
     }
 
-    let served = Math.min(totalClients, capacity)
-
-    // 3b. Register throughput limits served clients (calculated before revenue)
-    const registerThroughput = getTotalThroughput(state.cashRegisters, state)
-    const registerMissed = registerThroughput > 0
-      ? calculateRegisterPenalty(served, registerThroughput)
-      : 0
-    served = served - registerMissed
+    // Касса больше не лимитирует пропускную (мех. throughput удалена —
+     // касса теперь compliance-шаг по 54-ФЗ, без апгрейдов и типов).
+     // Ограничение по ёмкости точки сохраняется.
+    const served = Math.min(totalClients, capacity)
     const missed = totalClients - served
 
     // 4. Bank payment ratio
@@ -203,12 +196,6 @@ export function processWeek(state: GameState): DayResult {
       dailyRevenue = Math.round(dailyRevenue * (1 - acquiringRate))
     }
 
-    // 7. Register breakdown penalty (random equipment failure, separate from throughput)
-    const registerBroke = checkRegisterBreakdown(state.cashRegisters)
-    const breakdownPenalty = registerBroke
-      ? Math.round(dailyRevenue * REGISTER_BREAKDOWN_PENALTY_RATE)
-      : 0
-
     // Apply energy penalty: low energy = reduced productivity
     let energyModifier: number = ENERGY_REVENUE_MULTIPLIER.NORMAL
     if (state.entrepreneurEnergy < ENERGY_THRESHOLDS.CRITICAL) {
@@ -217,8 +204,7 @@ export function processWeek(state: GameState): DayResult {
       energyModifier = ENERGY_REVENUE_MULTIPLIER.TIRED
     }
 
-    const dayRevenue = Math.max(0, Math.round((dailyRevenue - breakdownPenalty) * energyModifier * tacticRevenueMul))
-    const registerOverflowPenalty = Math.round(registerMissed * avgCheck)
+    const dayRevenue = Math.max(0, Math.round(dailyRevenue * energyModifier * tacticRevenueMul))
 
     // 8. Purchase costs (via assortment daily costs)
     const purchaseCost = totalDailyCategoryCost
@@ -237,10 +223,7 @@ export function processWeek(state: GameState): DayResult {
 
     // 11. Fixed daily costs (apply Спринт-5 difficulty multiplier)
     const expenseMult = getExpenseMultiplier(state.currentWeek ?? 1)
-    const totalRegisters = state.cashRegisters?.reduce((s, r) => s + r.count, 0) ?? 0
-    const dailyUtilities = Math.round(ECONOMY_CONSTANTS.DAILY_UTILITIES * expenseMult)
-    const dailyRegisterMaintenance = Math.round(totalRegisters * ECONOMY_CONSTANTS.DAILY_REGISTER_MAINTENANCE * expenseMult)
-    const dailyFixedCosts = dailyUtilities + dailyRegisterMaintenance
+    const dailyFixedCosts = Math.round(ECONOMY_CONSTANTS.DAILY_UTILITIES * expenseMult)
 
     // 12. Monthly fixed costs (rent + owner's base salary) — spread evenly
     // across the 28-day cycle so the player doesn't get one brutal hit per
@@ -325,7 +308,6 @@ export function processWeek(state: GameState): DayResult {
     weekRepChange += dayRepChange
     weekLoyaltyChange += dayLoyaltyChange
     weekExpiredLoss += expiredLoss
-    weekRegisterOverflow += registerOverflowPenalty
 
     if (expiredLoss === 0) {
       totalDaysWithoutExpiry += 1
@@ -445,7 +427,7 @@ export function processWeek(state: GameState): DayResult {
     painLossFokusBadSupplier: 0,
     painLossElbaFine: 0,
     painLossExternBlock: 0,
-    registerOverflowPenalty: weekRegisterOverflow,
+    registerOverflowPenalty: 0,
     categoryFines: {},
   }
 

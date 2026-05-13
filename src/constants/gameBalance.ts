@@ -30,9 +30,6 @@ export const LOYALTY_CAPACITY_MODIFIER = {
 // Reputation loss per missed (not served) client per day
 export const REPUTATION_LOSS_PER_MISSED_CLIENT = 0.2
 
-// Register breakdown penalty as a fraction of daily revenue
-export const REGISTER_BREAKDOWN_PENALTY_RATE = 0.15
-
 // Elba softens the overload-loyalty penalty by this factor (0.5 = half)
 export const ELBA_LOYALTY_PENALTY_REDUCTION = 0.5
 

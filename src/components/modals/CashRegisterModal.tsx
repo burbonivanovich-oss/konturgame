@@ -1,8 +1,5 @@
 import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
-import { CASH_REGISTER_CONFIGS } from '../../constants/cashRegisters'
-import { getTotalThroughput, getRegisterSummary } from '../../services/cashRegisterEngine'
-import type { CashRegisterType } from '../../types/game'
 import { K } from '../design-system/tokens'
 
 interface CashRegisterModalProps {
@@ -10,150 +7,85 @@ interface CashRegisterModalProps {
   onClose: () => void
 }
 
-const REGISTER_TYPES: CashRegisterType[] = ['mobile', 'reliable', 'fast']
+const COMPLIANCE_COST = 24000
 
+// Раньше было 3 типа касс с throughput-механикой, поломками и комбо-скидками.
+// Теперь это compliance-шаг по 54-ФЗ: одна покупка ККТ + ФН, и всё. Сама
+// касса как «развитие» удалена — она была декоративной механикой, которая
+// почти не кусала, кроме как в очень узком mid-game window.
 export default function CashRegisterModal({ isOpen, onClose }: CashRegisterModalProps) {
-  const { balance, cashRegisters, buyCashRegister, services } = useGameStore()
-  const summary = getRegisterSummary(cashRegisters)
-  const totalThroughput = getTotalThroughput(cashRegisters, { services } as any)
-  const totalCount = cashRegisters.reduce((s, r) => s + r.count, 0)
-
-  const handleBuy = (type: CashRegisterType) => {
-    buyCashRegister(type)
-  }
-
-  const getDiscount = (idx: number): number => {
-    if (totalCount >= 2) return 15
-    if (totalCount >= 1 && idx > 0) return 10
-    return 0
-  }
-
-  const getEffectiveCost = (type: CashRegisterType): number => {
-    const baseCost = CASH_REGISTER_CONFIGS[type].cost
-    if (totalCount >= 2) return Math.round(baseCost * 0.85)
-    if (totalCount >= 1) return Math.round(baseCost * 0.9)
-    return baseCost
-  }
+  const { balance, fiscalDriveOwned, purchaseFiscalCompliance } = useGameStore()
+  const owned = !!fiscalDriveOwned
+  const canAfford = balance >= COMPLIANCE_COST
 
   return (
-    <Modal isOpen={isOpen} title="🖥️ Кассовое оборудование" onClose={onClose} size="lg">
+    <Modal isOpen={isOpen} title="🧾 Касса по 54-ФЗ" onClose={onClose} size="md">
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-        {/* Current status */}
-        {cashRegisters.length > 0 && (
+        <div style={{
+          background: owned ? K.mintSoft : K.bone,
+          borderRadius: 14, padding: 16,
+          display: 'flex', alignItems: 'center', gap: 12,
+        }}>
           <div style={{
-            background: K.bone, borderRadius: 14, padding: 16,
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            width: 48, height: 48, borderRadius: 12,
+            background: K.white,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 26, flexShrink: 0,
           }}>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.45, marginBottom: 4 }}>
-                ТЕКУЩЕЕ ОБОРУДОВАНИЕ
-              </div>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>
-                {summary.names.join(', ')}
-              </div>
+            {owned ? '✅' : '🧾'}
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>
+              {owned ? 'Закон выполнен' : 'ККТ + Фискальный накопитель'}
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 11, opacity: 0.45 }}>Пропускная</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: K.mint }}>
-                {totalThroughput}/день
-              </div>
+            <div style={{ fontSize: 12, color: K.muted, lineHeight: 1.45 }}>
+              {owned
+                ? 'У вас есть онлайн-касса и фискальный накопитель — каждый чек передаётся в ФНС через ОФД. Штрафы по 54-ФЗ вам не грозят.'
+                : 'По 54-ФЗ каждая продажа должна пробиваться через онлайн-кассу с фискальным накопителем (ФН подписывает чеки электронной подписью). Без них штраф до 10 000 ₽ за каждый чек.'}
             </div>
           </div>
-        )}
-
-        {/* Combo discount notice */}
-        {totalCount > 0 && (
-          <div style={{
-            background: K.orangeSoft, borderRadius: 10, padding: '10px 14px',
-            fontSize: 12, fontWeight: 600, color: K.orange,
-          }}>
-            🎁 Скидка на следующую кассу: {totalCount >= 2 ? '15%' : '10%'}
-          </div>
-        )}
-
-        {/* Register cards */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {REGISTER_TYPES.map((type, idx) => {
-            const cfg = CASH_REGISTER_CONFIGS[type]
-            const effectiveCost = getEffectiveCost(type)
-            const discount = getDiscount(idx)
-            const canAfford = balance >= effectiveCost
-            const existing = cashRegisters.find((r) => r.type === type)
-
-            return (
-              <div key={type} style={{
-                border: `1px solid ${K.line}`, borderRadius: 14, padding: 16,
-                display: 'flex', alignItems: 'center', gap: 14,
-                background: K.white,
-              }}>
-                <div style={{
-                  width: 48, height: 48, borderRadius: 12,
-                  background: K.bone,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 24, flexShrink: 0,
-                }}>
-                  {cfg.icon}
-                </div>
-
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700 }}>{cfg.name}</div>
-                    {existing && (
-                      <div style={{
-                        fontSize: 10, fontWeight: 800, padding: '2px 8px',
-                        borderRadius: 6, background: K.mint, color: K.white,
-                      }}>
-                        ×{existing.count}
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ fontSize: 11, opacity: 0.55, lineHeight: 1.4, marginBottom: 8 }}>
-                    {cfg.description}
-                  </div>
-                  <div style={{ display: 'flex', gap: 16, fontSize: 11 }}>
-                    <div>
-                      <span style={{ opacity: 0.45 }}>Пропускная: </span>
-                      <span style={{ fontWeight: 700 }}>{cfg.throughput} чел/день</span>
-                    </div>
-                    <div>
-                      <span style={{ opacity: 0.45 }}>Отказ: </span>
-                      <span style={{ fontWeight: 700 }}>{(cfg.breakdownChance * 100).toFixed(1)}%/день</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  {discount > 0 && (
-                    <div style={{ fontSize: 10, fontWeight: 700, color: K.mint, marginBottom: 2 }}>
-                      −{discount}%
-                    </div>
-                  )}
-                  <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 8 }}>
-                    {effectiveCost.toLocaleString('ru-RU')} ₽
-                  </div>
-                  <button
-                    onClick={() => handleBuy(type)}
-                    disabled={!canAfford}
-                    style={{
-                      padding: '8px 16px', borderRadius: 10, fontSize: 12, fontWeight: 700,
-                      border: 'none', cursor: canAfford ? 'pointer' : 'not-allowed',
-                      background: canAfford ? K.ink : K.bone,
-                      color: canAfford ? K.white : K.muted,
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {existing ? 'Ещё одну' : 'Купить'}
-                  </button>
-                </div>
-              </div>
-            )
-          })}
         </div>
 
+        {!owned && (
+          <div style={{
+            border: `1px solid ${K.line}`, borderRadius: 14, padding: 16,
+            display: 'flex', alignItems: 'center', gap: 14,
+            background: K.white,
+          }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>
+                Купить пакет (ККТ + ФН)
+              </div>
+              <div style={{ fontSize: 11, color: K.muted, lineHeight: 1.4 }}>
+                Одноразовая покупка. Совместимо с любым ОФД.
+              </div>
+            </div>
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>
+                {COMPLIANCE_COST.toLocaleString('ru-RU')} ₽
+              </div>
+              <button
+                onClick={() => purchaseFiscalCompliance()}
+                disabled={!canAfford}
+                style={{
+                  padding: '8px 16px', borderRadius: 10, fontSize: 12, fontWeight: 700,
+                  border: 'none', cursor: canAfford ? 'pointer' : 'not-allowed',
+                  background: canAfford ? K.ink : K.bone,
+                  color: canAfford ? K.white : K.muted,
+                  fontFamily: 'inherit',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Купить
+              </button>
+            </div>
+          </div>
+        )}
+
         <div style={{ fontSize: 11, opacity: 0.5, textAlign: 'center', lineHeight: 1.4 }}>
-          Если клиентов больше пропускной способности — выручка снижается.<br/>
-          Контур.Маркет + Быстрая касса даёт бонус +25% к пропускной.
+          Касса по закону работает только с оператором фискальных данных (ОФД).<br/>
+          Подключите Контур.ОФД в Экосистеме, чтобы чеки начали уходить в ФНС.
         </div>
       </div>
     </Modal>
