@@ -421,23 +421,27 @@ export const UPGRADES_CONFIG: Record<BusinessType, Array<{
 }>> = {
   // Спринт 5e: убраны hire-* апгрейды (наём только через события).
   // Лицензионные категории (alcohol/bar) больше не требуют Экстерн.
+  //
+  // Спринт 6: сокращено до 6 апгрейдов на бизнес (было 8). Срезаны
+  // «мелкие» бонусы которые редко покупались за 52 недели игры:
+  //   shop: убраны cctv (+2% выручки) и premium-categories (+15% маржи)
+  //   cafe: убраны cooler (+5% вмест.) и seasonal-menu (+10% чек)
+  //   salon: убраны uv-lamps (+10% клиентов) и crm-system (+3% чек)
+  // Оставлены апгрейды, открывающие категории/услуги (gating) или
+  // дающие крупные единоразовые скачки (capacity/throughput).
   shop: [
     { id: 'cold-case', name: '❄️ Холодильная витрина', cost: 40000, effect: 'Открывает молочку, +10% вместимость', capacityBonus: 0.1 },
     { id: 'freezer', name: '🧊 Морозильник', cost: 60000, effect: 'Открывает мясо/рыбу при наличии холодильной витрины', capacityBonus: 0.05, requiresUpgrade: 'cold-case' },
     { id: 'liquor-cabinet', name: '🍷 Алкошкаф с замком', cost: 50000, effect: 'Открывает алкогольную лицензию (нужен ОФД)', requiresServices: ['ofd'] },
     { id: 'tobacco-display', name: '🚬 Витрина для табака', cost: 35000, effect: 'Открывает табачку (закрытый шкаф по закону)' },
-    { id: 'cctv', name: '📹 Видеонаблюдение', cost: 65000, effect: '+2% выручка, защита от краж', checkBonus: 0.02, energyBonus: 5 },
     { id: 'pos-terminal', name: '💳 POS-терминал', cost: 75000, effect: '+25% клиентов, удобнее работа', clientBonus: 0.25, checkBonus: 0.05, energyBonus: 4 },
     { id: 'hall-expansion', name: '📏 Расширение зала', cost: 120000, effect: '+60% вместимость', capacityBonus: 0.6, monthlyRentIncrease: 15000, energyBonus: 8 },
-    { id: 'premium-categories', name: '⭐ Премиум-полка', cost: 70000, effect: '+20% маржа на премиум товарах', checkBonus: 0.15 },
   ],
   cafe: [
     { id: 'espresso-machine', name: '☕ Кофемашина эспрессо', cost: 60000, effect: 'База кафе. +5% выручка, +6 энергии', checkBonus: 0.05, energyBonus: 6 },
     { id: 'oven', name: '🥐 Печь / духовка', cost: 50000, effect: 'Открывает десерты и выпечку', capacityBonus: 0.05 },
     { id: 'kitchen', name: '🍳 Полноценная кухня', cost: 90000, effect: 'Открывает готовую еду (нужен Маркет)', capacityBonus: 0.1, energyBonus: 4, requiresServices: ['market'] },
     { id: 'bar-counter', name: '🍹 Барная стойка', cost: 75000, effect: 'Открывает барную карту (нужен ОФД)', requiresServices: ['ofd'] },
-    { id: 'cooler', name: '❄️ Холодильник', cost: 40000, effect: '+5% вместимость', capacityBonus: 0.05 },
-    { id: 'seasonal-menu', name: '🍽️ Сезонное меню', cost: 50000, effect: '+25% выручка летом/весной', checkBonus: 0.1 },
     { id: 'summer-terrace', name: '🏕️ Летняя веранда', cost: 110000, effect: '+40% мест летом', capacityBonus: 0.4, monthlyRentIncrease: 12000, energyBonus: 10 },
     { id: 'sound-system', name: '🎵 Аудио-система', cost: 45000, effect: '+5% средний чек: атмосфера задерживает гостей', checkBonus: 0.05, energyBonus: 3 },
   ],
@@ -447,8 +451,6 @@ export const UPGRADES_CONFIG: Record<BusinessType, Array<{
     { id: 'cosmetics-shelf', name: '🛍️ Витрина косметики', cost: 45000, effect: 'Открывает продажу косметики (нужны Маркет+ОФД)', requiresServices: ['market', 'ofd'] },
     { id: 'spa-room', name: '🧖 SPA-комната', cost: 110000, effect: 'Открывает SPA-процедуры', capacityBonus: 0.1, monthlyRentIncrease: 8000 },
     { id: 'massage-chair', name: '💆 Массажное кресло', cost: 70000, effect: '+25% клиентов, релаксация', clientBonus: 0.25, energyBonus: 16 },
-    { id: 'uv-lamps', name: '💡 УФ-лампы', cost: 55000, effect: '+10% клиентов, безопасность', clientBonus: 0.1, energyBonus: 4 },
-    { id: 'crm-system', name: '📊 CRM-система', cost: 60000, effect: '+3% чек, аналитика', checkBonus: 0.03, energyBonus: 8 },
     { id: 'vip-room', name: '👑 VIP-кабинет', cost: 140000, effect: '+30% среднего чека', checkBonus: 0.3, monthlyRentIncrease: 15000, energyBonus: 12 },
   ],
 }
