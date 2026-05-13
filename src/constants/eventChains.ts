@@ -4,16 +4,24 @@ import type { EventTemplate } from '../types/game'
 // chainId + chainStep identify the event's position in its narrative arc.
 // chainFollowUpId on each option tells the engine which event fires next.
 
-import { FIRST_HIRE_OPTIONS, SVETLANA_INTRO, SVETLANA_TO_ANNA } from './firstHireEvents'
+import {
+  FIRST_HIRE_OPTIONS,
+  SVETLANA_INTRO,
+  SVETLANA_DEMANDS_HIRE,
+  OLEG_TROUBLE_1,
+  OLEG_TROUBLE_2,
+  SVETLANA_TO_ANNA,
+} from './firstHireEvents'
 
 export const CHAIN_EVENTS: EventTemplate[] = [
-  // first_hire — чейн «Первый сотрудник», запускается из SOLO_OVERLOAD_EVENTS.
-  // Не имеет chain start event (не появляется сам через triggerNewChainStarts).
   FIRST_HIRE_OPTIONS,
-  // svetlana_intro — сюжетный чейн появления Светланы (второй найм).
-  // Стартует автоматически на W12+ при наличии хотя бы одного сотрудника.
   SVETLANA_INTRO,
-  // Последствие отказа от Светланы — она уходит к Анне через 3 недели.
+  // Светлана требует второго сотрудника если её наняли в solo-команду.
+  // Автопланируется в applyEventConsequence через 2 недели после её найма.
+  SVETLANA_DEMANDS_HIRE,
+  // Олег скисает под Светланой — двухступенчатый чейн увольнения.
+  OLEG_TROUBLE_1,
+  OLEG_TROUBLE_2,
   SVETLANA_TO_ANNA,
 
 
@@ -750,6 +758,15 @@ export const CHAIN_FOLLOWUP_DELAY: Record<string, number> = {
   first_hire_options: 2,
   // Светлана к Анне — через 3 недели после отказа от её найма
   svetlana_to_anna: 3,
+  // Олег скисает — финальный косяк через неделю после первого предупреждения
+  oleg_trouble_2: 1,
+  // Светлана требует второго — обычно ставится напрямую в applyEventConsequence,
+  // но если вдруг попадает в pendingChainFollowUps через chainFollowUpId,
+  // лимит делёжки даём 2 недели как по умолчанию.
+  svetlana_demands_hire: 2,
+  // Олег под Светланой — расписание набора (если игрок выбирает Олега
+  // через svetlana_demands_hire, начинается цепочка проблем)
+  oleg_trouble_1: 4,
   // Гена: появляется примерно раз в 8 недель, финал ~13 недель
   // после 4-го эпизода — лотерея ложится на нед. 47-49.
   gena_arc_2: 8,

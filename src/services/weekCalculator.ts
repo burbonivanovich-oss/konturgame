@@ -908,11 +908,10 @@ function triggerNewChainStarts(state: GameState): void {
     // как chainFollowUp из SOLO_OVERLOAD-события.
     if (chainId === 'first_hire') continue
 
-    // svetlana_intro — стартует автоматически с W12+, но только если у
-    // игрока уже есть хотя бы один сотрудник (она — второй найм по сюжету).
-    if (chainId === 'svetlana_intro') {
-      if ((state.employees ?? []).length === 0) continue
-    }
+    // svetlana_intro — стартует автоматически с W12+, независимо от того
+    // нанимал ли игрок кого-то до этого. Если он solo, Светлана при найме
+    // ПОТРЕБУЕТ дополнительного человека — это обрабатывается в
+    // applyEventConsequence (см. svetlana_demands_hire follow-up).
 
     const startEvent = getChainStartEvent(chainId)
     if (!startEvent) continue

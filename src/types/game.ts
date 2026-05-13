@@ -290,6 +290,9 @@ export interface EventOption {
       dislikesManager?: boolean  // Под управленцем скисает быстрее
       growthLimitUnderManager?: number  // более низкий пол при наличии менеджера
     }
+    // Увольнение через событие (Спринт 5e): убирает сотрудника из state.employees
+    // по имени. Используется в чейне Олег-троублс (oleg_trouble_1/2).
+    fireEmployee?: { name?: string }
   }
   hasServiceAlternative?: boolean
   requiredService?: ServiceType

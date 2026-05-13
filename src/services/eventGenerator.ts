@@ -1027,6 +1027,19 @@ export function applyEventConsequence(
   // зашиты в опции — это конкретный кандидат с конкретной историей.
   // Балансовое списание (стоимость найма / первый аванс) уже обработано
   // через balanceDelta выше; здесь — только создание Employee.
+  // Увольнение сотрудника через событие — убираем по имени
+  if (c.fireEmployee?.name && state.employees) {
+    const targetName = c.fireEmployee.name
+    state.employees = state.employees.filter(e => e.name !== targetName)
+    if (!state.decisionLog) state.decisionLog = []
+    state.decisionLog.push({
+      week: state.currentWeek,
+      text: `Расстались: ${targetName}`,
+      type: 'choice',
+      impact: 'neutral',
+    })
+  }
+
   if (c.hireEmployee) {
     const h = c.hireEmployee
     if (!state.employees) state.employees = []
@@ -1045,10 +1058,31 @@ export function applyEventConsequence(
     if (h.growthLimitUnderManager !== undefined) emp.growthLimitUnderManager = h.growthLimitUnderManager
     state.employees.push(emp)
     // Если найм связан с NPC (например, Светлана) — раскрываем его.
-    // С этого момента появляется portrait, чейн svetlana_growth уже
-    // имеет нарративный контекст «вы её наняли», а не «она из воздуха».
     if (h.linkNpcId && state.npcs) {
       state.npcs = revealNPC(state.npcs, h.linkNpcId)
+    }
+    // Спринт 5e: реакция Светланы на состав команды при её найме.
+    //  • Если игрок был solo (только Светлана появилась) — она требует
+    //    дополнительного найма через 2 недели (svetlana_demands_hire).
+    //  • Если в команде есть Олег — через 4 недели начинается чейн
+    //    его проблем (oleg_trouble_1).
+    if (h.linkNpcId === 'svetlana' && h.position === 'manager') {
+      const teamWithoutHer = state.employees.filter(e => e.name !== 'Светлана')
+      const wasSolo = teamWithoutHer.length === 0
+      const hasOleg = teamWithoutHer.some(e => e.name === 'Олег')
+      if (!state.pendingChainFollowUps) state.pendingChainFollowUps = []
+      if (wasSolo) {
+        state.pendingChainFollowUps.push({
+          chainEventId: 'svetlana_demands_hire',
+          triggerWeek: state.currentWeek + 2,
+        })
+      }
+      if (hasOleg) {
+        state.pendingChainFollowUps.push({
+          chainEventId: 'oleg_trouble_1',
+          triggerWeek: state.currentWeek + 4,
+        })
+      }
     }
     // Косметика: подпись наёма в лог, чтобы игрок видел кого взял
     if (!state.decisionLog) state.decisionLog = []

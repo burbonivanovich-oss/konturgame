@@ -140,10 +140,13 @@ export const FIRST_HIRE_OPTIONS: EventTemplate = {
     chainStep: 1,
   },
   options: [
-    // ── Дальний родственник: дёшево, посредственно ────────────────────
+    // Намёки вместо цифр (Спринт 5e): игрок ориентируется по описанию, не по
+    // numbers. Эффективность, growthRate, energy/loyalty/reputation — скрыты.
+    // Известно только: зарплата (это деньги, нельзя скрыть) и качественный
+    // профиль («без опыта», «учится», «без огонька», «класс сразу виден»).
     {
       id: 'hire_relative',
-      text: '👨 Дальний родственник: 25 000 ₽/мес, без опыта · −9 энергии/нед' + SALARY_NOTE_SUFFIX,
+      text: '👨 Дальний родственник: 25 000 ₽/мес — без опыта, придётся всё перепроверять' + SALARY_NOTE_SUFFIX,
       consequences: {
         balanceDelta: -3000,
         loyaltyDelta: -3,
@@ -156,10 +159,9 @@ export const FIRST_HIRE_OPTIONS: EventTemplate = {
         },
       },
     },
-    // ── Студент: дёшево, ещё учится, ВЫРАСТЕТ к 1.05 за пару месяцев ──
     {
       id: 'hire_student',
-      text: '👨‍🎓 Студент Никита, 3-й курс: 35 000 ₽/мес, схватывает быстро · стартует 0.85, дойдёт до 1.05' + SALARY_NOTE_SUFFIX,
+      text: '👨‍🎓 Студент Никита, 3-й курс: 35 000 ₽/мес — будет учиться по ходу, но схватывает быстро' + SALARY_NOTE_SUFFIX,
       consequences: {
         balanceDelta: -4000,
         loyaltyDelta: 0,
@@ -169,16 +171,14 @@ export const FIRST_HIRE_OPTIONS: EventTemplate = {
           efficiency: 0.85,
           energyCost: 6,
           name: 'Никита',
-          // +0.015/нед, через ~13 недель достигнет потолка 1.05
           growthRate: 0.015,
           growthLimit: 1.05,
         },
       },
     },
-    // ── Олег: «просто работает», но БУДЕТ халтурить ───────────────────
     {
       id: 'hire_friend',
-      text: '👨 Олег, 39, без энтузиазма: 38 000 ₽/мес, на старте 1.0 → скатится до 0.9 · под менеджером ещё хуже · −6 энергии/нед' + SALARY_NOTE_SUFFIX,
+      text: '👨 Олег, 39: 38 000 ₽/мес — работает нормально, но без огонька, не любит командование' + SALARY_NOTE_SUFFIX,
       consequences: {
         balanceDelta: -4500,
         loyaltyDelta: 0,
@@ -188,20 +188,16 @@ export const FIRST_HIRE_OPTIONS: EventTemplate = {
           efficiency: 1.0,
           energyCost: 6,
           name: 'Олег',
-          // -0.005/нед, через ~20 недель достигнет дна 0.9
           growthRate: -0.005,
           growthLimit: 0.9,
-          // Под менеджером: rate удваивается (-0.01/нед), пол падает до 0.75
-          // плюс -10% штраф к capacity. Эффективное падение 0.9 → 0.675
           dislikesManager: true,
           growthLimitUnderManager: 0.75,
         },
       },
     },
-    // ── Бывший профи: бизнес-специфичный (cafe) ───────────────────────
     {
       id: 'hire_pro_cafe',
-      text: '🍳 Сергей, повар из закрывшегося ресторана: 55 000 ₽/мес, 12 лет в общепите · −5 энергии/нед' + SALARY_NOTE_SUFFIX,
+      text: '🍳 Сергей, повар из закрывшегося ресторана: 55 000 ₽/мес — 12 лет в общепите, класс виден сразу' + SALARY_NOTE_SUFFIX,
       requiredBusinessTypes: ['cafe'],
       consequences: {
         balanceDelta: -7000,
@@ -216,10 +212,9 @@ export const FIRST_HIRE_OPTIONS: EventTemplate = {
         },
       },
     },
-    // ── Бывший профи: бизнес-специфичный (shop) ───────────────────────
     {
       id: 'hire_pro_shop',
-      text: '🏪 Алла, продавец из обанкротившегося «Магнита»: 55 000 ₽/мес, 10 лет на кассе · −5 энергии/нед' + SALARY_NOTE_SUFFIX,
+      text: '🏪 Алла, продавец из обанкротившегося «Магнита»: 55 000 ₽/мес — 10 лет на кассе, класс виден сразу' + SALARY_NOTE_SUFFIX,
       requiredBusinessTypes: ['shop'],
       consequences: {
         balanceDelta: -7000,
@@ -234,10 +229,9 @@ export const FIRST_HIRE_OPTIONS: EventTemplate = {
         },
       },
     },
-    // ── Бывший профи: бизнес-специфичный (salon) ──────────────────────
     {
       id: 'hire_pro_salon',
-      text: '💇 Лариса, парикмахер из закрытого салона: 55 000 ₽/мес, своя клиентура · −5 энергии/нед' + SALARY_NOTE_SUFFIX,
+      text: '💇 Лариса, парикмахер из закрытого салона: 55 000 ₽/мес — со своей клиентурой, готова к работе' + SALARY_NOTE_SUFFIX,
       requiredBusinessTypes: ['beauty-salon'],
       consequences: {
         balanceDelta: -7000,
@@ -254,7 +248,6 @@ export const FIRST_HIRE_OPTIONS: EventTemplate = {
         },
       },
     },
-    // ── Отказать: остаться solo ───────────────────────────────────────
     {
       id: 'refuse_all',
       text: 'Пока никого — справлюсь сам',
@@ -297,7 +290,7 @@ export const SVETLANA_INTRO: EventTemplate = {
   options: [
     {
       id: 'hire',
-      text: '⭐ Принять — талант не часто стучится. 60 000 ₽/мес, управленец, +25% к команде / +40% к специалистам · −4 энергии/нед' + SALARY_NOTE_SUFFIX,
+      text: '⭐ Принять — талант не часто стучится. 60 000 ₽/мес — управленец, разгрузит вас и подтянет команду' + SALARY_NOTE_SUFFIX,
       consequences: {
         balanceDelta: -8000,
         loyaltyDelta: 6,
@@ -328,6 +321,195 @@ export const SVETLANA_INTRO: EventTemplate = {
  * Светлана у конкурента — последствие отказа от её найма на собеседовании.
  * Срабатывает через 3 недели после svetlana_intro если игрок выбрал pass.
  */
+/**
+ * Светлана настаивает на втором найме (Спринт 5e).
+ *
+ * Срабатывает через 2 недели после того, как Светлана нанята в solo-команду
+ * (см. applyEventConsequence — там auto-schedule если employees.length===0
+ * до её прихода). Никаких опций «пропустить» — она настаивает, без второго
+ * человека работа не выстроится.
+ */
+export const SVETLANA_DEMANDS_HIRE: EventTemplate = {
+  id: 'svetlana_demands_hire',
+  title: 'Светлана настаивает: нужен второй',
+  description:
+    'Третья неделя со Светланой. После закрытия она садится напротив, без вступлений: «Я разобралась со всеми вашими операциями. Вы знаете, что нас двое на всё — это нерабочая конструкция. Если хотим расти, нам нужен ещё один человек прямо сейчас. Я уже посмотрела трёх. Вот они».\n\nКладёт перед вами три листочка. Каждый — короткое резюме и ожидание по зарплате. Спорить с такой постановкой бесполезно — и сами понимаете, что она права.',
+  trigger: {
+    dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true,
+    chainId: 'svetlana_intro',
+    chainStep: 3,
+  },
+  npcId: 'svetlana',
+  options: [
+    {
+      id: 'hire_student_via_svetlana',
+      text: '👨‍🎓 Никита, 3-й курс политеха: 35 000 ₽/мес — учится по ходу, но схватывает быстро' + SALARY_NOTE_SUFFIX,
+      consequences: {
+        balanceDelta: -4000,
+        loyaltyDelta: 0,
+        hireEmployee: {
+          position: 'assistant',
+          salary: 35000,
+          efficiency: 0.85,
+          energyCost: 6,
+          name: 'Никита',
+          growthRate: 0.015,
+          growthLimit: 1.05,
+        },
+      },
+    },
+    {
+      id: 'hire_oleg_via_svetlana',
+      text: '👨 Олег, 39: 38 000 ₽/мес — работает нормально, но без огонька, не любит командование' + SALARY_NOTE_SUFFIX,
+      consequences: {
+        balanceDelta: -4500,
+        loyaltyDelta: 0,
+        hireEmployee: {
+          position: 'assistant',
+          salary: 38000,
+          efficiency: 1.0,
+          energyCost: 6,
+          name: 'Олег',
+          growthRate: -0.005,
+          growthLimit: 0.9,
+          dislikesManager: true,
+          growthLimitUnderManager: 0.75,
+        },
+      },
+      // Олег под Светланой — сразу заводим часы до oleg_trouble_1
+      chainFollowUpId: 'oleg_trouble_1',
+    },
+    {
+      id: 'hire_pro_via_svetlana_cafe',
+      text: '🍳 Сергей, повар: 55 000 ₽/мес — 12 лет в общепите, класс виден сразу' + SALARY_NOTE_SUFFIX,
+      requiredBusinessTypes: ['cafe'],
+      consequences: {
+        balanceDelta: -7000,
+        loyaltyDelta: 5,
+        reputationDelta: 2,
+        hireEmployee: {
+          position: 'specialist',
+          salary: 55000,
+          efficiency: 1.2,
+          energyCost: 5,
+          name: 'Сергей',
+        },
+      },
+    },
+    {
+      id: 'hire_pro_via_svetlana_shop',
+      text: '🏪 Алла, продавец: 55 000 ₽/мес — 10 лет на кассе, класс виден сразу' + SALARY_NOTE_SUFFIX,
+      requiredBusinessTypes: ['shop'],
+      consequences: {
+        balanceDelta: -7000,
+        loyaltyDelta: 5,
+        reputationDelta: 2,
+        hireEmployee: {
+          position: 'specialist',
+          salary: 55000,
+          efficiency: 1.2,
+          energyCost: 5,
+          name: 'Алла',
+        },
+      },
+    },
+    {
+      id: 'hire_pro_via_svetlana_salon',
+      text: '💇 Лариса, парикмахер: 55 000 ₽/мес — со своей клиентурой' + SALARY_NOTE_SUFFIX,
+      requiredBusinessTypes: ['beauty-salon'],
+      consequences: {
+        balanceDelta: -7000,
+        loyaltyDelta: 5,
+        reputationDelta: 2,
+        clientModifier: 0.10,
+        clientModifierDays: 28,
+        hireEmployee: {
+          position: 'specialist',
+          salary: 55000,
+          efficiency: 1.2,
+          energyCost: 5,
+          name: 'Лариса',
+        },
+      },
+    },
+  ],
+}
+
+/**
+ * Олег косячит — первый звонок (Спринт 5e).
+ *
+ * Срабатывает через 4 недели после прихода Светланы, если Олег в команде.
+ * Под её управлением он скисает (см. dislikesManager) и начинает реально
+ * портить работу. Игроку даётся выбор: ещё один шанс или расставаться сразу.
+ */
+export const OLEG_TROUBLE_1: EventTemplate = {
+  id: 'oleg_trouble_1',
+  title: 'С Олегом всё хуже',
+  description:
+    'За четыре недели работы со Светланой Олег явно сдулся. Два дня прогулял «по семейным обстоятельствам», запутался с приёмкой поставщика (−5 тыс. убытка), нахамил постоянной клиентке — та оставила отзыв «неприветливые продавцы».\n\nСветлана подходит в среду, спокойно, но без полутонов: «Я не могу за ним переделывать каждый день. Решайте — либо мы с ним пробуем построить разговор последний раз, либо ищем замену».',
+  trigger: {
+    dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true,
+    chainId: 'svetlana_intro',
+    chainStep: 4,
+  },
+  npcId: 'svetlana',
+  options: [
+    {
+      id: 'give_time',
+      text: 'Дать ему ещё неделю — может, исправится',
+      consequences: {
+        clientModifier: -0.05,
+        clientModifierDays: 14,
+        reputationDelta: -1,
+      },
+      chainFollowUpId: 'oleg_trouble_2',
+    },
+    {
+      id: 'fire_now',
+      text: 'Расставаться. Светлана права',
+      consequences: {
+        balanceDelta: -10000,  // выходное пособие / страх замены
+        reputationDelta: -1,
+        loyaltyDelta: 2,       // команда видит, что слабых не тащат
+        fireEmployee: { name: 'Олег' },
+      },
+      npcRelationshipDelta: 5,
+    },
+  ],
+}
+
+/**
+ * Олег: последняя капля (Спринт 5e).
+ *
+ * Срабатывает через 1 неделю после oleg_trouble_1 если игрок дал ему время.
+ * За эту неделю Олег делает столько, что выбора уже нет — расстаёмся.
+ */
+export const OLEG_TROUBLE_2: EventTemplate = {
+  id: 'oleg_trouble_2',
+  title: 'Олег: финальный косяк',
+  description:
+    'Неделя «последнего шанса» стала финальной. В субботу — самый трафик — Олег не пришёл и не предупредил. В понедельник опоздал на 40 минут, к обеду «вышел перекурить» и не вернулся до конца смены. Касса час стояла без присмотра — мог зайти кто угодно.\n\nСветлана уже не уговаривает. Кладёт перед вами листок с распечатанными статьями трудового кодекса об увольнении за прогулы. «Это окно. Сейчас — или мы сами ставим себя в неудобную позу».',
+  trigger: {
+    dayMin: 0, dayMax: 9999, randomChance: 1.0, oneTime: true,
+    chainId: 'svetlana_intro',
+    chainStep: 5,
+  },
+  npcId: 'svetlana',
+  options: [
+    {
+      id: 'part_ways',
+      text: 'Расставаться по обоюдному, без скандала',
+      consequences: {
+        balanceDelta: -15000,
+        reputationDelta: -2,
+        loyaltyDelta: -1,  // довёл до этого — на команде осадок
+        fireEmployee: { name: 'Олег' },
+      },
+      npcRelationshipDelta: 3,
+    },
+  ],
+}
+
 export const SVETLANA_TO_ANNA: EventTemplate = {
   id: 'svetlana_to_anna',
   title: 'Анна объявила о новой управляющей',
