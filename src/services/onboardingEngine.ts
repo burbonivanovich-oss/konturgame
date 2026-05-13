@@ -7,8 +7,9 @@ import { ONBOARDING_STAGES, SERVICE_UNLOCK_MAP } from '../constants/onboarding'
 const MIN_DAYS_IN_STAGE = 3
 
 // Cost the player must cover to complete a buy_register action step.
-// Service activations have no upfront cost (billed daily), so only the register matters.
-const MIN_REGISTER_COST = 8000
+// Спринт 5e: к первой кассе обязательно идёт фискальный накопитель
+// (+8К₽). Минимум для покупки = касса 8К + ФН 8К = 16К₽.
+const MIN_REGISTER_COST = 16000
 
 export function getUnlockedServicesForStage(stage: OnboardingStage): ServiceType[] {
   return SERVICE_UNLOCK_MAP[stage] ?? []

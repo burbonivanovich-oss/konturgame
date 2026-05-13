@@ -104,6 +104,7 @@ const createInitialState = (businessType: BusinessType): GameState => {
 
     // Cash registers
     cashRegisters: [],
+    fiscalDriveOwned: false,
 
     // Assortment
     enabledCategories: getDefaultCategories(businessType),
@@ -1075,7 +1076,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (totalExisting >= 2) cost = Math.round(cost * (1 - (REGISTER_COMBO_DISCOUNTS[3] ?? 0)))
       else if (totalExisting >= 1) cost = Math.round(cost * (1 - (REGISTER_COMBO_DISCOUNTS[2] ?? 0)))
 
-      if (state.balance < cost) return false
+      // Спринт 5e: к ПЕРВОЙ кассе обязательно покупается фискальный
+      // накопитель (54-ФЗ требует). +8 000₽ к стоимости первой покупки.
+      const FISCAL_DRIVE_COST = 8000
+      const isFirstRegister = totalExisting === 0 && !state.fiscalDriveOwned
+      const totalCost = isFirstRegister ? cost + FISCAL_DRIVE_COST : cost
+
+      if (state.balance < totalCost) return false
 
       set((s) => {
         const existing = s.cashRegisters.find((r) => r.type === type)
@@ -1092,7 +1099,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         }
         return {
           cashRegisters: newRegisters,
-          balance: s.balance - cost,
+          fiscalDriveOwned: isFirstRegister ? true : s.fiscalDriveOwned,
+          balance: s.balance - totalCost,
           lastUpdated: Date.now(),
         }
       })
@@ -1463,6 +1471,7 @@ function extractState(state: any): GameState {
     unlockedServices: unlockedServices ?? SERVICE_UNLOCK_MAP[0],
     serviceDeactivatedWeeks: (state as any).serviceDeactivatedWeeks ?? {},
     cashRegisters: cashRegisters ?? [],
+    fiscalDriveOwned: (state as any).fiscalDriveOwned ?? false,
     enabledCategories: enabledCategories ?? [],
     promoCodesRevealed: promoCodesRevealed ?? [],
     pendingPromoCode: null, // Never persist pending promo

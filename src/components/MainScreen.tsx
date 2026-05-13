@@ -125,7 +125,8 @@ function DashboardView({
     market: 'Маркет', bank: 'Банк', ofd: 'ОФД',
     diadoc: 'Диадок', fokus: 'Фокус', elba: 'Эльба', extern: 'Экстерн',
   }
-  const serviceOrder: ServiceType[] = ['market', 'bank', 'ofd', 'extern', 'diadoc', 'fokus', 'elba']
+  // Спринт 5e: Экстерн скрыт из списка
+  const serviceOrder: ServiceType[] = ['market', 'bank', 'ofd', 'diadoc', 'fokus', 'elba']
 
   // Business stage (from main)
   const stage = getBusinessStage(currentWeek, businessTier)

@@ -61,8 +61,8 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
     ],
   },
 
-  // ── Контур.Маркет (48 000 ₽) — учёт товаров ─────────────────────────
-  // Опциональный. W12 — первый из растянутого ряда W12 → W17 → W21 → W24 → W28.
+  // ── Контур.Маркет (24 000 ₽) — учёт товаров ─────────────────────────
+  // Опциональный. W12 — первый из растянутого ряда W12 → W17 → W21 → W24.
   {
     id: 'FIRST_MARKET',
     title: 'Опять кончилось то, что покупали',
@@ -76,8 +76,8 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
       },
       {
         id: 'subscribe',
-        text: 'Подключить Контур.Маркет (48 000 ₽)',
-        consequences: { balanceDelta: -48000, serviceId: 'market' },
+        text: 'Подключить Контур.Маркет (24 000 ₽)',
+        consequences: { balanceDelta: -24000, serviceId: 'market' },
         isContourOption: true,
       },
     ],
@@ -154,27 +154,8 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
     ],
   },
 
-  // ── Контур.Экстерн (48 000 ₽) — отчётность ФНС ──────────────────────
-  // Опциональный. W28 — последний в ряду опциональных.
-  {
-    id: 'FIRST_EXTERN',
-    title: 'Декларация на следующей неделе',
-    description: 'В чате предпринимателей паника: декларация по УСН до 30-го, штраф за просрочку — 5% от суммы налога за каждый месяц, минимум 1 000 ₽. На сайте ФНС форма требует электронную подпись и не загружается с третьего раза. Бухгалтерская контора в районе берёт 8 000 ₽ за разовую сдачу — но у них тоже очередь.',
-    trigger: { dayMin: 196, randomChance: 0.12, noService: 'extern', oneTime: true },
-    options: [
-      {
-        id: 'one_time_accountant',
-        text: 'Заплатить разово конторе (8 000 ₽)',
-        consequences: { balanceDelta: -8000 },
-      },
-      {
-        id: 'subscribe',
-        text: 'Подключить Контур.Экстерн (48 000 ₽) — на год вперёд',
-        consequences: { balanceDelta: -48000, serviceId: 'extern' },
-        isContourOption: true,
-      },
-    ],
-  },
+  // Спринт 5e: FIRST_EXTERN удалён — Экстерн скрыт из списка сервисов
+  // (его функционал теперь поглощён Эльбой).
 
   // ─────────────────────────────────────────────────────────────────────
   // Recurring crisis events — после ramp-window (W14+).
@@ -242,23 +223,5 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
     ],
   },
 
-  {
-    id: 'PAIN_EXTERN',
-    title: 'Блокировка счёта за просрочку отчётности',
-    description: 'Утром не проходит платёж поставщику. Звонок в банк: «Счёт ограничен по требованию ФНС». В налоговой: «Отчёт не сдан в срок, разблокируем после сдачи».',
-    trigger: { dayMin: 224, randomChance: 0.04, noService: 'extern', oneTime: false },
-    options: [
-      {
-        id: 'rush_courier',
-        text: 'Курьер с бумагами в инспекцию (8 000 ₽)',
-        consequences: { balanceDelta: -8000, reputationDelta: -2 },
-      },
-      {
-        id: 'subscribe',
-        text: 'Подключить Контур.Экстерн (48 000 ₽) — на год вперёд',
-        consequences: { balanceDelta: -48000, serviceId: 'extern' },
-        isContourOption: true,
-      },
-    ],
-  },
+  // PAIN_EXTERN удалён вместе с FIRST_EXTERN.
 ]

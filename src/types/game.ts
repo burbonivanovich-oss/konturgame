@@ -520,6 +520,10 @@ export interface GameState {
 
   // Cash registers
   cashRegisters: CashRegister[]
+  // Спринт 5e: фискальный накопитель — обязательный по 54-ФЗ компонент.
+  // Покупается ВМЕСТЕ с первой кассой (бандл, +8 000₽). Без него ОФД
+  // не может передавать чеки в ФНС, штраф до 10К за каждый чек.
+  fiscalDriveOwned?: boolean
 
   // Assortment categories
   enabledCategories: string[]

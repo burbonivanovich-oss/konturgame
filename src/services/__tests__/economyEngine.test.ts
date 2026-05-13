@@ -279,11 +279,9 @@ describe('calculateMonthlyExpenses', () => {
     expect(calculateMonthlyExpenses(state)).toBe(30550)
   })
 
-  it('adds hire-cashier salary increase (W1 grace)', () => {
-    // (18000 + 14000 + 12000) × 0.65 = 28600
-    const state = makeState({ purchasedUpgrades: ['hire-cashier'] })
-    expect(calculateMonthlyExpenses(state)).toBe(28600)
-  })
+  // hire-cashier upgrade удалён в Спринт 5e (найм только через события).
+  // Тест убран; вместо этого проверяем premium-categories upgrade (без
+  // salary increase — только checkBonus).
 
   it('does NOT include active service subscriptions (charged daily instead)', () => {
     const state = makeState({
