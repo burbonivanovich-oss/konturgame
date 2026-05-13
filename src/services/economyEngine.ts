@@ -1,7 +1,7 @@
 import type { GameState, Modifiers } from '../types/game'
 import { BUSINESS_CONFIGS, MONTHLY_EXPENSES, UPGRADES_CONFIG, CAMPAIGN_DIMINISHING_FACTORS, SERVICES_CONFIG, getExpenseMultiplier } from '../constants/business'
 import { BUSINESS_TIERS, type BusinessTierConfig } from '../constants/businessTiers'
-import { LOYALTY_CAPACITY_THRESHOLDS, LOYALTY_CAPACITY_MODIFIER } from '../constants/gameBalance'
+import { REPUTATION_CAPACITY_THRESHOLDS, REPUTATION_CAPACITY_MODIFIER } from '../constants/gameBalance'
 import { calculateSynergyModifiers } from './synergyEngine'
 
 // ── Business tier (level) helpers ────────────────────────────────────────────
@@ -93,11 +93,13 @@ export function calculateCapacity(state: GameState): number {
   if (state.services?.market?.isActive) {
     capacityMod += SERVICES_CONFIG.market.effects.capacityBonus ?? 0
   }
-  if (state.loyalty > LOYALTY_CAPACITY_THRESHOLDS.HIGH) {
-    capacityMod += LOYALTY_CAPACITY_MODIFIER.HIGH_BONUS
+  // Раньше тут были loyalty-пороги; теперь репутация — единственный
+  // социальный скаляр и сама даёт capacity-бонус.
+  if (state.reputation > REPUTATION_CAPACITY_THRESHOLDS.HIGH) {
+    capacityMod += REPUTATION_CAPACITY_MODIFIER.HIGH_BONUS
   }
-  if (state.loyalty < LOYALTY_CAPACITY_THRESHOLDS.LOW) {
-    capacityMod -= LOYALTY_CAPACITY_MODIFIER.LOW_PENALTY
+  if (state.reputation < REPUTATION_CAPACITY_THRESHOLDS.LOW) {
+    capacityMod -= REPUTATION_CAPACITY_MODIFIER.LOW_PENALTY
   }
 
   const upgradeBonus = getCapacityUpgradesBonus(state)
@@ -117,9 +119,7 @@ export function getClientUpgradesBonus(state: GameState): number {
   return getPurchasedUpgradeConfigs(state).reduce((sum, u) => sum + (u.clientBonus ?? 0), 0)
 }
 
-export function getLoyaltyUpgradesBonus(state: GameState): number {
-  return getPurchasedUpgradeConfigs(state).reduce((sum, u) => sum + (u.loyaltyBonus ?? 0), 0)
-}
+// getLoyaltyUpgradesBonus удалён вместе со скаляром лояльности.
 
 export function calculateAverageCheck(baseCheck: number, modifiers: Modifiers): number {
   const totalCheckMod = 1.0 + modifiers.checkBonus + modifiers.advertisingCheckPenalty

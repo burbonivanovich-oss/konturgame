@@ -282,12 +282,16 @@ export const ECONOMY_CONSTANTS = {
 
   MAX_REPUTATION: 100,
   MIN_REPUTATION: 0,
+  // MAX_LOYALTY / MIN_LOYALTY оставлены как дубль REPUTATION-границ —
+  // legacy callers ещё могут читать; убраны из новых вызовов.
   MAX_LOYALTY: 100,
   MIN_LOYALTY: 0,
   MAX_ENTREPRENEURIAL_ENERGY: 100,
 
   REPUTATION_ZERO_WEEKS_FOR_LOSS: 6,
   OVERLOAD_THRESHOLD: 0.9,
+  // Раньше OVERLOAD_DAYS_FOR_LOYALTY_PENALTY / LOYALTY_PENALTY_PER_DAY.
+  // Теперь это rep-штраф (см. weekCalculator: -1.5 rep/день после 3 дней перегруза).
   OVERLOAD_DAYS_FOR_LOYALTY_PENALTY: 3,
   LOYALTY_PENALTY_PER_DAY: 10,
   LOYALTY_BONUS_PREMIUM: 15,

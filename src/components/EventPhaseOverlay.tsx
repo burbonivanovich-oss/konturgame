@@ -43,7 +43,7 @@ interface EventPhaseOverlayProps {
 export function EventPhaseOverlay({ onOptionSelect, onContinueIfNoEvent }: EventPhaseOverlayProps) {
   const {
     pendingEvent, pendingEventsQueue, npcs, currentWeek, businessType, deferEvent,
-    balance, entrepreneurEnergy, reputation, loyalty,
+    balance, entrepreneurEnergy, reputation,
   } = useGameStore()
 
   // Edge case: фаза events без события. Показываем «тишину» и
@@ -90,7 +90,6 @@ export function EventPhaseOverlay({ onOptionSelect, onContinueIfNoEvent }: Event
           balance={balance}
           energy={entrepreneurEnergy}
           reputation={reputation}
-          loyalty={loyalty}
         />
 
         {/* Header */}
@@ -239,22 +238,20 @@ export function EventPhaseOverlay({ onOptionSelect, onContinueIfNoEvent }: Event
 }
 
 function KpiStrip({
-  balance, energy, reputation, loyalty,
-}: { balance: number; energy: number; reputation: number; loyalty: number }) {
+  balance, energy, reputation,
+}: { balance: number; energy: number; reputation: number; loyalty?: number }) {
   const energyColor = energy >= 60 ? K.mint : energy >= 30 ? K.orange : K.bad
   const repColor = reputation >= 60 ? K.mint : reputation >= 30 ? K.orange : K.bad
-  const loyaltyColor = loyalty >= 60 ? K.mint : loyalty >= 30 ? K.orange : K.bad
   const balanceColor = balance < 0 ? K.bad : balance < 30000 ? K.orange : K.ink
   return (
     <div style={{
-      display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8,
+      display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8,
       background: K.white, border: `1px solid ${K.line}`,
       borderRadius: 12, padding: '10px 14px',
     }}>
       <KpiCell label="Баланс" value={`${balance.toLocaleString('ru-RU')} ₽`} color={balanceColor} />
       <KpiCell label="Энергия" value={`${energy}/100`} color={energyColor} />
       <KpiCell label="Репутация" value={`${reputation}/100`} color={repColor} />
-      <KpiCell label="Лояльность" value={`${loyalty}/100`} color={loyaltyColor} />
     </div>
   )
 }

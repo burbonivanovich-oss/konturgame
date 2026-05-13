@@ -189,13 +189,14 @@ describe('calculateCapacity', () => {
     expect(calculateCapacity(state)).toBe(Math.round(BASE * 1.2))
   })
 
-  it('adds loyalty > 80 bonus', () => {
-    const state = makeState({ loyalty: 85 })
+  // Лояльность выпилена — capacity-бонусы/штрафы теперь от репутации.
+  it('adds reputation > 80 bonus', () => {
+    const state = makeState({ reputation: 85 })
     expect(calculateCapacity(state)).toBe(Math.round(BASE * 1.1))
   })
 
-  it('applies loyalty < 30 penalty', () => {
-    const state = makeState({ loyalty: 20 })
+  it('applies reputation < 30 penalty', () => {
+    const state = makeState({ reputation: 20 })
     expect(calculateCapacity(state)).toBe(Math.round(BASE * 0.85))
   })
 

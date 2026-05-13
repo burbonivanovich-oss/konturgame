@@ -913,7 +913,9 @@ export function generateEvent(day: number, state: GameState): Event | null {
     // for the event to feel like a setback rather than a death blow.
     if (template.trigger.balanceMin !== undefined && state.balance < template.trigger.balanceMin) continue
     if (template.trigger.weekMin !== undefined && state.currentWeek < template.trigger.weekMin) continue
-    if (template.trigger.loyaltyMin !== undefined && state.loyalty < template.trigger.loyaltyMin) continue
+    // loyaltyMin как trigger выпилен с лояльностью; интерпретируем как
+    // дополнительный минимум репутации (с конверсией ×0.5).
+    if (template.trigger.loyaltyMin !== undefined && state.reputation < template.trigger.loyaltyMin * 0.5) continue
     // NPC relationship gating (v5.1)
     if (template.npcId) {
       const npc = (state.npcs ?? []).find(n => n.id === template.npcId)
@@ -944,7 +946,7 @@ export function generateCrisisEvent(state: GameState): Event | null {
     if (template.trigger.oneTime && triggered.includes(template.id)) return false
     if (template.trigger.balanceMin !== undefined && state.balance < template.trigger.balanceMin) return false
     if (template.trigger.weekMin !== undefined && state.currentWeek < template.trigger.weekMin) return false
-    if (template.trigger.loyaltyMin !== undefined && state.loyalty < template.trigger.loyaltyMin) return false
+    if (template.trigger.loyaltyMin !== undefined && state.reputation < template.trigger.loyaltyMin * 0.5) return false
     if (template.trigger.reputationMin !== undefined && state.reputation < template.trigger.reputationMin) return false
     if (template.trigger.randomChance !== undefined && Math.random() > template.trigger.randomChance) return false
     return true
@@ -988,8 +990,11 @@ export function applyEventConsequence(
   if (c.reputationDelta !== undefined) {
     state.reputation = Math.max(0, Math.min(100, state.reputation + c.reputationDelta))
   }
+  // Лояльность как скаляр выпилена. Старые события всё ещё указывают
+  // loyaltyDelta — переадресуем в репутацию × 0.5 (лояльность была более
+  // «толстой» шкалой, поэтому половинная конверсия даёт сравнимый эффект).
   if (c.loyaltyDelta !== undefined) {
-    state.loyalty = Math.max(0, Math.min(100, state.loyalty + c.loyaltyDelta))
+    state.reputation = Math.max(0, Math.min(100, state.reputation + c.loyaltyDelta * 0.5))
   }
   if (c.energyDelta !== undefined) {
     state.entrepreneurEnergy = Math.max(0, Math.min(100, state.entrepreneurEnergy + c.energyDelta))

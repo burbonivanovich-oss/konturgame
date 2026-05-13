@@ -48,7 +48,7 @@ const createInitialState = (businessType: BusinessType): GameState => {
     balance: config.startBalance,
     savedBalance: 0,
     reputation: 50,
-    loyalty: 55,
+    loyalty: 55,  // оставлено для совместимости со старыми сэйвами; не используется
     entrepreneurEnergy: ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY,
 
     stock: [],
@@ -204,6 +204,7 @@ interface GameStoreActions {
   addBalance: (delta: number) => void
   setReputation: (value: number) => void
   addReputation: (delta: number) => void
+  // Лояльность выпилена как скаляр; setLoyalty/addLoyalty переадресуют в репутацию × 0.5.
   setLoyalty: (value: number) => void
   addLoyalty: (delta: number) => void
 
@@ -364,8 +365,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY,
           baseState.entrepreneurEnergy + (bonus.startingEnergyDelta ?? 0)
         ),
-        reputation: Math.min(100, baseState.reputation + (bonus.startingReputationDelta ?? 0)),
-        loyalty: Math.min(100, baseState.loyalty + (bonus.startingLoyaltyDelta ?? 0)),
+        reputation: Math.min(100, baseState.reputation + (bonus.startingReputationDelta ?? 0) + (bonus.startingLoyaltyDelta ?? 0) * 0.5),
       }
       set(newState)
       saveToStorage(newState)
@@ -518,16 +518,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }))
     },
 
-    setLoyalty: (value) => {
-      set((state) => ({
-        loyalty: Math.max(0, Math.min(ECONOMY_CONSTANTS.MAX_LOYALTY, value)),
-        lastUpdated: Date.now(),
-      }))
-    },
-
+    // Лояльность выпилена; setLoyalty молча игнорирует, addLoyalty
+    // переадресует в репутацию × 0.5 (для совместимости с external callers).
+    setLoyalty: () => {},
     addLoyalty: (delta) => {
       set((state) => ({
-        loyalty: Math.max(0, Math.min(ECONOMY_CONSTANTS.MAX_LOYALTY, state.loyalty + delta)),
+        reputation: Math.max(0, Math.min(100, state.reputation + delta * 0.5)),
         lastUpdated: Date.now(),
       }))
     },

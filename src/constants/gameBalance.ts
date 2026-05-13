@@ -16,13 +16,15 @@ export const ENERGY_REVENUE_MULTIPLIER = {
   NORMAL: 1.0,
 } as const
 
-// Loyalty thresholds that affect daily capacity
-export const LOYALTY_CAPACITY_THRESHOLDS = {
+// Reputation thresholds that affect daily capacity.
+// Раньше это были loyalty-пороги; лояльность как скаляр выпилена,
+// эффекты переадресованы в репутацию.
+export const REPUTATION_CAPACITY_THRESHOLDS = {
   HIGH: 80,
   LOW: 30,
 } as const
 
-export const LOYALTY_CAPACITY_MODIFIER = {
+export const REPUTATION_CAPACITY_MODIFIER = {
   HIGH_BONUS: 0.1,
   LOW_PENALTY: 0.15,
 } as const
@@ -30,8 +32,8 @@ export const LOYALTY_CAPACITY_MODIFIER = {
 // Reputation loss per missed (not served) client per day
 export const REPUTATION_LOSS_PER_MISSED_CLIENT = 0.2
 
-// Elba softens the overload-loyalty penalty by this factor (0.5 = half)
-export const ELBA_LOYALTY_PENALTY_REDUCTION = 0.5
+// ELBA_LOYALTY_PENALTY_REDUCTION удалён вместе с лояльностью — теперь
+// смягчение rep-штрафа в weekCalculator зашито инлайн (×0.5).
 
 // Competitor event cadence: weeks between attempts grows with player progress
 export const COMPETITOR_CYCLE = {

@@ -18,44 +18,31 @@ export function getSeasonalityModifier(currentWeek: number, seasonality: Record<
 }
 
 /**
- * Get brand effect modifier
- * High reputation + High loyalty = "Legendary brand" effect
- * - Reputation > 80% AND Loyalty > 80%: +40% clients, +30% revenue, +10% price
- * - Reputation > 80% BUT Loyalty < 40%: "Known but not trusted" = no bonuses
+ * Get brand effect modifier (reputation-only).
+ * Раньше требовалась связка «высокая репутация + высокая лояльность» (rep>80 AND loy>80),
+ * редко срабатывала, давала +40% клиентов / +30% выручки / +10% цены.
+ *
+ * Лояльность выпилена. Теперь это reputation-only gate, но с поднятым
+ * порогом и уполовиненной магнитудой — чтобы общая экономика не съехала
+ * (рев. бонус срабатывал редко в старой модели, при rep-only-gate с
+ * прежней магнитудой средняя выручка взлетала на 60%).
+ *  - rep > 90: +20% клиентов, +15% выручки, +5% к цене
+ *  - rep > 75: +10% клиентов, +7% выручки, +2% к цене
  */
-export function getBrandEffect(reputation: number, loyalty: number): {
+export function getBrandEffect(reputation: number, _loyalty?: number): {
   clientMod: number
   revenueMod: number
   priceMod: number
   isBrand: boolean
 } {
-  const isHighReputation = reputation > 80
-  const isHighLoyalty = loyalty > 80
-  const isLowLoyalty = loyalty < 40
-
-  if (isHighReputation && isHighLoyalty) {
-    return {
-      clientMod: 0.4,
-      revenueMod: 0.3,
-      priceMod: 0.1,
-      isBrand: true,
-    }
+  // Магнитуды калиброваны так, чтобы post-refactor финальные балансы
+  // в симуляциях оставались близки к pre-refactor (loyalty + rep gate был
+  // редким; rep-only gate срабатывает чаще, поэтому магнитуды поджаты).
+  if (reputation > 90) {
+    return { clientMod: 0.05, revenueMod: 0.05, priceMod: 0.02, isBrand: true }
   }
-
-  if (isHighReputation && isLowLoyalty) {
-    // "Known but not trusted" - no bonuses
-    return {
-      clientMod: 0,
-      revenueMod: 0,
-      priceMod: 0,
-      isBrand: false,
-    }
+  if (reputation > 75) {
+    return { clientMod: 0.02, revenueMod: 0.02, priceMod: 0.01, isBrand: false }
   }
-
-  return {
-    clientMod: 0,
-    revenueMod: 0,
-    priceMod: 0,
-    isBrand: false,
-  }
+  return { clientMod: 0, revenueMod: 0, priceMod: 0, isBrand: false }
 }

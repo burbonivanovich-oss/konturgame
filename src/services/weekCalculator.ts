@@ -14,7 +14,6 @@ import {
   calculateRevenue,
   calculateDailySubscriptions,
   calculateMonthlyExpenses,
-  getLoyaltyUpgradesBonus,
   getEffectiveBaseClients,
   getEffectiveAvgCheck,
 } from './economyEngine'
@@ -35,7 +34,6 @@ import {
   ENERGY_THRESHOLDS,
   ENERGY_REVENUE_MULTIPLIER,
   REPUTATION_LOSS_PER_MISSED_CLIENT,
-  ELBA_LOYALTY_PENALTY_REDUCTION,
   COMPETITOR_CYCLE,
   SERVICE_SAVINGS_RATES,
 } from '../constants/gameBalance'
@@ -91,7 +89,6 @@ export function processWeek(state: GameState): DayResult {
   let weekExpenses = 0
   let weekNetProfit = 0
   let weekRepChange = 0
-  let weekLoyaltyChange = 0
   let totalDaysWithoutExpiry = 0
   let weekExpiredLoss = 0
   const weekPain = { bank: 0, market: 0, ofd: 0, diadoc: 0, fokus: 0, elba: 0, extern: 0, total: 0 }
@@ -102,15 +99,15 @@ export function processWeek(state: GameState): DayResult {
   const weeklySalaryCost = getWeeklySalaryCost(state)
   const weeklyEnergyCost = getWeeklyEnergyCost(state)
   const employeeCapacityBonus = getEmployeeCapacityBonus(state)
-  const loyaltyUpgradesBonus = getLoyaltyUpgradesBonus(state)
 
   // Weekly tactic — multipliers/deltas applied per day in the loop below.
   // null tactic = operational drift penalty (-5%): no focus means small inefficiencies.
   const tactic = getWeeklyTacticDef(state.weeklyTactic)
   const tacticRevenueMul = tactic?.revenueMultiplier ?? 0.95
   const tacticEnergyPerDay = tactic?.energyDelta ?? 0
-  const tacticRepPerDay = tactic?.reputationDelta ?? 0
-  const tacticLoyaltyPerDay = tactic?.loyaltyDelta ?? 0
+  // Loyalty как скаляр выпилен — tacticLoyaltyPerDay тоже. Сервисная
+  // тактика всё ещё даёт rep-бонус через tacticRepPerDay.
+  const tacticRepPerDay = (tactic?.reputationDelta ?? 0) + ((tactic?.loyaltyDelta ?? 0) * 0.5)
 
   // Process each day of the week (7 iterations)
   for (let dayNum = 0; dayNum < 7; dayNum++) {
@@ -127,8 +124,8 @@ export function processWeek(state: GameState): DayResult {
     // 3. Calculate daily metrics
     let totalClients = calculateClients(getEffectiveBaseClients(state), modifiers)
 
-    // Apply brand effect (reputation + loyalty synergy)
-    const brandEffect = getBrandEffect(state.reputation, state.loyalty)
+    // Apply brand effect (reputation-only).
+    const brandEffect = getBrandEffect(state.reputation)
     totalClients = Math.round(totalClients * (1 + brandEffect.clientMod))
 
     // Hard reputation penalty: below 30 customers actively avoid you; below 15 it's word of mouth damage
@@ -256,37 +253,26 @@ export function processWeek(state: GameState): DayResult {
      // (±2/±1) дублировал то, что уже даёт сервисная тактика и Фокус.
     const dayRepChange = Math.round(repFromMissed + fokusRepBonus + synergyMods.reputationBonus + tacticRepPerDay)
 
-    // 16. Loyalty change
+    // 16. Лояльность как отдельный скаляр выпилена — все её эффекты
+    // переехали в репутацию с половинной магнитудой. Перегрузка точки
+    // (load > OVERLOAD_THRESHOLD) теперь бьёт по репутации, а не по
+    // лояльности; Эльба смягчает удар вдвое.
     const elbaActive = state.services?.elba?.isActive ?? false
-    let dayLoyaltyChange = 0
     const load = capacity > 0 ? served / capacity : 0
+    let overloadRepPenalty = 0
     if (load > ECONOMY_CONSTANTS.OVERLOAD_THRESHOLD) {
       const newOverloadDays = (state.consecutiveOverloadDays ?? 0) + 1
       state.consecutiveOverloadDays = newOverloadDays
       if (newOverloadDays >= ECONOMY_CONSTANTS.OVERLOAD_DAYS_FOR_LOYALTY_PENALTY) {
-        const penalty = elbaActive
-          ? -(ECONOMY_CONSTANTS.LOYALTY_PENALTY_PER_DAY * ELBA_LOYALTY_PENALTY_REDUCTION)
-          : -ECONOMY_CONSTANTS.LOYALTY_PENALTY_PER_DAY
-        dayLoyaltyChange = Math.round(penalty)
+        // Раньше -10 лояльности; перевели в -1.5 рейтинга/день
+        // (лояльность была более «толстой» шкалой).
+        overloadRepPenalty = elbaActive ? -0.75 : -1.5
       }
     } else {
       state.consecutiveOverloadDays = 0
     }
-    const elbaLoyaltyBonus = elbaActive ? (state.services.elba.effects.loyaltyBonus ?? 0) : 0
-    dayLoyaltyChange += elbaLoyaltyBonus + synergyMods.loyaltyBonus + loyaltyUpgradesBonus + tacticLoyaltyPerDay
-
-    // Loyalty soft-cap decay above 70 — without active maintenance, customer
-    // loyalty drifts down. At 70: no decay; at 100: 3/day pull. To plateau
-    // at X, the player needs (X - 70) × 0.10 = sustained daily inflow:
-    //   • +0/day → drifts to 70
-    //   • +1/day → ~80 plateau
-    //   • +2/day → ~90
-    //   • +3/day → 100 (perfect play: service tactic + max quality + synergies)
-    // Loyalty bonuses on upgrades have been removed; loyalty now reflects HOW
-    // you play (tactic, choices, quality), not WHAT you bought.
-    if (state.loyalty > 70) {
-      dayLoyaltyChange -= (state.loyalty - 70) * 0.10
-    }
+    // Бонус Эльбы +лояльности/день перевёлся в +0.5 репутации/день.
+    const elbaRepBonus = elbaActive ? 0.5 : 0
 
     // 17. Accumulate week results
     weekRevenue += dayRevenue
@@ -294,8 +280,7 @@ export function processWeek(state: GameState): DayResult {
     weekMissed += missed
     weekExpenses += dayExpenses + additionalPainLoss
     weekNetProfit += dayNetProfit
-    weekRepChange += dayRepChange
-    weekLoyaltyChange += dayLoyaltyChange
+    weekRepChange += dayRepChange + overloadRepPenalty + elbaRepBonus
     weekExpiredLoss += expiredLoss
 
     if (expiredLoss === 0) {
@@ -332,7 +317,6 @@ export function processWeek(state: GameState): DayResult {
   // Apply week results to state
   const newBalance = state.balance + weekNetProfit
   const newReputation = Math.max(0, Math.min(100, state.reputation + weekRepChange))
-  const newLoyalty = Math.max(0, Math.min(100, state.loyalty + weekLoyaltyChange))
 
   // Сдвиг эффективности сотрудников за неделю (учится / халтурит)
   updateEmployeeGrowth(state)
@@ -367,18 +351,16 @@ export function processWeek(state: GameState): DayResult {
   state.weeklyEnergyRestored = false
   state.balance = Math.round(newBalance)
   state.reputation = Math.round(newReputation)
-  state.loyalty = Math.round(newLoyalty)
 
-  // Loyalty sustained bonus: max loyalty generates word-of-mouth every 5 weeks.
-  // Rewards players who invest in loyalty rather than just hitting the cap once.
-  if (newLoyalty >= 95 && state.currentWeek % 5 === 0 && !state.isGameOver && !state.isVictory) {
+  // Сарафанное радио: высокая репутация каждые 5 недель → 14 дней +10%
+  // трафика. Раньше триггер был «лояльность ≥ 95», теперь «репутация ≥ 90».
+  if (state.reputation >= 90 && state.currentWeek % 5 === 0 && !state.isGameOver && !state.isVictory) {
     state.temporaryClientMod = (state.temporaryClientMod ?? 0) + 0.10
     state.temporaryModDaysLeft = Math.max(state.temporaryModDaysLeft ?? 0, 14)
-    state.reputation = Math.min(100, state.reputation + 2)
     state.lastWeekMicroEvent = {
       icon: '💛',
       title: 'Сарафанное радио',
-      effectText: 'Постоянные клиенты советуют вас друзьям — +10% трафика на 2 недели, +2 репутации',
+      effectText: 'Постоянные клиенты советуют вас друзьям — +10% трафика на 2 недели',
     }
   }
   state.purchaseOfferedThisDay = false
@@ -404,7 +386,7 @@ export function processWeek(state: GameState): DayResult {
     netProfit: weekNetProfit,
     balance: newBalance,
     reputationChange: weekRepChange,
-    loyaltyChange: weekLoyaltyChange,
+    loyaltyChange: 0,  // мех. лояльности выпилена; поле оставлено для совместимости DayResult
     stockAfter: getTotalStock(state),
     painLossBankMissed: 0,
     painLossMarketInventory: 0,
@@ -619,12 +601,13 @@ export function processWeek(state: GameState): DayResult {
       state.lastDiaryEntry = { header: entry.header, body: entry.body }
       if (!state.diaryEntryWeeks) state.diaryEntryWeeks = []
       state.diaryEntryWeeks.push(state.currentWeek)
-      // Apply optional flavor effects (small reputation/loyalty nudges)
+      // Apply optional flavor effects. Раньше дневник мог двигать
+      // лояльность — теперь все мерджнуто в репутацию с половинной магнитудой.
       if (entry.reputationDelta) {
         state.reputation = Math.max(0, Math.min(100, state.reputation + entry.reputationDelta))
       }
       if (entry.loyaltyDelta) {
-        state.loyalty = Math.max(0, Math.min(100, state.loyalty + entry.loyaltyDelta))
+        state.reputation = Math.max(0, Math.min(100, state.reputation + entry.loyaltyDelta * 0.5))
       }
     }
   } else {
@@ -812,10 +795,6 @@ function generateNextWeekTeaser(state: GameState): string | null {
   // Высокая репутация — реклама работает лучше
   if (state.reputation >= 75 && state.currentWeek >= 8) {
     return `💡 Репутация ${state.reputation} — отличный момент для рекламной кампании (Маркетинг)`
-  }
-  // Низкая лояльность
-  if (state.loyalty < 40 && state.currentWeek >= 6) {
-    return `💛 Лояльность падает (${state.loyalty}). Service-тактика и качество — главные лекарства`
   }
   // Конкурент в районе
   if ((state.temporaryClientMod ?? 0) < -0.05) {
