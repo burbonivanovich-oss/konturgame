@@ -280,21 +280,31 @@ function DashboardView({
                 Неделя {currentWeek}
                 {dailyProfit !== 0 && (
                   <> · <span style={{ fontWeight: 700 }}>
-                    {dailyProfit > 0 ? '+' : ''}{dailyProfit.toLocaleString('ru-RU')} ₽/день
+                    {dailyProfit > 0 ? '+' : ''}{(dailyProfit * 7).toLocaleString('ru-RU')} ₽/нед
                   </span></>
                 )}
               </div>
             </div>
 
-            {[
-              { icon: '💹', label: 'Прибыль / день', value: `${dailyProfit > 0 ? '+' : ''}${dailyProfit.toLocaleString('ru-RU')} ₽`, bg: dailyProfit >= 0 ? K.mint : '#c0392b', sub: 'после налогов' },
-              { icon: '💸', label: 'Расходы / день', value: `${dailyExpenses.toLocaleString('ru-RU')} ₽`, bg: K.violet, sub: lastDayResult ? 'за вчера' : 'нет данных' },
-              { icon: '👥', label: 'Клиенты', value: lastDayResult ? `${servedToday} / ${clientsToday}` : '—', bg: K.blue, sub: missedToday > 0 ? `${missedToday} ушли` : 'все обслужены' },
-            ].map(t => (
-              <div key={t.label} style={{
+            {(() => {
+              const weeklyProfit = dailyProfit * 7
+              const energyTone =
+                entrepreneurEnergy < 30 ? '#c0392b'
+                : entrepreneurEnergy < 50 ? K.orange
+                : K.mint
+              return [
+                { icon: '💹', label: 'Прибыль / неделя', value: `${weeklyProfit > 0 ? '+' : ''}${weeklyProfit.toLocaleString('ru-RU')} ₽`, bg: weeklyProfit >= 0 ? K.mint : '#c0392b', sub: lastDayResult ? 'за вчера × 7' : 'нет данных', onClick: undefined as (() => void) | undefined },
+                { icon: '💸', label: 'Расходы / день', value: `${dailyExpenses.toLocaleString('ru-RU')} ₽`, bg: K.violet, sub: lastDayResult ? 'за вчера' : 'нет данных', onClick: undefined as (() => void) | undefined },
+                { icon: '⚡', label: 'Энергия', value: `${entrepreneurEnergy}`, bg: energyTone, sub: entrepreneurEnergy < 40 ? 'устаёте — отдых нужен' : 'в норме', onClick: onOpenOwnerInvestments },
+              ]
+            })().map(t => (
+              <div key={t.label}
+                onClick={t.onClick}
+                style={{
                 background: t.bg, borderRadius: 14, padding: '14px 16px',
                 display: 'flex', flexDirection: 'column', gap: 4,
                 position: 'relative', overflow: 'hidden',
+                cursor: t.onClick ? 'pointer' : 'default',
               }}>
                 <span style={{
                   position: 'absolute', top: 8, right: 10,
@@ -644,30 +654,8 @@ function DashboardView({
           padding: 18, display: 'flex', flexDirection: 'column', gap: 14,
           overflowY: 'auto',
         }}>
-          {/* Status pills row: only money-adjacent and energy stay visible.
-              Reputation / loyalty / quality moved into the health card below
-              as a single qualitative read. */}
-          {(() => {
-            const lowEnergy = entrepreneurEnergy < 40
-            return (
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                <button
-                  onClick={onOpenOwnerInvestments}
-                  style={{
-                    background: lowEnergy ? K.orangeSoft : K.blueSoft,
-                    border: 'none', borderRadius: 999,
-                    padding: '5px 10px', fontSize: 11, fontWeight: 700,
-                    color: lowEnergy ? K.orange : K.blue,
-                    cursor: 'pointer', fontFamily: 'inherit',
-                    display: 'flex', alignItems: 'center', gap: 5,
-                  }}
-                >
-                  <span style={{ opacity: 0.7, fontWeight: 500 }}>Энергия</span>
-                  <span>{entrepreneurEnergy}</span>
-                </button>
-              </div>
-            )
-          })()}
+          {/* Energy moved to top KPI strip — see DashboardView render below.
+              Right rail now starts with business health + stage. */}
 
           {/* Business health + Stage compact row */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -705,43 +693,55 @@ function DashboardView({
             </div>
           </div>
 
-          {/* Ecosystem */}
-          <div>
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8,
-            }}>
-              <div style={{ fontSize: 10, color: K.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                Экосистема
-              </div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: K.ink }}>
-                Контур · {Object.values(services).filter(s => s.isActive).length}/7
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-              {serviceOrder.map(sid => {
-                const svc = services[sid]
-                const isActive = svc?.isActive
-                const accent = SERVICE_ACCENT[sid]
-                return (
-                  <div key={sid} style={{
-                    padding: '10px 10px',
-                    borderRadius: 10,
-                    background: isActive ? accent : K.bone,
-                    color: isActive ? K.white : K.muted,
-                    fontSize: 12, fontWeight: 700,
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    opacity: isActive ? 1 : 0.75,
-                  }}>
-                    <span>{SERVICE_SHORT[sid]}</span>
-                    <span style={{
-                      width: 6, height: 6, borderRadius: 999,
-                      background: isActive ? K.white : K.line,
-                    }} />
+          {/* Ecosystem — показываем только разблокированные онбордингом
+              сервисы (плюс уже активные, на случай если игрок включил что-то
+              раньше через event). До W2 в Stage 1 это только Bank+ОФД, а не
+              все 6 — иначе панель выглядит как «онбординг толкает всё сразу». */}
+          {(() => {
+            const visibleServices = serviceOrder.filter(sid =>
+              (store.unlockedServices ?? []).includes(sid) || services[sid]?.isActive,
+            )
+            const activeCountVisible = visibleServices.filter(sid => services[sid]?.isActive).length
+            if (visibleServices.length === 0) return null
+            return (
+              <div>
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8,
+                }}>
+                  <div style={{ fontSize: 10, color: K.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    Экосистема
                   </div>
-                )
-              })}
-            </div>
-          </div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: K.ink }}>
+                    Контур · {activeCountVisible}/{visibleServices.length}
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                  {visibleServices.map(sid => {
+                    const svc = services[sid]
+                    const isActive = svc?.isActive
+                    const accent = SERVICE_ACCENT[sid]
+                    return (
+                      <div key={sid} style={{
+                        padding: '10px 10px',
+                        borderRadius: 10,
+                        background: isActive ? accent : K.bone,
+                        color: isActive ? K.white : K.muted,
+                        fontSize: 12, fontWeight: 700,
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        opacity: isActive ? 1 : 0.75,
+                      }}>
+                        <span>{SERVICE_SHORT[sid]}</span>
+                        <span style={{
+                          width: 6, height: 6, borderRadius: 999,
+                          background: isActive ? K.white : K.line,
+                        }} />
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Active synergies */}
           {synergies.length > 0 && (
