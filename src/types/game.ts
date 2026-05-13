@@ -100,6 +100,13 @@ export interface Employee {
   //  • Если не задано — сотрудник стабилен, эффективность не меняется
   growthRate?: number
   growthLimit?: number     // потолок если growthRate>0, пол если <0
+  // Сотрудник плохо переносит менеджера в команде — при его наличии:
+  //   • не получает team boost, а имеет −10% penalty к эффективности
+  //   • growthRate (если отрицательный) удваивается — быстрее «скисает»
+  //   • growthLimit заменяется на growthLimitUnderManager (глубже)
+  // Используется для Олега и подобных «без энтузиазма» работников.
+  dislikesManager?: boolean
+  growthLimitUnderManager?: number  // более низкий пол при наличии менеджера
 }
 
 export interface ProductCategory {
@@ -280,6 +287,8 @@ export interface EventOption {
       linkNpcId?: string       // Если найм привязан к существующему NPC — раскрыть
       growthRate?: number      // Изменение эффективности за неделю (+ растёт, − падает)
       growthLimit?: number     // Потолок/пол для роста/деградации
+      dislikesManager?: boolean  // Под управленцем скисает быстрее
+      growthLimitUnderManager?: number  // более низкий пол при наличии менеджера
     }
   }
   hasServiceAlternative?: boolean

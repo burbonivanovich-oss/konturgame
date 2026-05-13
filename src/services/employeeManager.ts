@@ -6,30 +6,43 @@ export function initializeEmployees(): Employee[] {
   return []
 }
 
-// Спринт 5e: менеджер (position 'manager') усиливает команду на +25%.
-// Сама Светлана работает на своей efficiency без буста (она и есть босс),
-// но остальные сотрудники под её управлением становятся продуктивнее.
-// Это делает выбор «нанять управленца» осмысленным: он не просто +X
-// эффективности, а множитель на всю остальную команду.
-const MANAGER_TEAM_BOOST = 0.25
+// Спринт 5e: менеджер (position 'manager') усиливает команду.
+// Двухуровневый буст — управленец особенно хорошо раскрывает специалистов
+// (опытных профи), потому что разгружает их от рутины и админа. Обычные
+// помощники (assistant) тоже получают буст, но скромнее.
+// Это делает «профи + Светлана» особо сильной комбинацией:
+//   Алла/Сергей/Лариса eff 1.2 → 1.2 × 1.40 = 1.68
+//   Студент Никита     eff 0.85→1.05 → ×1.25 = 1.06→1.31
+const MANAGER_BOOST_DEFAULT = 0.25
+const MANAGER_BOOST_SPECIALIST = 0.40
 
 export function hasManager(state: GameState): boolean {
   return state.employees.some(e => e.position === 'manager')
 }
+
+// Штраф для тех, кто плохо переносит управленца (например, Олег без
+// энтузиазма): -10% к их эффективности когда в команде есть менеджер.
+const MANAGER_DISLIKE_PENALTY = 0.10
 
 export function getEmployeeCapacityBonus(state: GameState): number {
   if (state.employees.length === 0) return 0
   if (!hasManager(state)) {
     return getTotalEmployeeEfficiency(state.employees)
   }
-  // Manager в команде — её эффективность + остальные с бустом +25%
-  const managerSum = state.employees
-    .filter(e => e.position === 'manager')
-    .reduce((s, e) => s + e.efficiency, 0)
-  const teamSum = state.employees
-    .filter(e => e.position !== 'manager')
-    .reduce((s, e) => s + e.efficiency, 0)
-  return managerSum + teamSum * (1 + MANAGER_TEAM_BOOST)
+  let total = 0
+  for (const emp of state.employees) {
+    if (emp.position === 'manager') {
+      total += emp.efficiency
+    } else if (emp.dislikesManager) {
+      // Олег: «начальство — это лишний контроль и больше работы»
+      total += emp.efficiency * (1 - MANAGER_DISLIKE_PENALTY)
+    } else if (emp.position === 'specialist') {
+      total += emp.efficiency * (1 + MANAGER_BOOST_SPECIALIST)
+    } else {
+      total += emp.efficiency * (1 + MANAGER_BOOST_DEFAULT)
+    }
+  }
+  return total
 }
 
 // 1/4 of monthly per week
@@ -68,18 +81,27 @@ export function getWeeklyEnergyCost(state: GameState): number {
 // (родственник, профи, Светлана) не имеют growthRate — их eff неизменна.
 export function updateEmployeeGrowth(state: GameState): void {
   if (!state.employees || state.employees.length === 0) return
+  const managerPresent = hasManager(state)
   for (const emp of state.employees) {
     if (!emp.growthRate) continue
-    const next = emp.efficiency + emp.growthRate
-    if (emp.growthLimit !== undefined) {
-      // Положительный рост: не выше limit. Отрицательный: не ниже limit.
-      emp.efficiency = emp.growthRate > 0
-        ? Math.min(emp.growthLimit, next)
-        : Math.max(emp.growthLimit, next)
+    // Олег под менеджером — отрицательный growthRate удваивается, и
+    // используется более низкий пол (growthLimitUnderManager)
+    let rate = emp.growthRate
+    let limit = emp.growthLimit
+    if (emp.dislikesManager && managerPresent) {
+      if (rate < 0) rate *= 2
+      if (emp.growthLimitUnderManager !== undefined) {
+        limit = emp.growthLimitUnderManager
+      }
+    }
+    const next = emp.efficiency + rate
+    if (limit !== undefined) {
+      emp.efficiency = rate > 0
+        ? Math.min(limit, next)
+        : Math.max(limit, next)
     } else {
       emp.efficiency = next
     }
-    // Общий sanity-clamp на случай экзотичных значений
     emp.efficiency = Math.max(0.5, Math.min(1.6, emp.efficiency))
   }
 }

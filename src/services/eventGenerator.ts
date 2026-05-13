@@ -1041,6 +1041,8 @@ export function applyEventConsequence(
     if (h.name) emp.name = h.name
     if (h.growthRate !== undefined) emp.growthRate = h.growthRate
     if (h.growthLimit !== undefined) emp.growthLimit = h.growthLimit
+    if (h.dislikesManager !== undefined) emp.dislikesManager = h.dislikesManager
+    if (h.growthLimitUnderManager !== undefined) emp.growthLimitUnderManager = h.growthLimitUnderManager
     state.employees.push(emp)
     // Если найм связан с NPC (например, Светлана) — раскрываем его.
     // С этого момента появляется portrait, чейн svetlana_growth уже
