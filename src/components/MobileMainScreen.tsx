@@ -55,6 +55,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
     weekPhase, completeResultsPhase, completeSummaryPhase, completeSimulationPhase, lastDayResult, balance,
     weeklyTactic, setWeeklyTactic, personalGoal, currentWeek, npcs,
     onboardingStage, onboardingStepIndex, onboardingCompleted,
+    entrepreneurEnergy, burnoutWarningActive,
   } = useGameStore()
   const [savingsToast, setSavingsToast] = useState<number | null>(null)
 
@@ -286,25 +287,37 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
                   Тактика на неделю
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {WEEKLY_TACTICS.map(t => (
-                    <button
-                      key={t.id}
-                      onClick={() => setWeeklyTactic(t.id)}
-                      style={{
-                        textAlign: 'left', padding: '10px 12px',
-                        background: K.bone, border: `1px solid ${K.lineSoft}`,
-                        borderRadius: 10, cursor: 'pointer',
-                        fontFamily: 'inherit',
-                        display: 'flex', alignItems: 'center', gap: 10,
-                      }}
-                    >
-                      <span style={{ fontSize: 18, flexShrink: 0 }}>{t.icon}</span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: K.ink }}>{t.title}</div>
-                        <div style={{ fontSize: 10, color: K.muted, lineHeight: 1.3 }}>{t.blurb}</div>
-                      </div>
-                    </button>
-                  ))}
+                  {WEEKLY_TACTICS.map(t => {
+                    const weekDelta = Math.round(t.energyDelta * 7)
+                    const isRisky = t.id === 'aggressive' && (entrepreneurEnergy < 50 || burnoutWarningActive)
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => setWeeklyTactic(t.id)}
+                        style={{
+                          textAlign: 'left', padding: '10px 12px',
+                          background: K.bone,
+                          border: isRisky ? `1px solid ${K.bad}` : `1px solid ${K.lineSoft}`,
+                          borderRadius: 10, cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          display: 'flex', alignItems: 'center', gap: 10,
+                        }}
+                      >
+                        <span style={{ fontSize: 18, flexShrink: 0 }}>{t.icon}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: K.ink }}>{t.title}</div>
+                          <div style={{ fontSize: 10, color: K.muted, lineHeight: 1.3 }}>{t.blurb}</div>
+                          <div style={{
+                            fontSize: 10, fontWeight: 700, marginTop: 3,
+                            color: weekDelta > 0 ? K.mint : weekDelta < 0 ? K.bad : K.muted,
+                          }}>
+                            {weekDelta > 0 ? '+' : ''}{weekDelta} энергии / нед
+                            {isRisky && ` · ⚠️ риск выгорания`}
+                          </div>
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             ) : (() => {
@@ -451,7 +464,7 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
 
         {activeTab === 'stats' && (
           <>
-            <Indicators />
+            <Indicators onOpenOwnerInvestments={() => setShowOwnerInvestmentsModal(true)} />
           </>
         )}
 

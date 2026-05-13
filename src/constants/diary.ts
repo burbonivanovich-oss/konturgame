@@ -198,62 +198,62 @@ export const DIARY_ENTRIES: DiaryEntry[] = [
     }),
   },
 
-  // ── Goal-specific reflections (v5.3) ───────────────────────────────
-  // Parent renovation — a small but persistent weight
+  // ── Goal-specific reflections — обновлены под новый сет мотиваций (v5.4) ──
+  // close_debt — кредитка, висящая с 2022-го. Тихий, личный груз.
   {
-    id: 'diary_goal_parent_call',
+    id: 'diary_goal_debt_balance_check',
     specificity: 6,
-    matches: (s) => s.personalGoal?.id === 'parent_reno' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    matches: (s) => s.personalGoal?.id === 'close_debt' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
     compose: (s) => ({
       header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Позвонили домой. Папа сказал, в ванной снова капает — «труба немного, несущественно». Положил трубку. Открыл сайт ремонтных бригад. Закрыл. Пока рано. Но не совсем рано.',
+      body: 'Открыл приложение банка. Долг по кредитке — 312 000. Прокрутил историю платежей за полгода: 35 тысяч ушло, тело уменьшилось на семь. Закрыл приложение. Открыл управленческий отчёт. Считаю, сколько недель.',
     }),
   },
   {
-    id: 'diary_goal_parent_estimate',
+    id: 'diary_goal_debt_partial',
     specificity: 6,
-    matches: (s) => s.personalGoal?.id === 'parent_reno' && s.currentWeek >= 18 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    matches: (s) => s.personalGoal?.id === 'close_debt' && s.currentWeek >= 18 && !s.personalGoal.achieved && !s.personalGoal.missed,
     compose: (s) => ({
       header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Прислали смету из бригады — мама сфотографировала и отправила в вотсапе. Смотришь на цифры, прикидываешь. Реально. Если продолжить в том же темпе — реально.',
+      body: 'Перевёл 60 тысяч в счёт основного долга. Не зарплата за месяц — просто перевод. Банк прислал «Остаток 250 000». Цифра. Без эмоций. Это и есть прогресс — когда цифра становится просто цифрой.',
     }),
   },
-  // Katya's deposit — quiet countdown to her fresh start
+  // brother_tuition — оплата института младшего. Близкие.
   {
-    id: 'diary_goal_katya_photo',
+    id: 'diary_goal_brother_schedule',
     specificity: 6,
-    matches: (s) => s.personalGoal?.id === 'katya_deposit' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    matches: (s) => s.personalGoal?.id === 'brother_tuition' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
     compose: (s) => ({
       header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Катя прислала фото — квартира на Советской, третий этаж, вид во двор. «Вот такая. Хозяйка нормальная». Сохранили в телефон. Считаете недели.',
-    }),
-  },
-  {
-    id: 'diary_goal_katya_viewing',
-    specificity: 6,
-    matches: (s) => s.personalGoal?.id === 'katya_deposit' && s.currentWeek >= 22 && !s.personalGoal.achieved && !s.personalGoal.missed,
-    compose: (s) => ({
-      header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Съездили с Катей смотреть квартиру — формально она уже решила, просто хотела, чтобы кто-то был рядом. На кухне дочка спросила: «А тут мы будем жить?» Катя ответила: «Посмотрим». Оба понимают, что посмотрит в первую очередь цифра.',
-    }),
-  },
-  // Courtyard — the trees are still there, for now
-  {
-    id: 'diary_goal_courtyard_walk',
-    specificity: 6,
-    matches: (s) => s.personalGoal?.id === 'courtyard_save' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
-    compose: (s) => ({
-      header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Прошли через двор вечером. Берёзы стоят, лавочки на месте. Детский голос где-то из-за угла. Всё как обычно — пока. Комиссия соберётся через полтора месяца.',
+      body: 'Брат прислал скрин расписания — серьёзный такой, со списком предметов на семестр. Подписал: «спасибо, не подведу». Хорошо, что не «не подведу тебя». Когда младший хочет доказать сам себе — это надёжнее благодарности.',
     }),
   },
   {
-    id: 'diary_goal_courtyard_lawyer',
+    id: 'diary_goal_brother_advance',
     specificity: 6,
-    matches: (s) => s.personalGoal?.id === 'courtyard_save' && s.currentWeek >= 20 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    matches: (s) => s.personalGoal?.id === 'brother_tuition' && s.currentWeek >= 20 && !s.personalGoal.achieved && !s.personalGoal.missed,
     compose: (s) => ({
       header: `Дневник · Неделя ${s.currentWeek}`,
-      body: 'Юрист из инициативной группы сказал: «Шансы есть, если подадим полный пакет до пятницы». Я перевела часть суммы. Он сказал спасибо. Я сказала — за дело.',
+      body: 'Перевёл аванс за семестр — 80 тысяч. Брат позвонил подтвердить, говорил быстро, смущённо. Сказал не «спасибо», а «считаю, что должен». Это вернее благодарности.',
+    }),
+  },
+  // buy_premises — выкуп помещения, стратегический выход из аренды.
+  {
+    id: 'diary_goal_premises_visit',
+    specificity: 6,
+    matches: (s) => s.personalGoal?.id === 'buy_premises' && s.currentWeek >= 8 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    compose: (s) => ({
+      header: `Дневник · Неделя ${s.currentWeek}`,
+      body: 'Хозяин зашёл по делу — без повода, просто «посмотреть». Поговорили о погоде. Под конец сказал, мимоходом: «Думаю продавать, дочка из Сочи зовёт». Цифру не назвал. Я тоже не спросил. Пока.',
+    }),
+  },
+  {
+    id: 'diary_goal_premises_realtor',
+    specificity: 6,
+    matches: (s) => s.personalGoal?.id === 'buy_premises' && s.currentWeek >= 20 && !s.personalGoal.achieved && !s.personalGoal.missed,
+    compose: (s) => ({
+      header: `Дневник · Неделя ${s.currentWeek}`,
+      body: 'Договорился с риелтором. Назвала цифру: 400. Уточнила: «Если до декабря — он держит. Дальше — на свободный рынок, и там уже от 450». Записал. Считаю недели до декабря.',
     }),
   },
 

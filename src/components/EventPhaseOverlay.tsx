@@ -41,7 +41,10 @@ interface EventPhaseOverlayProps {
  * «Тихая неделя» с кнопкой «Дальше → итоги».
  */
 export function EventPhaseOverlay({ onOptionSelect, onContinueIfNoEvent }: EventPhaseOverlayProps) {
-  const { pendingEvent, pendingEventsQueue, npcs, currentWeek, deferEvent } = useGameStore()
+  const {
+    pendingEvent, pendingEventsQueue, npcs, currentWeek, deferEvent,
+    balance, entrepreneurEnergy, reputation, loyalty,
+  } = useGameStore()
 
   // Edge case: фаза events без события. Показываем «тишину» и
   // позволяем продвинуть фазу.
@@ -73,6 +76,16 @@ export function EventPhaseOverlay({ onOptionSelect, onContinueIfNoEvent }: Event
         width: '100%', maxWidth: 600,
         display: 'flex', flexDirection: 'column', gap: 20,
       }}>
+
+        {/* KPI-strip — текущее состояние во время решения. Раньше игрок
+            не видел свои показатели и решал «вслепую» (например выбирал
+            опцию -10K при балансе 5K). Цифры окрашиваются в статус-цвета. */}
+        <KpiStrip
+          balance={balance}
+          energy={entrepreneurEnergy}
+          reputation={reputation}
+          loyalty={loyalty}
+        />
 
         {/* Header */}
         <header style={{ textAlign: 'center' }}>
@@ -207,8 +220,111 @@ export function EventPhaseOverlay({ onOptionSelect, onContinueIfNoEvent }: Event
             ⏰ Решение уже откладывали — нужно ответить сейчас
           </div>
         )}
+
+        {/* Preview очереди — игрок видит что его ждёт после текущего
+            события. Помогает планировать решения стратегически (например,
+            не сливать всё на одно событие если впереди ещё два). */}
+        {pendingEventsQueue && pendingEventsQueue.length > 0 && (
+          <QueuePreview events={pendingEventsQueue} />
+        )}
       </div>
     </div>
+  )
+}
+
+function KpiStrip({
+  balance, energy, reputation, loyalty,
+}: { balance: number; energy: number; reputation: number; loyalty: number }) {
+  const energyColor = energy >= 60 ? K.mint : energy >= 30 ? K.orange : K.bad
+  const repColor = reputation >= 60 ? K.mint : reputation >= 30 ? K.orange : K.bad
+  const loyaltyColor = loyalty >= 60 ? K.mint : loyalty >= 30 ? K.orange : K.bad
+  const balanceColor = balance < 0 ? K.bad : balance < 30000 ? K.orange : K.ink
+  return (
+    <div style={{
+      display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8,
+      background: K.white, border: `1px solid ${K.line}`,
+      borderRadius: 12, padding: '10px 14px',
+    }}>
+      <KpiCell label="Баланс" value={`${balance.toLocaleString('ru-RU')} ₽`} color={balanceColor} />
+      <KpiCell label="Энергия" value={`${energy}/100`} color={energyColor} />
+      <KpiCell label="Репутация" value={`${reputation}/100`} color={repColor} />
+      <KpiCell label="Лояльность" value={`${loyalty}/100`} color={loyaltyColor} />
+    </div>
+  )
+}
+
+function KpiCell({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+      <div style={{
+        fontSize: 9, fontWeight: 700, letterSpacing: '0.05em',
+        textTransform: 'uppercase', color: K.muted,
+      }}>{label}</div>
+      <div style={{
+        fontSize: 13, fontWeight: 800, color,
+        fontVariantNumeric: 'tabular-nums',
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+      }}>{value}</div>
+    </div>
+  )
+}
+
+function QueuePreview({ events }: { events: Event[] }) {
+  // Показываем максимум 2 следующих события — больше — это слишком много
+  // когнитивной нагрузки на экране выбора. NPC и эмодзи помогают сразу
+  // понять «о чём будет следующее», без необходимости читать description.
+  const slice = events.slice(0, 2)
+  return (
+    <section style={{
+      background: 'transparent',
+      borderTop: `1px dashed ${K.line}`,
+      paddingTop: 14,
+      display: 'flex', flexDirection: 'column', gap: 8,
+    }}>
+      <div style={{
+        fontSize: 10, fontWeight: 800, letterSpacing: '0.08em',
+        textTransform: 'uppercase', color: K.muted,
+      }}>
+        Дальше на этой неделе · {events.length} событий
+      </div>
+      {slice.map((ev) => {
+        const npcDef = ev.npcId ? getNPCDefinition(ev.npcId) : null
+        return (
+          <div key={ev.id} style={{
+            background: K.bone, border: `1px solid ${K.lineSoft}`,
+            borderRadius: 10, padding: '8px 12px',
+            display: 'flex', alignItems: 'center', gap: 10,
+            opacity: 0.78,
+          }}>
+            <div style={{
+              fontSize: 18, width: 24, height: 24,
+              display: 'grid', placeItems: 'center',
+              flexShrink: 0,
+            }} aria-hidden="true">
+              {npcDef ? npcDef.portrait : ev.isMoralDilemma ? '⚖️' : '📨'}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                fontSize: 12, fontWeight: 700, color: K.ink,
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>
+                {ev.title}
+              </div>
+              {npcDef && (
+                <div style={{ fontSize: 10, color: K.muted, marginTop: 1 }}>
+                  {npcDef.name}
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })}
+      {events.length > 2 && (
+        <div style={{ fontSize: 10, color: K.muted, textAlign: 'center' }}>
+          …и ещё {events.length - 2}
+        </div>
+      )}
+    </section>
   )
 }
 

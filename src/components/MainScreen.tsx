@@ -76,6 +76,7 @@ function DashboardView({
     pendingEvent, pendingEventsQueue, lastDayResult,
     entrepreneurEnergy, npcs, stockBatches, capacity, cashRegisters,
     businessType, businessTier, weeklyTactic, setWeeklyTactic,
+    burnoutWarningActive,
   } = store
 
   const bizConfig = BUSINESS_CONFIGS[businessType]
@@ -168,26 +169,54 @@ function DashboardView({
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                {WEEKLY_TACTICS.map(t => (
-                  <button
-                    key={t.id}
-                    onClick={() => setWeeklyTactic(t.id)}
-                    style={{
-                      textAlign: 'left', padding: '10px 12px',
-                      background: K.bone, border: `1px solid ${K.lineSoft}`,
-                      borderRadius: 10, cursor: 'pointer',
-                      fontFamily: 'inherit',
-                      display: 'flex', flexDirection: 'column', gap: 4,
-                      transition: 'all 0.15s',
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = K.orange }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = K.lineSoft }}
-                  >
-                    <div style={{ fontSize: 18 }}>{t.icon}</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: K.ink }}>{t.title}</div>
-                    <div style={{ fontSize: 11, color: K.muted, lineHeight: 1.4 }}>{t.blurb}</div>
-                  </button>
-                ))}
+                {WEEKLY_TACTICS.map(t => {
+                  // Прогноз энергии на конец недели: грубо current + delta×7.
+                  // Не учитывает базовую trate бизнеса/сотрудников — это
+                  // намеренное упрощение: цифра показывает дельту тактики,
+                  // а не точный итог. Warning рисуется когда выбор тактики
+                  // ставит игрока в зону риска burnout.
+                  const weekDelta = Math.round(t.energyDelta * 7)
+                  const isRisky = t.id === 'aggressive' && (entrepreneurEnergy < 50 || burnoutWarningActive)
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => setWeeklyTactic(t.id)}
+                      style={{
+                        textAlign: 'left', padding: '10px 12px',
+                        background: K.bone,
+                        border: isRisky ? `1px solid ${K.bad}` : `1px solid ${K.lineSoft}`,
+                        borderRadius: 10, cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        display: 'flex', flexDirection: 'column', gap: 4,
+                        transition: 'all 0.15s',
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = isRisky ? K.bad : K.orange }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = isRisky ? K.bad : K.lineSoft }}
+                    >
+                      <div style={{ fontSize: 18 }}>{t.icon}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: K.ink }}>{t.title}</div>
+                      <div style={{ fontSize: 11, color: K.muted, lineHeight: 1.4 }}>{t.blurb}</div>
+                      <div style={{
+                        fontSize: 10, fontWeight: 700, marginTop: 4,
+                        color: weekDelta > 0 ? K.mint : weekDelta < 0 ? K.bad : K.muted,
+                      }}>
+                        {weekDelta > 0 ? '+' : ''}{weekDelta} энергии / нед
+                      </div>
+                      {isRisky && (
+                        <div style={{
+                          fontSize: 10, fontWeight: 800, color: K.bad,
+                          background: 'rgba(255,90,90,0.10)',
+                          borderRadius: 6, padding: '4px 6px', marginTop: 2,
+                          lineHeight: 1.3,
+                        }}>
+                          {burnoutWarningActive
+                            ? '⚠️ После 0 энергии — риск выгорания'
+                            : `⚠️ Энергии всего ${entrepreneurEnergy}`}
+                        </div>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           ) : (() => {

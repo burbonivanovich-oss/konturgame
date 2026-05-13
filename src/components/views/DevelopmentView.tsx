@@ -540,6 +540,20 @@ function UpgradesSection() {
           // покупал кассира за 60K и удивлялся минусу 15K/мес.
           const monthlyExtra = (upgrade.monthlySalaryIncrease ?? 0) + (upgrade.monthlyRentIncrease ?? 0)
 
+          // Определяем категории-теги. Один апгрейд может относиться к
+          // нескольким: например, «Наём кассира» — это и Вместимость
+          // (capacityBonus), и Энергия (energyBonus), и Персонал
+          // (monthlySalaryIncrease). Тегов мало, читать их быстро —
+          // это лучше, чем читать описание сначала.
+          const opensCategory = /открывает/i.test(upgrade.effect)
+          const tags: Array<{ icon: string; label: string }> = []
+          if (opensCategory) tags.push({ icon: '🔓', label: 'Категория' })
+          if (upgrade.capacityBonus) tags.push({ icon: '📦', label: 'Вместимость' })
+          if (upgrade.clientBonus) tags.push({ icon: '👥', label: 'Клиенты' })
+          if (upgrade.checkBonus) tags.push({ icon: '💰', label: 'Чек' })
+          if (upgrade.energyBonus) tags.push({ icon: '🔋', label: 'Энергия' })
+          if (upgrade.monthlySalaryIncrease) tags.push({ icon: '👨‍💼', label: 'Найм' })
+
           return (
             <div
               key={upgrade.id}
@@ -565,9 +579,44 @@ function UpgradesSection() {
                 {isPurchased && <span style={{ fontSize: 18, color: K.mint }}>✓</span>}
               </div>
 
+              {/* Категории-теги для быстрого сканирования. Лежат под
+                  названием, до описания — глаз цепляется в первую очередь. */}
+              {tags.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  {tags.map((tag, i) => (
+                    <span key={i} style={{
+                      fontSize: 9, fontWeight: 700,
+                      padding: '2px 7px', borderRadius: 999,
+                      background: K.bone, color: K.ink2,
+                      letterSpacing: '0.02em',
+                    }}>
+                      {tag.icon} {tag.label}
+                    </span>
+                  ))}
+                </div>
+              )}
+
               <p style={{ fontSize: 12, color: K.ink2, margin: 0, lineHeight: 1.4 }}>
                 {upgrade.effect}
               </p>
+
+              {/* Точные числовые эффекты — что именно прибавится. Размещены
+                  под описанием, потому что описание объясняет «что это»,
+                  а числа — «сколько именно». */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {upgrade.capacityBonus ? (
+                  <EffectLine label="Вместимость" value={`+${Math.round(upgrade.capacityBonus * 100)}%`} />
+                ) : null}
+                {upgrade.clientBonus ? (
+                  <EffectLine label="Клиенты" value={`+${Math.round(upgrade.clientBonus * 100)}%`} />
+                ) : null}
+                {upgrade.checkBonus ? (
+                  <EffectLine label="Средний чек" value={`+${Math.round(upgrade.checkBonus * 100)}%`} />
+                ) : null}
+                {upgrade.energyBonus ? (
+                  <EffectLine label="Восстановление энергии" value={`+${upgrade.energyBonus} / нед`} />
+                ) : null}
+              </div>
 
               {/* Бэджи зависимостей: галочка если выполнено, крест если нет.
                   Купить можно всегда (механика не блокирует), но игрок видит
@@ -648,6 +697,19 @@ function UpgradesSection() {
           Нет доступных улучшений для этого типа бизнеса
         </div>
       )}
+    </div>
+  )
+}
+
+function EffectLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'space-between',
+      fontSize: 11, lineHeight: 1.3,
+      fontVariantNumeric: 'tabular-nums',
+    }}>
+      <span style={{ color: K.muted }}>{label}</span>
+      <span style={{ color: K.mint, fontWeight: 800 }}>{value}</span>
     </div>
   )
 }

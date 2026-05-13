@@ -425,6 +425,10 @@ export const UPGRADES_CONFIG: Record<BusinessType, Array<{
     { id: 'seasonal-menu', name: '🍽️ Сезонное меню', cost: 50000, effect: '+25% выручка летом/весной', checkBonus: 0.1 },
     { id: 'hire-barista', name: '👨‍💼 Наём баристы', cost: 70000, effect: '+40% пропускная способность', capacityBonus: 0.4, monthlySalaryIncrease: 15000, energyBonus: 14 },
     { id: 'summer-terrace', name: '🏕️ Летняя веранда', cost: 110000, effect: '+40% мест летом', capacityBonus: 0.4, monthlyRentIncrease: 12000, energyBonus: 10 },
+    // 9-й апгрейд для симметрии с shop/salon (тоже по 9). Аудио-система
+    // умеренно повышает средний чек (атмосфера задерживает гостей подольше)
+    // и снимает фоновую тишину, что добавляет немного владельческой энергии.
+    { id: 'sound-system', name: '🎵 Аудио-система', cost: 45000, effect: '+5% средний чек: атмосфера задерживает гостей', checkBonus: 0.05, energyBonus: 3 },
   ],
   'beauty-salon': [
     // Equipment that gates categories
