@@ -94,6 +94,12 @@ export interface Employee {
   efficiency: number       // 0.5 to 1.5 (affects capacity)
   hireDay: number
   energyCost: number       // energy cost per week to manage
+  // Спринт 5e: динамика эффективности через неделю.
+  //  • Положительный growthRate (студент) — учится, растёт до growthLimit
+  //  • Отрицательный (Олег) — выгорает/халтурит, падает до growthLimit
+  //  • Если не задано — сотрудник стабилен, эффективность не меняется
+  growthRate?: number
+  growthLimit?: number     // потолок если growthRate>0, пол если <0
 }
 
 export interface ProductCategory {
@@ -272,6 +278,8 @@ export interface EventOption {
       energyCost: number       // Энергозатраты на управление (нед.)
       name?: string            // Конкретное имя кандидата (иначе случайное)
       linkNpcId?: string       // Если найм привязан к существующему NPC — раскрыть
+      growthRate?: number      // Изменение эффективности за неделю (+ растёт, − падает)
+      growthLimit?: number     // Потолок/пол для роста/деградации
     }
   }
   hasServiceAlternative?: boolean

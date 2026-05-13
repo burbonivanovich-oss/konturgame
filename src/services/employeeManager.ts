@@ -6,9 +6,30 @@ export function initializeEmployees(): Employee[] {
   return []
 }
 
+// Спринт 5e: менеджер (position 'manager') усиливает команду на +25%.
+// Сама Светлана работает на своей efficiency без буста (она и есть босс),
+// но остальные сотрудники под её управлением становятся продуктивнее.
+// Это делает выбор «нанять управленца» осмысленным: он не просто +X
+// эффективности, а множитель на всю остальную команду.
+const MANAGER_TEAM_BOOST = 0.25
+
+export function hasManager(state: GameState): boolean {
+  return state.employees.some(e => e.position === 'manager')
+}
+
 export function getEmployeeCapacityBonus(state: GameState): number {
   if (state.employees.length === 0) return 0
-  return getTotalEmployeeEfficiency(state.employees)
+  if (!hasManager(state)) {
+    return getTotalEmployeeEfficiency(state.employees)
+  }
+  // Manager в команде — её эффективность + остальные с бустом +25%
+  const managerSum = state.employees
+    .filter(e => e.position === 'manager')
+    .reduce((s, e) => s + e.efficiency, 0)
+  const teamSum = state.employees
+    .filter(e => e.position !== 'manager')
+    .reduce((s, e) => s + e.efficiency, 0)
+  return managerSum + teamSum * (1 + MANAGER_TEAM_BOOST)
 }
 
 // 1/4 of monthly per week
@@ -39,6 +60,28 @@ export function getWeeklyEnergyCost(state: GameState): number {
   // полностью снимает штраф.
   const understaffPenalty = state.employees.length === 0 ? 15 : 0
   return baseCost + employeeCost + understaffPenalty
+}
+
+// Спринт 5e: динамика эффективности — раз в неделю каждый сотрудник с
+// growthRate сдвигается к своему growthLimit. Студент учится (растёт от 0.85
+// к 1.05), Олег халтурит (падает с 1.0 к 0.9). Стабильные сотрудники
+// (родственник, профи, Светлана) не имеют growthRate — их eff неизменна.
+export function updateEmployeeGrowth(state: GameState): void {
+  if (!state.employees || state.employees.length === 0) return
+  for (const emp of state.employees) {
+    if (!emp.growthRate) continue
+    const next = emp.efficiency + emp.growthRate
+    if (emp.growthLimit !== undefined) {
+      // Положительный рост: не выше limit. Отрицательный: не ниже limit.
+      emp.efficiency = emp.growthRate > 0
+        ? Math.min(emp.growthLimit, next)
+        : Math.max(emp.growthLimit, next)
+    } else {
+      emp.efficiency = next
+    }
+    // Общий sanity-clamp на случай экзотичных значений
+    emp.efficiency = Math.max(0.5, Math.min(1.6, emp.efficiency))
+  }
 }
 
 export function getUpgradeEnergyBonus(state: GameState): number {

@@ -1039,6 +1039,8 @@ export function applyEventConsequence(
     emp.salary = h.salary
     emp.energyCost = h.energyCost
     if (h.name) emp.name = h.name
+    if (h.growthRate !== undefined) emp.growthRate = h.growthRate
+    if (h.growthLimit !== undefined) emp.growthLimit = h.growthLimit
     state.employees.push(emp)
     // Если найм связан с NPC (например, Светлана) — раскрываем его.
     // С этого момента появляется portrait, чейн svetlana_growth уже

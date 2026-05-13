@@ -4,14 +4,16 @@ import type { EventTemplate } from '../types/game'
 // chainId + chainStep identify the event's position in its narrative arc.
 // chainFollowUpId on each option tells the engine which event fires next.
 
-import { FIRST_HIRE_OPTIONS, SVETLANA_TO_ANNA } from './firstHireEvents'
+import { FIRST_HIRE_OPTIONS, SVETLANA_INTRO, SVETLANA_TO_ANNA } from './firstHireEvents'
 
 export const CHAIN_EVENTS: EventTemplate[] = [
   // first_hire — чейн «Первый сотрудник», запускается из SOLO_OVERLOAD_EVENTS.
-  // Не имеет chain start event (не появляется сам через triggerNewChainStarts),
-  // только как follow-up из overload-события.
+  // Не имеет chain start event (не появляется сам через triggerNewChainStarts).
   FIRST_HIRE_OPTIONS,
-  // Последствие отказа от Светланы — она уходит к конкуренту через 3 недели.
+  // svetlana_intro — сюжетный чейн появления Светланы (второй найм).
+  // Стартует автоматически на W12+ при наличии хотя бы одного сотрудника.
+  SVETLANA_INTRO,
+  // Последствие отказа от Светланы — она уходит к Анне через 3 недели.
   SVETLANA_TO_ANNA,
 
 
@@ -97,12 +99,15 @@ export const CHAIN_EVENTS: EventTemplate[] = [
   },
 
   // ── CHAIN 2: Рост Светланы (svetlana_growth) ────────────────────────────────
-  // Trigger: week 6–9. Светлана хочет учиться — инвестируй или потеряй.
+  // Trigger: ~W18-23 (после svetlana_intro на W12-15 и нескольких недель работы).
+  // Раньше стартовал с W6, но Светлана теперь приходит сюжетно на W12+ через
+  // svetlana_intro — её просьба про курсы должна быть ПОСЛЕ knockout-первого
+  // впечатления, когда видны её результаты.
   {
     id: 'svetlana_growth_1',
     title: 'Светлана хочет учиться',
-    description: 'Светлана Орлова — ваш лучший продавец — попросила поговорить. "Я нашла курсы по управлению продажами, 15 000 ₽. Если вы оплатите, я останусь здесь и применю всё у вас. Если нет — мне сделали предложение в другом месте. Решайте."',
-    trigger: { dayMin: 42, dayMax: 63, randomChance: 1.0, oneTime: true, chainId: 'svetlana_growth', chainStep: 1 },
+    description: 'Светлана уже несколько недель в команде — изменилось всё. Подходит после смены: "Я нашла курсы по управлению продажами, 15 000 ₽. Если вы оплатите, я останусь здесь и применю всё у вас. Если нет — мне сделали предложение в другом месте. Решайте."',
+    trigger: { dayMin: 126, dayMax: 161, randomChance: 1.0, oneTime: true, chainId: 'svetlana_growth', chainStep: 1 },
     npcId: 'svetlana',
     decisionDeadlineWeeks: 1,
     options: [
@@ -697,7 +702,7 @@ export const CHAIN_EVENTS: EventTemplate[] = [
 
 export const CHAIN_IDS = [
   'mikhail_crisis', 'svetlana_growth', 'inspector_chain', 'anna_war', 'legacy',
-  'tamara_arc', 'gena_arc', 'first_hire',
+  'tamara_arc', 'gena_arc', 'first_hire', 'svetlana_intro',
 ] as const
 export type ChainId = typeof CHAIN_IDS[number]
 
@@ -707,13 +712,19 @@ export type ChainId = typeof CHAIN_IDS[number]
 // никогда не пытался его запустить как обычный chain.
 export const CHAIN_TRIGGER_WEEKS: Record<ChainId, number> = {
   mikhail_crisis: 3,
-  svetlana_growth: 6,
+  // svetlana_growth (W18+) — стартует ПОСЛЕ svetlana_intro (W12+).
+  // Гейтится в weekCalculator: чейн ждёт пока Светлана revealed И в employees.
+  svetlana_growth: 18,
   inspector_chain: 8,
   anna_war: 10,
   legacy: 15,
   tamara_arc: 8,
   gena_arc: 8,
   first_hire: 999,
+  // svetlana_intro — стартует с W12, но triggerNewChainStarts требует
+  // employees.length >= 1 (см. weekCalculator). Если игрок до W12 не
+  // нанял никого, чейн ждёт пока появится сотрудник.
+  svetlana_intro: 12,
 }
 
 // Delay in weeks before the follow-up fires after the triggering choice

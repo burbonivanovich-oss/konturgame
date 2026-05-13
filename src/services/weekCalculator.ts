@@ -42,7 +42,7 @@ import {
 } from '../constants/gameBalance'
 import { getTotalThroughput, calculateRegisterPenalty, checkRegisterBreakdown } from './cashRegisterEngine'
 import { calculateCategoryRevenue } from './assortmentEngine'
-import { initializeEmployees, getWeeklySalaryCost, getWeeklyEnergyCost, getEmployeeCapacityBonus, getUpgradeEnergyBonus } from './employeeManager'
+import { initializeEmployees, getWeeklySalaryCost, getWeeklyEnergyCost, getEmployeeCapacityBonus, getUpgradeEnergyBonus, updateEmployeeGrowth } from './employeeManager'
 import { initializeQuality, updateQualityWeekly, getQualityReputationBonus, getQualityLoyaltyBonus, getQualityPricePremium } from './qualityManager'
 import { getQualityClientModifier, getBrandEffect } from './qualityModifier'
 
@@ -365,6 +365,9 @@ export function processWeek(state: GameState): DayResult {
 
   // Update quality weekly
   updateQualityWeekly(state)
+
+  // Сдвиг эффективности сотрудников за неделю (учится / халтурит)
+  updateEmployeeGrowth(state)
 
   // Deduct weekly employee energy cost, minus upgrade bonuses
   const upgradeEnergyBonus = getUpgradeEnergyBonus(state)
@@ -891,15 +894,25 @@ function triggerNewChainStarts(state: GameState): void {
     // svetlana_growth — нарративная зависимость от найма Светланы.
     // Раньше чейн стартовал автоматически с W6, даже если игрок никого не
     // нанимал, и Светлана появлялась «из воздуха». Теперь — только если
-    // её действительно наняли через first_hire (NPC revealed).
+    // её действительно наняли через svetlana_intro (NPC revealed как hired).
     if (chainId === 'svetlana_growth') {
       const svetlana = (state.npcs ?? []).find(n => n.id === 'svetlana')
       if (!svetlana?.isRevealed) continue
+      // Гейтим ещё и наличием Светланы в employees — на случай если
+      // svetlana_to_anna её revealed (там она у Анны, а не у нас).
+      const haveSvetlana = (state.employees ?? []).some(e => e.name === 'Светлана')
+      if (!haveSvetlana) continue
     }
 
-    // first_hire — не запускается автоматически. Чейн срабатывает только
+    // first_hire — не запускается автоматически. Срабатывает только
     // как chainFollowUp из SOLO_OVERLOAD-события.
     if (chainId === 'first_hire') continue
+
+    // svetlana_intro — стартует автоматически с W12+, но только если у
+    // игрока уже есть хотя бы один сотрудник (она — второй найм по сюжету).
+    if (chainId === 'svetlana_intro') {
+      if ((state.employees ?? []).length === 0) continue
+    }
 
     const startEvent = getChainStartEvent(chainId)
     if (!startEvent) continue
