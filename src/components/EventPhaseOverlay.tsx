@@ -41,7 +41,7 @@ interface EventPhaseOverlayProps {
  * «Тихая неделя» с кнопкой «Дальше → итоги».
  */
 export function EventPhaseOverlay({ onOptionSelect, onContinueIfNoEvent }: EventPhaseOverlayProps) {
-  const { pendingEvent, pendingEventsQueue, npcs, currentWeek } = useGameStore()
+  const { pendingEvent, pendingEventsQueue, npcs, currentWeek, deferEvent } = useGameStore()
 
   // Edge case: фаза events без события. Показываем «тишину» и
   // позволяем продвинуть фазу.
@@ -56,6 +56,10 @@ export function EventPhaseOverlay({ onOptionSelect, onContinueIfNoEvent }: Event
   const deadlineWeeksLeft = pendingEvent.decisionDeadlineWeek
     ? Math.max(0, pendingEvent.decisionDeadlineWeek - currentWeek)
     : null
+  // Отсрочка возможна один раз. Если событие уже было отложено — кнопка
+  // скрыта, игрок обязан принять решение сейчас. Дилеммы и события с
+  // дедлайном «решить сейчас» (deadline=0) тоже не откладываем.
+  const canDefer = !pendingEvent.wasDeferred && !isMoral && deadlineWeeksLeft !== 0
 
   return (
     <div style={{
@@ -160,6 +164,49 @@ export function EventPhaseOverlay({ onOptionSelect, onContinueIfNoEvent }: Event
             />
           ))}
         </section>
+
+        {/* Defer button — отсрочка решения на одну неделю. Доступна один
+            раз: на следующей неделе событие вернётся с wasDeferred=true и
+            эта кнопка не отрисуется. Скрыта также для моральных дилемм
+            и событий со срочным дедлайном. */}
+        {canDefer && (
+          <button
+            type="button"
+            onClick={() => deferEvent()}
+            style={{
+              alignSelf: 'center',
+              background: 'transparent', color: K.muted,
+              border: `1px dashed ${K.line}`,
+              borderRadius: 10, padding: '10px 18px',
+              fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
+              letterSpacing: '0.02em', cursor: 'pointer',
+              transition: 'all 0.15s',
+              marginTop: 4,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = K.ink2
+              e.currentTarget.style.borderColor = K.muted
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = K.muted
+              e.currentTarget.style.borderColor = K.line
+            }}
+          >
+            Подумаю позже · вернётся на следующей неделе
+          </button>
+        )}
+        {pendingEvent.wasDeferred && (
+          <div style={{
+            alignSelf: 'center', textAlign: 'center',
+            fontSize: 11, fontWeight: 700, color: K.bad,
+            letterSpacing: '0.04em',
+            background: 'rgba(220,38,38,0.06)',
+            border: `1px solid rgba(220,38,38,0.18)`,
+            borderRadius: 10, padding: '8px 14px',
+          }}>
+            ⏰ Решение уже откладывали — нужно ответить сейчас
+          </div>
+        )}
       </div>
     </div>
   )

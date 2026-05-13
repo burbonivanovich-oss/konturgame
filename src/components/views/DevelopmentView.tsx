@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { useGameStore } from '../../stores/gameStore'
 import {
   AD_CAMPAIGNS_CONFIG, MAX_ACTIVE_CAMPAIGNS, CAMPAIGN_DIMINISHING_FACTORS,
-  getUpgradesForBusiness,
+  getUpgradesForBusiness, SERVICES_CONFIG,
 } from '../../constants/business'
 import { getCampaignStats } from '../../services/weekCalculator'
 import { getCurrentTier, getNextTier, canUpgradeTier } from '../../services/economyEngine'
 import { getDimensionStatus } from '../../services/businessHealth'
 import { K } from '../design-system/tokens'
+import type { ServiceType } from '../../types/game'
 
 type DevTab = 'marketing' | 'upgrades' | 'tier' | 'roi'
 
@@ -490,9 +491,19 @@ function MarketingSection() {
 }
 
 function UpgradesSection() {
-  const { balance, businessType, purchasedUpgrades, purchaseUpgrade, setBalance } = useGameStore()
+  const { balance, businessType, purchasedUpgrades, purchaseUpgrade, setBalance, services } = useGameStore()
   const [selectedUpgrade, setSelectedUpgrade] = useState<string | null>(null)
   const upgrades = getUpgradesForBusiness(businessType)
+
+  // helper: имя апгрейда-зависимости (для бейджа «требует X»)
+  const getUpgradeName = (id: string): string => {
+    const u = upgrades.find(u => u.id === id)
+    return u ? u.name : id
+  }
+  // helper: проверка активности сервиса (для requiresServices)
+  const isServiceActive = (id: ServiceType): boolean => {
+    return services?.[id]?.isActive ?? false
+  }
 
   const handlePurchase = (upgrade: typeof upgrades[0]) => {
     if (balance >= upgrade.cost && !purchasedUpgrades.includes(upgrade.id)) {
@@ -518,6 +529,16 @@ function UpgradesSection() {
           const isPurchased = purchasedUpgrades.includes(upgrade.id)
           const canAfford = balance >= upgrade.cost
           const isSelected = selectedUpgrade === upgrade.id
+
+          // Зависимости: апгрейд требует другого апгрейда (cold-case для морозильника)
+          // или активных сервисов (Маркет для кухни, ОФД+Экстерн для барной стойки).
+          const reqUpgradeOk = !upgrade.requiresUpgrade || purchasedUpgrades.includes(upgrade.requiresUpgrade)
+          const missingServices = (upgrade.requiresServices ?? []).filter(s => !isServiceActive(s))
+          const allReqsOk = reqUpgradeOk && missingServices.length === 0
+
+          // Скрытые ежемесячные расходы — игрок не видел их раньше,
+          // покупал кассира за 60K и удивлялся минусу 15K/мес.
+          const monthlyExtra = (upgrade.monthlySalaryIncrease ?? 0) + (upgrade.monthlyRentIncrease ?? 0)
 
           return (
             <div
@@ -548,14 +569,49 @@ function UpgradesSection() {
                 {upgrade.effect}
               </p>
 
+              {/* Бэджи зависимостей: галочка если выполнено, крест если нет.
+                  Купить можно всегда (механика не блокирует), но игрок видит
+                  что эффект работать не будет, пока зависимость не выполнена. */}
+              {!isPurchased && upgrade.requiresUpgrade && (
+                <RequirementBadge
+                  met={reqUpgradeOk}
+                  label="Требует"
+                  value={getUpgradeName(upgrade.requiresUpgrade)}
+                />
+              )}
+              {!isPurchased && upgrade.requiresServices && upgrade.requiresServices.length > 0 && (
+                <RequirementBadge
+                  met={missingServices.length === 0}
+                  label={upgrade.requiresServices.length > 1 ? 'Нужны сервисы' : 'Нужен сервис'}
+                  value={upgrade.requiresServices.map(s => SERVICES_CONFIG[s]?.name ?? s).join(', ')}
+                />
+              )}
+
               {!isPurchased && (
                 <div style={{
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: canAfford ? K.orange : K.bad,
+                  display: 'flex', flexDirection: 'column', gap: 4,
                   marginTop: 'auto',
                 }}>
-                  {upgrade.cost.toLocaleString('ru-RU')} ₽
+                  <div style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: canAfford ? K.orange : K.bad,
+                  }}>
+                    {upgrade.cost.toLocaleString('ru-RU')} ₽
+                  </div>
+                  {/* Скрытые ежемесячные расходы. Показываем красным —
+                      это то, что кусает баланс долго после разовой покупки. */}
+                  {monthlyExtra > 0 && (
+                    <div style={{
+                      fontSize: 10, fontWeight: 700,
+                      color: K.bad,
+                      letterSpacing: '0.02em',
+                    }}>
+                      ⚠️ +{monthlyExtra.toLocaleString('ru-RU')} ₽/мес постоянно
+                      {upgrade.monthlySalaryIncrease ? ' (зарплата)' : ''}
+                      {upgrade.monthlyRentIncrease ? ' (аренда)' : ''}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -579,7 +635,7 @@ function UpgradesSection() {
                     transition: 'all 0.2s',
                   }}
                 >
-                  Купить сейчас
+                  {allReqsOk ? 'Купить сейчас' : 'Купить (требования не выполнены)'}
                 </button>
               )}
             </div>
@@ -592,6 +648,23 @@ function UpgradesSection() {
           Нет доступных улучшений для этого типа бизнеса
         </div>
       )}
+    </div>
+  )
+}
+
+function RequirementBadge({ met, label, value }: { met: boolean; label: string; value: string }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 6,
+      fontSize: 11, fontWeight: 700,
+      color: met ? K.mint : K.bad,
+      padding: '4px 8px', borderRadius: 8,
+      background: met ? 'rgba(34,197,94,0.07)' : 'rgba(220,38,38,0.07)',
+      border: `1px solid ${met ? 'rgba(34,197,94,0.25)' : 'rgba(220,38,38,0.25)'}`,
+    }}>
+      <span aria-hidden="true">{met ? '✓' : '✕'}</span>
+      <span style={{ opacity: 0.8 }}>{label}:</span>
+      <span style={{ fontWeight: 800 }}>{value}</span>
     </div>
   )
 }

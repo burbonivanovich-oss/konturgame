@@ -280,6 +280,9 @@ export interface Event {
   npcId?: string
   isMoralDilemma?: boolean
   decisionDeadlineWeek?: number
+  // Set to true when the player chose "Подумаю позже" — the event resurfaces
+  // on the next week and the defer button is hidden (один раз можно отложить).
+  wasDeferred?: boolean
 }
 
 export interface EventTemplate {
@@ -431,6 +434,9 @@ export interface GameState {
   lastDayResult: DayResult | null
   pendingEvent: Event | null
   pendingEventsQueue: Event[]
+  // Events the player deferred via "Подумаю позже" — restored at the start
+  // of the next week's event phase and shown without the defer option.
+  deferredEvents?: Event[]
   triggeredEventIds: string[]
 
   isGameOver: boolean

@@ -663,6 +663,21 @@ export function processWeek(state: GameState): DayResult {
   // Pick 1 micro event per week (passive, no modal — shown in WeekResults)
   applyWeeklyMicroEvent(state)
 
+  // Restore deferred events from previous week. They come back first
+  // (priority over random/crisis generation) with wasDeferred=true,
+  // so UI hides the «Подумаю позже» button — игрок обязан их решить.
+  if (state.deferredEvents && state.deferredEvents.length > 0 && !state.isGameOver && !state.isVictory) {
+    const [first, ...rest] = state.deferredEvents
+    if (!state.pendingEvent) {
+      state.pendingEvent = first
+      state.pendingEventsQueue = [...rest, ...(state.pendingEventsQueue ?? [])]
+    } else {
+      // Уже есть событие из цепочки/кризиса — отложенные идут в очередь
+      state.pendingEventsQueue = [...state.deferredEvents, ...(state.pendingEventsQueue ?? [])]
+    }
+    state.deferredEvents = []
+  }
+
   // Generate 1-2 events every week (crisis weeks always get 2)
   if (!state.isGameOver && !state.isVictory && !state.pendingEvent) {
     const firstEvent = generateEvent(state.currentWeek * 7, state)

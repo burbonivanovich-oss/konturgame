@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import { ECONOMY_CONSTANTS } from '../constants/business'
 import { getBusinessStage, STAGE_CONFIG, getNextStage } from '../constants/businessStages'
 import { getBusinessHealth } from '../services/businessHealth'
+import { ENERGY_THRESHOLDS } from '../constants/gameBalance'
 import { K } from './design-system/tokens'
 
 function statusColor(value: number): string {
@@ -14,7 +15,7 @@ function statusColor(value: number): string {
 export default function Indicators() {
   const {
     stockBatches, capacity, lastDayResult, balance, entrepreneurEnergy,
-    currentWeek, businessTier,
+    currentWeek, businessTier, burnoutWarningActive,
   } = useGameStore()
   const { addBalance, addLoyalty } = useGameStore()
 
@@ -98,10 +99,33 @@ export default function Indicators() {
         )}
       </div>
 
+      {/* Burnout warning — рисуется ТОЛЬКО когда на прошлой неделе энергия
+          уже падала до нуля. Следующее обнуление = game over. Самое тихое
+          плохое UX-ощущение игры было «умер от выгорания внезапно», эта
+          карточка устраняет неожиданность. */}
+      {burnoutWarningActive && (
+        <div style={{
+          background: K.bad, color: K.white, borderRadius: 16, padding: 14,
+          display: 'flex', flexDirection: 'column', gap: 6,
+          boxShadow: '0 0 0 2px rgba(220,38,38,0.18)',
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: '0.02em' }}>
+            🔥 ГРОЗИТ ВЫГОРАНИЕ
+          </div>
+          <div style={{ fontSize: 11, lineHeight: 1.5, opacity: 0.95 }}>
+            Энергия падала до нуля. Если упадёт снова — игра закончится.
+            Возьмите 🌿 спокойную неделю, наймите сотрудника или используйте отдых.
+          </div>
+        </div>
+      )}
+
       {/* Энергия владельца */}
       <div style={{
         background: K.white, borderRadius: 16, padding: 16,
         display: 'flex', flexDirection: 'column', gap: 8,
+        // Пульсация при критическом уровне — привлекает внимание без
+        // навязчивых модалок. Анимация определена в index.css.
+        animation: entrepreneurEnergy < ENERGY_THRESHOLDS.CRITICAL ? 'pulse-critical 1.6s ease-in-out infinite' : undefined,
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em' }}>⚡ ЭНЕРГИЯ</div>
@@ -120,6 +144,23 @@ export default function Indicators() {
         <div style={{ fontSize: 10, opacity: 0.6, lineHeight: 1.3 }}>
           {entrepreneurEnergy > 70 ? '✅ Полна энергии' : entrepreneurEnergy > 40 ? '⚠️ Нужен отдых' : '🔴 Требуется восстановление'}
         </div>
+
+        {/* Energy → revenue impact — игрок не догадывался, что усталость
+            режет выручку. Теперь видно явно при критическом и просто
+            утомлённом состоянии. Пороги синхронизированы с ENERGY_THRESHOLDS. */}
+        {entrepreneurEnergy < ENERGY_THRESHOLDS.TIRED && (
+          <div style={{
+            fontSize: 10, fontWeight: 700,
+            color: entrepreneurEnergy < ENERGY_THRESHOLDS.CRITICAL ? K.bad : K.orange,
+            padding: '6px 8px', borderRadius: 8,
+            background: K.bone,
+            lineHeight: 1.3,
+          }}>
+            {entrepreneurEnergy < ENERGY_THRESHOLDS.CRITICAL
+              ? '⚠️ Усталость режет выручку на 20%'
+              : '⚠️ Усталость режет выручку на 10%'}
+          </div>
+        )}
       </div>
 
       {/* Склад — открывается на 3-й неделе (после первых закупок) */}

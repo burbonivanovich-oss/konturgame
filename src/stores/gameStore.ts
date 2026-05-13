@@ -64,6 +64,7 @@ const createInitialState = (businessType: BusinessType): GameState => {
     lastDayResult: null,
     pendingEvent: null,
     pendingEventsQueue: [],
+    deferredEvents: [],
     triggeredEventIds: [],
 
     isGameOver: false,
@@ -235,6 +236,7 @@ interface GameStoreActions {
   // Events
   setPendingEvent: (event: Event | null) => void
   markEventAsResolved: (eventId: string) => void
+  deferEvent: () => void
   // Record which option the player picked for an event — feeds achievements
   // + postmortem timeline. Idempotent; first choice wins per event id.
   recordEventChoice: (eventId: string, choiceId: string) => void
@@ -725,6 +727,30 @@ export const useGameStore = create<GameStore>((set, get) => ({
           pendingEventsQueue: queue.slice(1),
           // Когда последнее событие разрешено в фазе events — идём в
           // simulation (анимация недели), а не сразу в results.
+          weekPhase: (allCleared && state.weekPhase === 'events' ? 'simulation' : state.weekPhase) as WeekPhase,
+          lastUpdated: Date.now(),
+        }
+      })
+    },
+
+    // «Подумаю позже» — откладывает текущее событие на следующую неделю.
+    // На следующей неделе событие появится снова с флагом wasDeferred=true,
+    // и кнопка отсрочки уже не отрисуется — игрок обязан принять решение.
+    // Если у события есть decisionDeadlineWeek и срок истечёт во время
+    // отсрочки, autoResolveExpiredDecisions сам резолвит его дефолтной
+    // опцией (первая не-Контур или первая) — это сознательная цена отсрочки.
+    deferEvent: () => {
+      set((state) => {
+        if (!state.pendingEvent) return state
+        const deferred: Event = { ...state.pendingEvent, wasDeferred: true }
+        const queue = state.pendingEventsQueue ?? []
+        const nextEvent = queue.length > 0 ? queue[0] : null
+        const allCleared = nextEvent === null
+        return {
+          deferredEvents: [...(state.deferredEvents ?? []), deferred],
+          pendingEvent: nextEvent,
+          pendingEventsQueue: queue.slice(1),
+          // Если очередь опустела — фаза events закрывается как при resolve.
           weekPhase: (allCleared && state.weekPhase === 'events' ? 'simulation' : state.weekPhase) as WeekPhase,
           lastUpdated: Date.now(),
         }
@@ -1357,7 +1383,7 @@ function extractState(state: any): GameState {
   const {
     businessType, currentWeek, dayOfWeek, balance, savedBalance, reputation, loyalty,
     entrepreneurEnergy, stock, stockBatches, capacity, services, achievements,
-    lastDayResult, pendingEvent, pendingEventsQueue, triggeredEventIds,
+    lastDayResult, pendingEvent, pendingEventsQueue, deferredEvents, triggeredEventIds,
     isGameOver, isVictory, gameOverReason, consecutiveOverloadDays, daysReputationZero,
     daysSinceLastMonthly, purchaseOfferedThisDay, activeAdCampaigns, purchasedUpgrades,
     temporaryClientMod, temporaryCheckMod, temporaryModDaysLeft, createdAt, lastUpdated,
@@ -1400,6 +1426,7 @@ function extractState(state: any): GameState {
     entrepreneurEnergy: entrepreneurEnergy ?? ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY,
     stock, stockBatches, capacity, services, achievements,
     lastDayResult, pendingEvent, pendingEventsQueue: pendingEventsQueue ?? [],
+    deferredEvents: state.deferredEvents ?? [],
     triggeredEventIds, isGameOver, isVictory, gameOverReason,
     consecutiveOverloadDays, daysReputationZero, daysSinceLastMonthly,
     purchaseOfferedThisDay, activeAdCampaigns, purchasedUpgrades,

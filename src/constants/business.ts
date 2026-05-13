@@ -394,12 +394,18 @@ export const UPGRADES_CONFIG: Record<BusinessType, Array<{
   monthlySalaryIncrease?: number
   monthlyRentIncrease?: number
   energyBonus?: number
+  // Зависимости — UI рисует бэдж «требует X» с галочкой/крестом.
+  // Если апгрейд купить раньше зависимости, его эффект всё равно начисляется
+  // (механика не блокируется), но категория/связанная фича не откроется,
+  // пока требование не выполнено. Бэдж предупреждает игрока заранее.
+  requiresUpgrade?: string
+  requiresServices?: ServiceType[]
 }>> = {
   shop: [
     // Equipment that gates categories
     { id: 'cold-case', name: '❄️ Холодильная витрина', cost: 40000, effect: 'Открывает молочку, +10% вместимость', capacityBonus: 0.1 },
-    { id: 'freezer', name: '🧊 Морозильник', cost: 60000, effect: 'Открывает мясо/рыбу при наличии холодильной витрины', capacityBonus: 0.05 },
-    { id: 'liquor-cabinet', name: '🍷 Алкошкаф с замком', cost: 50000, effect: 'Открывает алкогольную лицензию (нужен ОФД+Экстерн)' },
+    { id: 'freezer', name: '🧊 Морозильник', cost: 60000, effect: 'Открывает мясо/рыбу при наличии холодильной витрины', capacityBonus: 0.05, requiresUpgrade: 'cold-case' },
+    { id: 'liquor-cabinet', name: '🍷 Алкошкаф с замком', cost: 50000, effect: 'Открывает алкогольную лицензию (нужен ОФД+Экстерн)', requiresServices: ['ofd', 'extern'] },
     { id: 'tobacco-display', name: '🚬 Витрина для табака', cost: 35000, effect: 'Открывает табачку (закрытый шкаф по закону)' },
     // General upgrades
     { id: 'cctv', name: '📹 Видеонаблюдение', cost: 65000, effect: '+2% выручка, защита от краж', checkBonus: 0.02, energyBonus: 5 },
@@ -412,8 +418,8 @@ export const UPGRADES_CONFIG: Record<BusinessType, Array<{
     // Equipment that gates categories
     { id: 'espresso-machine', name: '☕ Кофемашина эспрессо', cost: 60000, effect: 'База кафе. +5% выручка, +6 энергии', checkBonus: 0.05, energyBonus: 6 },
     { id: 'oven', name: '🥐 Печь / духовка', cost: 50000, effect: 'Открывает десерты и выпечку', capacityBonus: 0.05 },
-    { id: 'kitchen', name: '🍳 Полноценная кухня', cost: 90000, effect: 'Открывает готовую еду (нужен Маркет)', capacityBonus: 0.1, energyBonus: 4 },
-    { id: 'bar-counter', name: '🍹 Барная стойка', cost: 75000, effect: 'Открывает барную карту (нужны ОФД+Экстерн)' },
+    { id: 'kitchen', name: '🍳 Полноценная кухня', cost: 90000, effect: 'Открывает готовую еду (нужен Маркет)', capacityBonus: 0.1, energyBonus: 4, requiresServices: ['market'] },
+    { id: 'bar-counter', name: '🍹 Барная стойка', cost: 75000, effect: 'Открывает барную карту (нужны ОФД+Экстерн)', requiresServices: ['ofd', 'extern'] },
     // General upgrades
     { id: 'cooler', name: '❄️ Холодильник', cost: 40000, effect: '+5% вместимость', capacityBonus: 0.05 },
     { id: 'seasonal-menu', name: '🍽️ Сезонное меню', cost: 50000, effect: '+25% выручка летом/весной', checkBonus: 0.1 },
@@ -423,8 +429,8 @@ export const UPGRADES_CONFIG: Record<BusinessType, Array<{
   'beauty-salon': [
     // Equipment that gates categories
     { id: 'manicure-station', name: '💅 Станция маникюра', cost: 50000, effect: 'База — открывает базовые услуги полностью. +20% клиентов, +15% маржа', clientBonus: 0.2, checkBonus: 0.15 },
-    { id: 'coloring-station', name: '💇 Окрасочная станция', cost: 80000, effect: 'Открывает премиум-услуги (нужен Маркет)', checkBonus: 0.05 },
-    { id: 'cosmetics-shelf', name: '🛍️ Витрина косметики', cost: 45000, effect: 'Открывает продажу косметики (нужны Маркет+ОФД)' },
+    { id: 'coloring-station', name: '💇 Окрасочная станция', cost: 80000, effect: 'Открывает премиум-услуги (нужен Маркет)', checkBonus: 0.05, requiresServices: ['market'] },
+    { id: 'cosmetics-shelf', name: '🛍️ Витрина косметики', cost: 45000, effect: 'Открывает продажу косметики (нужны Маркет+ОФД)', requiresServices: ['market', 'ofd'] },
     { id: 'spa-room', name: '🧖 SPA-комната', cost: 110000, effect: 'Открывает SPA-процедуры', capacityBonus: 0.1, monthlyRentIncrease: 8000 },
     // General upgrades
     { id: 'massage-chair', name: '💆 Массажное кресло', cost: 70000, effect: '+25% клиентов, релаксация', clientBonus: 0.25, energyBonus: 16 },
