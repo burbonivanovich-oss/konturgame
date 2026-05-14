@@ -60,24 +60,12 @@ export function DevelopmentView() {
 }
 
 function TierSection() {
-  const upgradeBusinessTier = useGameStore(s => s.upgradeBusinessTier)
+  // Тиры теперь auto-progression: weekCalculator сам поднимает уровень
+  // когда currentWeek ≥ unlockWeek и репутация ≥ unlockReputation. Кнопки
+  // покупки нет — этот экран read-only timeline.
   const state = useGameStore.getState()
   const current = getCurrentTier(state)
   const next = getNextTier(state)
-  const check = canUpgradeTier(state)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-
-  const handleUpgrade = () => {
-    setError(null)
-    setSuccess(null)
-    const r = upgradeBusinessTier()
-    if (r.ok) {
-      setSuccess(`Поздравляем! Теперь это ${getCurrentTier(useGameStore.getState()).name}.`)
-    } else {
-      setError(r.reason ?? 'Не удалось')
-    }
-  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -164,44 +152,28 @@ function TierSection() {
             <Requirement met={state.currentWeek >= next.unlockWeek}
               label={`Неделя ${next.unlockWeek}+`}
               actual={`сейчас ${state.currentWeek}`} />
-            <Requirement met={state.balance >= next.unlockBalance}
-              label={`Оборот от ${next.unlockBalance.toLocaleString('ru-RU')} ₽`}
-              actual={`${state.balance.toLocaleString('ru-RU')} ₽`} />
             {(() => {
               const repStatus = getDimensionStatus(state.reputation)
               return (
                 <Requirement met={state.reputation >= next.unlockReputation}
-                  label="Прочная репутация"
+                  label={`Репутация ≥ ${next.unlockReputation}`}
                   actual={repStatus.label} />
               )
             })()}
-            {/* Скаляр качества выпилен — его гейт мерджнут в unlockReputation. */}
-            <Requirement met={state.balance >= next.upgradeCost}
-              label={`Стоимость апгрейда: ${next.upgradeCost.toLocaleString('ru-RU')} ₽`}
-              actual={state.balance >= next.upgradeCost ? 'хватает' : 'не хватает'} />
           </div>
 
-          <button
-            disabled={!check.ok}
-            onClick={handleUpgrade}
-            style={{
-              marginTop: 16, width: '100%',
-              padding: '14px 18px', borderRadius: 12,
-              background: check.ok ? K.ink : K.lineSoft,
-              color: check.ok ? K.white : K.muted,
-              border: 'none', fontSize: 14, fontWeight: 800,
-              cursor: check.ok ? 'pointer' : 'not-allowed',
-              fontFamily: 'inherit', letterSpacing: '-0.01em',
-            }}
-          >
-            {check.ok ? `Перейти на «${next.name}» за ${next.upgradeCost.toLocaleString('ru-RU')} ₽` : (check.reason ?? 'Недоступно')}
-          </button>
-          {error && (
-            <div style={{ marginTop: 8, fontSize: 12, color: '#c0392b' }}>{error}</div>
-          )}
-          {success && (
-            <div style={{ marginTop: 8, fontSize: 12, color: K.mint, fontWeight: 700 }}>{success}</div>
-          )}
+          <div style={{
+            marginTop: 16, padding: '12px 14px', borderRadius: 10,
+            background: K.mintSoft, color: K.mintInk,
+            fontSize: 12, fontWeight: 600, lineHeight: 1.45,
+            display: 'flex', alignItems: 'flex-start', gap: 8,
+          }}>
+            <span style={{ fontSize: 14, flexShrink: 0 }}>✨</span>
+            <span>
+              Уровень открывается автоматически, когда выполнятся оба условия.
+              Без затрат, аренда и зарплаты не вырастут.
+            </span>
+          </div>
         </div>
       ) : (
         <div style={{

@@ -5,8 +5,12 @@ import { REPUTATION_CAPACITY_THRESHOLDS, REPUTATION_CAPACITY_MODIFIER } from '..
 import { calculateSynergyModifiers } from './synergyEngine'
 
 // ── Business tier (level) helpers ────────────────────────────────────────────
-// Tier multipliers scale every "size" number (clients, check, rent, salary,
-// capacity). Existing saves without `businessTier` default to tier 1.
+// Тиры теперь — auto-progression milestones, не purchase gate. Тир
+// поднимается автоматически когда currentWeek ≥ unlockWeek и репутация
+// ≥ unlockReputation. Без затрат, без повышения ренты/ЗП — только
+// небольшие бонусы (×1.2 / ×1.4 клиентов и т.п.) и нарративный момент.
+// Раньше: разовая покупка за 150K/400K с ×1.5 множителями и ×1.5 рентой
+// — рискованное решение, которое мало кто делал в реальных прогонах.
 
 export function getCurrentTier(state: GameState): BusinessTierConfig {
   const tiers = BUSINESS_TIERS[state.businessType]
@@ -20,17 +24,15 @@ export function getNextTier(state: GameState): BusinessTierConfig | null {
   return tiers.find(t => t.level === currentLevel + 1) ?? null
 }
 
+// Проверка условий auto-progression в следующий тир. Используется
+// weekCalculator'ом после processWeek для автоматического апгрейда.
+// Возвращает причину неполного выполнения (для UI «осталось N недель» /
+// «нужна репутация ≥ X»).
 export function canUpgradeTier(state: GameState): { ok: boolean; reason?: string } {
   const next = getNextTier(state)
   if (!next) return { ok: false, reason: 'Достигнут максимальный уровень' }
   if (state.currentWeek < next.unlockWeek) {
     return { ok: false, reason: `Доступно с ${next.unlockWeek}-й недели` }
-  }
-  if (state.balance < next.upgradeCost) {
-    return { ok: false, reason: `Недостаточно средств (нужно ${next.upgradeCost.toLocaleString('ru-RU')} ₽)` }
-  }
-  if (state.balance < next.unlockBalance) {
-    return { ok: false, reason: `Нужен оборотный баланс от ${next.unlockBalance.toLocaleString('ru-RU')} ₽` }
   }
   if (state.reputation < next.unlockReputation) {
     return { ok: false, reason: `Нужна репутация от ${next.unlockReputation}` }
