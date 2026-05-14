@@ -10,10 +10,21 @@ import { getDimensionStatus } from '../../services/businessHealth'
 import { K } from '../design-system/tokens'
 import type { ServiceType } from '../../types/game'
 
-type DevTab = 'marketing' | 'upgrades' | 'tier' | 'roi'
+// Раньше DevelopmentView содержал 4 вкладки (Tier / Marketing / Upgrades /
+// ROI) внутри одной nav-страницы «Развитие». После flatten'а сайдбара
+// каждая стала отдельным пунктом меню. Этот файл оставлен как контейнер,
+// который принимает `view` prop и рендерит нужную секцию без табов.
+// ROI слит в Реклама (один экран, не два).
+export type DevView = 'marketing' | 'upgrades' | 'tier'
 
-export function DevelopmentView() {
-  const [tab, setTab] = useState<DevTab>('marketing')
+const VIEW_TITLES: Record<DevView, { eyebrow: string; title: string }> = {
+  marketing: { eyebrow: 'РОСТ',     title: 'Реклама' },
+  upgrades:  { eyebrow: 'РОСТ',     title: 'Улучшения' },
+  tier:      { eyebrow: 'РОСТ',     title: 'Уровень бизнеса' },
+}
+
+export function DevelopmentView({ view = 'marketing' }: { view?: DevView }) {
+  const headers = VIEW_TITLES[view]
 
   return (
     <div style={{
@@ -22,39 +33,13 @@ export function DevelopmentView() {
       fontFamily: 'Manrope, sans-serif', color: K.ink, letterSpacing: '-0.01em',
     }}>
       <div>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>РОСТ</div>
-        <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.025em' }}>Развитие</div>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>{headers.eyebrow}</div>
+        <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.025em' }}>{headers.title}</div>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 6, borderBottom: `1px solid ${K.line}` }}>
-        {([
-          { id: 'tier',      label: 'Уровень бизнеса' },
-          { id: 'marketing', label: 'Реклама' },
-          { id: 'upgrades',  label: 'Улучшения' },
-          { id: 'roi',       label: 'ROI кампаний' },
-        ] as { id: DevTab; label: string }[]).map(t => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            style={{
-              padding: '10px 14px', border: 'none', cursor: 'pointer',
-              background: 'transparent', fontFamily: 'inherit',
-              fontSize: 13, fontWeight: 700,
-              color: tab === t.id ? K.ink : K.muted,
-              borderBottom: tab === t.id ? `2px solid ${K.ink}` : '2px solid transparent',
-              marginBottom: -1,
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {tab === 'tier'      && <TierSection />}
-      {tab === 'marketing' && <MarketingSection />}
-      {tab === 'upgrades'  && <UpgradesSection />}
-      {tab === 'roi'       && <RoiSection />}
+      {view === 'tier'      && <TierSection />}
+      {view === 'marketing' && <MarketingSection />}
+      {view === 'upgrades'  && <UpgradesSection />}
     </div>
   )
 }
@@ -450,6 +435,19 @@ function MarketingSection() {
         <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.5 }}>
           Одновременно можно вести до {MAX_ACTIVE_CAMPAIGNS} кампаний. Каждая следующая работает слабее (100% → 60% → 30%) — выгоднее дождаться завершения и запустить новую.
         </div>
+      </div>
+
+      {/* ROI секция — раньше отдельная вкладка «ROI кампаний», теперь
+          встроена в Реклама внизу: одна страница, не два экрана для
+          одной сущности «реклама». */}
+      <div style={{
+        marginTop: 8, paddingTop: 16,
+        borderTop: `1px solid ${K.line}`,
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase', marginBottom: 12 }}>
+          ROI КАМПАНИЙ
+        </div>
+        <RoiSection />
       </div>
     </div>
   )
