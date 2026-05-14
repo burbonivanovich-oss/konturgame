@@ -16,9 +16,10 @@ import type { EventTemplate } from '../types/game'
  */
 export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
 
-  // ── Контур.Банк (36 000 ₽) — расчётный счёт + эквайринг ─────────────
+  // ── Контур.Банк (бесплатно) — расчётный счёт + эквайринг ─────────────
   // ОБЯЗАТЕЛЬНЫЙ. Срабатывает с первой недели, randomChance высокий —
-  // эквайринг — это базовая гигиена малого бизнеса.
+  // эквайринг — это базовая гигиена малого бизнеса. Подключение
+  // бесплатное, монетизация через комиссию 1.5% с безнала.
   {
     id: 'FIRST_BANK',
     title: 'Третья пара уходит без покупки',
@@ -32,8 +33,8 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
       },
       {
         id: 'subscribe',
-        text: 'Подключить Контур.Банк (36 000 ₽)',
-        consequences: { balanceDelta: -36000, serviceId: 'bank' },
+        text: 'Подключить Контур.Банк (бесплатно — комиссия 1.5% с безнала)',
+        consequences: { serviceId: 'bank' },
         isContourOption: true,
       },
     ],
