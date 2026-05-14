@@ -14,7 +14,6 @@ import {
   calculateRevenue,
   calculateDailySubscriptions,
   calculateMonthlyExpenses,
-  getLoyaltyUpgradesBonus,
   getEffectiveBaseClients,
   getEffectiveAvgCheck,
 } from './economyEngine'
@@ -35,16 +34,12 @@ import {
   ENERGY_THRESHOLDS,
   ENERGY_REVENUE_MULTIPLIER,
   REPUTATION_LOSS_PER_MISSED_CLIENT,
-  REGISTER_BREAKDOWN_PENALTY_RATE,
-  ELBA_LOYALTY_PENALTY_REDUCTION,
   COMPETITOR_CYCLE,
   SERVICE_SAVINGS_RATES,
 } from '../constants/gameBalance'
-import { getTotalThroughput, calculateRegisterPenalty, checkRegisterBreakdown } from './cashRegisterEngine'
 import { calculateCategoryRevenue } from './assortmentEngine'
 import { initializeEmployees, getWeeklySalaryCost, getWeeklyEnergyCost, getEmployeeCapacityBonus, getUpgradeEnergyBonus, updateEmployeeGrowth } from './employeeManager'
-import { initializeQuality, updateQualityWeekly, getQualityReputationBonus, getQualityLoyaltyBonus, getQualityPricePremium } from './qualityManager'
-import { getQualityClientModifier, getBrandEffect } from './qualityModifier'
+import { getBrandEffect } from './qualityModifier'
 
 export function checkWeekBlocked(state: GameState): { blocked: boolean; reason?: string } {
   if (state.pendingEvent) {
@@ -72,9 +67,8 @@ export function processWeek(state: GameState): DayResult {
   if (!state.employees) {
     state.employees = initializeEmployees()
   }
-  if (state.qualityLevel === undefined) {
-    state.qualityLevel = initializeQuality()
-  }
+  // qualityLevel удалён — был дублирующим скаляром, эффекты теперь
+  // идут напрямую в репутацию (через Fokus, синергии, тактику, события).
   if (state.weeksSinceCompetitorEvent === undefined) {
     state.weeksSinceCompetitorEvent = 0
   }
@@ -95,10 +89,8 @@ export function processWeek(state: GameState): DayResult {
   let weekExpenses = 0
   let weekNetProfit = 0
   let weekRepChange = 0
-  let weekLoyaltyChange = 0
   let totalDaysWithoutExpiry = 0
   let weekExpiredLoss = 0
-  let weekRegisterOverflow = 0
   const weekPain = { bank: 0, market: 0, ofd: 0, diadoc: 0, fokus: 0, elba: 0, extern: 0, total: 0 }
   let weeklySeasonalSum = 0
   let weeklyEventSum = 0
@@ -107,15 +99,15 @@ export function processWeek(state: GameState): DayResult {
   const weeklySalaryCost = getWeeklySalaryCost(state)
   const weeklyEnergyCost = getWeeklyEnergyCost(state)
   const employeeCapacityBonus = getEmployeeCapacityBonus(state)
-  const loyaltyUpgradesBonus = getLoyaltyUpgradesBonus(state)
 
   // Weekly tactic — multipliers/deltas applied per day in the loop below.
   // null tactic = operational drift penalty (-5%): no focus means small inefficiencies.
   const tactic = getWeeklyTacticDef(state.weeklyTactic)
   const tacticRevenueMul = tactic?.revenueMultiplier ?? 0.95
   const tacticEnergyPerDay = tactic?.energyDelta ?? 0
-  const tacticRepPerDay = tactic?.reputationDelta ?? 0
-  const tacticLoyaltyPerDay = tactic?.loyaltyDelta ?? 0
+  // Loyalty как скаляр выпилен — tacticLoyaltyPerDay тоже. Сервисная
+  // тактика всё ещё даёт rep-бонус через tacticRepPerDay.
+  const tacticRepPerDay = (tactic?.reputationDelta ?? 0) + ((tactic?.loyaltyDelta ?? 0) * 0.5)
 
   // Process each day of the week (7 iterations)
   for (let dayNum = 0; dayNum < 7; dayNum++) {
@@ -126,21 +118,14 @@ export function processWeek(state: GameState): DayResult {
     weeklyEventSum += modifiers.event
     const synergyMods = calculateSynergyModifiers(state)
 
-    // Quality price premium
-    const qualityPricePremium = getQualityPricePremium(state)
-
     // 2. Stock expiry — must run before revenue to account for lost inventory
     const { loss: expiredLoss } = checkExpiry(state)
 
     // 3. Calculate daily metrics
     let totalClients = calculateClients(getEffectiveBaseClients(state), modifiers)
 
-    // Apply quality modifier (affects client acquisition)
-    const qualityClientMod = getQualityClientModifier(state.qualityLevel)
-    totalClients = Math.round(totalClients * (1 + qualityClientMod))
-
-    // Apply brand effect (reputation + loyalty synergy)
-    const brandEffect = getBrandEffect(state.reputation, state.loyalty)
+    // Apply brand effect (reputation-only).
+    const brandEffect = getBrandEffect(state.reputation)
     totalClients = Math.round(totalClients * (1 + brandEffect.clientMod))
 
     // Hard reputation penalty: below 30 customers actively avoid you; below 15 it's word of mouth damage
@@ -155,27 +140,21 @@ export function processWeek(state: GameState): DayResult {
       capacity = Math.round(capacity * (1 + employeeCapacityBonus * 0.1))
     }
 
-    let served = Math.min(totalClients, capacity)
-
-    // 3b. Register throughput limits served clients (calculated before revenue)
-    const registerThroughput = getTotalThroughput(state.cashRegisters, state)
-    const registerMissed = registerThroughput > 0
-      ? calculateRegisterPenalty(served, registerThroughput)
-      : 0
-    served = served - registerMissed
+    // Касса больше не лимитирует пропускную (мех. throughput удалена —
+     // касса теперь compliance-шаг по 54-ФЗ, без апгрейдов и типов).
+     // Ограничение по ёмкости точки сохраняется.
+    const served = Math.min(totalClients, capacity)
     const missed = totalClients - served
 
     // 4. Bank payment ratio
     const bankPaymentRatio = getBankPaymentRatio(state)
     const effectiveServed = Math.floor(served * bankPaymentRatio)
 
-    // 5. Average check with quality and brand premiums
+    // 5. Average check with brand premium (репутация × лояльность синергия).
+    // Раньше тут был ещё qualityPricePremium — выпилен вместе со скаляром
+    // качества: при высокой репутации brand effect уже даёт +чек, дублирование убрано.
     let avgCheck = calculateAverageCheck(getEffectiveAvgCheck(state), modifiers)
-
-    // Add quality price premium + brand effect (skip getQualityPriceModifier to avoid double-counting)
-    const totalPriceModifier = qualityPricePremium + brandEffect.priceMod
-
-    avgCheck = Math.round(avgCheck * (1 + totalPriceModifier))
+    avgCheck = Math.round(avgCheck * (1 + brandEffect.priceMod))
 
     // 6. Revenue (daily)
     let dailyRevenue: number
@@ -203,12 +182,6 @@ export function processWeek(state: GameState): DayResult {
       dailyRevenue = Math.round(dailyRevenue * (1 - acquiringRate))
     }
 
-    // 7. Register breakdown penalty (random equipment failure, separate from throughput)
-    const registerBroke = checkRegisterBreakdown(state.cashRegisters)
-    const breakdownPenalty = registerBroke
-      ? Math.round(dailyRevenue * REGISTER_BREAKDOWN_PENALTY_RATE)
-      : 0
-
     // Apply energy penalty: low energy = reduced productivity
     let energyModifier: number = ENERGY_REVENUE_MULTIPLIER.NORMAL
     if (state.entrepreneurEnergy < ENERGY_THRESHOLDS.CRITICAL) {
@@ -217,8 +190,7 @@ export function processWeek(state: GameState): DayResult {
       energyModifier = ENERGY_REVENUE_MULTIPLIER.TIRED
     }
 
-    const dayRevenue = Math.max(0, Math.round((dailyRevenue - breakdownPenalty) * energyModifier * tacticRevenueMul))
-    const registerOverflowPenalty = Math.round(registerMissed * avgCheck)
+    const dayRevenue = Math.max(0, Math.round(dailyRevenue * energyModifier * tacticRevenueMul))
 
     // 8. Purchase costs (via assortment daily costs)
     const purchaseCost = totalDailyCategoryCost
@@ -237,10 +209,7 @@ export function processWeek(state: GameState): DayResult {
 
     // 11. Fixed daily costs (apply Спринт-5 difficulty multiplier)
     const expenseMult = getExpenseMultiplier(state.currentWeek ?? 1)
-    const totalRegisters = state.cashRegisters?.reduce((s, r) => s + r.count, 0) ?? 0
-    const dailyUtilities = Math.round(ECONOMY_CONSTANTS.DAILY_UTILITIES * expenseMult)
-    const dailyRegisterMaintenance = Math.round(totalRegisters * ECONOMY_CONSTANTS.DAILY_REGISTER_MAINTENANCE * expenseMult)
-    const dailyFixedCosts = dailyUtilities + dailyRegisterMaintenance
+    const dailyFixedCosts = Math.round(ECONOMY_CONSTANTS.DAILY_UTILITIES * expenseMult)
 
     // 12. Monthly fixed costs (rent + owner's base salary) — spread evenly
     // across the 28-day cycle so the player doesn't get one brutal hit per
@@ -280,41 +249,30 @@ export function processWeek(state: GameState): DayResult {
     const fokusRepBonus = state.services?.fokus?.isActive
       ? (state.services.fokus.effects.reputationBonus ?? 0)
       : 0
-    const qualityRepBonus = getQualityReputationBonus(state)
-    const dayRepChange = Math.round(repFromMissed + fokusRepBonus + synergyMods.reputationBonus + qualityRepBonus + tacticRepPerDay)
+    // Качество как отдельный скаляр выпилено — его вклад в репутацию
+     // (±2/±1) дублировал то, что уже даёт сервисная тактика и Фокус.
+    const dayRepChange = Math.round(repFromMissed + fokusRepBonus + synergyMods.reputationBonus + tacticRepPerDay)
 
-    // 16. Loyalty change with quality bonus
+    // 16. Лояльность как отдельный скаляр выпилена — все её эффекты
+    // переехали в репутацию с половинной магнитудой. Перегрузка точки
+    // (load > OVERLOAD_THRESHOLD) теперь бьёт по репутации, а не по
+    // лояльности; Эльба смягчает удар вдвое.
     const elbaActive = state.services?.elba?.isActive ?? false
-    let dayLoyaltyChange = 0
     const load = capacity > 0 ? served / capacity : 0
+    let overloadRepPenalty = 0
     if (load > ECONOMY_CONSTANTS.OVERLOAD_THRESHOLD) {
       const newOverloadDays = (state.consecutiveOverloadDays ?? 0) + 1
       state.consecutiveOverloadDays = newOverloadDays
       if (newOverloadDays >= ECONOMY_CONSTANTS.OVERLOAD_DAYS_FOR_LOYALTY_PENALTY) {
-        const penalty = elbaActive
-          ? -(ECONOMY_CONSTANTS.LOYALTY_PENALTY_PER_DAY * ELBA_LOYALTY_PENALTY_REDUCTION)
-          : -ECONOMY_CONSTANTS.LOYALTY_PENALTY_PER_DAY
-        dayLoyaltyChange = Math.round(penalty)
+        // Раньше -10 лояльности; перевели в -1.5 рейтинга/день
+        // (лояльность была более «толстой» шкалой).
+        overloadRepPenalty = elbaActive ? -0.75 : -1.5
       }
     } else {
       state.consecutiveOverloadDays = 0
     }
-    const elbaLoyaltyBonus = elbaActive ? (state.services.elba.effects.loyaltyBonus ?? 0) : 0
-    const qualityLoyaltyBonus = getQualityLoyaltyBonus(state)
-    dayLoyaltyChange += elbaLoyaltyBonus + synergyMods.loyaltyBonus + qualityLoyaltyBonus + loyaltyUpgradesBonus + tacticLoyaltyPerDay
-
-    // Loyalty soft-cap decay above 70 — without active maintenance, customer
-    // loyalty drifts down. At 70: no decay; at 100: 3/day pull. To plateau
-    // at X, the player needs (X - 70) × 0.10 = sustained daily inflow:
-    //   • +0/day → drifts to 70
-    //   • +1/day → ~80 plateau
-    //   • +2/day → ~90
-    //   • +3/day → 100 (perfect play: service tactic + max quality + synergies)
-    // Loyalty bonuses on upgrades have been removed; loyalty now reflects HOW
-    // you play (tactic, choices, quality), not WHAT you bought.
-    if (state.loyalty > 70) {
-      dayLoyaltyChange -= (state.loyalty - 70) * 0.10
-    }
+    // Бонус Эльбы +лояльности/день перевёлся в +0.5 репутации/день.
+    const elbaRepBonus = elbaActive ? 0.5 : 0
 
     // 17. Accumulate week results
     weekRevenue += dayRevenue
@@ -322,10 +280,8 @@ export function processWeek(state: GameState): DayResult {
     weekMissed += missed
     weekExpenses += dayExpenses + additionalPainLoss
     weekNetProfit += dayNetProfit
-    weekRepChange += dayRepChange
-    weekLoyaltyChange += dayLoyaltyChange
+    weekRepChange += dayRepChange + overloadRepPenalty + elbaRepBonus
     weekExpiredLoss += expiredLoss
-    weekRegisterOverflow += registerOverflowPenalty
 
     if (expiredLoss === 0) {
       totalDaysWithoutExpiry += 1
@@ -361,10 +317,6 @@ export function processWeek(state: GameState): DayResult {
   // Apply week results to state
   const newBalance = state.balance + weekNetProfit
   const newReputation = Math.max(0, Math.min(100, state.reputation + weekRepChange))
-  const newLoyalty = Math.max(0, Math.min(100, state.loyalty + weekLoyaltyChange))
-
-  // Update quality weekly
-  updateQualityWeekly(state)
 
   // Сдвиг эффективности сотрудников за неделю (учится / халтурит)
   updateEmployeeGrowth(state)
@@ -399,18 +351,16 @@ export function processWeek(state: GameState): DayResult {
   state.weeklyEnergyRestored = false
   state.balance = Math.round(newBalance)
   state.reputation = Math.round(newReputation)
-  state.loyalty = Math.round(newLoyalty)
 
-  // Loyalty sustained bonus: max loyalty generates word-of-mouth every 5 weeks.
-  // Rewards players who invest in loyalty rather than just hitting the cap once.
-  if (newLoyalty >= 95 && state.currentWeek % 5 === 0 && !state.isGameOver && !state.isVictory) {
+  // Сарафанное радио: высокая репутация каждые 5 недель → 14 дней +10%
+  // трафика. Раньше триггер был «лояльность ≥ 95», теперь «репутация ≥ 90».
+  if (state.reputation >= 90 && state.currentWeek % 5 === 0 && !state.isGameOver && !state.isVictory) {
     state.temporaryClientMod = (state.temporaryClientMod ?? 0) + 0.10
     state.temporaryModDaysLeft = Math.max(state.temporaryModDaysLeft ?? 0, 14)
-    state.reputation = Math.min(100, state.reputation + 2)
     state.lastWeekMicroEvent = {
       icon: '💛',
       title: 'Сарафанное радио',
-      effectText: 'Постоянные клиенты советуют вас друзьям — +10% трафика на 2 недели, +2 репутации',
+      effectText: 'Постоянные клиенты советуют вас друзьям — +10% трафика на 2 недели',
     }
   }
   state.purchaseOfferedThisDay = false
@@ -436,7 +386,7 @@ export function processWeek(state: GameState): DayResult {
     netProfit: weekNetProfit,
     balance: newBalance,
     reputationChange: weekRepChange,
-    loyaltyChange: weekLoyaltyChange,
+    loyaltyChange: 0,  // мех. лояльности выпилена; поле оставлено для совместимости DayResult
     stockAfter: getTotalStock(state),
     painLossBankMissed: 0,
     painLossMarketInventory: 0,
@@ -445,7 +395,7 @@ export function processWeek(state: GameState): DayResult {
     painLossFokusBadSupplier: 0,
     painLossElbaFine: 0,
     painLossExternBlock: 0,
-    registerOverflowPenalty: weekRegisterOverflow,
+    registerOverflowPenalty: 0,
     categoryFines: {},
   }
 
@@ -651,12 +601,13 @@ export function processWeek(state: GameState): DayResult {
       state.lastDiaryEntry = { header: entry.header, body: entry.body }
       if (!state.diaryEntryWeeks) state.diaryEntryWeeks = []
       state.diaryEntryWeeks.push(state.currentWeek)
-      // Apply optional flavor effects (small reputation/loyalty nudges)
+      // Apply optional flavor effects. Раньше дневник мог двигать
+      // лояльность — теперь все мерджнуто в репутацию с половинной магнитудой.
       if (entry.reputationDelta) {
         state.reputation = Math.max(0, Math.min(100, state.reputation + entry.reputationDelta))
       }
       if (entry.loyaltyDelta) {
-        state.loyalty = Math.max(0, Math.min(100, state.loyalty + entry.loyaltyDelta))
+        state.reputation = Math.max(0, Math.min(100, state.reputation + entry.loyaltyDelta * 0.5))
       }
     }
   } else {
@@ -845,10 +796,6 @@ function generateNextWeekTeaser(state: GameState): string | null {
   if (state.reputation >= 75 && state.currentWeek >= 8) {
     return `💡 Репутация ${state.reputation} — отличный момент для рекламной кампании (Маркетинг)`
   }
-  // Низкая лояльность
-  if (state.loyalty < 40 && state.currentWeek >= 6) {
-    return `💛 Лояльность падает (${state.loyalty}). Service-тактика и качество — главные лекарства`
-  }
   // Конкурент в районе
   if ((state.temporaryClientMod ?? 0) < -0.05) {
     return `⚡ Конкурент держит вас в напряжении. Подумайте об улучшении сервиса`
@@ -903,16 +850,44 @@ function accumulateServiceSavings(state: GameState, weekRevenue: number, weekNet
   }
 }
 
+// Какие контексты сейчас активны — picker отдаст приоритет событиям,
+// привязанным к ним. Цель: «мир реагирует». После выгорания тебе
+// предложат отдохнуть; после увольнения — одинокий вечер с раздумьями;
+// на пик-неделе — благодарный клиент. Без контекста привязки события
+// остаются в обычном vibe-pool.
+function getActiveMicroContexts(state: GameState): Set<string> {
+  const ctx = new Set<string>()
+  if (state.burnoutWarningActive === true) ctx.add('after_burnout')
+  if ((state.consecutiveOverloadDays ?? 0) >= 3) ctx.add('after_overload')
+  if ((state.reputation ?? 50) < 35) ctx.add('after_low_rep')
+  // «Крупная неделя» — выручка значимо выше базовой нормы
+  // (baseClients × avgCheck × 7 × 1.5 как порог).
+  const cfg = (BUSINESS_CONFIGS as any)[state.businessType]
+  const expectedWeekly = cfg ? cfg.baseClients * cfg.avgCheck * 7 : 50000
+  if ((state.lastDayResult?.revenue ?? 0) > expectedWeekly * 1.5) ctx.add('after_big_week')
+  // Свежий найм / увольнение — за последние 2 недели.
+  const currentDay = (state.currentWeek ?? 1) * 7
+  if ((state.employees ?? []).some(e => currentDay - (e.hireDay ?? 0) < 14)) {
+    ctx.add('after_hire')
+  }
+  const recentFire = (state.decisionLog ?? [])
+    .slice(-5)
+    .some(e => e.text?.startsWith('Расстались:') && (state.currentWeek - e.week) <= 2)
+  if (recentFire) ctx.add('after_fire')
+  return ctx
+}
+
 function applyWeeklyMicroEvent(state: GameState): void {
   // Спринт 5e: state-aware picker.
   //   • Низкая энергия / burnoutWarning → bias на 'good' (восстановление)
   //   • Высокая энергия → больше 'rough' допустимо («жизнь продолжается»)
+  //   • Контекстные триггеры (after_burnout/after_fire/...) поднимают
+  //     соответствующие события в приоритет: 70% шанс выбрать из них.
   //   • Не повторяем события из state.seenMicroEvents в текущем цикле
   //   • Когда все события показаны — массив сбрасывается, начинается новый цикл
-  // Раньше picker был детерминированным: (week-1) % len → одна и та же
-  // последовательность между прогонами, что делало баланс предсказуемым.
   const energy = state.entrepreneurEnergy ?? 100
   const burnoutWarn = state.burnoutWarningActive === true
+  const activeContexts = getActiveMicroContexts(state)
 
   // Распределение vibe по состоянию игрока
   let vibeWeights: Record<'good' | 'neutral' | 'rough', number>
@@ -934,20 +909,33 @@ function applyWeeklyMicroEvent(state: GameState): void {
     : 'rough'
 
   const seen = new Set(state.seenMicroEvents ?? [])
-  // Фильтр: нужный vibe + не показывался в текущем цикле
-  let candidates = DAILY_MICRO_EVENTS.filter(m => m.vibe === targetVibe && !seen.has(m.id))
-  // Если все события этого vibe показаны — сбрасываем seen и пробуем снова
-  if (candidates.length === 0) {
-    state.seenMicroEvents = []
-    candidates = DAILY_MICRO_EVENTS.filter(m => m.vibe === targetVibe)
-  }
-  // Если совсем нет (vibe пустой) — fallback на любое неувиденное
-  if (candidates.length === 0) {
-    candidates = DAILY_MICRO_EVENTS.filter(m => !seen.has(m.id))
-    if (candidates.length === 0) candidates = DAILY_MICRO_EVENTS
+
+  // 1) Сначала ищем события с активным контекстом (не показанные).
+  //    70% шанс взять из контекстных кандидатов, если они есть — это
+  //    делает реакцию мира заметной, но не предсказуемой.
+  let micro: typeof DAILY_MICRO_EVENTS[0] | undefined
+  if (activeContexts.size > 0 && Math.random() < 0.70) {
+    const contextual = DAILY_MICRO_EVENTS.filter(
+      m => m.contextTrigger && activeContexts.has(m.contextTrigger) && !seen.has(m.id),
+    )
+    if (contextual.length > 0) {
+      micro = contextual[Math.floor(Math.random() * contextual.length)]
+    }
   }
 
-  const micro = candidates[Math.floor(Math.random() * candidates.length)]
+  // 2) Иначе — обычный vibe-пул (как раньше).
+  if (!micro) {
+    let candidates = DAILY_MICRO_EVENTS.filter(m => m.vibe === targetVibe && !seen.has(m.id))
+    if (candidates.length === 0) {
+      state.seenMicroEvents = []
+      candidates = DAILY_MICRO_EVENTS.filter(m => m.vibe === targetVibe)
+    }
+    if (candidates.length === 0) {
+      candidates = DAILY_MICRO_EVENTS.filter(m => !seen.has(m.id))
+      if (candidates.length === 0) candidates = DAILY_MICRO_EVENTS as any
+    }
+    micro = candidates[Math.floor(Math.random() * candidates.length)]
+  }
   if (!micro) return
 
   // Ограничиваем массив seenMicroEvents — в длинной игре может расти

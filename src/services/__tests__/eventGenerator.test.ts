@@ -199,18 +199,20 @@ describe('applyEventConsequence', () => {
     expect(state.reputation).toBe(0)
   })
 
-  it('applies loyalty delta (clamped to 0-100)', () => {
-    const state = makeState({ loyalty: 95 })
+  it('routes legacy loyaltyDelta into reputation × 0.5 (clamped to 0-100)', () => {
+    // Лояльность как скаляр выпилена; loyaltyDelta события переадресуется
+    // в репутацию с половинной магнитудой. +20 loyalty → +10 reputation.
+    const state = makeState({ reputation: 50 })
     const event = {
       id: 'TEST',
       day: 1,
       title: '',
       description: '',
       isResolved: false,
-      options: [{ id: 'opt', text: '', consequences: { loyaltyDelta: 15 } }],
+      options: [{ id: 'opt', text: '', consequences: { loyaltyDelta: 20 } }],
     }
     applyEventConsequence(state, event, 'opt')
-    expect(state.loyalty).toBe(100)
+    expect(state.reputation).toBe(60)
   })
 
   it('sets temporary client modifier', () => {

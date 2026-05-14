@@ -124,7 +124,6 @@ describe('calculateSynergyModifiers', () => {
     expect(mods.clientBonus).toBe(0)
     expect(mods.revenueBonus).toBe(0)
     expect(mods.taxSaving).toBe(0)
-    expect(mods.loyaltyBonus).toBe(0)
     expect(mods.capacityBonus).toBe(0)
   })
 

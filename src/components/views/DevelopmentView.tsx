@@ -175,14 +175,7 @@ function TierSection() {
                   actual={repStatus.label} />
               )
             })()}
-            {next.unlockQuality !== undefined && (() => {
-              const qualStatus = getDimensionStatus(state.qualityLevel ?? 0)
-              return (
-                <Requirement met={(state.qualityLevel ?? 0) >= next.unlockQuality}
-                  label="Качество держится"
-                  actual={qualStatus.label} />
-              )
-            })()}
+            {/* Скаляр качества выпилен — его гейт мерджнут в unlockReputation. */}
             <Requirement met={state.balance >= next.upgradeCost}
               label={`Стоимость апгрейда: ${next.upgradeCost.toLocaleString('ru-RU')} ₽`}
               actual={state.balance >= next.upgradeCost ? 'хватает' : 'не хватает'} />

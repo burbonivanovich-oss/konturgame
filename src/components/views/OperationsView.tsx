@@ -33,7 +33,7 @@ export default function OperationsView({ onShowHireModal }: OperationsViewProps)
     toggleCategory, employees,
     fireEmployee,
     currentWeek, businessTier,
-    cashRegisters,
+    fiscalDriveOwned,
     onboardingStage, onboardingStepIndex, onboardingCompleted,
   } = useGameStore()
 
@@ -47,16 +47,15 @@ export default function OperationsView({ onShowHireModal }: OperationsViewProps)
   const nextStageConfig = nextStage ? STAGE_CONFIG[nextStage] : null
   const atHireLimit = employees.length >= stageConfig.maxEmployees
 
-  // Pulse the "Купить кассу" button when onboarding asks for buy_register
+  // Pulse the "Купить кассу" button when onboarding asks for buy_register.
+  // После рефакторинга касс это compliance-шаг (54-ФЗ), не апгрейд.
   const isRegisterTargeted = (() => {
     if (onboardingCompleted) return false
     const stage = ONBOARDING_STAGES[onboardingStage as 0|1|2|3|4]
     if (!stage) return false
     const step = stage.steps[onboardingStepIndex ?? 0]
-    return step?.requiresAction === 'buy_register' && (cashRegisters?.length ?? 0) === 0
+    return step?.requiresAction === 'buy_register' && !fiscalDriveOwned
   })()
-
-  const totalRegisters = (cashRegisters ?? []).reduce((s, r) => s + r.count, 0)
 
   return (
     <div style={{
@@ -73,9 +72,9 @@ export default function OperationsView({ onShowHireModal }: OperationsViewProps)
       {/* Cash registers — needed for legal POS, onboarding-targeted at stage 1 */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>КАССЫ</div>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>КАССА · 54-ФЗ</div>
           <span style={{ fontSize: 11, color: K.muted }}>
-            {totalRegisters > 0 ? `${totalRegisters} установлено` : 'не установлено'}
+            {fiscalDriveOwned ? 'compliance OK' : 'не установлено'}
           </span>
         </div>
         <div style={{
@@ -88,33 +87,35 @@ export default function OperationsView({ onShowHireModal }: OperationsViewProps)
             background: K.bone, color: K.ink,
             display: 'grid', placeItems: 'center', fontSize: 22, flexShrink: 0,
           }}>
-            🧾
+            {fiscalDriveOwned ? '✅' : '🧾'}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: K.ink }}>
-              {totalRegisters === 0 ? 'Касса не установлена' : `Касс: ${totalRegisters}`}
+              {fiscalDriveOwned ? 'ККТ + ФН установлены' : 'Касса не установлена'}
             </div>
             <div style={{ fontSize: 12, color: K.muted, marginTop: 2 }}>
-              {totalRegisters === 0
-                ? 'Без кассы продажи нелегальны — штрафы ФНС'
-                : 'Хотите больше пропускной способности? Добавьте ещё.'}
+              {fiscalDriveOwned
+                ? 'Чеки уходят в ФНС через ОФД, штрафы по 54-ФЗ не грозят.'
+                : 'Без кассы и ФН продажи нелегальны — штрафы ФНС до 10 000 ₽ за чек.'}
             </div>
           </div>
-          <button
-            onClick={() => setShowRegisterModal(true)}
-            className={isRegisterTargeted ? 'nav-pulse' : undefined}
-            style={{
-              padding: '11px 18px', borderRadius: 10, border: 'none',
-              background: isRegisterTargeted ? K.orange : totalRegisters === 0 ? K.ink : K.bone,
-              color: isRegisterTargeted || totalRegisters === 0 ? K.white : K.ink,
-              fontSize: 13, fontWeight: 800, cursor: 'pointer',
-              fontFamily: 'inherit', flexShrink: 0,
-              outline: isRegisterTargeted ? `2px solid ${K.orange}` : 'none',
-              boxShadow: isRegisterTargeted ? '0 2px 8px rgba(255,107,0,0.35)' : 'none',
-            }}
-          >
-            {totalRegisters === 0 ? 'Купить кассу' : 'Купить ещё'}
-          </button>
+          {!fiscalDriveOwned && (
+            <button
+              onClick={() => setShowRegisterModal(true)}
+              className={isRegisterTargeted ? 'nav-pulse' : undefined}
+              style={{
+                padding: '11px 18px', borderRadius: 10, border: 'none',
+                background: isRegisterTargeted ? K.orange : K.ink,
+                color: K.white,
+                fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                fontFamily: 'inherit', flexShrink: 0,
+                outline: isRegisterTargeted ? `2px solid ${K.orange}` : 'none',
+                boxShadow: isRegisterTargeted ? '0 2px 8px rgba(255,107,0,0.35)' : 'none',
+              }}
+            >
+              Купить кассу
+            </button>
+          )}
         </div>
       </div>
 

@@ -1,13 +1,12 @@
 import { create } from 'zustand'
 import type {
   GameState, BusinessType, ServiceType, Service, DayResult, Event,
-  AdCampaign, CashRegisterType, CashRegister, OnboardingStage,
+  AdCampaign, OnboardingStage,
   CampaignROI, MilestoneStatus, WeekPhase, NPC, PlayerBackstory, NpcMemoryEntry,
   DecisionLogEntry, WeeklyTactic, EmployeePosition,
 } from '../types/game'
 import { SERVICES_CONFIG, BUSINESS_CONFIGS, ECONOMY_CONSTANTS, MAX_ACTIVE_CAMPAIGNS } from '../constants/business'
 import { ONBOARDING_STAGES, SERVICE_UNLOCK_MAP } from '../constants/onboarding'
-import { CASH_REGISTER_CONFIGS, REGISTER_COMBO_DISCOUNTS } from '../constants/cashRegisters'
 import { getDefaultCategories } from '../services/assortmentEngine'
 import { createEmployee } from '../constants/employees'
 import { checkWeekBlocked, processWeek } from '../services/weekCalculator'
@@ -49,7 +48,7 @@ const createInitialState = (businessType: BusinessType): GameState => {
     balance: config.startBalance,
     savedBalance: 0,
     reputation: 50,
-    loyalty: 55,
+    loyalty: 55,  // оставлено для совместимости со старыми сэйвами; не используется
     entrepreneurEnergy: ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY,
 
     stock: [],
@@ -102,7 +101,7 @@ const createInitialState = (businessType: BusinessType): GameState => {
     unlockedServices: SERVICE_UNLOCK_MAP[0],
     serviceDeactivatedWeeks: {},
 
-    // Cash registers
+    // Касса + ФН: один compliance-флаг по 54-ФЗ.
     cashRegisters: [],
     fiscalDriveOwned: false,
 
@@ -136,9 +135,6 @@ const createInitialState = (businessType: BusinessType): GameState => {
 
     // Employees system (NEW v2.0)
     employees: [],
-
-    // Quality of service/product (NEW v2.0)
-    qualityLevel: 50,
 
     // Competitor events tracking (UPDATED v2.0)
     weeksSinceCompetitorEvent: 0,
@@ -208,6 +204,7 @@ interface GameStoreActions {
   addBalance: (delta: number) => void
   setReputation: (value: number) => void
   addReputation: (delta: number) => void
+  // Лояльность выпилена как скаляр; setLoyalty/addLoyalty переадресуют в репутацию × 0.5.
   setLoyalty: (value: number) => void
   addLoyalty: (delta: number) => void
 
@@ -299,8 +296,9 @@ interface GameStoreActions {
   skipOnboardingStep: () => void
   claimEmergencyGrant: () => void
 
-  // Cash registers
-  buyCashRegister: (type: CashRegisterType) => boolean
+  // Cash register compliance — one-time 54-ФЗ покупка (ККТ + ФН).
+  // Раньше было 3 типа касс с throughput-механикой; теперь это compliance-шаг.
+  purchaseFiscalCompliance: () => boolean
 
   // Assortment
   toggleCategory: (categoryId: string) => void
@@ -316,7 +314,7 @@ interface GameStoreActions {
   runTrainingSession: () => boolean  // costs 20 energy, +0.1 efficiency to all employees (capped at max)
 
   // Quality level
-  adjustQualityLevel: (delta: number) => void
+  // adjustQualityLevel удалён вместе со скаляром качества.
 
   // Loans
   takeLoan: (amount: number, type: 'micro' | 'standard' | 'long-term') => boolean
@@ -367,8 +365,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY,
           baseState.entrepreneurEnergy + (bonus.startingEnergyDelta ?? 0)
         ),
-        reputation: Math.min(100, baseState.reputation + (bonus.startingReputationDelta ?? 0)),
-        loyalty: Math.min(100, baseState.loyalty + (bonus.startingLoyaltyDelta ?? 0)),
+        reputation: Math.min(100, baseState.reputation + (bonus.startingReputationDelta ?? 0) + (bonus.startingLoyaltyDelta ?? 0) * 0.5),
       }
       set(newState)
       saveToStorage(newState)
@@ -521,16 +518,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }))
     },
 
-    setLoyalty: (value) => {
-      set((state) => ({
-        loyalty: Math.max(0, Math.min(ECONOMY_CONSTANTS.MAX_LOYALTY, value)),
-        lastUpdated: Date.now(),
-      }))
-    },
-
+    // Лояльность выпилена; setLoyalty молча игнорирует, addLoyalty
+    // переадресует в репутацию × 0.5 (для совместимости с external callers).
+    setLoyalty: () => {},
     addLoyalty: (delta) => {
       set((state) => ({
-        loyalty: Math.max(0, Math.min(ECONOMY_CONSTANTS.MAX_LOYALTY, state.loyalty + delta)),
+        reputation: Math.max(0, Math.min(100, state.reputation + delta * 0.5)),
         lastUpdated: Date.now(),
       }))
     },
@@ -1065,45 +1058,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }))
     },
 
-    // Cash registers
-    buyCashRegister: (type: CashRegisterType): boolean => {
+    // 54-ФЗ compliance: одна покупка ККТ + фискальный накопитель.
+    // Никаких типов, throughput, поломок, апгрейдов — это шаг про закон,
+    // не про развитие. После покупки выручка не блокируется штрафами ФНС.
+    purchaseFiscalCompliance: (): boolean => {
       const state = get()
-      const config = CASH_REGISTER_CONFIGS[type]
-      if (!config) return false
-
-      const totalExisting = state.cashRegisters.reduce((s, r) => s + r.count, 0)
-      let cost = config.cost
-      if (totalExisting >= 2) cost = Math.round(cost * (1 - (REGISTER_COMBO_DISCOUNTS[3] ?? 0)))
-      else if (totalExisting >= 1) cost = Math.round(cost * (1 - (REGISTER_COMBO_DISCOUNTS[2] ?? 0)))
-
-      // Спринт 5e: к ПЕРВОЙ кассе обязательно покупается фискальный
-      // накопитель (54-ФЗ требует). +8 000₽ к стоимости первой покупки.
-      const FISCAL_DRIVE_COST = 8000
-      const isFirstRegister = totalExisting === 0 && !state.fiscalDriveOwned
-      const totalCost = isFirstRegister ? cost + FISCAL_DRIVE_COST : cost
-
-      if (state.balance < totalCost) return false
-
-      set((s) => {
-        const existing = s.cashRegisters.find((r) => r.type === type)
-        let newRegisters: CashRegister[]
-        if (existing) {
-          newRegisters = s.cashRegisters.map((r) =>
-            r.type === type ? { ...r, count: r.count + 1 } : r
-          )
-        } else {
-          newRegisters = [
-            ...s.cashRegisters,
-            { type, count: 1, purchaseDay: s.currentWeek * 7 + s.dayOfWeek },
-          ]
-        }
-        return {
-          cashRegisters: newRegisters,
-          fiscalDriveOwned: isFirstRegister ? true : s.fiscalDriveOwned,
-          balance: s.balance - totalCost,
-          lastUpdated: Date.now(),
-        }
-      })
+      if (state.fiscalDriveOwned) return false
+      const COMPLIANCE_COST = 24000
+      if (state.balance < COMPLIANCE_COST) return false
+      set((s) => ({
+        fiscalDriveOwned: true,
+        balance: s.balance - COMPLIANCE_COST,
+        lastUpdated: Date.now(),
+      }))
       return true
     },
 
@@ -1185,13 +1152,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return true
     },
 
-    // Quality level
-    adjustQualityLevel: (delta: number) => {
-      set((state) => ({
-        qualityLevel: Math.max(0, Math.min(100, state.qualityLevel + delta)),
-        lastUpdated: Date.now(),
-      }))
-    },
 
     // Loans
     takeLoan: (amount: number, type: 'micro' | 'standard' | 'long-term') => {
@@ -1423,7 +1383,7 @@ function extractState(state: any): GameState {
     cashRegisters, enabledCategories, promoCodesRevealed,
     daysBalanceNegative, competitorEventTriggered, lastDayPainLosses, bundlePromoShown,
     // v2.0 new fields
-    employees, qualityLevel, weeksSinceCompetitorEvent,
+    employees, weeksSinceCompetitorEvent,
     // v2.1 new fields
     loans,
     // v2.2 new fields
@@ -1482,7 +1442,6 @@ function extractState(state: any): GameState {
     lastWeekMicroEvent: null,
     // v2.0 fields with defaults for save compatibility
     employees: employees ?? [],
-    qualityLevel: qualityLevel ?? 50,
     weeksSinceCompetitorEvent: weeksSinceCompetitorEvent ?? 0,
     // v2.1 fields with defaults
     loans: loans ?? [],

@@ -518,11 +518,11 @@ export interface GameState {
   // Cooldown: week when each service was last deactivated (can't re-enable for 2 weeks)
   serviceDeactivatedWeeks?: Partial<Record<ServiceType, number>>
 
-  // Cash registers
+  // Касса + фискальный накопитель — одноразовая 54-ФЗ покупка (24 000₽).
+  // Раньше было 3 типа касс с throughput-механикой и поломками; теперь это
+  // compliance-флаг (купил → закон выполнен, ФНС не штрафует). Поле
+  // cashRegisters оставлено для совместимости со старыми сэйвами, всегда [].
   cashRegisters: CashRegister[]
-  // Спринт 5e: фискальный накопитель — обязательный по 54-ФЗ компонент.
-  // Покупается ВМЕСТЕ с первой кассой (бандл, +8 000₽). Без него ОФД
-  // не может передавать чеки в ФНС, штраф до 10К за каждый чек.
   fiscalDriveOwned?: boolean
 
   // Assortment categories
@@ -559,8 +559,10 @@ export interface GameState {
   // Employees system (NEW v2.0)
   employees: Employee[]
 
-  // Quality of service/product (NEW v2.0) - affects reputation and loyalty
-  qualityLevel: number  // 0-100, starts at 50
+  // qualityLevel оставлен как optional для совместимости со старыми
+  // сэйвами. Скаляр выпилен: его эффекты дублировали репутацию и
+  // мерджнуты обратно в неё. Не читается нигде в продакшене.
+  qualityLevel?: number
 
   // Competitor events tracking (UPDATED v2.0)
   weeksSinceCompetitorEvent: number  // Track weeks since last competitor event

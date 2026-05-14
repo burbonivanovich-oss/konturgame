@@ -40,7 +40,7 @@ const DAYS = 7
  * скипнуть, если не хочет смотреть.
  */
 export function SimulationOverlay({ onContinue }: SimulationOverlayProps) {
-  const { lastDayResult, balance, services, weeklyTactic, lastWeekPainLosses } = useGameStore()
+  const { lastDayResult, balance, services, weeklyTactic } = useGameStore()
 
   // Build chips from this week's data — выбор значимых моментов.
   const chips = useMemo<SimulationChip[]>(() => {
@@ -66,37 +66,14 @@ export function SimulationOverlay({ onContinue }: SimulationOverlayProps) {
         amount: -lastDayResult.subscriptionCost, color: K.muted, day: 0,
       })
     }
-    if (lastDayResult.registerOverflowPenalty > 0) {
-      out.push({
-        emoji: '⏳', label: 'Очередь упустила клиентов',
-        amount: -lastDayResult.registerOverflowPenalty, color: K.orange, day: 2,
-      })
-    }
+    // Раньше тут была строка «Очередь упустила клиентов» по
+    // registerOverflowPenalty — мех. кассы как throughput удалена,
+    // штраф теперь всегда 0.
 
-    // Pain losses (top-2 most painful) — переведённые на человеческий язык
-    if (lastWeekPainLosses && lastWeekPainLosses.total > 0) {
-      const PAIN_LABELS: Record<string, { emoji: string; text: string }> = {
-        bank: { emoji: '💳', text: 'Без эквайринга — клиенты ушли' },
-        market: { emoji: '📦', text: 'Без Маркета — лишняя порча' },
-        ofd: { emoji: '🧾', text: 'Без ОФД — налоговый штраф' },
-        diadoc: { emoji: '📄', text: 'Без Диадока — задержка ЭДО' },
-        fokus: { emoji: '🔍', text: 'Без Фокуса — плохой поставщик' },
-        elba: { emoji: '📊', text: 'Без Эльбы — пени за отчёт' },
-        extern: { emoji: '🏛', text: 'Без Экстерна — расхождение НДС' },
-      }
-      const top = (Object.entries(lastWeekPainLosses) as [string, number][])
-        .filter(([k, v]) => k !== 'total' && v > 0)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 2)
-      top.forEach(([key, amount], idx) => {
-        const meta = PAIN_LABELS[key]
-        if (!meta) return
-        out.push({
-          emoji: meta.emoji, label: meta.text,
-          amount: -Math.round(amount), color: K.bad, day: 3 + idx,
-        })
-      })
-    }
+    // Pain Engine как штраф к балансу выпилен — раньше тут показывались
+    // top-2 потери от отсутствующих сервисов. Теперь оценка «без сервиса
+    // теряете ~X ₽/мес» живёт одной строчкой на карточке сервиса в
+    // экране «Экосистема».
 
     // ── Positive chips ────────────────────────────────────────────
     const activeCount = Object.values(services).filter(s => s.isActive).length
@@ -121,7 +98,7 @@ export function SimulationOverlay({ onContinue }: SimulationOverlayProps) {
     }
 
     return out
-  }, [lastDayResult, services, weeklyTactic, lastWeekPainLosses])
+  }, [lastDayResult, services, weeklyTactic])
 
   const startBalance = useMemo(() => {
     if (!lastDayResult) return balance

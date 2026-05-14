@@ -10,7 +10,7 @@ export interface BusinessTierConfig {
   unlockWeek: number
   unlockBalance: number
   unlockReputation: number
-  unlockQuality?: number      // optional quality gate (cafe & salon)
+  // unlockQuality удалён вместе с скаляром качества (мерджнут в репутацию).
 
   // One-time price to upgrade INTO this tier (paid from balance)
   upgradeCost: number
@@ -82,7 +82,6 @@ export const BUSINESS_TIERS: Record<BusinessType, BusinessTierConfig[]> = {
       unlockWeek: 10,
       unlockBalance: 180_000,
       unlockReputation: 60,
-      unlockQuality: 60,
       upgradeCost: 150_000,
       multipliers: { clients: 1.4, check: 1.5, rent: 1.5, baseSalary: 1.4, capacity: 1.3 },
     },
@@ -94,7 +93,6 @@ export const BUSINESS_TIERS: Record<BusinessType, BusinessTierConfig[]> = {
       unlockWeek: 22,
       unlockBalance: 600_000,
       unlockReputation: 75,
-      unlockQuality: 75,
       upgradeCost: 400_000,
       multipliers: { clients: 1.8, check: 2.5, rent: 2.5, baseSalary: 2.0, capacity: 1.5 },
     },

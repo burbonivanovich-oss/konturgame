@@ -77,23 +77,21 @@ describe('GameStore', () => {
       expect(useGameStore.getState().reputation).toBe(100)
     })
 
-    it('should clamp loyalty between 0 and 100', () => {
+    // Лояльность как скаляр выпилена. setLoyalty — no-op; addLoyalty
+    // переадресует в репутацию × 0.5.
+    it('setLoyalty is a no-op', () => {
       const { setLoyalty } = useGameStore.getState()
-
+      const before = useGameStore.getState().reputation
       setLoyalty(200)
-      expect(useGameStore.getState().loyalty).toBe(100)
-
-      setLoyalty(-50)
-      expect(useGameStore.getState().loyalty).toBe(0)
-
-      setLoyalty(45)
-      expect(useGameStore.getState().loyalty).toBe(45)
+      expect(useGameStore.getState().reputation).toBe(before)
     })
 
-    it('should add loyalty delta with clamping', () => {
+    it('addLoyalty routes to reputation × 0.5', () => {
+      const startRep = 50
+      useGameStore.setState({ reputation: startRep })
       const { addLoyalty } = useGameStore.getState()
-      addLoyalty(-60)
-      expect(useGameStore.getState().loyalty).toBe(0)
+      addLoyalty(20)  // → +10 reputation
+      expect(useGameStore.getState().reputation).toBe(startRep + 10)
     })
   })
 
