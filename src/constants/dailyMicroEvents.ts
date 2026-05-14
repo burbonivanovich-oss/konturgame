@@ -36,6 +36,11 @@ export interface DailyMicroEvent {
   vibe: 'rough' | 'neutral' | 'good'
   // Опциональный триггер — если контекст активен, событие в приоритете.
   contextTrigger?: MicroEventContext
+  // Если true — событие фильтруется picker'ом, когда у игрока нет
+  // сотрудников (employees.length === 0). Без этого «Линейка команды»
+  // и «Зарплата сотрудникам» прилетали в solo-прогонах, что выглядело
+  // как баг.
+  requiresEmployees?: boolean
   options: MicroEventOption[]
 }
 
@@ -92,6 +97,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Собрал сотрудников, поговорил о целях на неделю.',
     icon: '👥',
     vibe: 'good',
+    requiresEmployees: true,
     options: [
       {
         id: 'inspiring_talk',
@@ -494,6 +500,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Конец недели - нужно платить зарплату персоналу. (Уже учтена в расходах)',
     icon: '💰',
     vibe: 'neutral',
+    requiresEmployees: true,
     options: [
       {
         id: 'pay_ontime',

@@ -927,6 +927,13 @@ function applyWeeklyMicroEvent(state: GameState): void {
     : 'rough'
 
   const seen = new Set(state.seenMicroEvents ?? [])
+  const hasEmployees = (state.employees?.length ?? 0) > 0
+
+  // requiresEmployees: события про команду/зарплату не должны прилетать
+  // в solo-прогонах (player жалуется «событие про сотрудников когда у
+  // нас сотрудников нет»).
+  const eligibilityFilter = (m: typeof DAILY_MICRO_EVENTS[0]): boolean =>
+    !m.requiresEmployees || hasEmployees
 
   // 1) Сначала ищем события с активным контекстом (не показанные).
   //    70% шанс взять из контекстных кандидатов, если они есть — это
@@ -934,7 +941,7 @@ function applyWeeklyMicroEvent(state: GameState): void {
   let micro: typeof DAILY_MICRO_EVENTS[0] | undefined
   if (activeContexts.size > 0 && Math.random() < 0.70) {
     const contextual = DAILY_MICRO_EVENTS.filter(
-      m => m.contextTrigger && activeContexts.has(m.contextTrigger) && !seen.has(m.id),
+      m => m.contextTrigger && activeContexts.has(m.contextTrigger) && !seen.has(m.id) && eligibilityFilter(m),
     )
     if (contextual.length > 0) {
       micro = contextual[Math.floor(Math.random() * contextual.length)]
@@ -943,14 +950,14 @@ function applyWeeklyMicroEvent(state: GameState): void {
 
   // 2) Иначе — обычный vibe-пул (как раньше).
   if (!micro) {
-    let candidates = DAILY_MICRO_EVENTS.filter(m => m.vibe === targetVibe && !seen.has(m.id))
+    let candidates = DAILY_MICRO_EVENTS.filter(m => m.vibe === targetVibe && !seen.has(m.id) && eligibilityFilter(m))
     if (candidates.length === 0) {
       state.seenMicroEvents = []
-      candidates = DAILY_MICRO_EVENTS.filter(m => m.vibe === targetVibe)
+      candidates = DAILY_MICRO_EVENTS.filter(m => m.vibe === targetVibe && eligibilityFilter(m))
     }
     if (candidates.length === 0) {
-      candidates = DAILY_MICRO_EVENTS.filter(m => !seen.has(m.id))
-      if (candidates.length === 0) candidates = DAILY_MICRO_EVENTS as any
+      candidates = DAILY_MICRO_EVENTS.filter(m => !seen.has(m.id) && eligibilityFilter(m))
+      if (candidates.length === 0) candidates = DAILY_MICRO_EVENTS.filter(eligibilityFilter) as any
     }
     micro = candidates[Math.floor(Math.random() * candidates.length)]
   }

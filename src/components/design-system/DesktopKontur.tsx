@@ -412,19 +412,27 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
                     <button
                       onClick={() => handleToggle(s.id, false)}
                       disabled={balance < s.annualPrice}
+                      // Спринт 6: подсветка кнопки Подключить, когда онбординг
+                      // именно её ждёт (раньше пульсировала только карточка
+                      // целиком — кнопка терялась).
+                      className={isOnboardingTarget && balance >= s.annualPrice ? 'nav-pulse' : undefined}
                       style={{
-                        border: 'none',
+                        border: isOnboardingTarget ? `2px solid ${K.orange}` : 'none',
                         cursor: balance < s.annualPrice ? 'not-allowed' : 'pointer',
                         fontFamily: 'inherit',
                         padding: '6px 12px', borderRadius: 999,
-                        background: balance >= s.annualPrice ? K.ink : 'rgba(0,0,0,0.1)',
+                        background: isOnboardingTarget && balance >= s.annualPrice
+                          ? K.orange
+                          : balance >= s.annualPrice ? K.ink : 'rgba(0,0,0,0.1)',
                         color: balance >= s.annualPrice ? '#fff' : K.muted,
                         fontSize: 11, fontWeight: 700,
                         opacity: balance >= s.annualPrice ? 1 : 0.6,
                         transition: 'opacity 0.2s',
+                        boxShadow: isOnboardingTarget && balance >= s.annualPrice
+                          ? '0 2px 8px rgba(255,107,0,0.45)' : 'none',
                       }}
                     >
-                      Подключить
+                      Подключить{isOnboardingTarget ? ' →' : ''}
                     </button>
                   </>
                 ) : (

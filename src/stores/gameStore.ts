@@ -449,18 +449,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
         weeklyBonus += sub.energyPerWeek
       }
 
-      // Partial restoration: +40 per week (not full reset).
-      // Sustained overwork with many employees will gradually drain energy to 0.
+      // Partial restoration: base +30/week (was +42 — user'у казалось,
+      // что «энергия слишком медленно убывает», т.е. neutral solo-игра
+      // выходила в плюс +6/нед и вообще не давила). Снижение базы +
+      // ослабленный calm дают стабильное лёгкое давление при отсутствии
+      // тактики и правильное «лекарство» при выборе calm.
+      //
+      // Расчёт post-fix (solo, без сотрудников, без upgrade'ов):
+      //   • shop neutral (cost 36): -6/нед — burnout к W17 без действий
+      //   • shop aggressive (cost 44.75): -14.75/нед — burnout к W7
+      //   • shop calm (cost 25.5 после +10.5 от calm): +4.5/нед — мягко
+      //   • cafe aggressive (cost 50.75): -20.75/нед — burnout к W5
+      //   • salon aggressive (cost 43.75): -13.75/нед — burnout к W7
       const currentEnergy = get().entrepreneurEnergy
       const restoredEnergy = Math.min(
-        // Спринт 5b: 42. С базовой стоимостью (shop/salon 35 = 20+15 solo,
-        // cafe 42 = 27+15) + aggressive -7/нед + микрособытий (-1.5/нед):
-        //   • shop/salon solo+aggressive: 35+7-42 = 0, -1.5 с микро →
-        //     устойчивы при aggressive, риск к концу года.
-        //   • cafe solo+aggressive: 42+7-42 = 7/нед нетто, -8.5 с микро
-        //     → выгорание к W12-15 — общепит выматывает быстрее.
-        //   • calm/service во всех типах остаются устойчивы.
-        currentEnergy + 42 + weeklyBonus,
+        currentEnergy + 30 + weeklyBonus,
         ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY
       )
 
