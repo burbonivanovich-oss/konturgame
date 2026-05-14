@@ -21,7 +21,6 @@ import { WeekResultsOverlay } from './WeekResultsOverlay'
 import { EventPhaseOverlay } from './EventPhaseOverlay'
 import { SimulationOverlay } from './SimulationOverlay'
 import { DesktopKontur } from './design-system/DesktopKontur'
-import { WarehouseView } from './views/WarehouseView'
 import { FinanceView } from './views/FinanceView'
 import OperationsView from './views/OperationsView'
 import StatisticsView from './views/StatisticsView'
@@ -835,7 +834,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   }
 
   const UNLOCK_TOAST_LABELS: Partial<Record<NavId, string>> = {
-    warehouse:   'Раздел «Склад» разблокирован',
     operations:  'Раздел «Управление» разблокирован',
     development: 'Раздел «Развитие» разблокирован',
     statistics:  'Раздел «Статистика» разблокирован',
@@ -962,7 +960,6 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
         </div>
       )}
 
-      {activeView === 'warehouse' && <WarehouseView />}
       {activeView === 'finance' && <FinanceView />}
       {activeView === 'operations' && (
         <OperationsView

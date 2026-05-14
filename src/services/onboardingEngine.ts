@@ -176,6 +176,21 @@ export function getBlockedActionStep(state: GameState): OnboardingStep | null {
   return step
 }
 
+// Проверка day-gate для перехода в следующую стадию. Используется
+// OnboardingPanel'ом чтобы кнопка «Понял →» на последнем шаге стадии
+// не перепрыгивала в Stage 2 на W2, опережая first-encounter события
+// сервисов. Раньше advanceOnboardingStage в store не проверял дату —
+// игрок быстро закрывал bank+ФН+ОФД в W1-W2 и его сразу пушило
+// «Подключите Маркет» вместо ожидания дня 70.
+export function isNextStageDayGated(state: GameState): boolean {
+  const currentStage = state.onboardingStage
+  if (currentStage >= 4) return false
+  const nextStageConfig = ONBOARDING_STAGES[currentStage + 1]
+  if (!nextStageConfig) return false
+  const currentDay = (state.currentWeek - 1) * 7 + (state.dayOfWeek ?? 0) + 1
+  return currentDay < nextStageConfig.dayRange[0]
+}
+
 export function advanceOnboardingIfNeeded(state: GameState): void {
   if (state.onboardingCompleted) return
 

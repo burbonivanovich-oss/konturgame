@@ -3,8 +3,12 @@ import { KIcon } from './KIcon'
 import { Row, Col, Card } from './primitives'
 import type { BusinessType, PersonalGoal } from '../../types/game'
 
+// 'warehouse' выпилен — он дублировал секцию «Ассортимент» в OperationsView
+// (та же логика toggle категорий, тот же список). Уникальной информации
+// или действий у вкладки не было. Stock batches (партии с FIFO/expiry)
+// живут отдельно на дашборде и в stockManager — их это не касается.
 type NavId = 'dashboard' | 'ecosystem' | 'finance' | 'development' | 'operations' |
-             'warehouse' | 'statistics' | 'journal'
+             'statistics' | 'journal'
 
 export interface NavItem {
   id: NavId
@@ -17,7 +21,6 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'dashboard',   label: 'Дневной цикл', icon: 'dashboard'               },
   { id: 'ecosystem',   label: 'Экосистема',   icon: 'eco'                     },
   { id: 'finance',     label: 'Финансы',      icon: 'finance'                 },
-  { id: 'warehouse',   label: 'Склад',        icon: 'warehouse', unlocksAtWeek: 2  },
   { id: 'operations',  label: 'Состав',       icon: 'ops'                          },
   { id: 'development', label: 'Развитие',     icon: 'upgrade',   unlocksAtWeek: 2  },
   { id: 'statistics',  label: 'Статистика',   icon: 'stats',     unlocksAtWeek: 7  },
@@ -38,7 +41,7 @@ interface NavGroup {
 
 export const NAV_GROUPS: NavGroup[] = [
   { id: 'today',    label: 'Сегодня', icon: 'dashboard', members: ['dashboard'] },
-  { id: 'business', label: 'Дело',    icon: 'ops',       members: ['ecosystem', 'warehouse', 'operations', 'development'] },
+  { id: 'business', label: 'Дело',    icon: 'ops',       members: ['ecosystem', 'operations', 'development'] },
   { id: 'reports',  label: 'Отчёты',  icon: 'finance',   members: ['finance', 'statistics', 'journal'] },
 ]
 

@@ -19,7 +19,6 @@ import OwnerInvestmentsModal from './modals/OwnerInvestmentsModal'
 import NPCRosterModal from './modals/NPCRosterModal'
 import HireEmployeeModal from './modals/HireEmployeeModal'
 import { FinanceView } from './views/FinanceView'
-import { WarehouseView } from './views/WarehouseView'
 import OperationsView from './views/OperationsView'
 import { DevelopmentView } from './views/DevelopmentView'
 import StatisticsView from './views/StatisticsView'
@@ -206,7 +205,6 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
           { id: 'services',    label: '🔌 Сервисы',     unlocksAtWeek: 0  },
           { id: 'finance',     label: '💼 Финансы',     unlocksAtWeek: 0  },
           { id: 'operations',  label: '⚙️ Управление',  unlocksAtWeek: 0  },
-          { id: 'warehouse',   label: '📦 Склад',       unlocksAtWeek: 2  },
           { id: 'development', label: '🚀 Развитие',    unlocksAtWeek: 2  },
           { id: 'statistics',  label: '📊 Статистика',  unlocksAtWeek: 7  },
           { id: 'journal',     label: '📓 Журнал',      unlocksAtWeek: 10 },
@@ -461,7 +459,6 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
         {activeTab === 'operations' && (
           <OperationsView onShowHireModal={() => setShowHireEmployeeModal(true)} />
         )}
-        {activeTab === 'warehouse' && <WarehouseView />}
         {activeTab === 'development' && <DevelopmentView />}
         {activeTab === 'statistics' && <StatisticsView />}
         {activeTab === 'journal' && <DecisionLogView />}
@@ -503,7 +500,6 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
             ecosystem: 'services',
             operations: 'operations',
             dashboard: 'day',
-            warehouse: 'warehouse',
             development: 'development',
             finance: 'finance',
             statistics: 'statistics',
@@ -521,7 +517,6 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
             ecosystem: 'services',
             operations: 'operations',
             dashboard: 'day',
-            warehouse: 'warehouse',
             development: 'development',
             finance: 'finance',
             statistics: 'statistics',
