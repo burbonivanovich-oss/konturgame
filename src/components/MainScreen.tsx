@@ -21,7 +21,6 @@ import { WeekResultsOverlay } from './WeekResultsOverlay'
 import { EventPhaseOverlay } from './EventPhaseOverlay'
 import { SimulationOverlay } from './SimulationOverlay'
 import { DesktopKontur } from './design-system/DesktopKontur'
-import { WarehouseView } from './views/WarehouseView'
 import { FinanceView } from './views/FinanceView'
 import OperationsView from './views/OperationsView'
 import StatisticsView from './views/StatisticsView'
@@ -739,7 +738,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   const [unlockToast, setUnlockToast] = useState<string | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const unlockToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const visitedTabsRef = useRef<Set<NavId>>(new Set(['dashboard', 'ecosystem', 'finance', 'development']))
+  const visitedTabsRef = useRef<Set<NavId>>(new Set(['dashboard', 'ecosystem', 'finance']))
 
   const {
     currentWeek, balance, services, pendingEvent, pendingEventsQueue,
@@ -835,9 +834,10 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
   }
 
   const UNLOCK_TOAST_LABELS: Partial<Record<NavId, string>> = {
-    warehouse:   'Раздел «Склад» разблокирован',
     operations:  'Раздел «Управление» разблокирован',
-    development: 'Раздел «Развитие» разблокирован',
+    marketing:   'Раздел «Реклама» разблокирован',
+    upgrades:    'Раздел «Улучшения» разблокирован',
+    tier:        'Раздел «Уровень бизнеса» разблокирован',
     statistics:  'Раздел «Статистика» разблокирован',
     journal:     'Раздел «Журнал» разблокирован',
   }
@@ -962,14 +962,15 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
         </div>
       )}
 
-      {activeView === 'warehouse' && <WarehouseView />}
       {activeView === 'finance' && <FinanceView />}
       {activeView === 'operations' && (
         <OperationsView
           onShowHireModal={() => setShowHireEmployeeModal(true)}
         />
       )}
-      {activeView === 'development' && <DevelopmentView />}
+      {activeView === 'marketing'  && <DevelopmentView view="marketing" />}
+      {activeView === 'upgrades'   && <DevelopmentView view="upgrades" />}
+      {activeView === 'tier'       && <DevelopmentView view="tier" />}
       {activeView === 'statistics' && <StatisticsView />}
       {activeView === 'journal' && <DecisionLogView />}
 

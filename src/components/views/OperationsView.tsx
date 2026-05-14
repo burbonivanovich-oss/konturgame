@@ -220,18 +220,11 @@ export default function OperationsView({ onShowHireModal }: OperationsViewProps)
                               </span>
                             )
                           })}
-                          {cat.requiresEgais && (
-                            <span style={{
-                              fontSize: 10, fontWeight: 700, padding: '2px 7px',
-                              borderRadius: 5, background: `${K.bad}1F`, color: K.bad,
-                            }}>ЕГАИС</span>
-                          )}
-                          {cat.requiresVetCert && (
-                            <span style={{
-                              fontSize: 10, fontWeight: 700, padding: '2px 7px',
-                              borderRadius: 5, background: `${K.bad}1F`, color: K.bad,
-                            }}>Ветсертификат</span>
-                          )}
+                          {/* ЕГАИС / Ветсертификат бейджи убраны: это
+                              реалистичный flavor, но игровой геймплей не
+                              затрагивает (нет gate'а на эти поля). Описания
+                              категорий упоминают «нужен ОФД для ЕГАИС»
+                              для контекста — этого достаточно. */}
                         </div>
                       )}
 

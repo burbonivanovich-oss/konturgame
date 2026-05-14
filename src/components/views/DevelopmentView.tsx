@@ -10,10 +10,21 @@ import { getDimensionStatus } from '../../services/businessHealth'
 import { K } from '../design-system/tokens'
 import type { ServiceType } from '../../types/game'
 
-type DevTab = 'marketing' | 'upgrades' | 'tier' | 'roi'
+// Раньше DevelopmentView содержал 4 вкладки (Tier / Marketing / Upgrades /
+// ROI) внутри одной nav-страницы «Развитие». После flatten'а сайдбара
+// каждая стала отдельным пунктом меню. Этот файл оставлен как контейнер,
+// который принимает `view` prop и рендерит нужную секцию без табов.
+// ROI слит в Реклама (один экран, не два).
+export type DevView = 'marketing' | 'upgrades' | 'tier'
 
-export function DevelopmentView() {
-  const [tab, setTab] = useState<DevTab>('marketing')
+const VIEW_TITLES: Record<DevView, { eyebrow: string; title: string }> = {
+  marketing: { eyebrow: 'РОСТ',     title: 'Реклама' },
+  upgrades:  { eyebrow: 'РОСТ',     title: 'Улучшения' },
+  tier:      { eyebrow: 'РОСТ',     title: 'Уровень бизнеса' },
+}
+
+export function DevelopmentView({ view = 'marketing' }: { view?: DevView }) {
+  const headers = VIEW_TITLES[view]
 
   return (
     <div style={{
@@ -22,62 +33,24 @@ export function DevelopmentView() {
       fontFamily: 'Manrope, sans-serif', color: K.ink, letterSpacing: '-0.01em',
     }}>
       <div>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>РОСТ</div>
-        <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.025em' }}>Развитие</div>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase' }}>{headers.eyebrow}</div>
+        <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.025em' }}>{headers.title}</div>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 6, borderBottom: `1px solid ${K.line}` }}>
-        {([
-          { id: 'tier',      label: 'Уровень бизнеса' },
-          { id: 'marketing', label: 'Реклама' },
-          { id: 'upgrades',  label: 'Улучшения' },
-          { id: 'roi',       label: 'ROI кампаний' },
-        ] as { id: DevTab; label: string }[]).map(t => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            style={{
-              padding: '10px 14px', border: 'none', cursor: 'pointer',
-              background: 'transparent', fontFamily: 'inherit',
-              fontSize: 13, fontWeight: 700,
-              color: tab === t.id ? K.ink : K.muted,
-              borderBottom: tab === t.id ? `2px solid ${K.ink}` : '2px solid transparent',
-              marginBottom: -1,
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {tab === 'tier'      && <TierSection />}
-      {tab === 'marketing' && <MarketingSection />}
-      {tab === 'upgrades'  && <UpgradesSection />}
-      {tab === 'roi'       && <RoiSection />}
+      {view === 'tier'      && <TierSection />}
+      {view === 'marketing' && <MarketingSection />}
+      {view === 'upgrades'  && <UpgradesSection />}
     </div>
   )
 }
 
 function TierSection() {
-  const upgradeBusinessTier = useGameStore(s => s.upgradeBusinessTier)
+  // Тиры теперь auto-progression: weekCalculator сам поднимает уровень
+  // когда currentWeek ≥ unlockWeek и репутация ≥ unlockReputation. Кнопки
+  // покупки нет — этот экран read-only timeline.
   const state = useGameStore.getState()
   const current = getCurrentTier(state)
   const next = getNextTier(state)
-  const check = canUpgradeTier(state)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-
-  const handleUpgrade = () => {
-    setError(null)
-    setSuccess(null)
-    const r = upgradeBusinessTier()
-    if (r.ok) {
-      setSuccess(`Поздравляем! Теперь это ${getCurrentTier(useGameStore.getState()).name}.`)
-    } else {
-      setError(r.reason ?? 'Не удалось')
-    }
-  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -164,44 +137,28 @@ function TierSection() {
             <Requirement met={state.currentWeek >= next.unlockWeek}
               label={`Неделя ${next.unlockWeek}+`}
               actual={`сейчас ${state.currentWeek}`} />
-            <Requirement met={state.balance >= next.unlockBalance}
-              label={`Оборот от ${next.unlockBalance.toLocaleString('ru-RU')} ₽`}
-              actual={`${state.balance.toLocaleString('ru-RU')} ₽`} />
             {(() => {
               const repStatus = getDimensionStatus(state.reputation)
               return (
                 <Requirement met={state.reputation >= next.unlockReputation}
-                  label="Прочная репутация"
+                  label={`Репутация ≥ ${next.unlockReputation}`}
                   actual={repStatus.label} />
               )
             })()}
-            {/* Скаляр качества выпилен — его гейт мерджнут в unlockReputation. */}
-            <Requirement met={state.balance >= next.upgradeCost}
-              label={`Стоимость апгрейда: ${next.upgradeCost.toLocaleString('ru-RU')} ₽`}
-              actual={state.balance >= next.upgradeCost ? 'хватает' : 'не хватает'} />
           </div>
 
-          <button
-            disabled={!check.ok}
-            onClick={handleUpgrade}
-            style={{
-              marginTop: 16, width: '100%',
-              padding: '14px 18px', borderRadius: 12,
-              background: check.ok ? K.ink : K.lineSoft,
-              color: check.ok ? K.white : K.muted,
-              border: 'none', fontSize: 14, fontWeight: 800,
-              cursor: check.ok ? 'pointer' : 'not-allowed',
-              fontFamily: 'inherit', letterSpacing: '-0.01em',
-            }}
-          >
-            {check.ok ? `Перейти на «${next.name}» за ${next.upgradeCost.toLocaleString('ru-RU')} ₽` : (check.reason ?? 'Недоступно')}
-          </button>
-          {error && (
-            <div style={{ marginTop: 8, fontSize: 12, color: '#c0392b' }}>{error}</div>
-          )}
-          {success && (
-            <div style={{ marginTop: 8, fontSize: 12, color: K.mint, fontWeight: 700 }}>{success}</div>
-          )}
+          <div style={{
+            marginTop: 16, padding: '12px 14px', borderRadius: 10,
+            background: K.mintSoft, color: K.mintInk,
+            fontSize: 12, fontWeight: 600, lineHeight: 1.45,
+            display: 'flex', alignItems: 'flex-start', gap: 8,
+          }}>
+            <span style={{ fontSize: 14, flexShrink: 0 }}>✨</span>
+            <span>
+              Уровень открывается автоматически, когда выполнятся оба условия.
+              Без затрат, аренда и зарплаты не вырастут.
+            </span>
+          </div>
         </div>
       ) : (
         <div style={{
@@ -478,6 +435,19 @@ function MarketingSection() {
         <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.5 }}>
           Одновременно можно вести до {MAX_ACTIVE_CAMPAIGNS} кампаний. Каждая следующая работает слабее (100% → 60% → 30%) — выгоднее дождаться завершения и запустить новую.
         </div>
+      </div>
+
+      {/* ROI секция — раньше отдельная вкладка «ROI кампаний», теперь
+          встроена в Реклама внизу: одна страница, не два экрана для
+          одной сущности «реклама». */}
+      <div style={{
+        marginTop: 8, paddingTop: 16,
+        borderTop: `1px solid ${K.line}`,
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: K.muted, textTransform: 'uppercase', marginBottom: 12 }}>
+          ROI КАМПАНИЙ
+        </div>
+        <RoiSection />
       </div>
     </div>
   )

@@ -16,6 +16,8 @@ import {
   calculateMonthlyExpenses,
   getEffectiveBaseClients,
   getEffectiveAvgCheck,
+  canUpgradeTier,
+  getNextTier,
 } from './economyEngine'
 import { getTotalStock, checkExpiry } from './stockManager'
 import { generateEvent } from './eventGenerator'
@@ -352,15 +354,31 @@ export function processWeek(state: GameState): DayResult {
   state.balance = Math.round(newBalance)
   state.reputation = Math.round(newReputation)
 
-  // Сарафанное радио: высокая репутация каждые 5 недель → 14 дней +10%
-  // трафика. Раньше триггер был «лояльность ≥ 95», теперь «репутация ≥ 90».
-  if (state.reputation >= 90 && state.currentWeek % 5 === 0 && !state.isGameOver && !state.isVictory) {
-    state.temporaryClientMod = (state.temporaryClientMod ?? 0) + 0.10
-    state.temporaryModDaysLeft = Math.max(state.temporaryModDaysLeft ?? 0, 14)
-    state.lastWeekMicroEvent = {
-      icon: '💛',
-      title: 'Сарафанное радио',
-      effectText: 'Постоянные клиенты советуют вас друзьям — +10% трафика на 2 недели',
+  // Auto-progression тиров: когда currentWeek ≥ unlockWeek И репутация
+  // ≥ unlockReputation, тир поднимается без затрат. Celebration через
+  // lastWeekMicroEvent. Раньше это была разовая покупка за 150K/400K
+  // с ×1.5 рентой — слишком рискованно, мало кто соглашался.
+  if (!state.isGameOver && !state.isVictory) {
+    const tierCheck = canUpgradeTier(state)
+    const nextTier = getNextTier(state)
+    if (tierCheck.ok && nextTier) {
+      state.businessTier = nextTier.level
+      state.consecutiveOverloadDays = 0
+      state.lastWeekMicroEvent = {
+        icon: nextTier.icon,
+        title: `Бизнес вырос: ${nextTier.name}`,
+        effectText: `Этап ${nextTier.level} разблокирован — клиенты, чек и зал подросли`,
+      }
+    } else if (state.reputation >= 90 && state.currentWeek % 5 === 0) {
+      // Сарафанное радио: только если в эту неделю не было tier-upgrade
+      // (его celebration важнее). +10% трафика на 14 дней.
+      state.temporaryClientMod = (state.temporaryClientMod ?? 0) + 0.10
+      state.temporaryModDaysLeft = Math.max(state.temporaryModDaysLeft ?? 0, 14)
+      state.lastWeekMicroEvent = {
+        icon: '💛',
+        title: 'Сарафанное радио',
+        effectText: 'Постоянные клиенты советуют вас друзьям — +10% трафика на 2 недели',
+      }
     }
   }
   state.purchaseOfferedThisDay = false

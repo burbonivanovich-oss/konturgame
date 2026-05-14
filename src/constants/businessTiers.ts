@@ -6,22 +6,28 @@ export interface BusinessTierConfig {
   description: string
   icon: string
 
-  // Unlock conditions (only applies to tier 2+; tier 1 is always available)
+  // Условия открытия. После рефакторинга тиров — это auto-progression
+  // milestone'ы, а не purchase gate. Когда currentWeek ≥ unlockWeek И
+  // репутация ≥ unlockReputation, тир переключается автоматически без
+  // затрат. Поля unlockBalance / upgradeCost оставлены = 0 в новых
+  // конфигах (сохранены в типе для совместимости со старыми сэйвами).
   unlockWeek: number
   unlockBalance: number
   unlockReputation: number
-  // unlockQuality удалён вместе с скаляром качества (мерджнут в репутацию).
 
-  // One-time price to upgrade INTO this tier (paid from balance)
+  // Раньше: разовая цена за апгрейд. Сейчас: 0 (auto-progression без затрат).
   upgradeCost: number
 
-  // Multipliers applied to baseline (tier 1) values everywhere those numbers
-  // are read. Tier 1 is always 1.0× to keep the math simple.
+  // Мультипликаторы к baseline (T1). Аренда и ЗП НЕ растут — это убирает
+  // risk «прыгнул в T2 и не вывёз фикс. косты». Растут только клиенты,
+  // чек и capacity — мелкие, плавные шаги, целевое назначение —
+  // отметить переход на новый этап жизни бизнеса, а не давать жёсткий
+  // экономический скачок.
   multipliers: {
     clients: number
     check: number
-    rent: number
-    baseSalary: number
+    rent: number       // всегда 1.0 — больше не растёт
+    baseSalary: number // всегда 1.0 — больше не растёт
     capacity: number
   }
 }
@@ -45,21 +51,21 @@ export const BUSINESS_TIERS: Record<BusinessType, BusinessTierConfig[]> = {
       description: 'Расширили зал, добавили холодильное оборудование, пересобрали витрины. Теперь сюда заходят за полноценной закупкой.',
       icon: '🛒',
       unlockWeek: 12,
-      unlockBalance: 200_000,
+      unlockBalance: 0,
       unlockReputation: 60,
-      upgradeCost: 150_000,
-      multipliers: { clients: 1.5, check: 1.2, rent: 1.4, baseSalary: 1.3, capacity: 1.4 },
+      upgradeCost: 0,
+      multipliers: { clients: 1.2, check: 1.1, rent: 1.0, baseSalary: 1.0, capacity: 1.15 },
     },
     {
       level: 3,
       name: 'Супермаркет',
       description: 'Полноценный сетевой формат: широкий ассортимент, кассы самообслуживания, доставка. Точка известна на весь район.',
       icon: '🏬',
-      unlockWeek: 25,
-      unlockBalance: 700_000,
+      unlockWeek: 22,
+      unlockBalance: 0,
       unlockReputation: 75,
-      upgradeCost: 450_000,
-      multipliers: { clients: 2.5, check: 1.4, rent: 2.5, baseSalary: 2.0, capacity: 2.0 },
+      upgradeCost: 0,
+      multipliers: { clients: 1.4, check: 1.25, rent: 1.0, baseSalary: 1.0, capacity: 1.35 },
     },
   ],
   cafe: [
@@ -79,11 +85,11 @@ export const BUSINESS_TIERS: Record<BusinessType, BusinessTierConfig[]> = {
       name: 'Бистро',
       description: 'Авторская кухня, винная карта, более продуманный интерьер. Гости приходят на ужин, а не за кофе.',
       icon: '🍽️',
-      unlockWeek: 10,
-      unlockBalance: 180_000,
+      unlockWeek: 12,
+      unlockBalance: 0,
       unlockReputation: 60,
-      upgradeCost: 150_000,
-      multipliers: { clients: 1.4, check: 1.5, rent: 1.5, baseSalary: 1.4, capacity: 1.3 },
+      upgradeCost: 0,
+      multipliers: { clients: 1.2, check: 1.15, rent: 1.0, baseSalary: 1.0, capacity: 1.15 },
     },
     {
       level: 3,
@@ -91,10 +97,10 @@ export const BUSINESS_TIERS: Record<BusinessType, BusinessTierConfig[]> = {
       description: 'Полноценный ресторан с шефом и меню от 1500₽ за блюдо. Бронь за неделю, отзывы в гид-журналах.',
       icon: '🍷',
       unlockWeek: 22,
-      unlockBalance: 600_000,
+      unlockBalance: 0,
       unlockReputation: 75,
-      upgradeCost: 400_000,
-      multipliers: { clients: 1.8, check: 2.5, rent: 2.5, baseSalary: 2.0, capacity: 1.5 },
+      upgradeCost: 0,
+      multipliers: { clients: 1.4, check: 1.30, rent: 1.0, baseSalary: 1.0, capacity: 1.30 },
     },
   ],
   'beauty-salon': [
@@ -114,11 +120,11 @@ export const BUSINESS_TIERS: Record<BusinessType, BusinessTierConfig[]> = {
       name: 'Салон красоты',
       description: 'Полноформатный салон с мастерами в штате, окрашиваниями, премиум-марками косметики.',
       icon: '💇',
-      unlockWeek: 10,
-      unlockBalance: 180_000,
+      unlockWeek: 12,
+      unlockBalance: 0,
       unlockReputation: 60,
-      upgradeCost: 150_000,
-      multipliers: { clients: 1.5, check: 1.4, rent: 1.4, baseSalary: 1.4, capacity: 1.3 },
+      upgradeCost: 0,
+      multipliers: { clients: 1.2, check: 1.2, rent: 1.0, baseSalary: 1.0, capacity: 1.15 },
     },
     {
       level: 3,
@@ -126,10 +132,10 @@ export const BUSINESS_TIERS: Record<BusinessType, BusinessTierConfig[]> = {
       description: 'Бьюти-центр со SPA-зоной. Запись за 2 недели, постоянная клиентура из топ-1%.',
       icon: '💎',
       unlockWeek: 22,
-      unlockBalance: 600_000,
+      unlockBalance: 0,
       unlockReputation: 75,
-      upgradeCost: 400_000,
-      multipliers: { clients: 2.0, check: 2.0, rent: 2.0, baseSalary: 1.8, capacity: 1.5 },
+      upgradeCost: 0,
+      multipliers: { clients: 1.4, check: 1.45, rent: 1.0, baseSalary: 1.0, capacity: 1.30 },
     },
   ],
 }

@@ -6,6 +6,7 @@ import {
   isWaitStepReady,
   checkOnboardingBlocked,
   getBlockedActionStep,
+  isNextStageDayGated,
 } from '../services/onboardingEngine'
 import type { OnboardingTrigger, OnboardingStage } from '../types/game'
 import { K } from './design-system/tokens'
@@ -91,11 +92,15 @@ export function OnboardingPanel({ onNavigate, onAction }: OnboardingPanelProps) 
   const steps = stageConfig.steps
   if (!steps || steps.length === 0) return null
 
-  const clampedIndex = Math.min(onboardingStepIndex, steps.length - 1)
-  const step = steps[clampedIndex]
+  // Если stepIndex >= steps.length, стадия пройдена и ждёт day-gate
+  // следующей. Раньше тут был Math.min(...) — это «зажимало» индекс на
+  // последнем шаге, и панель продолжала показывать прошедший шаг.
+  if (onboardingStepIndex >= steps.length) return null
+
+  const step = steps[onboardingStepIndex]
   if (!step) return null
 
-  const isLastStep = clampedIndex >= steps.length - 1
+  const isLastStep = onboardingStepIndex >= steps.length - 1
   const isLastStage = onboardingStage >= 4
 
   const stepKind: 'intro' | 'action' | 'wait' =
@@ -121,8 +126,17 @@ export function OnboardingPanel({ onNavigate, onAction }: OnboardingPanelProps) 
     if (!canProceed) return
     setConfirm('none')
     if (isLastStep) {
-      if (isLastStage) completeOnboarding()
-      else advanceOnboardingStage()
+      if (isLastStage) {
+        completeOnboarding()
+      } else if (isNextStageDayGated(gameState as any)) {
+        // Стадия пройдена, но day-gate следующей ещё не настал.
+        // Скрываем панель (bump stepIndex за пределы массива). Когда
+        // currentDay достигнет dayRange[0] следующей стадии, weekCalculator
+        // вызовет advanceOnboardingIfNeeded → автоматически откроет её.
+        nextOnboardingStep()
+      } else {
+        advanceOnboardingStage()
+      }
     } else {
       nextOnboardingStep()
     }
@@ -179,7 +193,7 @@ export function OnboardingPanel({ onNavigate, onAction }: OnboardingPanelProps) 
         }}
       >
         {/* Top progress bar — 5 stages with labels */}
-        <StageProgressBar currentStage={onboardingStage} stepInStage={clampedIndex + 1} totalInStage={steps.length} />
+        <StageProgressBar currentStage={onboardingStage} stepInStage={onboardingStepIndex + 1} totalInStage={steps.length} />
 
         {/* Main row: icon + content + action */}
         <div style={{

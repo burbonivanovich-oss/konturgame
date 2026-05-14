@@ -19,7 +19,6 @@ import OwnerInvestmentsModal from './modals/OwnerInvestmentsModal'
 import NPCRosterModal from './modals/NPCRosterModal'
 import HireEmployeeModal from './modals/HireEmployeeModal'
 import { FinanceView } from './views/FinanceView'
-import { WarehouseView } from './views/WarehouseView'
 import OperationsView from './views/OperationsView'
 import { DevelopmentView } from './views/DevelopmentView'
 import StatisticsView from './views/StatisticsView'
@@ -205,9 +204,10 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
           { id: 'stats',       label: '⭐ Индикаторы',  unlocksAtWeek: 0  },
           { id: 'services',    label: '🔌 Сервисы',     unlocksAtWeek: 0  },
           { id: 'finance',     label: '💼 Финансы',     unlocksAtWeek: 0  },
-          { id: 'operations',  label: '⚙️ Управление',  unlocksAtWeek: 0  },
-          { id: 'warehouse',   label: '📦 Склад',       unlocksAtWeek: 2  },
-          { id: 'development', label: '🚀 Развитие',    unlocksAtWeek: 2  },
+          { id: 'operations',  label: '⚙️ Состав',      unlocksAtWeek: 0  },
+          { id: 'marketing',   label: '📢 Реклама',     unlocksAtWeek: 2  },
+          { id: 'upgrades',    label: '🔧 Улучшения',   unlocksAtWeek: 2  },
+          { id: 'tier',        label: '⭐ Уровень',     unlocksAtWeek: 2  },
           { id: 'statistics',  label: '📊 Статистика',  unlocksAtWeek: 7  },
           { id: 'journal',     label: '📓 Журнал',      unlocksAtWeek: 10 },
         ]
@@ -461,8 +461,9 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
         {activeTab === 'operations' && (
           <OperationsView onShowHireModal={() => setShowHireEmployeeModal(true)} />
         )}
-        {activeTab === 'warehouse' && <WarehouseView />}
-        {activeTab === 'development' && <DevelopmentView />}
+        {activeTab === 'marketing'   && <DevelopmentView view="marketing" />}
+        {activeTab === 'upgrades'    && <DevelopmentView view="upgrades" />}
+        {activeTab === 'tier'        && <DevelopmentView view="tier" />}
         {activeTab === 'statistics' && <StatisticsView />}
         {activeTab === 'journal' && <DecisionLogView />}
       </div>
@@ -503,8 +504,9 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
             ecosystem: 'services',
             operations: 'operations',
             dashboard: 'day',
-            warehouse: 'warehouse',
-            development: 'development',
+            marketing: 'marketing',
+            upgrades: 'upgrades',
+            tier: 'tier',
             finance: 'finance',
             statistics: 'statistics',
             journal: 'journal',
@@ -521,8 +523,9 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
             ecosystem: 'services',
             operations: 'operations',
             dashboard: 'day',
-            warehouse: 'warehouse',
-            development: 'development',
+            marketing: 'marketing',
+            upgrades: 'upgrades',
+            tier: 'tier',
             finance: 'finance',
             statistics: 'statistics',
             journal: 'journal',

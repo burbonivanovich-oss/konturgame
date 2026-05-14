@@ -157,14 +157,8 @@ export default function AssortmentModal({ isOpen, onClose }: AssortmentModalProp
                           </div>
                         )
                       })}
-                      {cat.requiresEgais && (
-                        <div style={{
-                          fontSize: 10, fontWeight: 700, padding: '3px 8px',
-                          borderRadius: 6, background: 'rgba(180,47,35,0.12)', color: K.bad,
-                        }}>
-                          ЕГАИС
-                        </div>
-                      )}
+                      {/* ЕГАИС/Ветсертификат бейджи убраны — это flavor,
+                          игровых gate'ов на эти поля нет. */}
                     </div>
                   )}
 

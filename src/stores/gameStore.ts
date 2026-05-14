@@ -681,16 +681,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }))
     },
 
+    // Раньше тиры были разовой покупкой (списывалось upgradeCost).
+    // Теперь — auto-progression: weekCalculator после processWeek
+    // проверяет canUpgradeTier и сам апгрейдит. Action оставлен как
+    // ручной trigger (для тестов / отладки), но без списания денег.
     upgradeBusinessTier: () => {
       const state = get()
       const check = canUpgradeTier(state)
       if (!check.ok) return check
       const next = getNextTier(state)
       if (!next) return { ok: false, reason: 'Достигнут максимальный уровень' }
-      set((s) => ({
+      set(() => ({
         businessTier: next.level,
-        balance: s.balance - next.upgradeCost,
-        // Reset overload counter — bigger venue won't be cramped on day 1
         consecutiveOverloadDays: 0,
         lastUpdated: Date.now(),
       }))
