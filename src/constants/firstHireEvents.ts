@@ -84,14 +84,23 @@ export const SOLO_OVERLOAD_EVENTS: EventTemplate[] = [
     },
     options: [
       {
+        // Спринт 6 (Game Designer phase-2 audit): -10 энергии давал cafe-solo-
+        // aggressive почти-гарантированный burnout chain — игрок выбирал
+        // endure и через 2 недели выгорал. -7 даёт breathing room до прилёта
+        // first_hire_options (через 1 неделю, см. CHAIN_FOLLOWUP_DELAY).
         id: 'endure',
         text: 'Перестроить меню, чтобы быстрее справляться одному',
-        consequences: { energyDelta: -10, checkModifier: -0.05, checkModifierDays: 14 },
+        consequences: { energyDelta: -7, checkModifier: -0.05, checkModifierDays: 14 },
       },
       {
         id: 'consider_hire',
+        // Спринт 6 (Game Designer M1): cafe-solo-aggressive выгорал к W5
+        // ДО прилёта first_hire_options. Дали +5 энергии («звоните маме, она
+        // принесла борщ — есть силы продержаться неделю»), плюс уменьшили
+        // chain delay first_hire_options 2→1. Player получает кандидата
+        // быстрее и с запасом сил.
         text: 'Так дальше нельзя — искать помощника',
-        consequences: { energyDelta: -3 },
+        consequences: { energyDelta: 5 },
         chainFollowUpId: 'first_hire_options',
       },
     ],
@@ -275,13 +284,18 @@ export const MIKHAIL_RECOMMENDS_SVETLANA: EventTemplate = {
   id: 'MIKHAIL_RECOMMENDS_SVETLANA',
   title: 'Михаил между делом',
   description:
-    'Михаил при очередной поставке — кофе, документы, разговоры о ценах на молоко. Уже у двери, оборачивается: «Слушай, забыл — у меня племянница, политех закончила в этом году. Шарит в продажах, организаторша. Сейчас работу ищет, говорит — на стажёрскую не хочет, хочет на нормальную. Может зайдёт к тебе на этой неделе, посмотрите?»',
+    'Михаил при очередной поставке — кофе, документы, разговоры о ценах на молоко. Оставил на краю прилавка пачку вафель — «захватил, у вас тут всегда чай». Уже у двери, оборачивается: «Слушай, забыл — у меня племянница, политех закончила в этом году. Шарит в продажах, организаторша. Сейчас работу ищет, говорит — на стажёрскую не хочет, хочет на нормальную. Может зайдёт к тебе на этой неделе, посмотрите?»',
   trigger: {
     dayMin: 126, // ~W19
     dayMax: 140, // ~W20 (соизмеримо с svetlana_intro W20)
     randomChance: 1.0,
     oneTime: true,
     requiresNpcRevealed: true,
+    // Спринт 6 (Narrative #3): Михаил рекомендует племянницу только если
+    // отношения тёплые. Раньше гейт был только requiresNpcRevealed — если
+    // игрок отказал ему в mikhail_crisis_1 (rel -15) или Михаил ушёл к
+    // Анне (mikhail_crisis_2c), его тёплое «у меня племянница» резало ухо.
+    npcRelationshipMin: 50,
   },
   npcId: 'mikhail',
   options: [
@@ -501,6 +515,23 @@ export const OLEG_TROUBLE_1: EventTemplate = {
         reputationDelta: -1,
       },
       chainFollowUpId: 'oleg_trouble_2',
+    },
+    {
+      // Спринт 6 (Narrative #5): даём третий путь — поговорить с Олегом
+      // напрямую, без Светланы. Раньше выбор был «дать ещё шанс» (ведёт к
+      // принудительному fire через oleg_trouble_2) или «уволить сразу».
+      // Светлана читалась как infallible, Олег — как designed-to-fail.
+      // Теперь — шанс на тихое расставание с уважением к его правде:
+      // выходное пособие чуть больше (15К вместо 10К), команда видит
+      // «начальник умеет разговаривать», но Олег всё равно уходит.
+      id: 'talk_one_on_one',
+      text: 'Поговорить с Олегом наедине, без Светланы',
+      consequences: {
+        balanceDelta: -15000,  // нормальное выходное пособие
+        reputationDelta: 1,    // команда видит человеческое отношение
+        fireEmployee: { name: 'Олег' },
+      },
+      npcRelationshipDelta: -3,  // Светлане не нравится, что её обошли
     },
     {
       id: 'fire_now',

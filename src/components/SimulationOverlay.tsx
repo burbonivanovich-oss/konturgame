@@ -240,15 +240,16 @@ export function SimulationOverlay({ onContinue }: SimulationOverlayProps) {
           )}
         </div>
 
-        {/* Skip / continue */}
+        {/* Skip / continue (Спринт 6 UX #3: single-click — раньше требовалось
+            «Пропустить» → state change → «Подвести итоги». Теперь любой клик
+            мгновенно завершает фазу). */}
         <button
           onClick={() => {
             if (!skipped && progress < 1) {
               setSkipped(true)
               setProgress(1)
-            } else {
-              onContinue()
             }
+            onContinue()
           }}
           style={{
             width: '100%', cursor: 'pointer',

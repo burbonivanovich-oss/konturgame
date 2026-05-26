@@ -28,6 +28,41 @@ export default function SettingsModal({ isOpen, onClose, onRestart }: SettingsMo
     alert('Состояние игры выведено в консоль')
   }
 
+  // Спринт 6 (alpha playtest): экспорт сэйв-файла для аналитики.
+  // Подразумевается что игрок отправит файл вместе с заполненной формой
+  // фидбека. Replay-скрипт (docs/playtest/replay.ts) парсит JSON и
+  // выдаёт postmortem: где умер, какие сервисы, какие решения, ачивки.
+  const handlePlaytestExport = () => {
+    const state = useGameStore.getState()
+    const payload = {
+      schemaVersion: 1,
+      exportedAt: new Date().toISOString(),
+      app: {
+        version: '6.0-alpha',
+        userAgent: navigator.userAgent.slice(0, 200),
+      },
+      // Полный snapshot state'а — postmortem-скрипт извлекает что нужно
+      // (decisionLog, achievements, triggeredEventIds, gameOverReason,
+      // personalGoal итог, активные сервисы, businessTier, current week).
+      state,
+    }
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    const week = state.currentWeek ?? 0
+    const biz = state.businessType ?? 'unknown'
+    const status = state.isGameOver ? `gameover-${state.gameOverReason ?? 'unknown'}`
+      : state.isVictory ? 'victory'
+      : `inprogress-W${week}`
+    a.href = url
+    a.download = `playtest-${biz}-${status}-${Date.now()}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    alert('Отчёт о тесте сохранён. Прикрепите его к форме фидбека в Google Form.')
+  }
+
   const handleClearData = () => {
     if (confirm('Удалить все сохраненные данные? Это необратимо.')) {
       localStorage.removeItem('konturgame_state')
@@ -65,19 +100,34 @@ export default function SettingsModal({ isOpen, onClose, onRestart }: SettingsMo
           <div style={{ fontSize: 13, fontWeight: 700, color: K.orange, marginBottom: 12 }}>
             📊 Данные
           </div>
-          <button
-            onClick={handleExportState}
-            style={{
-              width: '100%', padding: '10px 12px', borderRadius: 10,
-              background: K.blueSoft, border: `1.5px solid ${K.blue}`,
-              color: K.blue, fontSize: 12, fontWeight: 700,
-              cursor: 'pointer', transition: 'opacity 0.2s',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-          >
-            📋 Показать состояние в консоли
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <button
+              onClick={handlePlaytestExport}
+              style={{
+                width: '100%', padding: '10px 12px', borderRadius: 10,
+                background: K.orangeSoft, border: `1.5px solid ${K.orange}`,
+                color: K.orange, fontSize: 12, fontWeight: 700,
+                cursor: 'pointer', transition: 'opacity 0.2s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+            >
+              📥 Скачать отчёт для плейтеста
+            </button>
+            <button
+              onClick={handleExportState}
+              style={{
+                width: '100%', padding: '10px 12px', borderRadius: 10,
+                background: K.blueSoft, border: `1.5px solid ${K.blue}`,
+                color: K.blue, fontSize: 12, fontWeight: 700,
+                cursor: 'pointer', transition: 'opacity 0.2s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+            >
+              📋 Показать состояние в консоли
+            </button>
+          </div>
         </div>
 
         <div style={{ height: 1, background: K.line }} />

@@ -40,6 +40,7 @@ import { getGroupForNav, getSubTabsForGroup } from './design-system/KLeftRail'
 import { KIcon } from './design-system/KIcon'
 import { getActiveSynergies } from '../services/synergyEngine'
 import { getBusinessHealth } from '../services/businessHealth'
+import { getWeeklyEnergyCost, getUpgradeEnergyBonus } from '../services/employeeManager'
 import type { ServiceType } from '../types/game'
 
 const ONBOARDING_ACTION_TO_NAV: Record<string, NavId> = {
@@ -285,10 +286,23 @@ function DashboardView({
                 entrepreneurEnergy < 30 ? '#c0392b'
                 : entrepreneurEnergy < 50 ? K.orange
                 : K.mint
+              // Спринт 6 (Game Designer #9): trend-индикатор энергии.
+              // Net = base restore (30) + tactic energy/нед - employee cost.
+              // Игрок видит «↓ -8/нед» — понятно, что без действий выгорит.
+              const tacticDef = weeklyTactic ? WEEKLY_TACTICS.find(t => t.id === weeklyTactic) : null
+              const tacticEnergyPerWeek = (tacticDef?.energyDelta ?? 0) * 7
+              const employeeCost = Math.max(0, getWeeklyEnergyCost(store) - getUpgradeEnergyBonus(store))
+              const expectedNet = 28 + tacticEnergyPerWeek - employeeCost
+              const trendIcon = expectedNet <= -5 ? '↓' : expectedNet >= 5 ? '↑' : '→'
+              const trendText = expectedNet <= -5
+                ? `${trendIcon} ${expectedNet}/нед — устаёте`
+                : expectedNet >= 5
+                  ? `${trendIcon} +${expectedNet}/нед — отдыхаете`
+                  : `${trendIcon} стабильно`
               return [
                 { icon: '💹', label: 'Прибыль / неделя', value: `${weeklyProfit > 0 ? '+' : ''}${weeklyProfit.toLocaleString('ru-RU')} ₽`, bg: weeklyProfit >= 0 ? K.mint : '#c0392b', sub: lastDayResult ? 'за вчера × 7' : 'нет данных', onClick: undefined as (() => void) | undefined },
                 { icon: '💸', label: 'Расходы / день', value: `${dailyExpenses.toLocaleString('ru-RU')} ₽`, bg: K.violet, sub: lastDayResult ? 'за вчера' : 'нет данных', onClick: undefined as (() => void) | undefined },
-                { icon: '⚡', label: 'Энергия', value: `${entrepreneurEnergy}`, bg: energyTone, sub: entrepreneurEnergy < 40 ? 'устаёте — отдых нужен' : 'в норме', onClick: onOpenOwnerInvestments },
+                { icon: '⚡', label: 'Энергия', value: `${entrepreneurEnergy}`, bg: energyTone, sub: trendText, onClick: onOpenOwnerInvestments },
               ]
             })().map(t => (
               <div key={t.label}
@@ -314,44 +328,24 @@ function DashboardView({
             ))}
           </div>
 
-          {/* Daily tasks checklist */}
-          <div style={{ background: K.white, border: `1px solid ${K.line}`, borderRadius: 14, padding: 14 }}>
-            <div style={{ fontSize: 11, color: K.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
-              Задачи дня
+          {/* Daily tasks checklist — Спринт 6 (UX phase-2 audit): показывается
+              ТОЛЬКО когда есть pending event. Раньше всегда висело 2 задачи,
+              включая «Нажать Следующий день» которая никогда не была done
+              (psychic debt — игрок видел вечный долг). Теперь либо «у тебя
+              событие — разреши его», либо блок скрыт. */}
+          {pendingEvent && (
+            <div style={{ background: K.orangeSoft, border: `1px solid ${K.orange}`, borderRadius: 14, padding: '10px 14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 14, height: 14, borderRadius: 999, flexShrink: 0,
+                  border: `2px solid ${K.orange}`, background: 'transparent',
+                }} />
+                <span style={{ fontSize: 13, fontWeight: 600, color: K.orange }}>
+                  Сначала разрешите событие — оно блокирует «Следующий день»
+                </span>
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {[
-                { label: 'Разрешить событие', done: !pendingEvent, urgent: !!pendingEvent },
-                { label: 'Нажать «Следующий день»', done: false, urgent: false },
-              ].map(task => (
-                <div key={task.label} style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '6px 10px', borderRadius: 999,
-                  background: task.urgent ? K.orangeSoft : K.bone,
-                }}>
-                  <div style={{
-                    width: 14, height: 14, borderRadius: 999, flexShrink: 0,
-                    border: `2px solid ${task.done ? K.mint : task.urgent ? K.orange : K.line}`,
-                    background: task.done ? K.mint : 'transparent',
-                    display: 'grid', placeItems: 'center',
-                  }}>
-                    {task.done && (
-                      <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
-                        <path d="M2 5l2 2 4-4" stroke={K.white} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    )}
-                  </div>
-                  <span style={{
-                    fontSize: 12, fontWeight: 500,
-                    color: task.urgent ? K.orange : task.done ? K.muted : K.ink,
-                    textDecoration: task.done ? 'line-through' : 'none',
-                  }}>
-                    {task.label}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+          )}
 
           {/* Pending event card */}
           {pendingEvent && (() => {
@@ -582,85 +576,77 @@ function DashboardView({
           {/* Energy moved to top KPI strip — see DashboardView render below.
               Right rail now starts with business health + stage. */}
 
-          {/* Business health + Stage compact row */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {(() => {
-              const health = getBusinessHealth(useGameStore.getState())
-              const tone = health.tone
-              const healthColor = tone === 'good' ? K.mint
-                : tone === 'warn' ? K.orange
-                : tone === 'bad' ? '#c0392b'
-                : K.ink2
-              return (
-                <div style={{ background: K.bone, borderRadius: 10, padding: '10px 12px' }}>
-                  <div style={{ fontSize: 10, color: K.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
-                    Состояние
-                  </div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: healthColor }}>
-                    {health.label}
-                  </div>
-                  <div style={{ fontSize: 11, color: K.muted, marginTop: 2, lineHeight: 1.4 }}>
-                    {health.hint}
-                  </div>
+          {/* Состояние — главная qualitative read. Спринт 6 (UX #1):
+              убрали отдельную карточку «Стадия» (читалась как лишний
+              шум) — теперь stage упоминается одной строкой в самом
+              состоянии. Right rail стал заметно легче. */}
+          {(() => {
+            const health = getBusinessHealth(useGameStore.getState())
+            const tone = health.tone
+            const healthColor = tone === 'good' ? K.mint
+              : tone === 'warn' ? K.orange
+              : tone === 'bad' ? '#c0392b'
+              : K.ink2
+            return (
+              <div style={{ background: K.bone, borderRadius: 10, padding: '10px 12px' }}>
+                <div style={{ fontSize: 10, color: K.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+                  Состояние
                 </div>
-              )
-            })()}
-            <div style={{ background: K.bone, borderRadius: 10, padding: '10px 12px' }}>
-              <div style={{ fontSize: 10, color: K.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
-                Стадия
+                <div style={{ fontSize: 14, fontWeight: 800, color: healthColor }}>
+                  {health.label}
+                </div>
+                <div style={{ fontSize: 11, color: K.muted, marginTop: 2, lineHeight: 1.4 }}>
+                  {health.hint}
+                </div>
+                <div style={{ fontSize: 10, color: K.muted, marginTop: 6, paddingTop: 6, borderTop: `1px dashed ${K.lineSoft}` }}>
+                  Этап: <span style={{ fontWeight: 700, color: K.ink }}>{stageCfg.label}</span>
+                  {nextCfg && <span> · далее {nextCfg.label}</span>}
+                </div>
               </div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: K.ink }}>{stageCfg.label}</div>
-              {nextCfg && (
-                <div style={{ fontSize: 10, color: K.muted, marginTop: 2 }}>
-                  далее: {nextCfg.label}
-                </div>
-              )}
-            </div>
-          </div>
+            )
+          })()}
 
-          {/* Ecosystem — показываем только разблокированные онбордингом
-              сервисы (плюс уже активные, на случай если игрок включил что-то
-              раньше через event). До W2 в Stage 1 это только Bank+ОФД, а не
-              все 6 — иначе панель выглядит как «онбординг толкает всё сразу». */}
+          {/* Ecosystem — компактный однострочный счётчик «Контур N/M ·
+              открой ещё». Раньше был 2-column grid с 6-7 плитками сервисов,
+              дублирующий разделы сайдбара. UX #1 указал, что right rail
+              перегружен KPI-mirror'ом. Клик ведёт на полноэкранную
+              Экосистему (через TutorialMoments-pattern не идёт — это
+              read-only компактный summary). */}
           {(() => {
             const visibleServices = serviceOrder.filter(sid =>
               (store.unlockedServices ?? []).includes(sid) || services[sid]?.isActive,
             )
             const activeCountVisible = visibleServices.filter(sid => services[sid]?.isActive).length
-            if (visibleServices.length === 0) return null
+            const totalVisible = visibleServices.length
+            const remaining = totalVisible - activeCountVisible
+            if (totalVisible === 0) return null
             return (
-              <div>
-                <div style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8,
-                }}>
+              <div style={{
+                background: K.bone, borderRadius: 10, padding: '10px 12px',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}>
+                <div>
                   <div style={{ fontSize: 10, color: K.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                     Экосистема
                   </div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: K.ink }}>
-                    Контур · {activeCountVisible}/{visibleServices.length}
+                  <div style={{ fontSize: 13, fontWeight: 800, color: K.ink, marginTop: 2 }}>
+                    Контур {activeCountVisible}/{totalVisible}
                   </div>
+                  {remaining > 0 && (
+                    <div style={{ fontSize: 10, color: K.muted, marginTop: 2 }}>
+                      открыто, можно подключить ещё {remaining}
+                    </div>
+                  )}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {/* Маленький dot-индикатор: сколько включено */}
+                <div style={{ display: 'flex', gap: 3 }}>
                   {visibleServices.map(sid => {
-                    const svc = services[sid]
-                    const isActive = svc?.isActive
-                    const accent = SERVICE_ACCENT[sid]
+                    const isActive = services[sid]?.isActive
                     return (
-                      <div key={sid} style={{
-                        padding: '10px 10px',
-                        borderRadius: 10,
-                        background: isActive ? accent : K.bone,
-                        color: isActive ? K.white : K.muted,
-                        fontSize: 12, fontWeight: 700,
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        opacity: isActive ? 1 : 0.75,
-                      }}>
-                        <span>{SERVICE_SHORT[sid]}</span>
-                        <span style={{
-                          width: 6, height: 6, borderRadius: 999,
-                          background: isActive ? K.white : K.line,
-                        }} />
-                      </div>
+                      <span key={sid} style={{
+                        width: 8, height: 8, borderRadius: 999,
+                        background: isActive ? (SERVICE_ACCENT[sid] ?? K.mint) : K.line,
+                      }} />
                     )
                   })}
                 </div>
@@ -677,9 +663,13 @@ function DashboardView({
               <div style={{ fontSize: 10, color: K.mint, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Активные синергии · {synergies.length}
               </div>
+              {/* Спринт 6 (UX #7): добавляем формулу синергии под названием.
+                  Раньше на дашборде показывалось только имя — формула жила
+                  только в полноэкранной Экосистеме. */}
               {synergies.slice(0, 3).map(s => (
-                <div key={s.id} style={{ fontSize: 11, fontWeight: 600, color: K.ink, lineHeight: 1.35 }}>
-                  {s.name}
+                <div key={s.id} style={{ display: 'flex', flexDirection: 'column', gap: 1, lineHeight: 1.3 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: K.ink }}>{s.name}</div>
+                  <div style={{ fontSize: 10, color: K.muted }}>{s.description}</div>
                 </div>
               ))}
               {synergies.length > 3 && (
@@ -757,6 +747,13 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
 
   const activeServiceIds = Object.values(services).filter(s => s.isActive).map(s => s.id)
   const activeCount = activeServiceIds.length
+  // Спринт 6 (UX phase-2 audit): badge на «Экосистеме» раньше был «X/7»,
+  // включая заблокированные. На W2 это читалось как «я только 2 из 7 —
+  // плохо стараюсь». Теперь знаменатель — только разблокированные сервисы.
+  const unlockedSet = new Set((useGameStore.getState().unlockedServices ?? []).filter(s => s !== 'extern'))
+  // Уже активные тоже включаем (если игрок включил вне онбординга)
+  activeServiceIds.forEach(id => { if (id !== 'extern') unlockedSet.add(id) })
+  const visibleServiceCount = Math.max(1, unlockedSet.size)
   const pendingEventCount = (pendingEvent ? 1 : 0) + (pendingEventsQueue?.length ?? 0)
 
   // Compute which nav item to highlight based on current onboarding step
@@ -867,6 +864,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
         businessType={businessType}
         currentWeek={currentWeek}
         activeServiceCount={activeCount}
+        totalServiceCount={visibleServiceCount}
         savedBalance={savedBalance ?? 0}
         balance={balance}
         personalGoal={personalGoal}

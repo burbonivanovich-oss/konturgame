@@ -4,7 +4,11 @@ export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
   shop: {
     type: 'shop',
     startBalance: 80000,
-    baseClients: 17,
+    // Спринт 6: bump 17→19 после Economy Designer аудита. Shop bank-only
+    // показывал net profit 11k→5.9k→1.8k к W20 (death spiral), к W22 в минус.
+    // +12% базовой выручки выправляет casual-сценарий — игрок не bankrupt'ится
+    // до W46, без услуг достижимо ~700-900k (не гарантированно цель 1М).
+    baseClients: 19,
     avgCheck: 112,
     capacity: 35,
     hasStock: true,
@@ -39,11 +43,12 @@ export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
   'beauty-salon': {
     type: 'beauty-salon',
     startBalance: 80000,
-    // 9 clients × 400₽ × 7 = 25.2k weekly base. Was 11 — but with margin fix
-    // and smoothed monthly bill, salon was running at +30K/wk on bank-only
-    // (richest of the three businesses by far). Pulled back so salon and cafe
-    // are roughly equally profitable on tier 1.
-    baseClients: 9,
+    // Спринт 6: 9 → 8 после Economy Designer аудита. Salon+market+ofd хитал
+    // 1.43M уже на W20 (43% выше цели 1М, 26 недель раньше срока) — тривиальная
+    // победа. Спред с shop+bank-only (179K) был 1.25M+. Урезание базового
+    // потока на 11% сужает разрыв, salon+услуги остаётся выигрышной стратегией
+    // (~1.3-1.5M к W46), но не «доминирующей» против других бизнесов.
+    baseClients: 8,
     avgCheck: 400,
     capacity: 20,
     hasStock: false,
@@ -71,7 +76,6 @@ export interface ServiceConfig {
     clientBonus?: number
     creditRate?: number
     reputationBonus?: number
-    loyaltyBonus?: number
     taxSaving?: number
     energyReduction?: number
     acquiringRate?: number
@@ -98,10 +102,14 @@ export const SERVICES_CONFIG: Record<ServiceType, ServiceConfig> = {
     // В жизни Банк = эквайринг (40% клиентов хотят платить картой) + быстрые
     // расчёты + кредиты МСБ. creditRate удалён — займы используют свои ставки,
     // эффект был декларативным.
-    description: 'Эквайринг: терминал бесплатно, комиссия 1.5% с безнала. Без банка 40% клиентов уходят — нечем платить. Кредитная линия для оборотных средств.',
+    description: 'Эквайринг: терминал бесплатно, комиссия 1% с безнала. Без банка 30% клиентов уходят — нечем платить. Кредитная линия для оборотных средств.',
     annualPrice: 0,
     effects: {
-      acquiringRate: 0.015,
+      // Спринт 6 (Economy #4): 0.015 → 0.010. Раньше для struggling shop'а
+      // (~70K/нед выручки) комиссия = ~1050₽/нед — больше чем weekly net
+      // profit в death-spiral сценарии. Bank-free но с 1.5% = quiet kill
+      // для casual-игроков. 1.0% даёт ~700₽/нед — заметно, но не смертельно.
+      acquiringRate: 0.010,
       energyReduction: 0.3,
     },
   },
@@ -406,7 +414,6 @@ export const UPGRADES_CONFIG: Record<BusinessType, Array<{
   cost: number
   effect: string
   capacityBonus?: number
-  loyaltyBonus?: number
   clientBonus?: number
   checkBonus?: number
   monthlySalaryIncrease?: number

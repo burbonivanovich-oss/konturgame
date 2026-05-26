@@ -72,7 +72,13 @@ export default function HireEmployeeModal({ isOpen, onClose }: HireEmployeeModal
                 {selectedData.baseSalary.toLocaleString('ru-RU')} ₽
               </div>
               <div style={{ fontSize: 10, opacity: 0.5, marginTop: 8 }}>
-                ≈ {(selectedData.baseSalary / 30).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} ₽/день
+                ≈ {Math.round(selectedData.baseSalary / 4).toLocaleString('ru-RU')} ₽/нед · {(selectedData.baseSalary / 30).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} ₽/день
+              </div>
+              {/* Спринт 6 (UX #4): процент от баланса. Раньше игрок брал
+                  менеджера за 75K с balance 80K не понимая что это 94%
+                  стартового капитала за один месяц. */}
+              <div style={{ fontSize: 11, fontWeight: 700, color: balance > 0 && selectedData.baseSalary / balance > 0.5 ? K.bad : K.muted, marginTop: 6 }}>
+                {balance > 0 ? `≈ ${Math.round(selectedData.baseSalary / balance * 100)}% вашего баланса в месяц` : ''}
               </div>
             </div>
 

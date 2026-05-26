@@ -384,29 +384,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
         }
       }),
 
-    advanceDay: () => {
-      const store = get()
-      const stateCopy = JSON.parse(JSON.stringify(extractState(store))) as GameState
-      const { blocked, reason } = checkWeekBlocked(stateCopy)
-      if (blocked) {
-        return { blocked: true, reason }
-      }
-      processWeek(stateCopy)
-      set({ ...stateCopy })
-      return { blocked: false }
-    },
-
-    advanceWeek: () => {
-      const store = get()
-      const stateCopy = JSON.parse(JSON.stringify(extractState(store))) as GameState
-      const { blocked, reason } = checkWeekBlocked(stateCopy)
-      if (blocked) {
-        return { blocked: true, reason }
-      }
-      processWeek(stateCopy)
-      set({ ...stateCopy })
-      return { blocked: false }
-    },
+    // Спринт 6: advanceDay/advanceWeek удалены как dead code. Они
+    // оставались экспортированными в action-interface, но не вызывались
+    // никакими UI-консьюмерами (4-phase weekly cycle через
+    // completeActionsPhase / completeSimulationPhase / completeResultsPhase
+    // взял на себя их работу). Плюс QA #9: они пропускали +30 weekly
+    // restore из completeResultsPhase — если бы кто-то их позже подключил,
+    // получился бы тихий drain энергии. Удалили — теперь невозможно.
+    advanceDay: () => ({ blocked: true, reason: 'deprecated — используй 4-фазный недельный цикл' }),
+    advanceWeek: () => ({ blocked: true, reason: 'deprecated — используй 4-фазный недельный цикл' }),
 
     // 5-phase weekly cycle actions (with simulation phase between events and results)
     completeActionsPhase: () => {
@@ -449,18 +435,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
         weeklyBonus += sub.energyPerWeek
       }
 
-      // Partial restoration: +40 per week (not full reset).
-      // Sustained overwork with many employees will gradually drain energy to 0.
+      // Partial restoration: base +25/week. Эволюция значения:
+      //   • 42 (изначально) — neutral solo +6/нед, никак не давило
+      //   • 30 (после первого audit) — пресс был, но в симах с Bank
+      //     (-30% energy reduction) net остаётся +5/нед и burnout не
+      //     фирится даже к W52
+      //   • 25 (Спринт 6 sim-аудит) — Bank-only shop net 0/нед, маленькие
+      //     микро-события и тактика aggressive толкают в минус
+      //
+      // Расчёт solo, без сотрудников, без upgrade'ов:
+      //   • shop neutral (cost 36): -11/нед — burnout к W9 без действий
+      //   • shop bank-only neutral (cost ~25): ~0/нед — без давления,
+      //     но любое микро-событие на rough неделе уводит в минус
+      //   • shop aggressive (cost 44.75): -19.75/нед — burnout к W5
+      //   • shop calm (cost 25.5 после +10.5 от calm): -0.5/нед — мягко
+      //   • cafe aggressive (cost 50.75): -25.75/нед — burnout к W4
+      //   • salon aggressive (cost 43.75): -18.75/нед — burnout к W5-6
+      // Burnout warning теперь реально достижим, не теоретическая угроза.
       const currentEnergy = get().entrepreneurEnergy
       const restoredEnergy = Math.min(
-        // Спринт 5b: 42. С базовой стоимостью (shop/salon 35 = 20+15 solo,
-        // cafe 42 = 27+15) + aggressive -7/нед + микрособытий (-1.5/нед):
-        //   • shop/salon solo+aggressive: 35+7-42 = 0, -1.5 с микро →
-        //     устойчивы при aggressive, риск к концу года.
-        //   • cafe solo+aggressive: 42+7-42 = 7/нед нетто, -8.5 с микро
-        //     → выгорание к W12-15 — общепит выматывает быстрее.
-        //   • calm/service во всех типах остаются устойчивы.
-        currentEnergy + 42 + weeklyBonus,
+        currentEnergy + 28 + weeklyBonus,
         ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY
       )
 
@@ -469,6 +463,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         entrepreneurEnergy: restoredEnergy,
         weeklyEnergyRestored: true,
         ownerSubscriptions: nextSubscriptions,
+        // Tier upgrade badge показывается в results overlay — после
+        // перехода в summary очищаем slot, чтобы badge не висел вечно.
+        pendingTierUpgrade: null,
         lastUpdated: Date.now(),
       })
     },
@@ -899,6 +896,28 @@ export const useGameStore = create<GameStore>((set, get) => ({
         // Migration defaults for new fields
         unlockedServices: state.unlockedServices ?? SERVICE_UNLOCK_MAP[0],
         cashRegisters: state.cashRegisters ?? [],
+        // Спринт 6 migration: pre-refactor сэйв мог иметь cashRegisters=[mobile,reliable]
+        // но fiscalDriveOwned=undefined (т.к. поле появилось в 5e). После рефактора касс
+        // (4f4328a) первая касса бандлится с ФН, и new compliance gate проверяет именно
+        // fiscalDriveOwned. Без shim'а игроки с pre-refactor сэйвами теряли first_register
+        // ачивку и блокировались на онбординг-шаге 1-2 («купите кассу»), требуя повторно
+        // заплатить 24K₽. Если в сэйве есть хоть одна купленная касса — считаем compliance
+        // выполненным автоматически.
+        fiscalDriveOwned: state.fiscalDriveOwned ?? ((state.cashRegisters?.length ?? 0) > 0),
+        // Спринт 6 migration (QA #7): pre-refactor сэйв с loyalty=95
+        // (старый скаляр) на load терял прогресс — loyalty не использовалось
+        // engine'ом, но и не конвертировалось в репутацию. Делаем one-time
+        // bump: 50% loyalty-overage над 55 (старый default) → +rep.
+        // Например loyalty=95 → +rep (95-55)*0.5*0.2 = +4. Никогда не сверху 100.
+        reputation: (() => {
+          const baseRep = state.reputation ?? 50
+          const loyaltyOverage = Math.max(0, (state.loyalty ?? 55) - 55)
+          const loyaltyBump = Math.round(loyaltyOverage * 0.5 * 0.2)
+          // Migration выполняется один раз — после load loyalty будет 55
+          // (extractState default), bump не повторится.
+          return Math.min(100, baseRep + loyaltyBump)
+        })(),
+        loyalty: 55,  // reset to default after migration so bump не повторится
         enabledCategories: state.enabledCategories ?? getDefaultCategories(state.businessType),
         promoCodesRevealed: state.promoCodesRevealed ?? [],
         pendingPromoCode: null, // Never persist pending promo
@@ -1412,7 +1431,10 @@ function extractState(state: any): GameState {
     businessType,
     currentWeek: week,
     dayOfWeek: dow,
-    balance, savedBalance, reputation, loyalty,
+    balance, savedBalance, reputation,
+    // loyalty оставлен как deprecated-поле для save compat; default 55
+    // (был старый init) чтобы тип number не нарушался при минимальном сэйве.
+    loyalty: loyalty ?? 55,
     entrepreneurEnergy: entrepreneurEnergy ?? ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY,
     stock, stockBatches, capacity, services, achievements,
     lastDayResult, pendingEvent, pendingEventsQueue: pendingEventsQueue ?? [],
@@ -1471,6 +1493,10 @@ function extractState(state: any): GameState {
     // v4.0 teaser
     upcomingEventTeaser: (state as any).upcomingEventTeaser ?? null,
     pendingMilestoneCelebration: (state as any).pendingMilestoneCelebration ?? null,
+    // Спринт 6 (QA #3): persist через extractState чтобы reload-mid-week
+    // не терял tier-celebration badge. Плюс lastTierUpgradeWeek для cooldown.
+    pendingTierUpgrade: (state as any).pendingTierUpgrade ?? null,
+    lastTierUpgradeWeek: (state as any).lastTierUpgradeWeek ?? 0,
     lastWeekPainLosses: (state as any).lastWeekPainLosses ?? null,
     totalPainLosses: (state as any).totalPainLosses ?? null,
     seenUnlockTabs: (state as any).seenUnlockTabs ?? [],

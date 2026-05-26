@@ -19,12 +19,17 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
   // ── Контур.Банк (бесплатно) — расчётный счёт + эквайринг ─────────────
   // ОБЯЗАТЕЛЬНЫЙ. Срабатывает с первой недели, randomChance высокий —
   // эквайринг — это базовая гигиена малого бизнеса. Подключение
-  // бесплатное, монетизация через комиссию 1.5% с безнала.
+  // бесплатное, монетизация через комиссию 1% с безнала.
   {
     id: 'FIRST_BANK',
     title: 'Третья пара уходит без покупки',
     description: 'Молодая пара минут двадцать выбирала, в итоге на кассе: «А картой можно?» — «Только наличные» — «Извините». Уходят. За неделю это уже третий раз. Соседняя кофейня поставила терминал в прошлом месяце, у них теперь очередь.',
-    trigger: { dayMin: 1, randomChance: 0.5, noService: 'bank', oneTime: true },
+    // Спринт 6 (Game Designer phase-1 audit): dayMin 1 → 15 — раньше FIRST_BANK
+    // мог прилететь параллельно с активным онбординг-шагом 1-1 («активируйте
+    // Bank»), создавая дублирующий prompt («подключите Банк» + «активируйте
+    // Bank»). Теперь FIRST_BANK живёт как «alternative-path» для игроков,
+    // скипнувших onboarding'овский шаг — fires после W2.
+    trigger: { dayMin: 15, randomChance: 0.5, noService: 'bank', oneTime: true },
     options: [
       {
         id: 'wait_it_out',
@@ -33,7 +38,7 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
       },
       {
         id: 'subscribe',
-        text: 'Подключить Контур.Банк (бесплатно — комиссия 1.5% с безнала)',
+        text: 'Подключить Контур.Банк (бесплатно — комиссия 1% с безнала)',
         consequences: { serviceId: 'bank' },
         isContourOption: true,
       },
@@ -68,7 +73,10 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
     id: 'FIRST_MARKET',
     title: 'Опять кончилось то, что покупали',
     description: 'Постоянная клиентка с порога: «Хлеба не привезли?» — а у вас он стоит, просто за стеллажом, не доглядели. «Я могла бы догадаться. У вас вечно так». Уходит. Складские остатки вы ведёте на бумажке, на бумажке же забываете.',
-    trigger: { dayMin: 84, randomChance: 0.12, noService: 'market', oneTime: true },
+    // Спринт 6 (Game Designer phase-3 audit): chance 0.12 → 0.20 чтобы
+    // FIRST_MARKET надёжно фирился к W13, не растягиваясь до W16. W11-19
+    // был самым «пустым» windows игры — это сужает trough.
+    trigger: { dayMin: 84, randomChance: 0.20, noService: 'market', oneTime: true },
     options: [
       {
         id: 'excel',
@@ -164,20 +172,38 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
   // только для упорно отказывающихся, и редкие.
   // ─────────────────────────────────────────────────────────────────────
 
+  // ─────────────────────────────────────────────────────────────────────
+  // PAIN events (Спринт 6, Economy #6 — probabilistic pain).
+  //
+  // Daily Pain Engine deductions retired в d7305a7 — был nagging tax-like.
+  // Эти события — другой жанр: редкие крисисы со story и выбором. Игрок
+  // запоминает «помните как налоговая пришла на W18 и Диадок спас», а не
+  // фоновое «теряете 4% выручки каждый день». Сервис ощущается как
+  // страховка с конкретным моментом payoff.
+  //
+  // Окно W14-26 — играет когда игрок только решает, нужен ли сервис.
+  // Раньше pain-events фирились W22-28 — слишком поздно, игрок уже без них
+  // справлялся. ROI subscription: ~5-8 недель (один-два предотвращённых
+  // crisis'а окупают подписку).
+  //
+  // noService gate: событие фирится ТОЛЬКО когда сервис неактивен. Subscribe
+  // option активирует сервис + платит подписку, что дешевле штрафа долгосрочно.
+  // ─────────────────────────────────────────────────────────────────────
+
   {
     id: 'PAIN_DIADOC',
-    title: 'Штраф за «нарушение документооборота»',
-    description: 'Камеральная проверка по контрагенту, у которого вы закупались. Налоговая выявила расхождения в первичке: часть оригиналов не нашлась, часть — без подписи. Вешают 18 000 ₽ штрафа.',
-    trigger: { dayMin: 154, randomChance: 0.04, noService: 'diadoc', oneTime: false },
+    title: 'Налоговая запросила накладные за квартал',
+    description: 'Камеральная проверка по контрагенту, у которого вы закупались. Налоговая прислала запрос: оригиналы первички за квартал, срок — 5 рабочих дней. Половина накладных у вас в папках, часть не нашлась. Если не предоставить — штраф 15 000 ₽ за «нарушение документооборота».',
+    trigger: { dayMin: 98, randomChance: 0.06, noService: 'diadoc', oneTime: false, requiresTriggeredEvent: 'FIRST_DIADOC' },
     options: [
       {
         id: 'pay',
-        text: 'Заплатить штраф (18 000 ₽)',
-        consequences: { balanceDelta: -18000, reputationDelta: -1 },
+        text: 'Заплатить штраф (15 000 ₽) + потерять день на поиски',
+        consequences: { balanceDelta: -15000, energyDelta: -8, reputationDelta: -1 },
       },
       {
         id: 'subscribe',
-        text: 'Подключить Контур.Диадок (24 000 ₽) — закрыть на годы',
+        text: 'Подключить Контур.Диадок (24 000 ₽) — все накладные в системе',
         consequences: { balanceDelta: -24000, serviceId: 'diadoc' },
         isContourOption: true,
       },
@@ -186,14 +212,14 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
 
   {
     id: 'PAIN_FOKUS',
-    title: 'Поставщик оказался в реестре недобросовестных',
-    description: 'Партия пришла бракованная, поставщик пропал. Через знакомого юриста выясняется: ИП в реестре «фирм-однодневок». Деньги вернуть нереально.',
-    trigger: { dayMin: 175, randomChance: 0.04, noService: 'fokus', oneTime: false },
+    title: 'Поставщик-новичок оказался липовым',
+    description: 'Заказ от незнакомого ИП, скидка 30%. Партия пришла бракованная, поставщик не отвечает. Юрист из района говорит: ИП в реестре «фирм-однодневок», деньги не вернуть. 12 000 ₽ в минусе, плюс репутация у тех, кто эту партию уже купил.',
+    trigger: { dayMin: 98, randomChance: 0.06, noService: 'fokus', oneTime: false, requiresTriggeredEvent: 'FIRST_FOKUS' },
     options: [
       {
         id: 'eat_loss',
-        text: 'Списать в потери (25 000 ₽)',
-        consequences: { balanceDelta: -25000, reputationDelta: -2 },
+        text: 'Списать в потери (12 000 ₽)',
+        consequences: { balanceDelta: -12000, reputationDelta: -2 },
       },
       {
         id: 'subscribe',
@@ -206,18 +232,18 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
 
   {
     id: 'PAIN_ELBA',
-    title: 'Ошибка в декларации — штраф',
-    description: 'Налоговая нашла недоплату по УСН за прошлый квартал. Штраф 15 000 ₽ + пени.',
-    trigger: { dayMin: 196, randomChance: 0.04, noService: 'elba', oneTime: false },
+    title: 'Ошибка в декларации УСН — пеня',
+    description: 'Налоговая нашла недоплату УСН за прошлый квартал — пропустили вычет. Пеня 10 000 ₽ + ночь работы на пересчёт прошлых документов. «У всех бывает», говорит знакомый бухгалтер по телефону.',
+    trigger: { dayMin: 112, randomChance: 0.05, noService: 'elba', oneTime: false, requiresTriggeredEvent: 'FIRST_ELBA' },
     options: [
       {
         id: 'pay_fine',
-        text: 'Заплатить (15 000 ₽)',
-        consequences: { balanceDelta: -15000 },
+        text: 'Заплатить пеню (10 000 ₽) + день на пересчёт',
+        consequences: { balanceDelta: -10000, energyDelta: -8 },
       },
       {
         id: 'subscribe',
-        text: 'Подключить Контур.Эльба (36 000 ₽) — расчёт автоматом',
+        text: 'Подключить Контур.Эльба (36 000 ₽) — расчёт автоматом, ошибок нет',
         consequences: { balanceDelta: -36000, serviceId: 'elba' },
         isContourOption: true,
       },

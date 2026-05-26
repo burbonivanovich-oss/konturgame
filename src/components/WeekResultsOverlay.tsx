@@ -35,7 +35,7 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
   const {
     currentWeek, balance, lastDayResult, services, achievements,
     pendingMilestoneCelebration, weeklyTactic,
-    lastWeekMicroEvent, lastDiaryEntry,
+    lastWeekMicroEvent, lastDiaryEntry, pendingTierUpgrade,
   } = useGameStore()
 
   if (!lastDayResult) return null
@@ -55,10 +55,24 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
   if (tactic && tactic.revenueMultiplier > 1) {
     const pct = Math.round((tactic.revenueMultiplier - 1) * 100)
     positives.push(`Тактика «${tactic.title}»: +${pct}% к выручке`)
+  } else if (tactic && tactic.id === 'service') {
+    // Спринт 6 (UX #8): service-тактика не имеет revenue boost, поэтому
+    // молчала в «Что сработало». Показываем её rep-эффект — игрок видит
+    // что тактика отработала.
+    const repWeekly = Math.round((tactic.reputationDelta * 7 + tactic.loyaltyDelta * 7 * 0.5) * 10) / 10
+    positives.push(`Тактика «${tactic.title}»: +${repWeekly} репутации за неделю`)
+  } else if (tactic && tactic.id === 'calm') {
+    positives.push(`Тактика «${tactic.title}»: +${Math.round(tactic.energyDelta * 7)} энергии за неделю`)
   }
-  if (activeCount >= 3) {
-    const bonus = activeCount >= 7 ? 30 : activeCount >= 5 ? 20 : 10
-    positives.push(`Бандл ${activeCount}/7 сервисов: +${bonus}% выручки`)
+  // Спринт 6 (UX phase-3 audit): показываем бандл-bonus ТОЛЬКО на неделях
+  // изменения (когда добавили сервис → новый tier бандла). Раньше эта
+  // строчка спамилась 20+ недель подряд с одинаковым +10%. Триггер:
+  // currentWeek первая неделя после tier-crossing (3rd, 5th, 7th service).
+  // Используем simple proxy: показываем только когда activeCount это TOP
+  // bundle (5+ или 7+) ИЛИ когда сервис только что подключён (rare path).
+  if (activeCount >= 5) {
+    const bonus = activeCount >= 7 ? 30 : 20
+    positives.push(`Полный бандл ${activeCount}/${activeCount >= 7 ? 7 : 5}: +${bonus}% выручки`)
   }
   if (lastWeekMicroEvent && lastWeekMicroEvent.effectText.includes('+')) {
     positives.push(lastWeekMicroEvent.effectText)
@@ -66,6 +80,12 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
 
   // ── Что пошло не так (negative causality) ──────────────────────────
   const negatives: string[] = []
+  // Спринт 6 (Economy #3): null tactic = -5% revenue tax. Раньше было
+  // молчаливо — игрок не понимал откуда «эффективность» падает. Теперь
+  // явная строчка в Что пошло не так.
+  if (!tactic) {
+    negatives.push('Без тактики на неделю: −5% выручки (рассеянность)')
+  }
   if (lastDayResult.expiredLoss > 0) {
     negatives.push(
       `Просрочка: −${lastDayResult.expiredLoss.toLocaleString('ru-RU')} ₽`
@@ -74,7 +94,12 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
   if (lastDayResult.tax > 0) {
     negatives.push(`Налог УСН: −${lastDayResult.tax.toLocaleString('ru-RU')} ₽`)
   }
-  if (lastDayResult.subscriptionCost > 0 && activeCount > 0) {
+  // Спринт 6 (UX phase-4 audit): подписки Контура раньше попадали в
+  // «Что пошло не так» каждую неделю — но это не «потеря», это
+  // плановый расход. После W6 (стабилизировались) убираем из negatives.
+  // На W1-6 оставляем чтобы игрок видел стоимость подписок в первый
+  // месяц, потом — нет.
+  if (lastDayResult.subscriptionCost > 0 && activeCount > 0 && currentWeek <= 6) {
     negatives.push(
       `Подписки Контура (${activeCount}): −${lastDayResult.subscriptionCost.toLocaleString('ru-RU')} ₽`
     )
@@ -102,7 +127,9 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
             fontSize: 11, fontWeight: 800, color: K.mintInk,
             letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6,
           }}>
-            Воскресенье · Неделя {currentWeek - 1} закончилась
+            {currentWeek - 1 >= 52
+              ? 'Год завершён — итоги бизнеса'
+              : `Воскресенье · Неделя ${currentWeek - 1} закончилась`}
           </div>
           <h1 style={{
             fontSize: 26, fontWeight: 800, color: K.ink,
@@ -124,6 +151,37 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
               lineHeight: 1.2,
             }}>
               {milestone.title}
+            </div>
+          </div>
+        )}
+
+        {/* Tier upgrade — отдельный slot, заметнее микрособытий.
+            Раньше tier-апгрейд писался в lastWeekMicroEvent и терялся
+            рядом с «соседка принесла печенье». */}
+        {pendingTierUpgrade && (
+          <div style={{
+            background: 'linear-gradient(135deg, #6b46c1, #2563eb)',
+            borderRadius: 14, padding: '18px 22px',
+            display: 'flex', alignItems: 'center', gap: 16,
+            boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)',
+          }}>
+            <div style={{ fontSize: 36 }} aria-hidden="true">{pendingTierUpgrade.icon}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                fontSize: 10, fontWeight: 800, letterSpacing: '0.08em',
+                color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase',
+              }}>
+                Бизнес вырос — Этап {pendingTierUpgrade.level}
+              </div>
+              <div style={{
+                fontSize: 18, fontWeight: 800, color: K.white,
+                lineHeight: 1.2, marginTop: 2,
+              }}>
+                {pendingTierUpgrade.name}
+              </div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 4 }}>
+                Клиенты, чек и ёмкость подросли. Никаких новых трат.
+              </div>
             </div>
           </div>
         )}

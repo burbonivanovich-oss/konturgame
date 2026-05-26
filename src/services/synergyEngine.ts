@@ -16,8 +16,8 @@ interface SynergyModifiers {
   revenueBonus: number
 }
 
-// loyaltyBonus убран — лояльность как скаляр выпилена. Если в SynergyBonus.effects
-// прилетит loyaltyBonus (legacy конфиг), он молча игнорируется.
+// loyaltyBonus поле удалено из SynergyBonus.effects (типа) в Спринт 6.
+// Все 7 синергий используют только rep/check/capacity/revenue/client/tax.
 export function calculateSynergyModifiers(state: GameState): SynergyModifiers {
   const synergies = getActiveSynergies(state)
   const result: SynergyModifiers = {
@@ -32,8 +32,7 @@ export function calculateSynergyModifiers(state: GameState): SynergyModifiers {
     const e = synergy.effects
     result.capacityBonus += e.capacityBonus ?? 0
     result.checkBonus += e.checkBonus ?? 0
-    // Старые loyaltyBonus синергии переадресуем в reputationBonus × 0.5.
-    result.reputationBonus += (e.reputationBonus ?? 0) + (e.loyaltyBonus ?? 0) * 0.5
+    result.reputationBonus += e.reputationBonus ?? 0
     result.taxSaving += e.taxSaving ?? 0
     result.clientBonus += e.clientBonus ?? 0
     result.revenueBonus += e.revenueBonus ?? 0

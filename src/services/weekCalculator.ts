@@ -304,9 +304,15 @@ export function processWeek(state: GameState): DayResult {
 
   // 2. Competitor event check (once per week, not 7 times)
   state.weeksSinceCompetitorEvent++
-  const competitorInterval =
+  // Спринт 6 (Game Designer phase-4 audit): cap на W20 чтобы lategame
+  // не терял competitor pressure. Раньше interval = 5 + week/10 рос линейно
+  // (W40 = 5+4=9 нед, W50 = 5+5=10 нед), к W40+ конкурент почти не давил.
+  // Cap на интервал = base + 2 (W20 уровень) — lategame пресс остаётся.
+  const competitorInterval = Math.min(
+    COMPETITOR_CYCLE.BASE_INTERVAL_WEEKS + 2,
     COMPETITOR_CYCLE.BASE_INTERVAL_WEEKS +
-    Math.floor(state.currentWeek / COMPETITOR_CYCLE.WEEK_DIVISOR)
+      Math.floor(state.currentWeek / COMPETITOR_CYCLE.WEEK_DIVISOR),
+  )
   if (state.weeksSinceCompetitorEvent >= competitorInterval && !state.competitorEventTriggered) {
     state.competitorEventTriggered = true
     state.weeksSinceCompetitorEvent = 0
@@ -355,24 +361,51 @@ export function processWeek(state: GameState): DayResult {
   state.reputation = Math.round(newReputation)
 
   // Auto-progression тиров: когда currentWeek ≥ unlockWeek И репутация
+  // Auto-progression тиров: когда currentWeek ≥ unlockWeek И репутация
   // ≥ unlockReputation, тир поднимается без затрат. Celebration через
-  // lastWeekMicroEvent. Раньше это была разовая покупка за 150K/400K
-  // с ×1.5 рентой — слишком рискованно, мало кто соглашался.
+  // dedicated state.pendingTierUpgrade slot (отдельно от lastWeekMicroEvent
+  // и pendingMilestoneCelebration). WeekResultsOverlay рендерит его как
+  // отдельный заметный badge — раньше tier-апгрейд читался как
+  // «соседка принесла печенье» (микро-событие).
+  //
+  // Спринт 6 (QA audit #1+#2): добавлен cooldown 3 недели после
+  // tier-апгрейда. Раньше игрок, державший rep<70 до W22 и резко
+  // нагнавший rep≥85 на W22 (service-тактика + Fokus), получал T1→T2
+  // на W22 и T2→T3 на W23 без перерыва — анти-climactic. Теперь
+  // между апгрейдами минимум 3 недели — milestone'ы дышат, badge не
+  // перезаписывается.
   if (!state.isGameOver && !state.isVictory) {
+    const lastTierWeek = (state as any).lastTierUpgradeWeek ?? 0
+    const tierCooldownOk = state.currentWeek - lastTierWeek >= 3
     const tierCheck = canUpgradeTier(state)
     const nextTier = getNextTier(state)
-    if (tierCheck.ok && nextTier) {
+    if (tierCheck.ok && nextTier && tierCooldownOk) {
       state.businessTier = nextTier.level
       state.consecutiveOverloadDays = 0
-      state.lastWeekMicroEvent = {
+      ;(state as any).lastTierUpgradeWeek = state.currentWeek
+      state.pendingTierUpgrade = {
+        level: nextTier.level,
+        name: nextTier.name,
         icon: nextTier.icon,
-        title: `Бизнес вырос: ${nextTier.name}`,
-        effectText: `Этап ${nextTier.level} разблокирован — клиенты, чек и зал подросли`,
       }
+      // Декларативная запись в журнал решений — auditor QA #8 указал, что
+      // tier-апгрейд не оставлял следа в decisionLog. Добавляем.
+      if (!state.decisionLog) state.decisionLog = []
+      state.decisionLog.push({
+        week: state.currentWeek,
+        text: `Бизнес вырос до уровня «${nextTier.name}»`,
+        type: 'choice',
+        impact: 'positive',
+      })
     } else if (state.reputation >= 90 && state.currentWeek % 5 === 0) {
-      // Сарафанное радио: только если в эту неделю не было tier-upgrade
-      // (его celebration важнее). +10% трафика на 14 дней.
-      state.temporaryClientMod = (state.temporaryClientMod ?? 0) + 0.10
+      // Сарафанное радио. Спринт 6 (QA #5+#6): теперь СУММИРУЕТ с
+      // существующим temporaryClientMod, а не заменяет. Раньше overwrite
+      // мог стереть отрицательный модификатор конкурента (immunity bug
+      // каждые 5 недель при rep≥90). Микро-события тоже used additive —
+      // консистентность между двумя путями. Cap на +0.30 чтобы не было
+      // unbounded накопления:
+      const current = state.temporaryClientMod ?? 0
+      state.temporaryClientMod = Math.min(0.30, current + 0.10)
       state.temporaryModDaysLeft = Math.max(state.temporaryModDaysLeft ?? 0, 14)
       state.lastWeekMicroEvent = {
         icon: '💛',
@@ -798,6 +831,24 @@ function generateNextWeekTeaser(state: GameState): string | null {
   const employees = state.employees?.length ?? 0
   const upgradesCount = state.purchasedUpgrades?.length ?? 0
 
+  // Спринт 6 (Game Designer phase-3 audit): T2 forward-looking teaser.
+  // Раньше игрок узнавал «нужна реп ≥70» только когда заходил в Развитие.
+  // Aggressive-tactic-runner мог уйти на rep=40 к W12 и пропустить T2.
+  // Триггер: за 3 недели до W12 при tier=1 и недостаточной репутации.
+  if (tier === 1 && state.currentWeek >= 9 && state.currentWeek <= 11) {
+    const rep = state.reputation ?? 50
+    if (rep < 70) {
+      return `🎯 До перехода на Этап 2 нужна репутация ≥ 70 (сейчас ${rep}). Service-тактика даёт +7 реп/нед, calm — +0.7`
+    }
+  }
+  // T3 forward-looking teaser
+  if (tier === 2 && state.currentWeek >= 19 && state.currentWeek <= 21) {
+    const rep = state.reputation ?? 50
+    if (rep < 85) {
+      return `🎯 До перехода на Этап 3 нужна репутация ≥ 85 (сейчас ${rep})`
+    }
+  }
+
   // Накопил, но не растёт
   if (balance >= 600000 && tier < 3 && state.currentWeek >= 25) {
     return `🏢 На счету ${balance.toLocaleString('ru-RU')} ₽ — может, пора подумать о следующем тире бизнеса (Развитие)`
@@ -927,6 +978,13 @@ function applyWeeklyMicroEvent(state: GameState): void {
     : 'rough'
 
   const seen = new Set(state.seenMicroEvents ?? [])
+  const hasEmployees = (state.employees?.length ?? 0) > 0
+
+  // requiresEmployees: события про команду/зарплату не должны прилетать
+  // в solo-прогонах (player жалуется «событие про сотрудников когда у
+  // нас сотрудников нет»).
+  const eligibilityFilter = (m: typeof DAILY_MICRO_EVENTS[0]): boolean =>
+    !m.requiresEmployees || hasEmployees
 
   // 1) Сначала ищем события с активным контекстом (не показанные).
   //    70% шанс взять из контекстных кандидатов, если они есть — это
@@ -934,7 +992,7 @@ function applyWeeklyMicroEvent(state: GameState): void {
   let micro: typeof DAILY_MICRO_EVENTS[0] | undefined
   if (activeContexts.size > 0 && Math.random() < 0.70) {
     const contextual = DAILY_MICRO_EVENTS.filter(
-      m => m.contextTrigger && activeContexts.has(m.contextTrigger) && !seen.has(m.id),
+      m => m.contextTrigger && activeContexts.has(m.contextTrigger) && !seen.has(m.id) && eligibilityFilter(m),
     )
     if (contextual.length > 0) {
       micro = contextual[Math.floor(Math.random() * contextual.length)]
@@ -943,14 +1001,14 @@ function applyWeeklyMicroEvent(state: GameState): void {
 
   // 2) Иначе — обычный vibe-пул (как раньше).
   if (!micro) {
-    let candidates = DAILY_MICRO_EVENTS.filter(m => m.vibe === targetVibe && !seen.has(m.id))
+    let candidates = DAILY_MICRO_EVENTS.filter(m => m.vibe === targetVibe && !seen.has(m.id) && eligibilityFilter(m))
     if (candidates.length === 0) {
       state.seenMicroEvents = []
-      candidates = DAILY_MICRO_EVENTS.filter(m => m.vibe === targetVibe)
+      candidates = DAILY_MICRO_EVENTS.filter(m => m.vibe === targetVibe && eligibilityFilter(m))
     }
     if (candidates.length === 0) {
-      candidates = DAILY_MICRO_EVENTS.filter(m => !seen.has(m.id))
-      if (candidates.length === 0) candidates = DAILY_MICRO_EVENTS as any
+      candidates = DAILY_MICRO_EVENTS.filter(m => !seen.has(m.id) && eligibilityFilter(m))
+      if (candidates.length === 0) candidates = DAILY_MICRO_EVENTS.filter(eligibilityFilter) as any
     }
     micro = candidates[Math.floor(Math.random() * candidates.length)]
   }

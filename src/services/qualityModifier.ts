@@ -2,8 +2,7 @@
 // клиентов / цены. Удалено: эффекты дублировали репутацию. Оставлены
 // только: brand effect (rep+loyalty синергия) и сезонность.
 //
-// Когда loyalty уйдёт следующим коммитом, getBrandEffect упростится до
-// reputation-only.
+// Лояльность тоже выпилена. getBrandEffect стал reputation-only.
 
 /**
  * Get season modifier based on week of year
@@ -19,15 +18,18 @@ export function getSeasonalityModifier(currentWeek: number, seasonality: Record<
 
 /**
  * Get brand effect modifier (reputation-only).
- * Раньше требовалась связка «высокая репутация + высокая лояльность» (rep>80 AND loy>80),
- * редко срабатывала, давала +40% клиентов / +30% выручки / +10% цены.
  *
- * Лояльность выпилена. Теперь это reputation-only gate, но с поднятым
- * порогом и уполовиненной магнитудой — чтобы общая экономика не съехала
- * (рев. бонус срабатывал редко в старой модели, при rep-only-gate с
- * прежней магнитудой средняя выручка взлетала на 60%).
- *  - rep > 90: +20% клиентов, +15% выручки, +5% к цене
- *  - rep > 75: +10% клиентов, +7% выручки, +2% к цене
+ * Истоки: раньше требовалась связка rep>80 AND loyalty>80, редко
+ * срабатывала, давала +40% клиентов / +30% выручки / +10% цены.
+ * Лояльность выпилена. Прошло 4 итерации калибровки — финальные значения
+ * (Спринт 6, после Economy/Game Designer аудитов):
+ *   • rep > 90: +10% клиентов, +10% выручки, +4% к цене
+ *   • rep > 75: +4% клиентов, +4% выручки, +2% к цене
+ *
+ * Промежуточный +5%/+5%/+2% оказался неощутимым — игрок упирался в
+ * rep=100 на W6, но не чувствовал «бренда». Текущее +10/+10/+4 даёт
+ * заметный slope rep=70 → rep=95, не разгоняя экономику до pre-refactor
+ * +40%/+30%/+10% уровня (там сложно было достичь обоих гейтов rep+loy).
  */
 export function getBrandEffect(reputation: number, _loyalty?: number): {
   clientMod: number
@@ -35,14 +37,11 @@ export function getBrandEffect(reputation: number, _loyalty?: number): {
   priceMod: number
   isBrand: boolean
 } {
-  // Магнитуды калиброваны так, чтобы post-refactor финальные балансы
-  // в симуляциях оставались близки к pre-refactor (loyalty + rep gate был
-  // редким; rep-only gate срабатывает чаще, поэтому магнитуды поджаты).
   if (reputation > 90) {
-    return { clientMod: 0.05, revenueMod: 0.05, priceMod: 0.02, isBrand: true }
+    return { clientMod: 0.10, revenueMod: 0.10, priceMod: 0.04, isBrand: true }
   }
   if (reputation > 75) {
-    return { clientMod: 0.02, revenueMod: 0.02, priceMod: 0.01, isBrand: false }
+    return { clientMod: 0.04, revenueMod: 0.04, priceMod: 0.02, isBrand: false }
   }
   return { clientMod: 0, revenueMod: 0, priceMod: 0, isBrand: false }
 }

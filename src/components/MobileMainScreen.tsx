@@ -48,6 +48,9 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
   const [showNpcRosterModal, setShowNpcRosterModal] = useState(false)
   const [showHireEmployeeModal, setShowHireEmployeeModal] = useState(false)
   const [activeTab, setActiveTab] = useState('day')
+  const [developSubTab, setDevelopSubTab] = useState<'marketing' | 'upgrades' | 'tier'>('marketing')
+  const [financeSubTab, setFinanceSubTab] = useState<'finance' | 'statistics'>('finance')
+  const [moreSubTab, setMoreSubTab] = useState<'indicators' | 'journal'>('indicators')
 
   const {
     pendingEvent, pendingEventsQueue, isGameOver, isVictory, businessType, achievements, promoCodesRevealed,
@@ -190,29 +193,20 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
         </div>
       </div>
 
-      {/* Tab navigation — horizontally scrollable, view tabs gated by week */}
+      {/* Bottom-style tab bar — 6 tabs, always visible, no horizontal scroll */}
       <div style={{
-        display: 'flex', gap: 4,
-        overflowX: 'auto', overflowY: 'hidden',
+        display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)',
         borderBottom: `1px solid ${K.line}`,
         marginBottom: 8,
-        WebkitOverflowScrolling: 'touch',
-        scrollbarWidth: 'none',
       }}>
-        {[
-          { id: 'day',         label: '◎ День',         unlocksAtWeek: 0  },
-          { id: 'stats',       label: '⭐ Индикаторы',  unlocksAtWeek: 0  },
-          { id: 'services',    label: '🔌 Сервисы',     unlocksAtWeek: 0  },
-          { id: 'finance',     label: '💼 Финансы',     unlocksAtWeek: 0  },
-          { id: 'operations',  label: '⚙️ Состав',      unlocksAtWeek: 0  },
-          { id: 'marketing',   label: '📢 Реклама',     unlocksAtWeek: 2  },
-          { id: 'upgrades',    label: '🔧 Улучшения',   unlocksAtWeek: 2  },
-          { id: 'tier',        label: '⭐ Уровень',     unlocksAtWeek: 2  },
-          { id: 'statistics',  label: '📊 Статистика',  unlocksAtWeek: 7  },
-          { id: 'journal',     label: '📓 Журнал',      unlocksAtWeek: 10 },
-        ]
-          .filter(tab => currentWeek >= tab.unlocksAtWeek)
-          .map((tab) => {
+        {([
+          { id: 'day',        label: 'День'      },
+          { id: 'services',   label: 'Сервисы'   },
+          { id: 'develop',    label: 'Развитие'  },
+          { id: 'operations', label: 'Состав'    },
+          { id: 'finance',    label: 'Финансы'   },
+          { id: 'more',       label: 'Ещё'       },
+        ] as const).map((tab) => {
             const isPulsing = onboardingTargetTab === tab.id && activeTab !== tab.id
             return (
               <button
@@ -220,11 +214,13 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
                 onClick={() => setActiveTab(tab.id)}
                 className={isPulsing ? 'nav-pulse' : undefined}
                 style={{
-                  padding: '8px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700,
-                  border: 'none', background: activeTab === tab.id ? K.ink : 'transparent',
-                  color: activeTab === tab.id ? K.white : K.ink,
-                  cursor: 'pointer', transition: 'all 0.2s',
-                  whiteSpace: 'nowrap', flexShrink: 0,
+                  padding: '7px 2px', borderRadius: 0, fontSize: 10, fontWeight: 700,
+                  border: 'none',
+                  borderBottom: activeTab === tab.id ? `2px solid ${K.orange}` : '2px solid transparent',
+                  background: 'transparent',
+                  color: activeTab === tab.id ? K.orange : K.muted,
+                  cursor: 'pointer', transition: 'all 0.15s',
+                  whiteSpace: 'nowrap', textAlign: 'center',
                   outline: isPulsing ? `2px solid ${K.orange}` : 'none',
                 }}
               >
@@ -447,25 +443,108 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
           </>
         )}
 
-        {activeTab === 'stats' && (
+        {/* Tab: Сервисы */}
+        {activeTab === 'services' && <ServicePanel />}
+
+        {/* Tab: Развитие — marketing / upgrades / tier via sub-tab bar */}
+        {activeTab === 'develop' && (
           <>
-            <Indicators onOpenOwnerInvestments={() => setShowOwnerInvestmentsModal(true)} />
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4,
+              background: K.bone, borderRadius: 10, padding: 4, flexShrink: 0,
+            }}>
+              {([
+                { id: 'marketing', label: 'Реклама'    },
+                { id: 'upgrades',  label: 'Улучшения'  },
+                { id: 'tier',      label: 'Уровень'    },
+              ] as const).map(sub => (
+                <button
+                  key={sub.id}
+                  onClick={() => setDevelopSubTab(sub.id)}
+                  style={{
+                    padding: '6px 4px', borderRadius: 7, fontSize: 11, fontWeight: 700,
+                    border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                    background: developSubTab === sub.id ? K.white : 'transparent',
+                    color: developSubTab === sub.id ? K.ink : K.muted,
+                    boxShadow: developSubTab === sub.id ? '0 1px 4px rgba(0,0,0,0.10)' : 'none',
+                  }}
+                >
+                  {sub.label}
+                </button>
+              ))}
+            </div>
+            <DevelopmentView view={developSubTab} />
           </>
         )}
 
-        {activeTab === 'services' && (
-          <ServicePanel />
-        )}
-
-        {activeTab === 'finance' && <FinanceView />}
+        {/* Tab: Состав */}
         {activeTab === 'operations' && (
           <OperationsView onShowHireModal={() => setShowHireEmployeeModal(true)} />
         )}
-        {activeTab === 'marketing'   && <DevelopmentView view="marketing" />}
-        {activeTab === 'upgrades'    && <DevelopmentView view="upgrades" />}
-        {activeTab === 'tier'        && <DevelopmentView view="tier" />}
-        {activeTab === 'statistics' && <StatisticsView />}
-        {activeTab === 'journal' && <DecisionLogView />}
+
+        {/* Tab: Финансы — finance / statistics via sub-tab bar */}
+        {activeTab === 'finance' && (
+          <>
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 4,
+              background: K.bone, borderRadius: 10, padding: 4, flexShrink: 0,
+            }}>
+              {([
+                { id: 'finance',    label: 'Финансы'    },
+                { id: 'statistics', label: 'Статистика' },
+              ] as const).map(sub => (
+                <button
+                  key={sub.id}
+                  onClick={() => setFinanceSubTab(sub.id)}
+                  style={{
+                    padding: '6px 4px', borderRadius: 7, fontSize: 11, fontWeight: 700,
+                    border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                    background: financeSubTab === sub.id ? K.white : 'transparent',
+                    color: financeSubTab === sub.id ? K.ink : K.muted,
+                    boxShadow: financeSubTab === sub.id ? '0 1px 4px rgba(0,0,0,0.10)' : 'none',
+                  }}
+                >
+                  {sub.label}
+                </button>
+              ))}
+            </div>
+            {financeSubTab === 'finance'    && <FinanceView />}
+            {financeSubTab === 'statistics' && <StatisticsView />}
+          </>
+        )}
+
+        {/* Tab: Ещё — indicators / journal via sub-tab bar */}
+        {activeTab === 'more' && (
+          <>
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 4,
+              background: K.bone, borderRadius: 10, padding: 4, flexShrink: 0,
+            }}>
+              {([
+                { id: 'indicators', label: 'Индикаторы' },
+                { id: 'journal',    label: 'Журнал'     },
+              ] as const).map(sub => (
+                <button
+                  key={sub.id}
+                  onClick={() => setMoreSubTab(sub.id)}
+                  style={{
+                    padding: '6px 4px', borderRadius: 7, fontSize: 11, fontWeight: 700,
+                    border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                    background: moreSubTab === sub.id ? K.white : 'transparent',
+                    color: moreSubTab === sub.id ? K.ink : K.muted,
+                    boxShadow: moreSubTab === sub.id ? '0 1px 4px rgba(0,0,0,0.10)' : 'none',
+                  }}
+                >
+                  {sub.label}
+                </button>
+              ))}
+            </div>
+            {moreSubTab === 'indicators' && (
+              <Indicators onOpenOwnerInvestments={() => setShowOwnerInvestmentsModal(true)} />
+            )}
+            {moreSubTab === 'journal' && <DecisionLogView />}
+          </>
+        )}
       </div>
 
       {/* Toast */}
@@ -501,16 +580,22 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
         onNavigate={(nav) => {
           // Map nav id → mobile tab id (loose mapping)
           const navToTab: Record<string, string> = {
-            ecosystem: 'services',
+            ecosystem:  'services',
             operations: 'operations',
-            dashboard: 'day',
-            marketing: 'marketing',
-            upgrades: 'upgrades',
-            tier: 'tier',
-            finance: 'finance',
-            statistics: 'statistics',
-            journal: 'journal',
+            dashboard:  'day',
+            marketing:  'develop',
+            upgrades:   'develop',
+            tier:       'develop',
+            finance:    'finance',
+            statistics: 'finance',
+            journal:    'more',
           }
+          // When onboarding sends us to a grouped tab, also pre-select the right sub-tab
+          if (nav === 'marketing')  setDevelopSubTab('marketing')
+          if (nav === 'upgrades')   setDevelopSubTab('upgrades')
+          if (nav === 'tier')       setDevelopSubTab('tier')
+          if (nav === 'statistics') setFinanceSubTab('statistics')
+          if (nav === 'journal')    setMoreSubTab('journal')
           setActiveTab(navToTab[nav] ?? nav)
         }}
         onAction={(action) => {
@@ -520,16 +605,22 @@ export default function MobileMainScreen({ onRestart }: MobileMainScreenProps) {
       <TutorialMoments
         onNavigate={(nav) => {
           const navToTab: Record<string, string> = {
-            ecosystem: 'services',
+            ecosystem:  'services',
             operations: 'operations',
-            dashboard: 'day',
-            marketing: 'marketing',
-            upgrades: 'upgrades',
-            tier: 'tier',
-            finance: 'finance',
-            statistics: 'statistics',
-            journal: 'journal',
+            dashboard:  'day',
+            marketing:  'develop',
+            upgrades:   'develop',
+            tier:       'develop',
+            finance:    'finance',
+            statistics: 'finance',
+            journal:    'more',
           }
+          // When onboarding sends us to a grouped tab, also pre-select the right sub-tab
+          if (nav === 'marketing')  setDevelopSubTab('marketing')
+          if (nav === 'upgrades')   setDevelopSubTab('upgrades')
+          if (nav === 'tier')       setDevelopSubTab('tier')
+          if (nav === 'statistics') setFinanceSubTab('statistics')
+          if (nav === 'journal')    setMoreSubTab('journal')
           setActiveTab(navToTab[nav] ?? nav)
         }}
       />

@@ -24,7 +24,9 @@ const VIEW_TITLES: Record<DevView, { eyebrow: string; title: string }> = {
 }
 
 export function DevelopmentView({ view = 'marketing' }: { view?: DevView }) {
-  const headers = VIEW_TITLES[view]
+  // Защита от TS-bypass (dynamic activeView со строкой не из union).
+  const safeView: DevView = (view in VIEW_TITLES ? view : 'marketing') as DevView
+  const headers = VIEW_TITLES[safeView]
 
   return (
     <div style={{
@@ -37,9 +39,9 @@ export function DevelopmentView({ view = 'marketing' }: { view?: DevView }) {
         <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.025em' }}>{headers.title}</div>
       </div>
 
-      {view === 'tier'      && <TierSection />}
-      {view === 'marketing' && <MarketingSection />}
-      {view === 'upgrades'  && <UpgradesSection />}
+      {safeView === 'tier'      && <TierSection />}
+      {safeView === 'marketing' && <MarketingSection />}
+      {safeView === 'upgrades'  && <UpgradesSection />}
     </div>
   )
 }
@@ -48,7 +50,10 @@ function TierSection() {
   // Тиры теперь auto-progression: weekCalculator сам поднимает уровень
   // когда currentWeek ≥ unlockWeek и репутация ≥ unlockReputation. Кнопки
   // покупки нет — этот экран read-only timeline.
-  const state = useGameStore.getState()
+  // Спринт 6 (QA #8): useGameStore() — reactive subscription, чтобы экран
+  // обновлялся при tier-bump mid-session. Раньше useGameStore.getState()
+  // делал snapshot и tier-апгрейд не отражался в UI до перерендера.
+  const state = useGameStore()
   const current = getCurrentTier(state)
   const next = getNextTier(state)
 

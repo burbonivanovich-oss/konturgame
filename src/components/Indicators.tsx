@@ -52,7 +52,7 @@ export default function Indicators({ onOpenOwnerInvestments }: IndicatorsProps =
     const actualCost = Math.max(0, weeklyCost - upgradeBonus)
     const tactic = getWeeklyTacticDef(weeklyTactic)
     const tacticEnergy = Math.round((tactic?.energyDelta ?? 0) * 7)
-    const restore = 42  // ECONOMY_CONSTANTS.ENERGY_WEEKLY_RESTORE base; aligned with completeResultsPhase
+    const restore = 28  // base restore per week; aligned with completeResultsPhase (Спринт 6: 42→30→28 после burnoutReachability теста)
     const net = restore + tacticEnergy - actualCost
     const businessLabel = state.businessType === 'shop' ? 'магазин' : state.businessType === 'cafe' ? 'кафе' : 'салон'
     return { weeklyCost, upgradeBonus, actualCost, tacticEnergy, restore, net, tactic, businessLabel }

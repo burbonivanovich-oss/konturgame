@@ -14,19 +14,19 @@ const ACTIVATION_TOAST: Record<string, { headline: string; detail: string }> = {
   extern:  { headline: 'Контур.Экстерн подключён!', detail: 'Налоговая нагрузка -2% — отчёты сдаются онлайн' },
 }
 
-// Одна строчка под inactive сервисом: что игрок теряет, если не подключит.
-// Раньше эта информация жила в отдельной Pain Engine панели и в дневном
-// штрафе к балансу — обе панели уехали, осталась только подсказка на
-// карточке сервиса как ROI-аргумент. Цифры — реалистичные оценки для
-// малого бизнеса (магазин/кафе/салон) на середине игры, не привязаны к
-// дневной выручке игрока (Pain Engine как штраф отключён).
+// Одна строчка под inactive сервисом: что игрок теряет/рискует без него.
+// Спринт 6 (UX Designer audit #5): убрали захардкоженные «~10 000 ₽/мес» —
+// они не привязаны к реальной выручке игрока (Pain Engine как ежедневный
+// штраф отключён). Когда игрок подключал сервис и не видел экономии в
+// финансах, доверие к Контур-копи терялось. Переписали в risk-language:
+// конкретные эффекты без обещаний в рублях.
 const SERVICE_PAIN_HINT: Record<string, string> = {
-  market: 'Без него ~10 000 ₽/мес уходит на ручной учёт и списания',
-  bank:   'Без него 30% клиентов уходят — некому платить наличкой',
+  market: 'Без него учёт вручную — товары теряются, маржа тает',
+  bank:   'Без него ~30% клиентов уходят — нечем платить картой',
   ofd:    'Без него штраф до 10 000 ₽ за каждый чек (54-ФЗ)',
-  diadoc: 'Без него ~5 000 ₽/мес — потерянные накладные и просрочки',
-  fokus:  'Без него ~6 000 ₽/мес — нарываетесь на плохих поставщиков',
-  elba:   'Без него ~4 000 ₽/мес — ошибки в декларациях и пени',
+  diadoc: 'Без него бумажные накладные теряются и опаздывают',
+  fokus:  'Без него рискуете нарваться на плохих поставщиков',
+  elba:   'Без него ошибки в декларациях и пени от ФНС',
 }
 
 const ONBOARDING_ACTION_SERVICE: Record<string, string> = {
@@ -405,41 +405,49 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
                       <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.6 }}>ЦЕНА</div>
                       <div style={{ fontSize: 14, fontWeight: 800 }} className="k-num">
                         {s.annualPrice === 0
-                          ? <>Бесплатно<span style={{ fontSize: 10, opacity: 0.7 }}> · комиссия 1.5%</span></>
+                          ? <>Бесплатно<span style={{ fontSize: 10, opacity: 0.7 }}> · комиссия 1%</span></>
                           : <>{s.annualPrice.toLocaleString('ru-RU')} ₽<span style={{ fontSize: 10, opacity: 0.7 }}>/год</span></>}
                       </div>
                     </div>
                     <button
                       onClick={() => handleToggle(s.id, false)}
                       disabled={balance < s.annualPrice}
+                      // Спринт 6: подсветка кнопки Подключить, когда онбординг
+                      // именно её ждёт (раньше пульсировала только карточка
+                      // целиком — кнопка терялась).
+                      className={isOnboardingTarget && balance >= s.annualPrice ? 'nav-pulse' : undefined}
                       style={{
-                        border: 'none',
+                        border: isOnboardingTarget ? `2px solid ${K.orange}` : 'none',
                         cursor: balance < s.annualPrice ? 'not-allowed' : 'pointer',
                         fontFamily: 'inherit',
                         padding: '6px 12px', borderRadius: 999,
-                        background: balance >= s.annualPrice ? K.ink : 'rgba(0,0,0,0.1)',
+                        background: isOnboardingTarget && balance >= s.annualPrice
+                          ? K.orange
+                          : balance >= s.annualPrice ? K.ink : 'rgba(0,0,0,0.1)',
                         color: balance >= s.annualPrice ? '#fff' : K.muted,
                         fontSize: 11, fontWeight: 700,
                         opacity: balance >= s.annualPrice ? 1 : 0.6,
                         transition: 'opacity 0.2s',
+                        boxShadow: isOnboardingTarget && balance >= s.annualPrice
+                          ? '0 2px 8px rgba(255,107,0,0.45)' : 'none',
                       }}
                     >
-                      Подключить
+                      Подключить{isOnboardingTarget ? ' →' : ''}
                     </button>
                   </>
                 ) : (
-                  // Once on, the service stays on for the run. No "unsub" path —
-                  // players don't waste decisions weighing weekly cost against
-                  // weekly value. Cost runs in the background as a fixed
-                  // monthly line in the financial summary.
+                  // Active state читается из цветной плашки + ON-тега.
+                  // Раньше тут была отдельная full-width «Подключено · до конца
+                  // года» pill — 40px space на каждую активную карточку.
+                  // Спринт 6: компактная подпись справа (1 строка под ценой),
+                  // освобождает место для других виджетов.
                   <div style={{
-                    fontSize: 11, fontWeight: 700, letterSpacing: '0.02em',
-                    padding: '6px 12px', borderRadius: 999,
-                    background: 'rgba(0,0,0,0.18)',
-                    color: 'currentColor',
-                    width: '100%', textAlign: 'center',
+                    fontSize: 10, fontWeight: 600,
+                    opacity: 0.7, letterSpacing: '0.02em',
                   }}>
-                    Подключено · до конца года
+                    {s.annualPrice > 0
+                      ? `${s.annualPrice.toLocaleString('ru-RU')} ₽/год · до W52`
+                      : 'бесплатно · до W52'}
                   </div>
                 )}
               </div>
