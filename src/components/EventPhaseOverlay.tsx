@@ -343,6 +343,29 @@ function OptionButton({
   const isContour = option.isContourOption === true
   const isRisk = !isContour && balanceDelta != null && balanceDelta < -5000
 
+  // Спринт 6 (UX #6): показываем дополнительные дельты опции — раньше
+  // игрок видел только balanceDelta, а изменения репутации/энергии
+  // оставались сюрпризом до резолва. Теперь маленькие чипы под текстом.
+  const repDelta = option.consequences?.reputationDelta
+  const loyDelta = option.consequences?.loyaltyDelta  // routes to rep×0.5
+  const totalRepDelta = (repDelta ?? 0) + (loyDelta ?? 0) * 0.5
+  const energyDelta = option.consequences?.energyDelta
+  const extraDeltas: { label: string; value: string; tone: 'good' | 'bad' | 'neutral' }[] = []
+  if (Math.abs(totalRepDelta) >= 1) {
+    extraDeltas.push({
+      label: '★',
+      value: `${totalRepDelta > 0 ? '+' : ''}${Math.round(totalRepDelta)} реп`,
+      tone: totalRepDelta > 0 ? 'good' : 'bad',
+    })
+  }
+  if (energyDelta !== undefined && energyDelta !== 0) {
+    extraDeltas.push({
+      label: '⚡',
+      value: `${energyDelta > 0 ? '+' : ''}${energyDelta}`,
+      tone: energyDelta > 0 ? 'good' : 'bad',
+    })
+  }
+
   return (
     <button
       onClick={onClick}
@@ -391,6 +414,25 @@ function OptionButton({
         }}>
           {option.text}
         </div>
+        {extraDeltas.length > 0 && (
+          <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+            {extraDeltas.map((d, idx) => (
+              <span key={idx} style={{
+                fontSize: 10, fontWeight: 700,
+                padding: '2px 6px', borderRadius: 4,
+                background: isContour ? 'rgba(255,255,255,0.18)' :
+                  d.tone === 'good' ? 'rgba(34,197,94,0.12)' :
+                  d.tone === 'bad' ? 'rgba(220,38,38,0.12)' : 'rgba(0,0,0,0.06)',
+                color: isContour ? K.white :
+                  d.tone === 'good' ? K.good :
+                  d.tone === 'bad' ? K.bad : K.muted,
+                letterSpacing: '0.02em',
+              }}>
+                {d.label} {d.value}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
       {hasMonetary && (
         <div style={{

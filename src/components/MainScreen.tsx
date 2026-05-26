@@ -677,9 +677,13 @@ function DashboardView({
               <div style={{ fontSize: 10, color: K.mint, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Активные синергии · {synergies.length}
               </div>
+              {/* Спринт 6 (UX #7): добавляем формулу синергии под названием.
+                  Раньше на дашборде показывалось только имя — формула жила
+                  только в полноэкранной Экосистеме. */}
               {synergies.slice(0, 3).map(s => (
-                <div key={s.id} style={{ fontSize: 11, fontWeight: 600, color: K.ink, lineHeight: 1.35 }}>
-                  {s.name}
+                <div key={s.id} style={{ display: 'flex', flexDirection: 'column', gap: 1, lineHeight: 1.3 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: K.ink }}>{s.name}</div>
+                  <div style={{ fontSize: 10, color: K.muted }}>{s.description}</div>
                 </div>
               ))}
               {synergies.length > 3 && (
