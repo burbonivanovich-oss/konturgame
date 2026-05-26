@@ -328,44 +328,24 @@ function DashboardView({
             ))}
           </div>
 
-          {/* Daily tasks checklist */}
-          <div style={{ background: K.white, border: `1px solid ${K.line}`, borderRadius: 14, padding: 14 }}>
-            <div style={{ fontSize: 11, color: K.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
-              Задачи дня
+          {/* Daily tasks checklist — Спринт 6 (UX phase-2 audit): показывается
+              ТОЛЬКО когда есть pending event. Раньше всегда висело 2 задачи,
+              включая «Нажать Следующий день» которая никогда не была done
+              (psychic debt — игрок видел вечный долг). Теперь либо «у тебя
+              событие — разреши его», либо блок скрыт. */}
+          {pendingEvent && (
+            <div style={{ background: K.orangeSoft, border: `1px solid ${K.orange}`, borderRadius: 14, padding: '10px 14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 14, height: 14, borderRadius: 999, flexShrink: 0,
+                  border: `2px solid ${K.orange}`, background: 'transparent',
+                }} />
+                <span style={{ fontSize: 13, fontWeight: 600, color: K.orange }}>
+                  Сначала разрешите событие — оно блокирует «Следующий день»
+                </span>
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {[
-                { label: 'Разрешить событие', done: !pendingEvent, urgent: !!pendingEvent },
-                { label: 'Нажать «Следующий день»', done: false, urgent: false },
-              ].map(task => (
-                <div key={task.label} style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '6px 10px', borderRadius: 999,
-                  background: task.urgent ? K.orangeSoft : K.bone,
-                }}>
-                  <div style={{
-                    width: 14, height: 14, borderRadius: 999, flexShrink: 0,
-                    border: `2px solid ${task.done ? K.mint : task.urgent ? K.orange : K.line}`,
-                    background: task.done ? K.mint : 'transparent',
-                    display: 'grid', placeItems: 'center',
-                  }}>
-                    {task.done && (
-                      <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
-                        <path d="M2 5l2 2 4-4" stroke={K.white} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    )}
-                  </div>
-                  <span style={{
-                    fontSize: 12, fontWeight: 500,
-                    color: task.urgent ? K.orange : task.done ? K.muted : K.ink,
-                    textDecoration: task.done ? 'line-through' : 'none',
-                  }}>
-                    {task.label}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+          )}
 
           {/* Pending event card */}
           {pendingEvent && (() => {
@@ -767,6 +747,13 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
 
   const activeServiceIds = Object.values(services).filter(s => s.isActive).map(s => s.id)
   const activeCount = activeServiceIds.length
+  // Спринт 6 (UX phase-2 audit): badge на «Экосистеме» раньше был «X/7»,
+  // включая заблокированные. На W2 это читалось как «я только 2 из 7 —
+  // плохо стараюсь». Теперь знаменатель — только разблокированные сервисы.
+  const unlockedSet = new Set((useGameStore.getState().unlockedServices ?? []).filter(s => s !== 'extern'))
+  // Уже активные тоже включаем (если игрок включил вне онбординга)
+  activeServiceIds.forEach(id => { if (id !== 'extern') unlockedSet.add(id) })
+  const visibleServiceCount = Math.max(1, unlockedSet.size)
   const pendingEventCount = (pendingEvent ? 1 : 0) + (pendingEventsQueue?.length ?? 0)
 
   // Compute which nav item to highlight based on current onboarding step
@@ -877,6 +864,7 @@ function DesktopMainScreen({ onRestart }: { onRestart?: () => void }) {
         businessType={businessType}
         currentWeek={currentWeek}
         activeServiceCount={activeCount}
+        totalServiceCount={visibleServiceCount}
         savedBalance={savedBalance ?? 0}
         balance={balance}
         personalGoal={personalGoal}

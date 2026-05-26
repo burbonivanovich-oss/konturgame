@@ -84,9 +84,13 @@ export const SOLO_OVERLOAD_EVENTS: EventTemplate[] = [
     },
     options: [
       {
+        // Спринт 6 (Game Designer phase-2 audit): -10 энергии давал cafe-solo-
+        // aggressive почти-гарантированный burnout chain — игрок выбирал
+        // endure и через 2 недели выгорал. -7 даёт breathing room до прилёта
+        // first_hire_options (через 1 неделю, см. CHAIN_FOLLOWUP_DELAY).
         id: 'endure',
         text: 'Перестроить меню, чтобы быстрее справляться одному',
-        consequences: { energyDelta: -10, checkModifier: -0.05, checkModifierDays: 14 },
+        consequences: { energyDelta: -7, checkModifier: -0.05, checkModifierDays: 14 },
       },
       {
         id: 'consider_hire',

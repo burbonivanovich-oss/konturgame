@@ -24,7 +24,12 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
     id: 'FIRST_BANK',
     title: 'Третья пара уходит без покупки',
     description: 'Молодая пара минут двадцать выбирала, в итоге на кассе: «А картой можно?» — «Только наличные» — «Извините». Уходят. За неделю это уже третий раз. Соседняя кофейня поставила терминал в прошлом месяце, у них теперь очередь.',
-    trigger: { dayMin: 1, randomChance: 0.5, noService: 'bank', oneTime: true },
+    // Спринт 6 (Game Designer phase-1 audit): dayMin 1 → 15 — раньше FIRST_BANK
+    // мог прилететь параллельно с активным онбординг-шагом 1-1 («активируйте
+    // Bank»), создавая дублирующий prompt («подключите Банк» + «активируйте
+    // Bank»). Теперь FIRST_BANK живёт как «alternative-path» для игроков,
+    // скипнувших onboarding'овский шаг — fires после W2.
+    trigger: { dayMin: 15, randomChance: 0.5, noService: 'bank', oneTime: true },
     options: [
       {
         id: 'wait_it_out',

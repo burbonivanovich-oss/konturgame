@@ -66,6 +66,10 @@ interface KLeftRailProps {
   businessType: BusinessType
   currentWeek: number
   activeServiceCount: number
+  // Спринт 6 (UX phase-2): знаменатель badge'а — только разблокированные
+  // сервисы. Раньше всегда «/7» включало заблокированные → ощущение неудачи
+  // в early game.
+  totalServiceCount?: number
   savedBalance: number
   balance: number
   personalGoal: PersonalGoal | null | undefined
@@ -82,7 +86,7 @@ interface KLeftRailProps {
 }
 
 export function KLeftRail({
-  active, businessType, currentWeek, activeServiceCount,
+  active, businessType, currentWeek, activeServiceCount, totalServiceCount = 6,
   savedBalance, balance, personalGoal, pendingEventCount,
   promoCodesCount, revealedNpcCount,
   highlightNav, onNav, onHelp, onSettings,
@@ -150,7 +154,7 @@ export function KLeftRail({
           const isActive = item.id === active
           let badge: string | undefined
           if (item.id === 'dashboard' && pendingEventCount > 0) badge = String(pendingEventCount)
-          else if (item.id === 'ecosystem') badge = `${activeServiceCount}/7`
+          else if (item.id === 'ecosystem') badge = `${activeServiceCount}/${totalServiceCount}`
           const isPulsing = highlightNav === item.id && !isActive && !isLocked
           return (
             <button
