@@ -392,14 +392,15 @@ export function processWeek(state: GameState): DayResult {
         impact: 'positive',
       })
     } else if (state.reputation >= 90 && state.currentWeek % 5 === 0) {
-      // Сарафанное радио: только если в эту неделю не было tier-upgrade.
-      // +10% трафика на 14 дней. ЗАМЕНА предыдущего значения (не сложение):
-      // раньше при rep≥90 каждые 5 недель прибавляло +10% к существующему
-      // temporaryClientMod, и за 30+ недель набегало +60% перманентно
-      // (поскольку 14-дневный таймер перезапускался). Теперь — overwrite,
-      // одиночный +10% всегда на 14 дней.
-      state.temporaryClientMod = 0.10
-      state.temporaryModDaysLeft = 14
+      // Сарафанное радио. Спринт 6 (QA #5+#6): теперь СУММИРУЕТ с
+      // существующим temporaryClientMod, а не заменяет. Раньше overwrite
+      // мог стереть отрицательный модификатор конкурента (immunity bug
+      // каждые 5 недель при rep≥90). Микро-события тоже used additive —
+      // консистентность между двумя путями. Cap на +0.30 чтобы не было
+      // unbounded накопления:
+      const current = state.temporaryClientMod ?? 0
+      state.temporaryClientMod = Math.min(0.30, current + 0.10)
+      state.temporaryModDaysLeft = Math.max(state.temporaryModDaysLeft ?? 0, 14)
       state.lastWeekMicroEvent = {
         icon: '💛',
         title: 'Сарафанное радио',

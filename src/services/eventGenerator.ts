@@ -67,12 +67,17 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     title: 'Полный срыв поставки в сезон',
     description: 'Поставщик бесследно исчез вместе с предоплатой. Склад пуст, заказы сорваны, клиенты уходят к конкуренту. Без цифрового учёта найти замену — дни потерь.',
     npcId: 'mikhail',
-    trigger: { randomChance: 0.05 },
+    // Спринт 6 (Economy #4): oneTime: true — раньше мог повториться, что
+    // ломало нарратив (исчезнувший поставщик возвращается чтобы исчезнуть
+    // снова). Магнитуда штрафа уменьшена 35K→20K + клиент-штраф ослаблен
+    // 30%/3 дня → 20%/3 дня, чтобы gap с Контур-опцией не выглядел как
+    // tutorial gotcha 17.5x.
+    trigger: { randomChance: 0.05, oneTime: true },
     options: [
       {
         id: 'wait',
-        text: 'Судорожно искать нового поставщика (−35 000 ₽)',
-        consequences: { balanceDelta: -35000, clientModifier: -0.3, clientModifierDays: 3 },
+        text: 'Судорожно искать нового поставщика (−20 000 ₽)',
+        consequences: { balanceDelta: -20000, clientModifier: -0.2, clientModifierDays: 3 },
       },
       {
         id: 'market-find',
@@ -112,12 +117,19 @@ export const EVENTS_DATABASE: EventTemplate[] = [
     title: 'Бунт персонала — угроза коллективного ухода',
     description: 'Три ключевых сотрудника выставили ультиматум: повышение зарплаты на 40% или уходят всей командой. Без нормального учёта рабочего времени до этого и дошло.',
     npcId: 'svetlana',
-    trigger: { randomChance: 0.05 },
+    // Спринт 6 (Economy #2): добавлен weekMin gate. Раньше событие могло
+    // прилететь на W3 без сотрудников — нарративный нонсенс («бунт персонала»
+    // при solo-игре) + -15 rep штраф валил казуального игрока ниже 30 (LOW
+    // capacity threshold). Теперь — только когда есть ≥2 сотрудника и W14+.
+    trigger: { randomChance: 0.05, weekMin: 14 },
     options: [
       {
         id: 'ignore',
+        // Магнитуда штрафа уменьшена с loyaltyDelta -30 (= -15 rep после
+        // double-rep fix removed) до явного -10 rep — серьёзный удар, но
+        // не game-ruining.
         text: 'Дать уйти. Нанять новых (−25 000 ₽)',
-        consequences: { balanceDelta: -25000, loyaltyDelta: -30 },
+        consequences: { balanceDelta: -25000, reputationDelta: -10 },
       },
       {
         id: 'bonus',
@@ -177,14 +189,19 @@ export const EVENTS_DATABASE: EventTemplate[] = [
         consequences: { balanceDelta: -15000 },
       },
       {
+        // Спринт 6 (Economy #6): cheap-repair был strictly dominated friend-master'ом
+        // (−2K дешевле и почти такие же downsides). Дали cheap-repair чистый
+        // upside: умеренная стоимость без клиент-штрафа («рабочее решение»),
+        // и наказали friend-master сильнее (риск повтора реализуется как
+        // clientModifier на 14 дней — длиннее окно).
         id: 'cheap-repair',
-        text: 'Сервис эконом, без гарантии — может опять сломаться (−7 000 ₽)',
-        consequences: { balanceDelta: -7000, clientModifier: -0.1, clientModifierDays: 3 },
+        text: 'Сервис эконом, гарантия 1 мес — рабочее решение (−7 000 ₽)',
+        consequences: { balanceDelta: -7000 },
       },
       {
         id: 'friend-master',
-        text: 'Знакомый мастер «по дружбе» — без чека, втрое дешевле (−5 000 ₽, риск повтора через месяц)',
-        consequences: { balanceDelta: -5000, reputationDelta: -1 },
+        text: 'Знакомый мастер «по дружбе» — без чека, втрое дешевле (−5 000 ₽, риск повтора)',
+        consequences: { balanceDelta: -5000, clientModifier: -0.10, clientModifierDays: 14, reputationDelta: -1 },
       },
       {
         id: 'replace',
@@ -493,9 +510,19 @@ export const EVENTS_DATABASE: EventTemplate[] = [
         consequences: { balanceDelta: -4000, energyDelta: 35 },
       },
       {
+        // Спринт 6 (Economy #1): раньше strictly dominated full-vacation —
+        // те же 15K, но энергии на 10 меньше + -3 реп. Добавили upside:
+        // бизнес остаётся открыт во время отъезда → +5% клиентов 7 дней
+        // (постоянники приходят, видят что точка работает).
         id: 'delegate',
-        text: 'Уехать, оставить смену на сотруднике — рисковать качеством (−15 000 ₽)',
-        consequences: { balanceDelta: -15000, energyDelta: 60, reputationDelta: -3 },
+        text: 'Уехать, оставить смену на сотруднике — точка работает (−15 000 ₽)',
+        consequences: {
+          balanceDelta: -15000,
+          energyDelta: 60,
+          reputationDelta: -2,  // было -3
+          clientModifier: 0.05,
+          clientModifierDays: 7,
+        },
       },
       {
         id: 'no-vacation',

@@ -50,7 +50,10 @@ function TierSection() {
   // Тиры теперь auto-progression: weekCalculator сам поднимает уровень
   // когда currentWeek ≥ unlockWeek и репутация ≥ unlockReputation. Кнопки
   // покупки нет — этот экран read-only timeline.
-  const state = useGameStore.getState()
+  // Спринт 6 (QA #8): useGameStore() — reactive subscription, чтобы экран
+  // обновлялся при tier-bump mid-session. Раньше useGameStore.getState()
+  // делал snapshot и tier-апгрейд не отражался в UI до перерендера.
+  const state = useGameStore()
   const current = getCurrentTier(state)
   const next = getNextTier(state)
 

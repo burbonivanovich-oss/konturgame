@@ -79,11 +79,19 @@ export function FinanceView() {
     { label: 'Выручка от продаж', value: lastDayResult.revenue, positive: true },
   ] : []
 
+  // Спринт 6 (Economy #7): bank acquiring fee теперь видим в expenseItems.
+  // Раньше 1% от revenue молчаливо вычитался из dailyRevenue в weekCalculator —
+  // player видел «выручка чуть меньше» без объяснения. Estimate: revenue × ~1%.
+  const acquiringFeeEstimate = lastDayResult && bankActive
+    ? Math.round(lastDayResult.revenue * (1 / 0.99 - 1))  // обратная формула — revenue показано ПОСЛЕ вычета
+    : 0
+
   const expenseItems = lastDayResult ? [
     ...(lastDayResult.purchaseCost > 0 ? [{ label: 'Закупки / ассортимент', value: lastDayResult.purchaseCost }] : []),
     ...(lastDayResult.tax > 0 ? [{ label: 'Налог УСН 6%', value: lastDayResult.tax }] : []),
     ...(lastDayResult.monthlyExpense > 0 ? [{ label: 'Аренда и зарплата (плановый платёж)', value: lastDayResult.monthlyExpense }] : []),
     ...(lastDayResult.subscriptionCost > 0 ? [{ label: 'Подписки Контур', value: lastDayResult.subscriptionCost }] : []),
+    ...(acquiringFeeEstimate > 0 ? [{ label: 'Эквайринг (1% Контур.Банк)', value: acquiringFeeEstimate }] : []),
     ...(lastDayResult.expiredLoss > 0 ? [{ label: 'Списание просрочки', value: lastDayResult.expiredLoss }] : []),
   ] : []
 

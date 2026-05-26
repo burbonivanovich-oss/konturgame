@@ -74,6 +74,12 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
 
   // ── Что пошло не так (negative causality) ──────────────────────────
   const negatives: string[] = []
+  // Спринт 6 (Economy #3): null tactic = -5% revenue tax. Раньше было
+  // молчаливо — игрок не понимал откуда «эффективность» падает. Теперь
+  // явная строчка в Что пошло не так.
+  if (!tactic) {
+    negatives.push('Без тактики на неделю: −5% выручки (рассеянность)')
+  }
   if (lastDayResult.expiredLoss > 0) {
     negatives.push(
       `Просрочка: −${lastDayResult.expiredLoss.toLocaleString('ru-RU')} ₽`
