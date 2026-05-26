@@ -4,7 +4,11 @@ export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
   shop: {
     type: 'shop',
     startBalance: 80000,
-    baseClients: 17,
+    // Спринт 6: bump 17→19 после Economy Designer аудита. Shop bank-only
+    // показывал net profit 11k→5.9k→1.8k к W20 (death spiral), к W22 в минус.
+    // +12% базовой выручки выправляет casual-сценарий — игрок не bankrupt'ится
+    // до W46, без услуг достижимо ~700-900k (не гарантированно цель 1М).
+    baseClients: 19,
     avgCheck: 112,
     capacity: 35,
     hasStock: true,
@@ -39,11 +43,12 @@ export const BUSINESS_CONFIGS: Record<BusinessType, BusinessConfig> = {
   'beauty-salon': {
     type: 'beauty-salon',
     startBalance: 80000,
-    // 9 clients × 400₽ × 7 = 25.2k weekly base. Was 11 — but with margin fix
-    // and smoothed monthly bill, salon was running at +30K/wk on bank-only
-    // (richest of the three businesses by far). Pulled back so salon and cafe
-    // are roughly equally profitable on tier 1.
-    baseClients: 9,
+    // Спринт 6: 9 → 8 после Economy Designer аудита. Salon+market+ofd хитал
+    // 1.43M уже на W20 (43% выше цели 1М, 26 недель раньше срока) — тривиальная
+    // победа. Спред с shop+bank-only (179K) был 1.25M+. Урезание базового
+    // потока на 11% сужает разрыв, salon+услуги остаётся выигрышной стратегией
+    // (~1.3-1.5M к W46), но не «доминирующей» против других бизнесов.
+    baseClients: 8,
     avgCheck: 400,
     capacity: 20,
     hasStock: false,
