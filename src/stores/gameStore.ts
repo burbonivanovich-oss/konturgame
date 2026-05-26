@@ -904,6 +904,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
         // заплатить 24K₽. Если в сэйве есть хоть одна купленная касса — считаем compliance
         // выполненным автоматически.
         fiscalDriveOwned: state.fiscalDriveOwned ?? ((state.cashRegisters?.length ?? 0) > 0),
+        // Спринт 6 migration (QA #7): pre-refactor сэйв с loyalty=95
+        // (старый скаляр) на load терял прогресс — loyalty не использовалось
+        // engine'ом, но и не конвертировалось в репутацию. Делаем one-time
+        // bump: 50% loyalty-overage над 55 (старый default) → +rep.
+        // Например loyalty=95 → +rep (95-55)*0.5*0.2 = +4. Никогда не сверху 100.
+        reputation: (() => {
+          const baseRep = state.reputation ?? 50
+          const loyaltyOverage = Math.max(0, (state.loyalty ?? 55) - 55)
+          const loyaltyBump = Math.round(loyaltyOverage * 0.5 * 0.2)
+          // Migration выполняется один раз — после load loyalty будет 55
+          // (extractState default), bump не повторится.
+          return Math.min(100, baseRep + loyaltyBump)
+        })(),
+        loyalty: 55,  // reset to default after migration so bump не повторится
         enabledCategories: state.enabledCategories ?? getDefaultCategories(state.businessType),
         promoCodesRevealed: state.promoCodesRevealed ?? [],
         pendingPromoCode: null, // Never persist pending promo
@@ -1479,6 +1493,10 @@ function extractState(state: any): GameState {
     // v4.0 teaser
     upcomingEventTeaser: (state as any).upcomingEventTeaser ?? null,
     pendingMilestoneCelebration: (state as any).pendingMilestoneCelebration ?? null,
+    // Спринт 6 (QA #3): persist через extractState чтобы reload-mid-week
+    // не терял tier-celebration badge. Плюс lastTierUpgradeWeek для cooldown.
+    pendingTierUpgrade: (state as any).pendingTierUpgrade ?? null,
+    lastTierUpgradeWeek: (state as any).lastTierUpgradeWeek ?? 0,
     lastWeekPainLosses: (state as any).lastWeekPainLosses ?? null,
     totalPainLosses: (state as any).totalPainLosses ?? null,
     seenUnlockTabs: (state as any).seenUnlockTabs ?? [],

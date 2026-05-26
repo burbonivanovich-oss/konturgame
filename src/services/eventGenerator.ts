@@ -893,6 +893,13 @@ export function generateEvent(day: number, state: GameState): Event | null {
       state.services[template.trigger.noService]?.isActive === true
     )
       continue
+    // Спринт 6 (Economy #5): gate by prior event — PAIN_* should not fire
+    // before its FIRST_* introduced the service narratively.
+    if (
+      template.trigger.requiresTriggeredEvent !== undefined &&
+      !(state.triggeredEventIds ?? []).includes(template.trigger.requiresTriggeredEvent)
+    )
+      continue
     if (
       template.trigger.randomChance !== undefined &&
       Math.random() > template.trigger.randomChance
@@ -987,13 +994,16 @@ export function applyEventConsequence(
   if (c.balanceDelta !== undefined) {
     state.balance = state.balance + c.balanceDelta
   }
+  // Спринт 6 (QA #4 audit): раньше reputationDelta и loyaltyDelta применялись
+  // КАК ДВЕ ПОСЛЕДОВАТЕЛЬНЫХ ОПЕРАЦИИ к репутации (после удаления loyalty-скаляра).
+  // Это давало double-rep bug: BIRTHDAY01 с +10/+10 давал +15 rep (вместо
+  // intended +10), STAFF01 с loyaltyDelta -30 рушил rep на -15 поверх любых
+  // явных rep-эффектов. Теперь: если есть явный reputationDelta — берём его;
+  // loyaltyDelta учитывается ТОЛЬКО когда reputationDelta не указан (legacy
+  // конверсия для событий, у которых исторически был только loyalty).
   if (c.reputationDelta !== undefined) {
     state.reputation = Math.max(0, Math.min(100, state.reputation + c.reputationDelta))
-  }
-  // Лояльность как скаляр выпилена. Старые события всё ещё указывают
-  // loyaltyDelta — переадресуем в репутацию × 0.5 (лояльность была более
-  // «толстой» шкалой, поэтому половинная конверсия даёт сравнимый эффект).
-  if (c.loyaltyDelta !== undefined) {
+  } else if (c.loyaltyDelta !== undefined) {
     state.reputation = Math.max(0, Math.min(100, state.reputation + c.loyaltyDelta * 0.5))
   }
   if (c.energyDelta !== undefined) {

@@ -355,17 +355,28 @@ export function processWeek(state: GameState): DayResult {
   state.reputation = Math.round(newReputation)
 
   // Auto-progression тиров: когда currentWeek ≥ unlockWeek И репутация
+  // Auto-progression тиров: когда currentWeek ≥ unlockWeek И репутация
   // ≥ unlockReputation, тир поднимается без затрат. Celebration через
   // dedicated state.pendingTierUpgrade slot (отдельно от lastWeekMicroEvent
   // и pendingMilestoneCelebration). WeekResultsOverlay рендерит его как
   // отдельный заметный badge — раньше tier-апгрейд читался как
   // «соседка принесла печенье» (микро-событие).
+  //
+  // Спринт 6 (QA audit #1+#2): добавлен cooldown 3 недели после
+  // tier-апгрейда. Раньше игрок, державший rep<70 до W22 и резко
+  // нагнавший rep≥85 на W22 (service-тактика + Fokus), получал T1→T2
+  // на W22 и T2→T3 на W23 без перерыва — анти-climactic. Теперь
+  // между апгрейдами минимум 3 недели — milestone'ы дышат, badge не
+  // перезаписывается.
   if (!state.isGameOver && !state.isVictory) {
+    const lastTierWeek = (state as any).lastTierUpgradeWeek ?? 0
+    const tierCooldownOk = state.currentWeek - lastTierWeek >= 3
     const tierCheck = canUpgradeTier(state)
     const nextTier = getNextTier(state)
-    if (tierCheck.ok && nextTier) {
+    if (tierCheck.ok && nextTier && tierCooldownOk) {
       state.businessTier = nextTier.level
       state.consecutiveOverloadDays = 0
+      ;(state as any).lastTierUpgradeWeek = state.currentWeek
       state.pendingTierUpgrade = {
         level: nextTier.level,
         name: nextTier.name,

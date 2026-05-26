@@ -186,7 +186,7 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
     id: 'PAIN_DIADOC',
     title: 'Налоговая запросила накладные за квартал',
     description: 'Камеральная проверка по контрагенту, у которого вы закупались. Налоговая прислала запрос: оригиналы первички за квартал, срок — 5 рабочих дней. Половина накладных у вас в папках, часть не нашлась. Если не предоставить — штраф 15 000 ₽ за «нарушение документооборота».',
-    trigger: { dayMin: 98, randomChance: 0.06, noService: 'diadoc', oneTime: false },
+    trigger: { dayMin: 98, randomChance: 0.06, noService: 'diadoc', oneTime: false, requiresTriggeredEvent: 'FIRST_DIADOC' },
     options: [
       {
         id: 'pay',
@@ -206,7 +206,7 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
     id: 'PAIN_FOKUS',
     title: 'Поставщик-новичок оказался липовым',
     description: 'Заказ от незнакомого ИП, скидка 30%. Партия пришла бракованная, поставщик не отвечает. Юрист из района говорит: ИП в реестре «фирм-однодневок», деньги не вернуть. 12 000 ₽ в минусе, плюс репутация у тех, кто эту партию уже купил.',
-    trigger: { dayMin: 98, randomChance: 0.06, noService: 'fokus', oneTime: false },
+    trigger: { dayMin: 98, randomChance: 0.06, noService: 'fokus', oneTime: false, requiresTriggeredEvent: 'FIRST_FOKUS' },
     options: [
       {
         id: 'eat_loss',
@@ -226,7 +226,7 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
     id: 'PAIN_ELBA',
     title: 'Ошибка в декларации УСН — пеня',
     description: 'Налоговая нашла недоплату УСН за прошлый квартал — пропустили вычет. Пеня 10 000 ₽ + ночь работы на пересчёт прошлых документов. «У всех бывает», говорит знакомый бухгалтер по телефону.',
-    trigger: { dayMin: 112, randomChance: 0.05, noService: 'elba', oneTime: false },
+    trigger: { dayMin: 112, randomChance: 0.05, noService: 'elba', oneTime: false, requiresTriggeredEvent: 'FIRST_ELBA' },
     options: [
       {
         id: 'pay_fine',
