@@ -356,19 +356,30 @@ export function processWeek(state: GameState): DayResult {
 
   // Auto-progression тиров: когда currentWeek ≥ unlockWeek И репутация
   // ≥ unlockReputation, тир поднимается без затрат. Celebration через
-  // lastWeekMicroEvent. Раньше это была разовая покупка за 150K/400K
-  // с ×1.5 рентой — слишком рискованно, мало кто соглашался.
+  // dedicated state.pendingTierUpgrade slot (отдельно от lastWeekMicroEvent
+  // и pendingMilestoneCelebration). WeekResultsOverlay рендерит его как
+  // отдельный заметный badge — раньше tier-апгрейд читался как
+  // «соседка принесла печенье» (микро-событие).
   if (!state.isGameOver && !state.isVictory) {
     const tierCheck = canUpgradeTier(state)
     const nextTier = getNextTier(state)
     if (tierCheck.ok && nextTier) {
       state.businessTier = nextTier.level
       state.consecutiveOverloadDays = 0
-      state.lastWeekMicroEvent = {
+      state.pendingTierUpgrade = {
+        level: nextTier.level,
+        name: nextTier.name,
         icon: nextTier.icon,
-        title: `Бизнес вырос: ${nextTier.name}`,
-        effectText: `Этап ${nextTier.level} разблокирован — клиенты, чек и зал подросли`,
       }
+      // Декларативная запись в журнал решений — auditor QA #8 указал, что
+      // tier-апгрейд не оставлял следа в decisionLog. Добавляем.
+      if (!state.decisionLog) state.decisionLog = []
+      state.decisionLog.push({
+        week: state.currentWeek,
+        text: `Бизнес вырос до уровня «${nextTier.name}»`,
+        type: 'choice',
+        impact: 'positive',
+      })
     } else if (state.reputation >= 90 && state.currentWeek % 5 === 0) {
       // Сарафанное радио: только если в эту неделю не было tier-upgrade.
       // +10% трафика на 14 дней. ЗАМЕНА предыдущего значения (не сложение):

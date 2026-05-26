@@ -206,7 +206,8 @@ export interface Service {
     clientBonus?: number
     creditRate?: number
     reputationBonus?: number
-    loyaltyBonus?: number
+    // loyaltyBonus удалён в Спринт 6 — лояльность как скаляр выпилена,
+    // никакой сервис это поле не использовал.
     taxSaving?: number
     energyReduction?: number
     acquiringRate?: number
@@ -222,7 +223,7 @@ export interface SynergyBonus {
     capacityBonus?: number
     checkBonus?: number
     reputationBonus?: number
-    loyaltyBonus?: number
+    // loyaltyBonus удалён в Спринт 6 (none of current synergies used it).
     taxSaving?: number
     clientBonus?: number
     revenueBonus?: number
@@ -609,6 +610,12 @@ export interface GameState {
 
   // Pending milestone celebration (shown in results overlay, v4.0)
   pendingMilestoneCelebration?: string | null  // 'week10' | 'week20' | 'week30'
+
+  // Pending tier upgrade celebration (Спринт 6): tier auto-progression
+  // больше не пишет в lastWeekMicroEvent (конфликт с микрособытиями и
+  // milestone'ами по приоритету). Заводим отдельный slot — WeekResultsOverlay
+  // показывает его как dedicated badge «Бизнес вырос: <Tier name>».
+  pendingTierUpgrade?: { level: number; name: string; icon: string } | null
 
   // Onboarding resilience (v4.2)
   // Step IDs where player explicitly chose to skip a required action

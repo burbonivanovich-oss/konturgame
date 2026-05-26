@@ -472,6 +472,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         entrepreneurEnergy: restoredEnergy,
         weeklyEnergyRestored: true,
         ownerSubscriptions: nextSubscriptions,
+        // Tier upgrade badge показывается в results overlay — после
+        // перехода в summary очищаем slot, чтобы badge не висел вечно.
+        pendingTierUpgrade: null,
         lastUpdated: Date.now(),
       })
     },

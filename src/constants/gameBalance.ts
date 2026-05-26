@@ -50,50 +50,9 @@ export const SERVICE_SAVINGS_RATES = {
   EXTERN_WEEKLY_CHANCE: 7 / 31,
 } as const
 
-// Daily losses applied when a service is missing AND its onboarding has been
-// unlocked. These are the "pain" the player feels for skipping a service.
-//
-// Calibration philosophy (v5.5): services should make life EASIER, not be
-// mandatory taxes. Bank and OFD remain "real-life mandatory" — Bank via
-// payment ratio (40% can't pay cash), OFD by frequent fines (online-cash-
-// register law). The other five (Market / Diadoc / Fokus / Elba / Extern)
-// are softened so that a careful player can survive without them, just at
-// noticeable cost.
-export const PAIN_LOSSES = {
-  MARKET: {
-    // Manual inventory accounting still leaks revenue, but at half the
-    // previous rate (8% → 4%). Service ROI now ~10 weeks instead of 4.
-    revenueRate: 0.04,
-  },
-  OFD: {
-    // Mandatory by law — kept punishing.
-    dailyChance: 0.10,
-    revenueRate: 0.15,
-  },
-  DIADOC: {
-    // Was already small; nudged down further.
-    dailyChance: 0.08,
-    revenueRate: 0.02,
-  },
-  FOKUS: {
-    // Bad-supplier risk: rarer (1/22 vs 1/17) and smaller hits (3-6% vs 5-10%).
-    dailyChance: 1 / 22,
-    minBalanceRate: 0.03,
-    maxBalanceRate: 0.06,
-  },
-  ELBA: {
-    // Tax-mistake fines: rarer (1/30 vs 1/25), 10% of profit vs 15%.
-    dailyChance: 1 / 30,
-    profitRate: 0.10,
-  },
-  EXTERN: {
-    // Account block: was a 25%-of-balance one-shot kill. Now 1 day of
-    // revenue capped at 10% of balance — still painful, no longer fatal.
-    dailyChance: 1 / 35,
-    revenueDaysOfDamage: 1,
-    maxBalancePct: 0.10,
-  },
-} as const
+// PAIN_LOSSES константа удалена в Спринт 6 как dead code. painEngine
+// возвращает нули (retired в 5d), UI хинты на карточках сервисов
+// захардкожены текстом в DesktopKontur.tsx. Никто этот объект не читал.
 
 // Bank: payment ratio when bank service is inactive.
 // Спринт 5b: 0.75 → 0.70. Без эквайринга 30% клиентов уходят.

@@ -35,7 +35,7 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
   const {
     currentWeek, balance, lastDayResult, services, achievements,
     pendingMilestoneCelebration, weeklyTactic,
-    lastWeekMicroEvent, lastDiaryEntry,
+    lastWeekMicroEvent, lastDiaryEntry, pendingTierUpgrade,
   } = useGameStore()
 
   if (!lastDayResult) return null
@@ -124,6 +124,37 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
               lineHeight: 1.2,
             }}>
               {milestone.title}
+            </div>
+          </div>
+        )}
+
+        {/* Tier upgrade — отдельный slot, заметнее микрособытий.
+            Раньше tier-апгрейд писался в lastWeekMicroEvent и терялся
+            рядом с «соседка принесла печенье». */}
+        {pendingTierUpgrade && (
+          <div style={{
+            background: 'linear-gradient(135deg, #6b46c1, #2563eb)',
+            borderRadius: 14, padding: '18px 22px',
+            display: 'flex', alignItems: 'center', gap: 16,
+            boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)',
+          }}>
+            <div style={{ fontSize: 36 }} aria-hidden="true">{pendingTierUpgrade.icon}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                fontSize: 10, fontWeight: 800, letterSpacing: '0.08em',
+                color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase',
+              }}>
+                Бизнес вырос — Этап {pendingTierUpgrade.level}
+              </div>
+              <div style={{
+                fontSize: 18, fontWeight: 800, color: K.white,
+                lineHeight: 1.2, marginTop: 2,
+              }}>
+                {pendingTierUpgrade.name}
+              </div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 4 }}>
+                Клиенты, чек и ёмкость подросли. Никаких новых трат.
+              </div>
             </div>
           </div>
         )}

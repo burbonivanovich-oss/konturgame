@@ -76,7 +76,6 @@ export interface ServiceConfig {
     clientBonus?: number
     creditRate?: number
     reputationBonus?: number
-    loyaltyBonus?: number
     taxSaving?: number
     energyReduction?: number
     acquiringRate?: number
@@ -411,7 +410,6 @@ export const UPGRADES_CONFIG: Record<BusinessType, Array<{
   cost: number
   effect: string
   capacityBonus?: number
-  loyaltyBonus?: number
   clientBonus?: number
   checkBonus?: number
   monthlySalaryIncrease?: number
