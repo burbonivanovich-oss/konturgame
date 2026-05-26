@@ -902,6 +902,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
         // Migration defaults for new fields
         unlockedServices: state.unlockedServices ?? SERVICE_UNLOCK_MAP[0],
         cashRegisters: state.cashRegisters ?? [],
+        // Спринт 6 migration: pre-refactor сэйв мог иметь cashRegisters=[mobile,reliable]
+        // но fiscalDriveOwned=undefined (т.к. поле появилось в 5e). После рефактора касс
+        // (4f4328a) первая касса бандлится с ФН, и new compliance gate проверяет именно
+        // fiscalDriveOwned. Без shim'а игроки с pre-refactor сэйвами теряли first_register
+        // ачивку и блокировались на онбординг-шаге 1-2 («купите кассу»), требуя повторно
+        // заплатить 24K₽. Если в сэйве есть хоть одна купленная касса — считаем compliance
+        // выполненным автоматически.
+        fiscalDriveOwned: state.fiscalDriveOwned ?? ((state.cashRegisters?.length ?? 0) > 0),
         enabledCategories: state.enabledCategories ?? getDefaultCategories(state.businessType),
         promoCodesRevealed: state.promoCodesRevealed ?? [],
         pendingPromoCode: null, // Never persist pending promo
@@ -1415,7 +1423,10 @@ function extractState(state: any): GameState {
     businessType,
     currentWeek: week,
     dayOfWeek: dow,
-    balance, savedBalance, reputation, loyalty,
+    balance, savedBalance, reputation,
+    // loyalty оставлен как deprecated-поле для save compat; default 55
+    // (был старый init) чтобы тип number не нарушался при минимальном сэйве.
+    loyalty: loyalty ?? 55,
     entrepreneurEnergy: entrepreneurEnergy ?? ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY,
     stock, stockBatches, capacity, services, achievements,
     lastDayResult, pendingEvent, pendingEventsQueue: pendingEventsQueue ?? [],

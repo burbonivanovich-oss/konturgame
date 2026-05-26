@@ -53,7 +53,11 @@ export default function App() {
       if (pendingBackstory.personal === 'hometown') {
         useGameStore.setState({ reputation: Math.min(100, useGameStore.getState().reputation + 5) })
       } else if (pendingBackstory.personal === 'friend') {
-        useGameStore.setState({ loyalty: Math.min(100, store.loyalty + 5) })
+        // Спринт 6: лояльность выпилена. Раньше friend perk писал +5 loyalty,
+        // но после удаления скаляра это был phantom write. Переадресуем в
+        // репутацию × 0.5 = +2.5 → округлим до +3 (дружелюбный игрок начинает
+        // с чуть более узнаваемым именем).
+        useGameStore.setState({ reputation: Math.min(100, useGameStore.getState().reputation + 3) })
       }
     }
 
@@ -117,7 +121,8 @@ function applyMetaPerk(perkId: string) {
       useGameStore.setState({ reputation: Math.min(100, store.reputation + 20) })
       break
     case 'energy_reserve':
-      useGameStore.setState({ entrepreneurEnergy: Math.min(115, store.entrepreneurEnergy + 15) })
+      // Engine clamps energy to MAX (100); ceiling 115 был недостижим и обманывал игрока.
+      useGameStore.setState({ entrepreneurEnergy: Math.min(100, store.entrepreneurEnergy + 15) })
       break
   }
 }
