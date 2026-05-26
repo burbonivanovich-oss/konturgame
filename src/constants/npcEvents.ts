@@ -147,7 +147,7 @@ export const NPC_EVENTS: EventTemplate[] = [
       },
       {
         id: 'extern',
-        text: 'Сформировать пакет через Контур.Экстерн (быстро и точно)',
+        text: 'Сформировать пакет через Контур.Эльба (быстро и точно)',
         consequences: { reputationDelta: 4 },
         npcRelationshipDelta: 14,
         requiredService: 'extern',

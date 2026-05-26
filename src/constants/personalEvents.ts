@@ -359,4 +359,93 @@ export const PERSONAL_BACKSTORY_EVENTS: EventTemplate[] = [
       },
     ],
   },
+
+  // ══════════════════════════════════════════════════════════════════════
+  // Спринт 6 (Narrative #4): backstory mid-game pulse W30-35.
+  //
+  // Раньше personal-events капались на W25-W30, потом тишина до W46+
+  // diary_goal_final_stretch — 15+ недель без напоминаний о цели.
+  // Эти 3 события закрывают dead zone в середине игры.
+  // ══════════════════════════════════════════════════════════════════════
+
+  // close_debt (free → освободиться от долгов): звонок из банка
+  {
+    id: 'PERS_DEBT_BANK_CALL',
+    title: 'Звонок из банка',
+    description:
+      'Незнакомый номер, женский голос: «Здравствуйте, это банк такой-то, по вашему счёту от 2022 года. Мы видим, что вы понемногу гасите — это хорошо. Но проценты бегут быстрее. Если погасить всё одним платежом до конца квартала, могли бы списать 15%». Пауза. «Подумайте».',
+    trigger: {
+      dayMin: 210, // W30
+      dayMax: 245, // W35
+      randomChance: 1.0,
+      oneTime: true,
+      requiredPersonal: 'free',
+    },
+    options: [
+      {
+        id: 'agree_lump',
+        text: 'Согласиться, накопить и закрыть одним платежом — теперь это план',
+        consequences: { reputationDelta: 2, energyDelta: -8 },
+      },
+      {
+        id: 'ignore_offer',
+        text: 'Игнорировать — буду гасить как могу',
+        consequences: { reputationDelta: -1 },
+      },
+    ],
+  },
+
+  // brother_tuition (friend → помочь брату): пересдача в декабре
+  {
+    id: 'PERS_BROTHER_RESIT',
+    title: 'Брат провалил матан',
+    description:
+      'Сообщение от младшего: «Слушай... матан не сдал. Пересдача в декабре, если не сдам — отчислят. Препод сказал, надо репетитора, ну, или сам выкручиваться». Между строк: денег на репетитора у него нет.',
+    trigger: {
+      dayMin: 210,
+      dayMax: 245,
+      randomChance: 1.0,
+      oneTime: true,
+      requiredPersonal: 'friend',
+    },
+    options: [
+      {
+        id: 'pay_tutor',
+        text: 'Оплатить репетитора (−12 000 ₽)',
+        consequences: { balanceDelta: -12000, reputationDelta: 4 },
+      },
+      {
+        id: 'help_himself',
+        text: 'Сказать, чтобы сам справился — он взрослый',
+        consequences: { reputationDelta: -2, energyDelta: -5 },
+      },
+    ],
+  },
+
+  // own_apartment (hometown → своя квартира): риелтор давит
+  {
+    id: 'PERS_REALTOR_PRESSURE',
+    title: 'Риелтор перезвонил',
+    description:
+      'Тот самый риелтор, который год назад показывал двушку у метро. «Помните? Я видел, что вы интересовались. Скоро год прошёл, цены подросли тысяч на 100. Хозяин думает поднимать ещё. Если хотите фиксировать — давайте говорить сейчас». Голос вкрадчивый. Двушка та реально стоила того.',
+    trigger: {
+      dayMin: 210,
+      dayMax: 245,
+      randomChance: 1.0,
+      oneTime: true,
+      requiredPersonal: 'hometown',
+    },
+    options: [
+      {
+        id: 'commit_realtor',
+        text: 'Сказать, что готов фиксировать — закрыть бизнес-цели быстрее',
+        consequences: { reputationDelta: 1, energyDelta: -6 },
+      },
+      {
+        id: 'wait_and_see',
+        text: 'Подождать — может, найду что получше',
+        consequences: { reputationDelta: 0 },
+      },
+    ],
+  },
 ]

@@ -190,7 +190,7 @@ export const CHAIN_EVENTS: EventTemplate[] = [
       },
       {
         id: 'extern_help',
-        text: 'Показать отчётность через Контур.Экстерн — всё корректно',
+        text: 'Показать отчётность через Контур.Эльба — всё корректно',
         consequences: { reputationDelta: 5 },
         npcRelationshipDelta: 15,
         requiredService: 'extern',
@@ -229,8 +229,11 @@ export const CHAIN_EVENTS: EventTemplate[] = [
         npcRelationshipDelta: 5,
       },
       {
-        id: 'extern_now',
-        text: 'Подключить Контур.Экстерн — снизить штраф до 5 000 ₽',
+        // Спринт 6 (Narrative #2): rewrite. Раньше текст был «−5 000 ₽
+        // через Экстерн» — читалось как купон. Плюс Экстерн скрыт из
+        // UI с 5e, его функционал поглощён Эльбой.
+        id: 'elba_now',
+        text: 'Открыть в Эльбе все накладные за квартал — расхождения видны как на ладони. Петров просматривает: «Здесь не штраф. Здесь — мелочь». Записывает 5 000 ₽.',
         consequences: { balanceDelta: -5000 },
         npcRelationshipDelta: 12,
         isContourOption: true,

@@ -282,6 +282,11 @@ export const MIKHAIL_RECOMMENDS_SVETLANA: EventTemplate = {
     randomChance: 1.0,
     oneTime: true,
     requiresNpcRevealed: true,
+    // Спринт 6 (Narrative #3): Михаил рекомендует племянницу только если
+    // отношения тёплые. Раньше гейт был только requiresNpcRevealed — если
+    // игрок отказал ему в mikhail_crisis_1 (rel -15) или Михаил ушёл к
+    // Анне (mikhail_crisis_2c), его тёплое «у меня племянница» резало ухо.
+    npcRelationshipMin: 50,
   },
   npcId: 'mikhail',
   options: [
@@ -501,6 +506,23 @@ export const OLEG_TROUBLE_1: EventTemplate = {
         reputationDelta: -1,
       },
       chainFollowUpId: 'oleg_trouble_2',
+    },
+    {
+      // Спринт 6 (Narrative #5): даём третий путь — поговорить с Олегом
+      // напрямую, без Светланы. Раньше выбор был «дать ещё шанс» (ведёт к
+      // принудительному fire через oleg_trouble_2) или «уволить сразу».
+      // Светлана читалась как infallible, Олег — как designed-to-fail.
+      // Теперь — шанс на тихое расставание с уважением к его правде:
+      // выходное пособие чуть больше (15К вместо 10К), команда видит
+      // «начальник умеет разговаривать», но Олег всё равно уходит.
+      id: 'talk_one_on_one',
+      text: 'Поговорить с Олегом наедине, без Светланы',
+      consequences: {
+        balanceDelta: -15000,  // нормальное выходное пособие
+        reputationDelta: 1,    // команда видит человеческое отношение
+        fireEmployee: { name: 'Олег' },
+      },
+      npcRelationshipDelta: -3,  // Светлане не нравится, что её обошли
     },
     {
       id: 'fire_now',

@@ -240,7 +240,7 @@ export const NPC_ARC_EVENTS: EventTemplate[] = [
       },
       {
         id: 'extern_check',
-        text: 'Через Контур.Экстерн подать заранее идеальный отчёт — нечего им искать',
+        text: 'Через Контур.Эльба подать заранее идеальный отчёт — нечего им искать',
         consequences: { reputationDelta: 8 },
         npcRelationshipDelta: 6,
         requiredService: 'extern',

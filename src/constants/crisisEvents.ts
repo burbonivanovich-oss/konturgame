@@ -96,7 +96,7 @@ export const CRISIS_EVENTS: EventTemplate[] = [
       },
       {
         id: 'use_extern',
-        text: 'Через Контур.Экстерн отчёт уже готов — отправить за час',
+        text: 'Через Контур.Эльба отчёт уже готов — отправить за час',
         requiredService: 'extern',
         consequences: { balanceDelta: 0, reputationDelta: 1 },
       },
