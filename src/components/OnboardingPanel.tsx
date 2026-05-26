@@ -404,7 +404,7 @@ export function OnboardingPanel({ onNavigate, onAction }: OnboardingPanelProps) 
 
             {confirm === 'skip-step' && (
               <ConfirmRow
-                text="Пропустить сервис — значит отказаться от его защиты. Продолжить без него?"
+                text="Шаг будет пропущен. Сервис останется доступен в Экосистеме — можно подключить позже, когда понадобится."
                 primaryLabel="Пропустить шаг"
                 primaryColor="#e53e3e"
                 onConfirm={handleSkipStep}

@@ -55,6 +55,14 @@ export function WeekResultsOverlay({ onContinue }: WeekResultsOverlayProps) {
   if (tactic && tactic.revenueMultiplier > 1) {
     const pct = Math.round((tactic.revenueMultiplier - 1) * 100)
     positives.push(`Тактика «${tactic.title}»: +${pct}% к выручке`)
+  } else if (tactic && tactic.id === 'service') {
+    // Спринт 6 (UX #8): service-тактика не имеет revenue boost, поэтому
+    // молчала в «Что сработало». Показываем её rep-эффект — игрок видит
+    // что тактика отработала.
+    const repWeekly = Math.round((tactic.reputationDelta * 7 + tactic.loyaltyDelta * 7 * 0.5) * 10) / 10
+    positives.push(`Тактика «${tactic.title}»: +${repWeekly} репутации за неделю`)
+  } else if (tactic && tactic.id === 'calm') {
+    positives.push(`Тактика «${tactic.title}»: +${Math.round(tactic.energyDelta * 7)} энергии за неделю`)
   }
   if (activeCount >= 3) {
     const bonus = activeCount >= 7 ? 30 : activeCount >= 5 ? 20 : 10

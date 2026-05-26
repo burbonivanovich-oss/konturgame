@@ -27,6 +27,9 @@ interface OperationsViewProps {
 
 export default function OperationsView({ onShowHireModal }: OperationsViewProps) {
   const [showRegisterModal, setShowRegisterModal] = useState(false)
+  // Спринт 6 (UX #2): inline confirm для увольнения. Раньше клик «Уволить»
+  // увольнял мгновенно — случайный тап на мобиле = ruin runs.
+  const [pendingFireId, setPendingFireId] = useState<string | null>(null)
 
   const {
     businessType, enabledCategories, services,
@@ -309,15 +312,26 @@ export default function OperationsView({ onShowHireModal }: OperationsViewProps)
                   </div>
                 </div>
                 <button
-                  onClick={() => fireEmployee(emp.id)}
+                  onClick={() => {
+                    if (pendingFireId === emp.id) {
+                      fireEmployee(emp.id)
+                      setPendingFireId(null)
+                    } else {
+                      setPendingFireId(emp.id)
+                      // Авто-сброс через 4 секунды, если игрок не подтвердил
+                      setTimeout(() => setPendingFireId(curr => curr === emp.id ? null : curr), 4000)
+                    }
+                  }}
                   style={{
                     padding: '6px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700,
                     border: `1px solid ${K.bad}`,
-                    background: `${K.bad}1A`,
-                    color: K.bad, cursor: 'pointer', marginLeft: 12,
+                    background: pendingFireId === emp.id ? K.bad : `${K.bad}1A`,
+                    color: pendingFireId === emp.id ? K.white : K.bad,
+                    cursor: 'pointer', marginLeft: 12,
+                    transition: 'all 0.15s',
                   }}
                 >
-                  Уволить
+                  {pendingFireId === emp.id ? 'Точно уволить?' : 'Уволить'}
                 </button>
               </div>
             ))}

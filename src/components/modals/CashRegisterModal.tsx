@@ -66,7 +66,14 @@ export default function CashRegisterModal({ isOpen, onClose }: CashRegisterModal
                 {COMPLIANCE_COST.toLocaleString('ru-RU')} ₽
               </div>
               <button
-                onClick={() => purchaseFiscalCompliance()}
+                onClick={() => {
+                  // Спринт 6 (UX #5): auto-close после успешной покупки.
+                  // Раньше модал оставался открыт в состоянии «Закон выполнен»,
+                  // требуя лишнего клика для закрытия.
+                  if (purchaseFiscalCompliance()) {
+                    setTimeout(onClose, 600)  // 600ms задержка чтобы успеть увидеть подтверждение
+                  }
+                }}
                 disabled={!canAfford}
                 style={{
                   padding: '8px 16px', borderRadius: 10, fontSize: 12, fontWeight: 700,
