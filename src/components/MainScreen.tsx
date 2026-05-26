@@ -596,85 +596,77 @@ function DashboardView({
           {/* Energy moved to top KPI strip — see DashboardView render below.
               Right rail now starts with business health + stage. */}
 
-          {/* Business health + Stage compact row */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {(() => {
-              const health = getBusinessHealth(useGameStore.getState())
-              const tone = health.tone
-              const healthColor = tone === 'good' ? K.mint
-                : tone === 'warn' ? K.orange
-                : tone === 'bad' ? '#c0392b'
-                : K.ink2
-              return (
-                <div style={{ background: K.bone, borderRadius: 10, padding: '10px 12px' }}>
-                  <div style={{ fontSize: 10, color: K.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
-                    Состояние
-                  </div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: healthColor }}>
-                    {health.label}
-                  </div>
-                  <div style={{ fontSize: 11, color: K.muted, marginTop: 2, lineHeight: 1.4 }}>
-                    {health.hint}
-                  </div>
+          {/* Состояние — главная qualitative read. Спринт 6 (UX #1):
+              убрали отдельную карточку «Стадия» (читалась как лишний
+              шум) — теперь stage упоминается одной строкой в самом
+              состоянии. Right rail стал заметно легче. */}
+          {(() => {
+            const health = getBusinessHealth(useGameStore.getState())
+            const tone = health.tone
+            const healthColor = tone === 'good' ? K.mint
+              : tone === 'warn' ? K.orange
+              : tone === 'bad' ? '#c0392b'
+              : K.ink2
+            return (
+              <div style={{ background: K.bone, borderRadius: 10, padding: '10px 12px' }}>
+                <div style={{ fontSize: 10, color: K.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+                  Состояние
                 </div>
-              )
-            })()}
-            <div style={{ background: K.bone, borderRadius: 10, padding: '10px 12px' }}>
-              <div style={{ fontSize: 10, color: K.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
-                Стадия
+                <div style={{ fontSize: 14, fontWeight: 800, color: healthColor }}>
+                  {health.label}
+                </div>
+                <div style={{ fontSize: 11, color: K.muted, marginTop: 2, lineHeight: 1.4 }}>
+                  {health.hint}
+                </div>
+                <div style={{ fontSize: 10, color: K.muted, marginTop: 6, paddingTop: 6, borderTop: `1px dashed ${K.lineSoft}` }}>
+                  Этап: <span style={{ fontWeight: 700, color: K.ink }}>{stageCfg.label}</span>
+                  {nextCfg && <span> · далее {nextCfg.label}</span>}
+                </div>
               </div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: K.ink }}>{stageCfg.label}</div>
-              {nextCfg && (
-                <div style={{ fontSize: 10, color: K.muted, marginTop: 2 }}>
-                  далее: {nextCfg.label}
-                </div>
-              )}
-            </div>
-          </div>
+            )
+          })()}
 
-          {/* Ecosystem — показываем только разблокированные онбордингом
-              сервисы (плюс уже активные, на случай если игрок включил что-то
-              раньше через event). До W2 в Stage 1 это только Bank+ОФД, а не
-              все 6 — иначе панель выглядит как «онбординг толкает всё сразу». */}
+          {/* Ecosystem — компактный однострочный счётчик «Контур N/M ·
+              открой ещё». Раньше был 2-column grid с 6-7 плитками сервисов,
+              дублирующий разделы сайдбара. UX #1 указал, что right rail
+              перегружен KPI-mirror'ом. Клик ведёт на полноэкранную
+              Экосистему (через TutorialMoments-pattern не идёт — это
+              read-only компактный summary). */}
           {(() => {
             const visibleServices = serviceOrder.filter(sid =>
               (store.unlockedServices ?? []).includes(sid) || services[sid]?.isActive,
             )
             const activeCountVisible = visibleServices.filter(sid => services[sid]?.isActive).length
-            if (visibleServices.length === 0) return null
+            const totalVisible = visibleServices.length
+            const remaining = totalVisible - activeCountVisible
+            if (totalVisible === 0) return null
             return (
-              <div>
-                <div style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8,
-                }}>
+              <div style={{
+                background: K.bone, borderRadius: 10, padding: '10px 12px',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}>
+                <div>
                   <div style={{ fontSize: 10, color: K.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                     Экосистема
                   </div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: K.ink }}>
-                    Контур · {activeCountVisible}/{visibleServices.length}
+                  <div style={{ fontSize: 13, fontWeight: 800, color: K.ink, marginTop: 2 }}>
+                    Контур {activeCountVisible}/{totalVisible}
                   </div>
+                  {remaining > 0 && (
+                    <div style={{ fontSize: 10, color: K.muted, marginTop: 2 }}>
+                      открыто, можно подключить ещё {remaining}
+                    </div>
+                  )}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {/* Маленький dot-индикатор: сколько включено */}
+                <div style={{ display: 'flex', gap: 3 }}>
                   {visibleServices.map(sid => {
-                    const svc = services[sid]
-                    const isActive = svc?.isActive
-                    const accent = SERVICE_ACCENT[sid]
+                    const isActive = services[sid]?.isActive
                     return (
-                      <div key={sid} style={{
-                        padding: '10px 10px',
-                        borderRadius: 10,
-                        background: isActive ? accent : K.bone,
-                        color: isActive ? K.white : K.muted,
-                        fontSize: 12, fontWeight: 700,
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        opacity: isActive ? 1 : 0.75,
-                      }}>
-                        <span>{SERVICE_SHORT[sid]}</span>
-                        <span style={{
-                          width: 6, height: 6, borderRadius: 999,
-                          background: isActive ? K.white : K.line,
-                        }} />
-                      </div>
+                      <span key={sid} style={{
+                        width: 8, height: 8, borderRadius: 999,
+                        background: isActive ? (SERVICE_ACCENT[sid] ?? K.mint) : K.line,
+                      }} />
                     )
                   })}
                 </div>
