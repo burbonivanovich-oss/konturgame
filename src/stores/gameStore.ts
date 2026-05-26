@@ -435,21 +435,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
         weeklyBonus += sub.energyPerWeek
       }
 
-      // Partial restoration: base +30/week (was +42 — user'у казалось,
-      // что «энергия слишком медленно убывает», т.е. neutral solo-игра
-      // выходила в плюс +6/нед и вообще не давила). Снижение базы +
-      // ослабленный calm дают стабильное лёгкое давление при отсутствии
-      // тактики и правильное «лекарство» при выборе calm.
+      // Partial restoration: base +25/week. Эволюция значения:
+      //   • 42 (изначально) — neutral solo +6/нед, никак не давило
+      //   • 30 (после первого audit) — пресс был, но в симах с Bank
+      //     (-30% energy reduction) net остаётся +5/нед и burnout не
+      //     фирится даже к W52
+      //   • 25 (Спринт 6 sim-аудит) — Bank-only shop net 0/нед, маленькие
+      //     микро-события и тактика aggressive толкают в минус
       //
-      // Расчёт post-fix (solo, без сотрудников, без upgrade'ов):
-      //   • shop neutral (cost 36): -6/нед — burnout к W17 без действий
-      //   • shop aggressive (cost 44.75): -14.75/нед — burnout к W7
-      //   • shop calm (cost 25.5 после +10.5 от calm): +4.5/нед — мягко
-      //   • cafe aggressive (cost 50.75): -20.75/нед — burnout к W5
-      //   • salon aggressive (cost 43.75): -13.75/нед — burnout к W7
+      // Расчёт solo, без сотрудников, без upgrade'ов:
+      //   • shop neutral (cost 36): -11/нед — burnout к W9 без действий
+      //   • shop bank-only neutral (cost ~25): ~0/нед — без давления,
+      //     но любое микро-событие на rough неделе уводит в минус
+      //   • shop aggressive (cost 44.75): -19.75/нед — burnout к W5
+      //   • shop calm (cost 25.5 после +10.5 от calm): -0.5/нед — мягко
+      //   • cafe aggressive (cost 50.75): -25.75/нед — burnout к W4
+      //   • salon aggressive (cost 43.75): -18.75/нед — burnout к W5-6
+      // Burnout warning теперь реально достижим, не теоретическая угроза.
       const currentEnergy = get().entrepreneurEnergy
       const restoredEnergy = Math.min(
-        currentEnergy + 30 + weeklyBonus,
+        currentEnergy + 28 + weeklyBonus,
         ECONOMY_CONSTANTS.MAX_ENTREPRENEURIAL_ENERGY
       )
 

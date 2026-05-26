@@ -292,7 +292,7 @@ function DashboardView({
               const tacticDef = weeklyTactic ? WEEKLY_TACTICS.find(t => t.id === weeklyTactic) : null
               const tacticEnergyPerWeek = (tacticDef?.energyDelta ?? 0) * 7
               const employeeCost = Math.max(0, getWeeklyEnergyCost(store) - getUpgradeEnergyBonus(store))
-              const expectedNet = 30 + tacticEnergyPerWeek - employeeCost
+              const expectedNet = 28 + tacticEnergyPerWeek - employeeCost
               const trendIcon = expectedNet <= -5 ? '↓' : expectedNet >= 5 ? '↑' : '→'
               const trendText = expectedNet <= -5
                 ? `${trendIcon} ${expectedNet}/нед — устаёте`
