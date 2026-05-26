@@ -405,7 +405,7 @@ export function DesktopKontur({ embedded = false }: { embedded?: boolean }) {
                       <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.6 }}>ЦЕНА</div>
                       <div style={{ fontSize: 14, fontWeight: 800 }} className="k-num">
                         {s.annualPrice === 0
-                          ? <>Бесплатно<span style={{ fontSize: 10, opacity: 0.7 }}> · комиссия 1.5%</span></>
+                          ? <>Бесплатно<span style={{ fontSize: 10, opacity: 0.7 }}> · комиссия 1%</span></>
                           : <>{s.annualPrice.toLocaleString('ru-RU')} ₽<span style={{ fontSize: 10, opacity: 0.7 }}>/год</span></>}
                       </div>
                     </div>

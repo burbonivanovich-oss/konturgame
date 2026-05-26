@@ -97,6 +97,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Собрал сотрудников, поговорил о целях на неделю.',
     icon: '👥',
     vibe: 'good',
+    contextTrigger: 'after_hire',  // новый человек в команде — первая общая планёрка
     requiresEmployees: true,
     options: [
       {
@@ -119,6 +120,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Будильник прозвонил три раза. Открылись на 40 минут позже — пара постоянников ушли.',
     icon: '😩',
     vibe: 'rough',
+    contextTrigger: 'after_burnout',  // физическое истощение после выгорания
     options: [
       {
         id: 'apologize',
@@ -139,6 +141,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Зашёл к соседу-предпринимателю за кофе. Он похвалил вашу точку: «у тебя по-человечески сделано».',
     icon: '☕',
     vibe: 'good',
+    contextTrigger: 'after_big_week',  // хорошая неделя — молва расходится по кварталу
     options: [
       {
         id: 'accept_compliment',
@@ -178,6 +181,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Обнаружил, что часть товара истекла (не заметили при приёмке).',
     icon: '⚠️',
     vibe: 'rough',
+    contextTrigger: 'after_overload',  // в перегрузе контроль приёмки проваливается
     options: [
       {
         id: 'write_off',
@@ -219,6 +223,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Поставщик пришёл на день раньше. Можно выложить свежее в витрину сразу.',
     icon: '⚡',
     vibe: 'good',
+    contextTrigger: 'after_big_week',  // после пиковой недели поставщик сам старается угодить
     options: [
       {
         id: 'restock',
@@ -259,6 +264,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Клиент вернул товар и требует вернуть деньги. Качество его не устроило.',
     icon: '😠',
     vibe: 'neutral',
+    contextTrigger: 'after_low_rep',  // при низкой репутации жалобы учащаются
     options: [
       {
         id: 'refund',
@@ -279,6 +285,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'В соседнем помещении открыли похожий магазин.',
     icon: '⚡',
     vibe: 'neutral',
+    contextTrigger: 'after_low_rep',  // когда репутация падает, конкурент особенно опасен
     options: [
       {
         id: 'improve_service',
@@ -299,6 +306,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Один клиент поделился в соцсетях хорошим отзывом. Его друзья пришли к тебе!',
     icon: '⭐',
     vibe: 'good',
+    contextTrigger: 'after_big_week',  // ажиотаж пиковой недели порождает органические отзывы
     options: [
       {
         id: 'thank_client',
@@ -336,6 +344,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Морозильник / кофемашина / окрасочная станция начала странно жужжать. Ремонт срочный.',
     icon: '🔧',
     vibe: 'rough',
+    contextTrigger: 'after_overload',  // техника изнашивается под пиковой нагрузкой
     options: [
       {
         id: 'fix_fast',
@@ -380,6 +389,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Инфлюэнсер вашего города захотел у тебя что-то купить.',
     icon: '🌟',
     vibe: 'good',
+    contextTrigger: 'after_big_week',  // шумная неделя привлекает внимание контент-мейкеров
     options: [
       {
         id: 'impress_influencer',
@@ -421,6 +431,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'На двери приклеен листок: «здравствуйте, я школьница на каникулах, готова помочь за небольшие деньги».',
     icon: '📝',
     vibe: 'neutral',
+    contextTrigger: 'after_overload',  // в перегрузе хочешь хоть кого-то на помощь
     options: [
       {
         id: 'call_back',
@@ -441,6 +452,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Локальный блогер с миллионом подписчиков обещал заехать. Не доехал. Написал «в следующий раз».',
     icon: '📷',
     vibe: 'rough',
+    contextTrigger: 'after_low_rep',  // мелкие разочарования сильнее бьют, когда репа на дне
     options: [
       {
         id: 'shake_off',
@@ -460,6 +472,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Старый клиент заказал большую партию в конце недели!',
     icon: '🤑',
     vibe: 'good',
+    contextTrigger: 'after_hire',  // с новым сотрудником наконец можно потянуть оптовый заказ
     options: [
       {
         id: 'accept_big_order',
@@ -543,6 +556,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Банк списал годовую подписку на онлайн-сервис, про который вы забыли.',
     icon: '💳',
     vibe: 'rough',
+    contextTrigger: 'after_burnout',  // туман после выгорания — забытые подписки, упущенные детали
     options: [
       {
         id: 'shrug',
@@ -602,6 +616,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Обдумал неделю. Кое-что пошло не так, но понял, где ошибка.',
     icon: '💭',
     vibe: 'good',
+    contextTrigger: 'after_fire',  // после расставания с сотрудником переосмысляешь решение
     options: [
       {
         id: 'learn_from_mistake',
@@ -639,6 +654,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Двое клиентов поскандалили между собой в очереди. Пришлось выгонять — оба обиделись на вас.',
     icon: '😤',
     vibe: 'rough',
+    contextTrigger: 'after_low_rep',  // при низкой репе в зал приходит более грубая публика
     options: [
       {
         id: 'absorb',
@@ -658,6 +674,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Спланировал новую неделю, поставил цели и приоритеты.',
     icon: '📋',
     vibe: 'good',
+    contextTrigger: 'after_burnout',  // после выгорания нужна структура — планирование лечит хаос
     options: [
       {
         id: 'serious_planning',
@@ -698,6 +715,7 @@ export const DAILY_MICRO_EVENTS: DailyMicroEvent[] = [
     description: 'Чувствуешь, что на следующей неделе что-то изменится. Волнение.',
     icon: '😰',
     vibe: 'neutral',
+    contextTrigger: 'after_fire',  // после увольнения — тревога: правильно ли сделал?
     options: [
       {
         id: 'embrace_change',

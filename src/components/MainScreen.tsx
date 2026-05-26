@@ -40,6 +40,7 @@ import { getGroupForNav, getSubTabsForGroup } from './design-system/KLeftRail'
 import { KIcon } from './design-system/KIcon'
 import { getActiveSynergies } from '../services/synergyEngine'
 import { getBusinessHealth } from '../services/businessHealth'
+import { getWeeklyEnergyCost, getUpgradeEnergyBonus } from '../services/employeeManager'
 import type { ServiceType } from '../types/game'
 
 const ONBOARDING_ACTION_TO_NAV: Record<string, NavId> = {
@@ -285,10 +286,23 @@ function DashboardView({
                 entrepreneurEnergy < 30 ? '#c0392b'
                 : entrepreneurEnergy < 50 ? K.orange
                 : K.mint
+              // Спринт 6 (Game Designer #9): trend-индикатор энергии.
+              // Net = base restore (30) + tactic energy/нед - employee cost.
+              // Игрок видит «↓ -8/нед» — понятно, что без действий выгорит.
+              const tacticDef = weeklyTactic ? WEEKLY_TACTICS.find(t => t.id === weeklyTactic) : null
+              const tacticEnergyPerWeek = (tacticDef?.energyDelta ?? 0) * 7
+              const employeeCost = Math.max(0, getWeeklyEnergyCost(store) - getUpgradeEnergyBonus(store))
+              const expectedNet = 30 + tacticEnergyPerWeek - employeeCost
+              const trendIcon = expectedNet <= -5 ? '↓' : expectedNet >= 5 ? '↑' : '→'
+              const trendText = expectedNet <= -5
+                ? `${trendIcon} ${expectedNet}/нед — устаёте`
+                : expectedNet >= 5
+                  ? `${trendIcon} +${expectedNet}/нед — отдыхаете`
+                  : `${trendIcon} стабильно`
               return [
                 { icon: '💹', label: 'Прибыль / неделя', value: `${weeklyProfit > 0 ? '+' : ''}${weeklyProfit.toLocaleString('ru-RU')} ₽`, bg: weeklyProfit >= 0 ? K.mint : '#c0392b', sub: lastDayResult ? 'за вчера × 7' : 'нет данных', onClick: undefined as (() => void) | undefined },
                 { icon: '💸', label: 'Расходы / день', value: `${dailyExpenses.toLocaleString('ru-RU')} ₽`, bg: K.violet, sub: lastDayResult ? 'за вчера' : 'нет данных', onClick: undefined as (() => void) | undefined },
-                { icon: '⚡', label: 'Энергия', value: `${entrepreneurEnergy}`, bg: energyTone, sub: entrepreneurEnergy < 40 ? 'устаёте — отдых нужен' : 'в норме', onClick: onOpenOwnerInvestments },
+                { icon: '⚡', label: 'Энергия', value: `${entrepreneurEnergy}`, bg: energyTone, sub: trendText, onClick: onOpenOwnerInvestments },
               ]
             })().map(t => (
               <div key={t.label}

@@ -384,29 +384,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
         }
       }),
 
-    advanceDay: () => {
-      const store = get()
-      const stateCopy = JSON.parse(JSON.stringify(extractState(store))) as GameState
-      const { blocked, reason } = checkWeekBlocked(stateCopy)
-      if (blocked) {
-        return { blocked: true, reason }
-      }
-      processWeek(stateCopy)
-      set({ ...stateCopy })
-      return { blocked: false }
-    },
-
-    advanceWeek: () => {
-      const store = get()
-      const stateCopy = JSON.parse(JSON.stringify(extractState(store))) as GameState
-      const { blocked, reason } = checkWeekBlocked(stateCopy)
-      if (blocked) {
-        return { blocked: true, reason }
-      }
-      processWeek(stateCopy)
-      set({ ...stateCopy })
-      return { blocked: false }
-    },
+    // Спринт 6: advanceDay/advanceWeek удалены как dead code. Они
+    // оставались экспортированными в action-interface, но не вызывались
+    // никакими UI-консьюмерами (4-phase weekly cycle через
+    // completeActionsPhase / completeSimulationPhase / completeResultsPhase
+    // взял на себя их работу). Плюс QA #9: они пропускали +30 weekly
+    // restore из completeResultsPhase — если бы кто-то их позже подключил,
+    // получился бы тихий drain энергии. Удалили — теперь невозможно.
+    advanceDay: () => ({ blocked: true, reason: 'deprecated — используй 4-фазный недельный цикл' }),
+    advanceWeek: () => ({ blocked: true, reason: 'deprecated — используй 4-фазный недельный цикл' }),
 
     // 5-phase weekly cycle actions (with simulation phase between events and results)
     completeActionsPhase: () => {
