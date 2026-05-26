@@ -138,7 +138,7 @@ export function KLeftRail({
           <div style={{
             width: `${Math.min(100, (currentWeek / 52) * 100)}%`,
             height: '100%',
-            background: currentWeek >= 49 ? K.orange : K.ink2,
+            background: currentWeek >= 45 ? '#c0392b' : currentWeek >= 42 ? K.orange : K.ink2,
             transition: 'width 0.3s',
           }} />
         </div>

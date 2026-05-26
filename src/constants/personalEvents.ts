@@ -448,4 +448,96 @@ export const PERSONAL_BACKSTORY_EVENTS: EventTemplate[] = [
       },
     ],
   },
+
+  // ══════════════════════════════════════════════════════════════════════
+  // Спринт 6 (Game Designer phase-4 audit): final-stretch события W38-42.
+  //
+  // Раньше personal-arc заканчивались на W30-35, дальше до финала W46-50
+  // не было событий, тематически связанных с goal. Final-stretch не имел
+  // mechanical hook — игрок дрейфовал к финалу пассивно. Эти 3 события
+  // дают one-shot risk/reward в горячем окне:
+  //   • close_debt: банк предлагает refinance — risk -20K, reward -50K долга
+  //   • brother_tuition: предзачисление в магистратуру — нужны 60K сейчас
+  //   • own_apartment: торг по квартире — рискнуть 30K на «гарантию»
+  // Решения тематически связаны с финальной целью, но не дублируют диари.
+  // ══════════════════════════════════════════════════════════════════════
+
+  {
+    id: 'PERS_FINAL_DEBT_REFI',
+    title: 'Звонок из банка: рефинансирование',
+    description:
+      'Банк сам перезванивает: «Видим, что вы исправно гасите. Могу предложить refinance — спишем 50К долга, но потребуется единовременный платёж 20К. Срок до конца месяца». Расчёт простой: если потянете 20К сейчас, конечная цель ближе на 30К.',
+    trigger: {
+      dayMin: 266,  // W38
+      dayMax: 294,  // W42
+      randomChance: 1.0,
+      oneTime: true,
+      requiredPersonal: 'free',
+    },
+    options: [
+      {
+        id: 'accept_refi',
+        text: 'Согласиться — снять 20К, минус 50К долга (нетто −30К к цели)',
+        consequences: { balanceDelta: 30000, reputationDelta: 1 },
+      },
+      {
+        id: 'decline_refi',
+        text: 'Отказаться — гасим как идёт',
+        consequences: { reputationDelta: 0 },
+      },
+    ],
+  },
+
+  {
+    id: 'PERS_FINAL_BROTHER_ADMISSION',
+    title: 'Брат: «магистратура с местом, но через неделю»',
+    description:
+      'Звонок: «Слушай, тут место в магистратуре освободилось — старый знакомый отжал. Но взнос 60К через неделю. Это считай половина следующего года жизни без долгов перед универом — потом стипендия + общага». Голос напряжённый. Это серьёзный момент.',
+    trigger: {
+      dayMin: 266,
+      dayMax: 294,
+      randomChance: 1.0,
+      oneTime: true,
+      requiredPersonal: 'friend',
+    },
+    options: [
+      {
+        id: 'pay_admission',
+        text: 'Отдать 60К — он того стоит',
+        consequences: { balanceDelta: -60000, reputationDelta: 5, energyDelta: -10 },
+      },
+      {
+        id: 'cant_now',
+        text: 'Не могу сейчас, пусть подаёт следующий год',
+        consequences: { reputationDelta: -3, energyDelta: -8 },
+      },
+    ],
+  },
+
+  {
+    id: 'PERS_FINAL_REALTOR_DEPOSIT',
+    title: 'Риелтор требует залог 30К — иначе квартира уходит',
+    description:
+      'Тот самый риелтор: «Хозяин начал нервничать. Если не оставите залог 30К к концу недели — он будет говорить с другим покупателем. Залог невозвратный, но я гарантирую: квартира за вами до конца года».',
+    trigger: {
+      dayMin: 266,
+      dayMax: 294,
+      randomChance: 1.0,
+      oneTime: true,
+      requiredPersonal: 'hometown',
+    },
+    isMoralDilemma: true,
+    options: [
+      {
+        id: 'pay_deposit',
+        text: 'Дать 30К залог — фиксируем квартиру',
+        consequences: { balanceDelta: -30000, reputationDelta: 2 },
+      },
+      {
+        id: 'risk_loss',
+        text: 'Не давать — поверю, что не уйдёт',
+        consequences: { reputationDelta: 0, energyDelta: -10 },
+      },
+    ],
+  },
 ]

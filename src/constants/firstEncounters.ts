@@ -73,7 +73,10 @@ export const FIRST_ENCOUNTER_EVENTS: EventTemplate[] = [
     id: 'FIRST_MARKET',
     title: 'Опять кончилось то, что покупали',
     description: 'Постоянная клиентка с порога: «Хлеба не привезли?» — а у вас он стоит, просто за стеллажом, не доглядели. «Я могла бы догадаться. У вас вечно так». Уходит. Складские остатки вы ведёте на бумажке, на бумажке же забываете.',
-    trigger: { dayMin: 84, randomChance: 0.12, noService: 'market', oneTime: true },
+    // Спринт 6 (Game Designer phase-3 audit): chance 0.12 → 0.20 чтобы
+    // FIRST_MARKET надёжно фирился к W13, не растягиваясь до W16. W11-19
+    // был самым «пустым» windows игры — это сужает trough.
+    trigger: { dayMin: 84, randomChance: 0.20, noService: 'market', oneTime: true },
     options: [
       {
         id: 'excel',

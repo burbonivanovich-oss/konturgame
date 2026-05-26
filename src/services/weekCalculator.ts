@@ -304,9 +304,15 @@ export function processWeek(state: GameState): DayResult {
 
   // 2. Competitor event check (once per week, not 7 times)
   state.weeksSinceCompetitorEvent++
-  const competitorInterval =
+  // Спринт 6 (Game Designer phase-4 audit): cap на W20 чтобы lategame
+  // не терял competitor pressure. Раньше interval = 5 + week/10 рос линейно
+  // (W40 = 5+4=9 нед, W50 = 5+5=10 нед), к W40+ конкурент почти не давил.
+  // Cap на интервал = base + 2 (W20 уровень) — lategame пресс остаётся.
+  const competitorInterval = Math.min(
+    COMPETITOR_CYCLE.BASE_INTERVAL_WEEKS + 2,
     COMPETITOR_CYCLE.BASE_INTERVAL_WEEKS +
-    Math.floor(state.currentWeek / COMPETITOR_CYCLE.WEEK_DIVISOR)
+      Math.floor(state.currentWeek / COMPETITOR_CYCLE.WEEK_DIVISOR),
+  )
   if (state.weeksSinceCompetitorEvent >= competitorInterval && !state.competitorEventTriggered) {
     state.competitorEventTriggered = true
     state.weeksSinceCompetitorEvent = 0
@@ -824,6 +830,24 @@ function generateNextWeekTeaser(state: GameState): string | null {
   const tier = state.businessTier ?? 1
   const employees = state.employees?.length ?? 0
   const upgradesCount = state.purchasedUpgrades?.length ?? 0
+
+  // Спринт 6 (Game Designer phase-3 audit): T2 forward-looking teaser.
+  // Раньше игрок узнавал «нужна реп ≥70» только когда заходил в Развитие.
+  // Aggressive-tactic-runner мог уйти на rep=40 к W12 и пропустить T2.
+  // Триггер: за 3 недели до W12 при tier=1 и недостаточной репутации.
+  if (tier === 1 && state.currentWeek >= 9 && state.currentWeek <= 11) {
+    const rep = state.reputation ?? 50
+    if (rep < 70) {
+      return `🎯 До перехода на Этап 2 нужна репутация ≥ 70 (сейчас ${rep}). Service-тактика даёт +7 реп/нед, calm — +0.7`
+    }
+  }
+  // T3 forward-looking teaser
+  if (tier === 2 && state.currentWeek >= 19 && state.currentWeek <= 21) {
+    const rep = state.reputation ?? 50
+    if (rep < 85) {
+      return `🎯 До перехода на Этап 3 нужна репутация ≥ 85 (сейчас ${rep})`
+    }
+  }
 
   // Накопил, но не растёт
   if (balance >= 600000 && tier < 3 && state.currentWeek >= 25) {

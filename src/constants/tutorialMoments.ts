@@ -143,10 +143,13 @@ export const TUTORIAL_MOMENTS: TutorialMoment[] = [
       const hasSvetlana = (s.employees ?? []).some(e => e.name === 'Светлана' && e.position === 'manager')
       const hasOleg = (s.employees ?? []).some(e => e.name === 'Олег')
       if (!hasSvetlana || !hasOleg) return false
-      // Show within 2 weeks of Svetlana hire (when player has just both)
+      // Спринт 6 (UX phase-3 audit): раньше friction-tutorial показывался
+      // в первые 2 недели вместе с manager-boost — две модалки об одном
+      // конфликте подряд. Теперь fires НЕ РАНЬШЕ 2 недель после найма
+      // Светланы (даём manager-boost усвоиться первым).
       const svetlanaHireDay = (s.employees ?? []).find(e => e.name === 'Светлана')?.hireDay ?? 0
       const weeksSince = ((s.currentWeek ?? 0) * 7 - svetlanaHireDay) / 7
-      return weeksSince >= 0 && weeksSince <= 2
+      return weeksSince >= 2 && weeksSince <= 4
     },
   },
 ]
