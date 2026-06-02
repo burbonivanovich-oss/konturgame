@@ -5,6 +5,8 @@
 // ErrorBoundary, чтобы тестер из любой точки игры мог дать фидбек и прислать
 // отчёт.
 
+import { track } from '../utils/analytics'
+
 /**
  * Версия для отчётов плейтеста. Меняется руками при заметных правках баланса/
  * механик, чтобы при разборе отчётов было понятно, на какой сборке играл тестер.
@@ -38,5 +40,6 @@ export function isFeedbackConfigured(): boolean {
 /** Открыть форму фидбека в новой вкладке (no-op, если не настроена). */
 export function openFeedbackForm(): void {
   if (!isFeedbackConfigured()) return
+  track('feedback.opened', {})
   window.open(FEEDBACK_FORM_URL, '_blank', 'noopener,noreferrer')
 }

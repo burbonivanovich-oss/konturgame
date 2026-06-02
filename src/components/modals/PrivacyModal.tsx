@@ -30,7 +30,7 @@ export default function PrivacyModal({ isOpen, onClose }: PrivacyModalProps) {
         <p>
           Прогресс игры (баланс, неделя, выбранные сервисы, репутация
           NPC и т.п.) сохраняется в localStorage вашего браузера под
-          ключом <code style={{ background: K.bone, padding: '1px 6px', borderRadius: 4 }}>konturgame_state_v7</code>.
+          ключом <code style={{ background: K.bone, padding: '1px 6px', borderRadius: 4 }}>konturgame_state</code>.
           Эти данные никуда не отправляются, очищаются при удалении
           данных сайта или вручную через «Настройки → Удалить данные».
         </p>

@@ -7,6 +7,10 @@ import { getNPCDefinition } from '../../constants/npcs'
 import { getMetaLesson } from '../../constants/metaLessons'
 import { downloadPlaytestReport } from '../../utils/playtestReport'
 import { isFeedbackConfigured, openFeedbackForm } from '../../constants/playtest'
+import { konturHomeUrl, konturServiceUrl } from '../../constants/konturLinks'
+import { SERVICES_CONFIG } from '../../constants/business'
+import { track } from '../../utils/analytics'
+import type { ServiceType } from '../../types/game'
 
 interface VictoryModalProps {
   isOpen: boolean
@@ -131,6 +135,7 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
     startNewGame, currentWeek, balance, reputation, gameOverReason,
     playerBackstory, npcs, completedChainIds, personalGoal,
     decisionLog, newlyUnlockedLessons, triggeredEventIds, victoryType,
+    services, businessType,
   } = useGameStore()
 
   const newLessons = (newlyUnlockedLessons ?? [])
@@ -185,6 +190,18 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
   const handleExportReport = () => {
     const ok = downloadPlaytestReport({ source: isVictory ? 'victory' : 'defeat' })
     if (!ok) alert('Не удалось сохранить отчёт. Попробуйте ещё раз.')
+  }
+
+  // CTA-блок «Попробовать в реальности» — главная бизнес-цель игры.
+  const ctaPlacement = isVictory ? 'victory' : 'defeat'
+  const activeServiceIds = (Object.keys(services ?? {}) as ServiceType[])
+    .filter((id) => services?.[id]?.isActive)
+
+  const handleHomeCta = () => {
+    track('cta.clicked', { kind: 'home', placement: ctaPlacement, businessType })
+  }
+  const handleServiceCta = (service: ServiceType) => {
+    track('cta.clicked', { kind: 'service', service, placement: ctaPlacement, businessType })
   }
 
   return (
@@ -408,6 +425,70 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
             <p style={{ fontSize: 14, color: K.muted, marginBottom: 24, lineHeight: 1.6 }}>
               Анализируйте ошибки и попробуйте снова!
             </p>
+          )}
+        </div>
+
+        {/* CTA «Попробовать в реальности» — пик эмоции, главная цель игры:
+            довести игрока до реальных сервисов Контура. */}
+        <div style={{
+          background: K.ink,
+          borderRadius: 14,
+          padding: '18px 18px 16px',
+          textAlign: 'left',
+        }}>
+          <div style={{ fontSize: 15, fontWeight: 800, color: K.white, marginBottom: 6 }}>
+            {isVictory ? 'Понравилось вести бизнес?' : 'В реальности это проще'}
+          </div>
+          <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.72)', lineHeight: 1.5, marginBottom: 14 }}>
+            {isVictory
+              ? 'В жизни Контур берёт на себя кассу, бухгалтерию и документы — чтобы у вас оставалось время на сам бизнес, а не на отчёты.'
+              : 'Часть проблем, на которых спотыкается бизнес, в реальности закрывают сервисы Контура: касса по 54-ФЗ, бухгалтерия, проверка партнёров.'}
+          </div>
+
+          <a
+            href={konturHomeUrl(ctaPlacement)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleHomeCta}
+            style={{
+              display: 'block', textAlign: 'center', textDecoration: 'none',
+              padding: '13px', borderRadius: 11,
+              background: K.orange, color: K.white,
+              fontSize: 14, fontWeight: 800,
+            }}
+          >
+            Попробовать в реальности →
+          </a>
+
+          {activeServiceIds.length > 0 && (
+            <div style={{ marginTop: 14 }}>
+              <div style={{
+                fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.5)',
+                textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8,
+              }}>
+                Сервисы, которые вы подключали в игре
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {activeServiceIds.map((id) => (
+                  <a
+                    key={id}
+                    href={konturServiceUrl(id, ctaPlacement)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => handleServiceCta(id)}
+                    style={{
+                      textDecoration: 'none',
+                      padding: '6px 10px', borderRadius: 8,
+                      background: 'rgba(255,255,255,0.1)',
+                      border: '1px solid rgba(255,255,255,0.18)',
+                      color: K.white, fontSize: 11.5, fontWeight: 700,
+                    }}
+                  >
+                    {SERVICES_CONFIG[id]?.name ?? id} ↗
+                  </a>
+                ))}
+              </div>
+            </div>
           )}
         </div>
 

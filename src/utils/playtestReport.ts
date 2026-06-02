@@ -6,6 +6,7 @@
 
 import { useGameStore } from '../stores/gameStore'
 import { APP_VERSION } from '../constants/playtest'
+import { track } from './analytics'
 
 export interface PlaytestReport {
   schemaVersion: number
@@ -62,6 +63,7 @@ export function downloadPlaytestReport(
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
+    track('report.exported', { source: extra?.source ?? 'unknown' })
     return true
   } catch (err) {
     console.error('Не удалось сохранить отчёт плейтеста', err)

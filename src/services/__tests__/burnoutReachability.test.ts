@@ -8,10 +8,25 @@
  * В simulation.test.ts энергия восстанавливается до 100 каждую неделю —
  * там тестируется только баланс денег. Здесь энергия живёт нормально.
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { processWeek } from '../weekCalculator'
+import { seedRng, createRng } from '../../utils/rng'
 import { SERVICES_CONFIG, ECONOMY_CONSTANTS } from '../../constants/business'
 import type { GameState, ServiceType, WeeklyTactic } from '../../types/game'
+
+// Детерминизм: часть пути недели (выбор микрособытий в weekCalculator) всё ещё
+// использует Math.random() напрямую (audit E4), поэтому seedRng недостаточно.
+// Чтобы тест не флачил на границе окна (W6 vs W7), на время теста подменяем
+// и модульный RNG, и Math.random детерминированным генератором.
+beforeEach(() => {
+  seedRng(20240517)
+  const rng = createRng(20240517)
+  vi.spyOn(Math, 'random').mockImplementation(() => rng.randFloat())
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 function makeServices(activeIds: ServiceType[] = []): GameState['services'] {
   const services = {} as GameState['services']

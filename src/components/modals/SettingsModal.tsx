@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import Modal from './Modal'
+import PrivacyModal from './PrivacyModal'
 import { useGameStore } from '../../stores/gameStore'
 import { K } from '../design-system/tokens'
 import { downloadPlaytestReport } from '../../utils/playtestReport'
@@ -11,6 +13,7 @@ interface SettingsModalProps {
 }
 
 export default function SettingsModal({ isOpen, onClose, onRestart }: SettingsModalProps) {
+  const [showPrivacy, setShowPrivacy] = useState(false)
 
   const handleNewGame = () => {
     if (confirm('Вы уверены? Текущий прогресс будет потерян.')) {
@@ -52,6 +55,7 @@ export default function SettingsModal({ isOpen, onClose, onRestart }: SettingsMo
   }
 
   return (
+    <>
     <Modal isOpen={isOpen} title="⚙️ Настройки" onClose={onClose} size="md">
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {/* Game options */}
@@ -122,6 +126,19 @@ export default function SettingsModal({ isOpen, onClose, onRestart }: SettingsMo
             >
               📋 Показать состояние в консоли
             </button>
+            <button
+              onClick={() => setShowPrivacy(true)}
+              style={{
+                width: '100%', padding: '10px 12px', borderRadius: 10,
+                background: K.bone, border: `1.5px solid ${K.line}`,
+                color: K.ink2, fontSize: 12, fontWeight: 700,
+                cursor: 'pointer', transition: 'opacity 0.2s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+            >
+              🔒 Приватность и данные
+            </button>
           </div>
         </div>
 
@@ -164,5 +181,7 @@ export default function SettingsModal({ isOpen, onClose, onRestart }: SettingsMo
         </div>
       </div>
     </Modal>
+    <PrivacyModal isOpen={showPrivacy} onClose={() => setShowPrivacy(false)} />
+    </>
   )
 }

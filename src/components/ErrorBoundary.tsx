@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { downloadPlaytestReport } from '../utils/playtestReport'
 import { isFeedbackConfigured, openFeedbackForm } from '../constants/playtest'
+import { track } from '../utils/analytics'
 
 // Граница ошибок для плейтеста.
 //
@@ -45,6 +46,7 @@ export default class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, info: ErrorInfo): void {
     console.error('Перехвачена ошибка рендера:', error, info)
     this.setState({ componentStack: info.componentStack ?? '' })
+    track('error.caught', { message: error.message.slice(0, 200) })
   }
 
   handleReload = (): void => {

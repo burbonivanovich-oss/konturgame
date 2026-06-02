@@ -5,6 +5,8 @@ import BackstoryScreen from '@components/BackstoryScreen'
 import PerkSelectionScreen from '@components/PerkSelectionScreen'
 import { useGameStore, syncOnboardingState } from './stores/gameStore'
 import { useMetaStore } from './stores/metaStore'
+import ConsentBanner from '@components/ConsentBanner'
+import { track } from './utils/analytics'
 import type { PlayerBackstory } from './types/game'
 
 type AppScreen = 'backstory' | 'business-select' | 'game' | 'perk-select'
@@ -18,6 +20,7 @@ export default function App() {
 
   // Load game from localStorage on mount
   useEffect(() => {
+    track('game.session.started', { returning: !!localStorage.getItem('konturgame_state') })
     const saved = localStorage.getItem('konturgame_state')
     if (saved) {
       try {
@@ -68,6 +71,7 @@ export default function App() {
     const perkId = consumeSelectedPerk()
     if (perkId) applyMetaPerk(perkId)
 
+    track('game.business.chosen', { businessType: useGameStore.getState().businessType })
     setScreen('game')
   }
 
@@ -83,19 +87,18 @@ export default function App() {
     setScreen('backstory')
   }
 
-  if (screen === 'game') {
-    return <MainScreen onRestart={handleRestartGame} />
-  }
+  const screenEl =
+    screen === 'game' ? <MainScreen onRestart={handleRestartGame} />
+    : screen === 'perk-select' ? <PerkSelectionScreen onContinue={handlePerkSelectionDone} />
+    : screen === 'business-select' ? <BusinessSelector onGameStart={handleGameStart} />
+    : <BackstoryScreen onComplete={handleBackstoryComplete} />
 
-  if (screen === 'perk-select') {
-    return <PerkSelectionScreen onContinue={handlePerkSelectionDone} />
-  }
-
-  if (screen === 'business-select') {
-    return <BusinessSelector onGameStart={handleGameStart} />
-  }
-
-  return <BackstoryScreen onComplete={handleBackstoryComplete} />
+  return (
+    <>
+      {screenEl}
+      <ConsentBanner />
+    </>
+  )
 }
 
 function applyMetaPerk(perkId: string) {
