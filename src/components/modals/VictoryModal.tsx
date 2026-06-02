@@ -5,6 +5,8 @@ import { K } from '../design-system/tokens'
 import { buildNpcExitLines, buildGoalClosure } from '../../constants/npcExits'
 import { getNPCDefinition } from '../../constants/npcs'
 import { getMetaLesson } from '../../constants/metaLessons'
+import { downloadPlaytestReport } from '../../utils/playtestReport'
+import { isFeedbackConfigured, openFeedbackForm } from '../../constants/playtest'
 
 interface VictoryModalProps {
   isOpen: boolean
@@ -178,6 +180,11 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
 
   const handleNewGame = () => {
     startNewGame('shop')
+  }
+
+  const handleExportReport = () => {
+    const ok = downloadPlaytestReport({ source: isVictory ? 'victory' : 'defeat' })
+    if (!ok) alert('Не удалось сохранить отчёт. Попробуйте ещё раз.')
   }
 
   return (
@@ -402,6 +409,54 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
               Анализируйте ошибки и попробуйте снова!
             </p>
           )}
+        </div>
+
+        {/* Плейтест: пик эмоции — лучший момент попросить отчёт и фидбек.
+            Блок виден только в alpha-сборке (когда настроена форма) либо
+            всегда даёт скачать отчёт. */}
+        <div style={{
+          background: K.bone,
+          border: `1px solid ${K.line}`,
+          borderRadius: 12,
+          padding: '14px 16px',
+          textAlign: 'left',
+        }}>
+          <div style={{
+            fontSize: 11, fontWeight: 800, color: K.orange,
+            textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6,
+          }}>
+            🧪 Помогите сделать игру лучше
+          </div>
+          <div style={{ fontSize: 12, color: K.ink2, lineHeight: 1.5, marginBottom: 12 }}>
+            Это альфа-версия. Скачайте отчёт об этой партии и пришлите его
+            вместе с коротким фидбеком — так мы поймём, что улучшить.
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={handleExportReport}
+              style={{
+                flex: 1, padding: '10px 12px', borderRadius: 10,
+                background: K.orangeSoft, border: `1.5px solid ${K.orange}`,
+                color: K.orange, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              📥 Скачать отчёт
+            </button>
+            {isFeedbackConfigured() && (
+              <button
+                onClick={openFeedbackForm}
+                style={{
+                  flex: 1, padding: '10px 12px', borderRadius: 10,
+                  background: K.mintSoft, border: `1.5px solid ${K.mint}`,
+                  color: K.ink, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                💬 Оставить фидбек
+              </button>
+            )}
+          </div>
         </div>
 
         <button

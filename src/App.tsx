@@ -26,7 +26,10 @@ export default function App() {
         syncOnboardingState()
         setScreen('game')
       } catch (error) {
+        // Повреждённый сэйв: убираем его, чтобы перезагрузка не падала снова
+        // на том же битом JSON (иначе игра «кирпичится» у тестера).
         console.error('Failed to load game', error)
+        localStorage.removeItem('konturgame_state')
         setScreen('backstory')
       }
     } else {

@@ -1,6 +1,8 @@
 import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
 import { K } from '../design-system/tokens'
+import { downloadPlaytestReport } from '../../utils/playtestReport'
+import { isFeedbackConfigured, openFeedbackForm } from '../../constants/playtest'
 
 interface SettingsModalProps {
   isOpen: boolean
@@ -29,38 +31,16 @@ export default function SettingsModal({ isOpen, onClose, onRestart }: SettingsMo
   }
 
   // Спринт 6 (alpha playtest): экспорт сэйв-файла для аналитики.
-  // Подразумевается что игрок отправит файл вместе с заполненной формой
-  // фидбека. Replay-скрипт (docs/playtest/replay.ts) парсит JSON и
-  // выдаёт postmortem: где умер, какие сервисы, какие решения, ачивки.
+  // Игрок отправляет файл вместе с заполненной формой фидбека. Replay-скрипт
+  // (docs/playtest/replay.mjs) парсит JSON и выдаёт postmortem: где умер,
+  // какие сервисы, решения, ачивки. Логика вынесена в utils/playtestReport.
   const handlePlaytestExport = () => {
-    const state = useGameStore.getState()
-    const payload = {
-      schemaVersion: 1,
-      exportedAt: new Date().toISOString(),
-      app: {
-        version: '6.0-alpha',
-        userAgent: navigator.userAgent.slice(0, 200),
-      },
-      // Полный snapshot state'а — postmortem-скрипт извлекает что нужно
-      // (decisionLog, achievements, triggeredEventIds, gameOverReason,
-      // personalGoal итог, активные сервисы, businessTier, current week).
-      state,
+    const ok = downloadPlaytestReport({ source: 'settings' })
+    if (ok) {
+      alert('Отчёт о тесте сохранён. Прикрепите его к форме фидбека в Google Form.')
+    } else {
+      alert('Не удалось сохранить отчёт. Попробуйте ещё раз.')
     }
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    const week = state.currentWeek ?? 0
-    const biz = state.businessType ?? 'unknown'
-    const status = state.isGameOver ? `gameover-${state.gameOverReason ?? 'unknown'}`
-      : state.isVictory ? 'victory'
-      : `inprogress-W${week}`
-    a.href = url
-    a.download = `playtest-${biz}-${status}-${Date.now()}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-    alert('Отчёт о тесте сохранён. Прикрепите его к форме фидбека в Google Form.')
   }
 
   const handleClearData = () => {
@@ -114,6 +94,21 @@ export default function SettingsModal({ isOpen, onClose, onRestart }: SettingsMo
             >
               📥 Скачать отчёт для плейтеста
             </button>
+            {isFeedbackConfigured() && (
+              <button
+                onClick={openFeedbackForm}
+                style={{
+                  width: '100%', padding: '10px 12px', borderRadius: 10,
+                  background: K.mintSoft, border: `1.5px solid ${K.mint}`,
+                  color: K.ink, fontSize: 12, fontWeight: 700,
+                  cursor: 'pointer', transition: 'opacity 0.2s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+              >
+                💬 Оставить фидбек
+              </button>
+            )}
             <button
               onClick={handleExportState}
               style={{
