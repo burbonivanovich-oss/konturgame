@@ -95,7 +95,7 @@ export default function App() {
 
   return (
     <>
-      {screenEl}
+      <main id="main">{screenEl}</main>
       <ConsentBanner />
     </>
   )

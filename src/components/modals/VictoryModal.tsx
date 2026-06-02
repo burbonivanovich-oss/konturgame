@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import Modal from './Modal'
 import { useGameStore } from '../../stores/gameStore'
 import type { PlayerBackstory, NPC } from '../../types/game'
@@ -9,6 +10,7 @@ import { downloadPlaytestReport } from '../../utils/playtestReport'
 import { isFeedbackConfigured, openFeedbackForm } from '../../constants/playtest'
 import { konturHomeUrl, konturServiceUrl } from '../../constants/konturLinks'
 import { SERVICES_CONFIG } from '../../constants/business'
+import { BUNDLE_PROMO_CODE, BUNDLE_PROMO_OFFER } from '../../constants/promoCodes'
 import { track } from '../../utils/analytics'
 import type { ServiceType } from '../../types/game'
 
@@ -202,6 +204,14 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
   }
   const handleServiceCta = (service: ServiceType) => {
     track('cta.clicked', { kind: 'service', service, placement: ctaPlacement, businessType })
+  }
+
+  const [copied, setCopied] = useState(false)
+  const handleCopyPromo = () => {
+    navigator.clipboard?.writeText(BUNDLE_PROMO_CODE).catch(() => {})
+    setCopied(true)
+    track('promo.copied', { code: BUNDLE_PROMO_CODE, placement: ctaPlacement })
+    window.setTimeout(() => setCopied(false), 2000)
   }
 
   return (
@@ -490,6 +500,38 @@ export default function VictoryModal({ isOpen, type }: VictoryModalProps) {
               </div>
             </div>
           )}
+
+          {/* Промокод на пике эмоции (audit D10): конкретный повод дойти до
+              kontur.ru — не просто ссылка, а реальная скидка. */}
+          <div style={{
+            marginTop: 14, paddingTop: 14,
+            borderTop: '1px solid rgba(255,255,255,0.12)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+          }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.72)', lineHeight: 1.4 }}>
+                {BUNDLE_PROMO_OFFER}
+              </div>
+              <div style={{
+                fontSize: 14, fontWeight: 800, color: K.white,
+                fontFamily: 'monospace', letterSpacing: '0.04em', marginTop: 2,
+              }}>
+                {BUNDLE_PROMO_CODE}
+              </div>
+            </div>
+            <button
+              onClick={handleCopyPromo}
+              style={{
+                flexShrink: 0, padding: '8px 12px', borderRadius: 9,
+                background: copied ? K.mint : 'rgba(255,255,255,0.14)',
+                border: '1px solid rgba(255,255,255,0.22)',
+                color: K.white, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              {copied ? '✓ Скопировано' : 'Копировать'}
+            </button>
+          </div>
         </div>
 
         {/* Плейтест: пик эмоции — лучший момент попросить отчёт и фидбек.
