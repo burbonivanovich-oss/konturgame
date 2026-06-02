@@ -194,9 +194,10 @@ export function buildModifiers(state: GameState): Modifiers {
     synergyMods.clientBonus +
     getClientUpgradesBonus(state)
 
-  // Check bonus: market + fokus + synergy
+  // Check bonus: market + fokus + synergy. Маркет теперь читается из конфига
+  // (Спринт 7 — раньше 0.15 был захардкожен и скрыт от игрока).
   const serviceCheckBonus =
-    (state.services?.market?.isActive ? 0.15 : 0) +
+    (state.services?.market?.isActive ? (state.services.market.effects.checkBonus ?? 0) : 0) +
     (state.services?.fokus?.isActive ? (state.services.fokus.effects.checkBonus ?? 0) : 0) +
     synergyMods.checkBonus
 

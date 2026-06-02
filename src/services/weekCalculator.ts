@@ -194,8 +194,13 @@ export function processWeek(state: GameState): DayResult {
 
     const dayRevenue = Math.max(0, Math.round(dailyRevenue * energyModifier * tacticRevenueMul))
 
-    // 8. Purchase costs (via assortment daily costs)
-    const purchaseCost = totalDailyCategoryCost
+    // 8. Purchase costs (via assortment daily costs).
+    // Диадок (Спринт 7): ЭДО ускоряет оборот → скидка на закупки (COGS).
+    // Это прямой, осязаемый эффект вместо прежнего dead taxSaving.
+    const procurementDiscount = state.services?.diadoc?.isActive
+      ? (state.services.diadoc.effects.procurementDiscount ?? 0)
+      : 0
+    const purchaseCost = Math.round(totalDailyCategoryCost * (1 - procurementDiscount))
 
     const totalCategoryFines = Object.values(categoryFines).reduce((s, v) => s + v, 0)
 
@@ -329,9 +334,15 @@ export function processWeek(state: GameState): DayResult {
   // Сдвиг эффективности сотрудников за неделю (учится / халтурит)
   updateEmployeeGrowth(state)
 
-  // Deduct weekly employee energy cost, minus upgrade bonuses
+  // Deduct weekly energy cost, minus upgrade bonuses and service automation.
+  // Спринт 7: energyReduction сервисов (Эльба -35%) теперь реально применяется
+  // к операционной усталости — раньше поле было dead config. Снижает базовую
+  // нагрузку, не уводя её в минус.
   const upgradeEnergyBonus = getUpgradeEnergyBonus(state)
-  const actualEnergyCost = Math.max(0, weeklyEnergyCost - upgradeEnergyBonus)
+  const serviceEnergyReduction = (Object.values(state.services ?? {}) as Array<{ isActive?: boolean; effects?: { energyReduction?: number } }>)
+    .reduce((sum, s) => sum + (s?.isActive ? (s.effects?.energyReduction ?? 0) : 0), 0)
+  const energyAfterServices = weeklyEnergyCost * (1 - Math.min(0.6, serviceEnergyReduction))
+  const actualEnergyCost = Math.max(0, energyAfterServices - upgradeEnergyBonus)
   // Apply weekly tactic's per-day energy delta over 7 days (e.g. -3/day = -21/week).
   const tacticEnergyTotal = tacticEnergyPerDay * 7
   state.entrepreneurEnergy = Math.max(

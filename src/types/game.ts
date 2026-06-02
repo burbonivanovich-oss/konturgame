@@ -211,6 +211,10 @@ export interface Service {
     taxSaving?: number
     energyReduction?: number
     acquiringRate?: number
+    // Скидка на ежедневные закупки (COGS). Прямой эффект Диадока: ЭДО
+    // ускоряет оборот документов → дешевле закупки. Применяется в
+    // weekCalculator к purchaseCost.
+    procurementDiscount?: number
   }
 }
 

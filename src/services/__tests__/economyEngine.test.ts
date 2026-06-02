@@ -312,12 +312,14 @@ describe('buildModifiers', () => {
   })
 
   it('includes market check bonus when market is active', () => {
+    // Спринт 7: +15% к чеку читается из конфига (effects.checkBonus), а не
+    // захардкожен. Тест отражает реальную форму сервиса из SERVICES_CONFIG.
     const state = makeState({
       services: {
-        market: { id: 'market', name: '', description: '', annualPrice: 24000, isActive: true, effects: {} },
+        market: { id: 'market', name: '', description: '', annualPrice: 24000, isActive: true, effects: { checkBonus: 0.15 } },
       } as GameState['services'],
     })
     const mods = buildModifiers(state)
-    expect(mods.checkBonus).toBeGreaterThan(0)
+    expect(mods.checkBonus).toBeCloseTo(0.15, 5)
   })
 })
